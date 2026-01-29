@@ -1,0 +1,460 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { TableModule } from 'primeng/table';
+import { DividerModule } from 'primeng/divider';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
+import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
+import { PurchaseOrder } from '../../../../models/purchase-order.model';
+import {
+  PurchaseOrderStatus,
+  PurchaseOrderStatusLabels,
+  PurchaseOrderStatusColors
+} from '../../../../enums';
+import { ToastService } from '../../../../shared/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirmation.service';
+import { PurchaseOrderReceivingComponent } from '../purchase-order-receiving/purchase-order-receiving.component';
+
+@Component({
+  selector: 'app-purchase-order-detail',
+  imports: [
+    CommonModule,
+    CardModule,
+    ButtonModule,
+    TagModule,
+    TableModule,
+    DividerModule,
+    SkeletonModule,
+    TooltipModule,
+    PurchaseOrderReceivingComponent
+  ],
+  template: `
+    <div class="grid">
+      <!-- Back to PO List Link -->
+      <div class="col-12 mb-3">
+        <p-button
+          icon="pi pi-arrow-left"
+          label="Back to Purchase Orders"
+          [text]="true"
+          (onClick)="goBackToList()"
+        />
+      </div>
+
+      @if (loading()) {
+        <!-- Loading Skeleton -->
+        <div class="col-12">
+          <p-card>
+            <div class="grid">
+              <div class="col-12 md:col-6">
+                <p-skeleton width="60%" height="2rem" styleClass="mb-3" />
+                <p-skeleton width="40%" height="1.5rem" styleClass="mb-2" />
+                <p-skeleton width="50%" height="1.5rem" styleClass="mb-2" />
+                <p-skeleton width="30%" height="1.5rem" />
+              </div>
+              <div class="col-12 md:col-6">
+                <p-skeleton width="40%" height="1.5rem" styleClass="mb-2" />
+                <p-skeleton width="35%" height="1.5rem" styleClass="mb-2" />
+                <p-skeleton width="45%" height="1.5rem" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+        <div class="col-12">
+          <p-card header="Line Items">
+            <p-skeleton height="200px" />
+          </p-card>
+        </div>
+      } @else if (notFound()) {
+        <!-- PO Not Found -->
+        <div class="col-12">
+          <p-card>
+            <div class="text-center py-8">
+              <i class="pi pi-exclamation-circle text-6xl text-orange-500 mb-4" style="display: block;"></i>
+              <h2 class="text-2xl font-bold text-900 m-0 mb-2">Purchase Order Not Found</h2>
+              <p class="text-600 text-lg m-0 mb-4">
+                The purchase order you're looking for doesn't exist or has been removed.
+              </p>
+              <p-button
+                icon="pi pi-arrow-left"
+                label="Back to Purchase Orders"
+                (onClick)="goBackToList()"
+              />
+            </div>
+          </p-card>
+        </div>
+      } @else if (purchaseOrder()) {
+        <!-- PO Detail Header -->
+        <div class="col-12">
+          <p-card>
+            <div class="flex flex-column md:flex-row md:align-items-start md:justify-content-between gap-4">
+              <!-- Left Section: PO Info -->
+              <div class="flex-grow-1">
+                <div class="flex align-items-center gap-3 mb-3">
+                  <h1 class="text-3xl font-bold text-900 m-0">{{ purchaseOrder()!.poNumber }}</h1>
+                  <p-tag
+                    [value]="getStatusLabel(purchaseOrder()!.status)"
+                    [severity]="getStatusSeverity(purchaseOrder()!.status)"
+                    [rounded]="true"
+                    styleClass="text-sm px-3 py-1"
+                  />
+                </div>
+
+                <div class="grid">
+                  <div class="col-12 md:col-6 lg:col-3">
+                    <div class="flex align-items-center gap-2 mb-1">
+                      <i class="pi pi-building text-primary"></i>
+                      <span class="text-600 text-sm">Supplier</span>
+                    </div>
+                    <span class="text-900 font-semibold">{{ purchaseOrder()!.supplierName }}</span>
+                  </div>
+
+                  <div class="col-12 md:col-6 lg:col-3">
+                    <div class="flex align-items-center gap-2 mb-1">
+                      <i class="pi pi-calendar text-primary"></i>
+                      <span class="text-600 text-sm">Order Date</span>
+                    </div>
+                    <span class="text-900 font-semibold">{{ formatDate(purchaseOrder()!.orderDate) }}</span>
+                  </div>
+
+                  <div class="col-12 md:col-6 lg:col-3">
+                    <div class="flex align-items-center gap-2 mb-1">
+                      <i class="pi pi-box text-primary"></i>
+                      <span class="text-600 text-sm">Total Units</span>
+                    </div>
+                    <span class="text-900 font-semibold">{{ getTotalUnits() }} unit{{ getTotalUnits() !== 1 ? 's' : '' }}</span>
+                  </div>
+
+                  <div class="col-12 md:col-6 lg:col-3">
+                    <div class="flex align-items-center gap-2 mb-1">
+                      <i class="pi pi-dollar text-primary"></i>
+                      <span class="text-600 text-sm">Total Amount</span>
+                    </div>
+                    <span class="text-2xl font-bold text-primary">
+                      {{ purchaseOrder()!.totalAmount | currency:'USD':'symbol':'1.2-2' }}
+                    </span>
+                  </div>
+                </div>
+
+                @if (purchaseOrder()!.notes) {
+                  <div class="mt-4">
+                    <div class="flex align-items-center gap-2 mb-1">
+                      <i class="pi pi-file-edit text-primary"></i>
+                      <span class="text-600 text-sm">Notes</span>
+                    </div>
+                    <p class="text-900 m-0 line-height-3">{{ purchaseOrder()!.notes }}</p>
+                  </div>
+                }
+              </div>
+
+              <!-- Right Section: Action Buttons -->
+              <div class="flex flex-column gap-2" style="min-width: 180px;">
+                @if (isPending()) {
+                  <p-button
+                    icon="pi pi-box"
+                    label="Receive Order"
+                    severity="success"
+                    styleClass="w-full"
+                    (onClick)="openReceivingDialog()"
+                    [loading]="actionLoading()"
+                    pTooltip="Receive this order and create inventory"
+                    tooltipPosition="left"
+                  />
+                  <p-button
+                    icon="pi pi-times"
+                    label="Cancel Order"
+                    severity="danger"
+                    [outlined]="true"
+                    styleClass="w-full"
+                    (onClick)="cancelOrder()"
+                    [loading]="actionLoading()"
+                    pTooltip="Cancel this purchase order"
+                    tooltipPosition="left"
+                  />
+                } @else {
+                  <div class="text-center p-3 border-round" [ngClass]="isReceived() ? 'bg-green-50' : 'bg-red-50'">
+                    <i class="pi mb-2" style="font-size: 1.5rem; display: block;"
+                       [ngClass]="isReceived() ? 'pi-check-circle text-green-500' : 'pi-times-circle text-red-500'"></i>
+                    <span class="text-sm" [ngClass]="isReceived() ? 'text-green-700' : 'text-red-700'">
+                      @if (isReceived()) {
+                        Order received successfully
+                      } @else if (isCancelled()) {
+                        Order has been cancelled
+                      }
+                    </span>
+                  </div>
+                  @if (isReceived()) {
+                    <p-button
+                      icon="pi pi-list"
+                      label="View Inventory"
+                      severity="secondary"
+                      [text]="true"
+                      styleClass="w-full mt-2"
+                      (onClick)="navigateToInventory()"
+                      pTooltip="Browse phones in inventory"
+                      tooltipPosition="left"
+                    />
+                  }
+                }
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="col-12">
+          <p-card header="Line Items">
+            <ng-template pTemplate="subtitle">
+              <span class="text-600 text-sm">
+                {{ getTotalUnits() }} total unit{{ getTotalUnits() > 1 ? 's' : '' }} across {{ purchaseOrder()!.items.length }} line item{{ purchaseOrder()!.items.length > 1 ? 's' : '' }}
+              </span>
+            </ng-template>
+            <p-table
+              [value]="purchaseOrder()!.items"
+              [scrollable]="true"
+              scrollDirection="horizontal"
+              [tableStyle]="{ 'min-width': '50rem' }"
+              styleClass="p-datatable-striped"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 5%">#</th>
+                  <th style="width: 25%">Brand</th>
+                  <th style="width: 30%">Model</th>
+                  <th style="width: 12%" class="text-right">Quantity</th>
+                  <th style="width: 14%" class="text-right">Unit Cost</th>
+                  <th style="width: 14%" class="text-right">Line Total</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
+                <tr>
+                  <td class="text-600">{{ rowIndex + 1 }}</td>
+                  <td>
+                    <span class="font-semibold">{{ item.brand }}</span>
+                  </td>
+                  <td>{{ item.model }}</td>
+                  <td class="text-right">
+                    <span class="font-medium">{{ item.quantity }}</span>
+                  </td>
+                  <td class="text-right">
+                    {{ item.unitCost | currency:'USD':'symbol':'1.2-2' }}
+                  </td>
+                  <td class="text-right font-semibold">
+                    {{ item.lineTotal | currency:'USD':'symbol':'1.2-2' }}
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="footer">
+                <tr>
+                  <td colspan="5" class="text-right font-bold text-lg">
+                    Order Total:
+                  </td>
+                  <td class="text-right font-bold text-lg text-primary">
+                    {{ purchaseOrder()!.totalAmount | currency:'USD':'symbol':'1.2-2' }}
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <span class="text-600">No line items found</span>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </p-card>
+        </div>
+
+        <!-- Order Metadata -->
+        <div class="col-12">
+          <p-card>
+            <div class="flex flex-wrap gap-4 text-sm text-600">
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-clock"></i>
+                <span>Created: {{ formatDateTime(purchaseOrder()!.createdAt) }}</span>
+              </div>
+              @if (purchaseOrder()!.updatedAt) {
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-refresh"></i>
+                  <span>Last Updated: {{ formatDateTime(purchaseOrder()!.updatedAt!) }}</span>
+                </div>
+              }
+            </div>
+          </p-card>
+        </div>
+      }
+    </div>
+
+    <!-- Receiving Dialog -->
+    @if (showReceivingDialog()) {
+      <app-purchase-order-receiving
+        [purchaseOrder]="purchaseOrder()"
+        (closed)="onReceivingDialogClosed()"
+        (received)="onOrderReceived($event)"
+      />
+    }
+  `,
+  styles: []
+})
+export class PurchaseOrderDetailComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private location = inject(Location);
+  private purchaseOrderService = inject(PurchaseOrderService);
+  private toastService = inject(ToastService);
+  private confirmDialogService = inject(ConfirmDialogService);
+
+  purchaseOrder = signal<PurchaseOrder | null>(null);
+  loading = signal(true);
+  notFound = signal(false);
+  actionLoading = signal(false);
+  showReceivingDialog = signal(false);
+
+  ngOnInit(): void {
+    const poId = this.route.snapshot.paramMap.get('id');
+    if (poId) {
+      this.loadPurchaseOrder(poId);
+    } else {
+      this.notFound.set(true);
+      this.loading.set(false);
+    }
+  }
+
+  private async loadPurchaseOrder(id: string): Promise<void> {
+    this.loading.set(true);
+    this.notFound.set(false);
+
+    try {
+      const po = await this.purchaseOrderService.getPurchaseOrderById(id);
+
+      if (!po) {
+        this.notFound.set(true);
+        return;
+      }
+
+      this.purchaseOrder.set(po);
+    } catch (error) {
+      console.error('Failed to load purchase order:', error);
+      this.notFound.set(true);
+      this.toastService.error('Error', 'Failed to load purchase order details');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  isPending(): boolean {
+    return this.purchaseOrder()?.status === PurchaseOrderStatus.PENDING;
+  }
+
+  isReceived(): boolean {
+    return this.purchaseOrder()?.status === PurchaseOrderStatus.RECEIVED;
+  }
+
+  isCancelled(): boolean {
+    return this.purchaseOrder()?.status === PurchaseOrderStatus.CANCELLED;
+  }
+
+  getStatusLabel(status: PurchaseOrderStatus): string {
+    return PurchaseOrderStatusLabels[status];
+  }
+
+  getStatusSeverity(status: PurchaseOrderStatus): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
+    const colorMap: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast'> = {
+      'warning': 'warn',
+      'success': 'success',
+      'danger': 'danger'
+    };
+    return colorMap[PurchaseOrderStatusColors[status]] || 'secondary';
+  }
+
+  getTotalUnits(): number {
+    const po = this.purchaseOrder();
+    if (!po) return 0;
+    return po.items.reduce((sum, item) => sum + item.quantity, 0);
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  formatDateTime(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  openReceivingDialog(): void {
+    this.showReceivingDialog.set(true);
+  }
+
+  onReceivingDialogClosed(): void {
+    this.showReceivingDialog.set(false);
+  }
+
+  async onOrderReceived(_event: { phonesCreated: number }): Promise<void> {
+    this.showReceivingDialog.set(false);
+
+    const po = this.purchaseOrder();
+    if (po) {
+      const updatedPo = await this.purchaseOrderService.getPurchaseOrderById(po.id);
+      if (updatedPo) {
+        this.purchaseOrder.set(updatedPo);
+      }
+    }
+  }
+
+  async cancelOrder(): Promise<void> {
+    const po = this.purchaseOrder();
+    if (!po) return;
+
+    const confirmed = await this.confirmDialogService.confirm({
+      header: 'Cancel Purchase Order',
+      message: `Are you sure you want to cancel purchase order <strong>${po.poNumber}</strong> from <strong>${po.supplierName}</strong>?<br/><br/>` +
+        `This action is <strong>irreversible</strong>. Once cancelled, this purchase order cannot be received or modified.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Cancel Order',
+      rejectLabel: 'Keep Order',
+      acceptButtonStyleClass: 'p-button-danger'
+    });
+
+    if (!confirmed) return;
+
+    this.actionLoading.set(true);
+
+    try {
+      const updatedPo = await this.purchaseOrderService.cancelPurchaseOrder(po.id);
+      this.purchaseOrder.set(updatedPo);
+      this.toastService.success('Success', `Purchase order ${po.poNumber} has been cancelled`);
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+      this.toastService.error('Error', 'Failed to cancel purchase order');
+    } finally {
+      this.actionLoading.set(false);
+    }
+  }
+
+  goBackToList(): void {
+    if (window.history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/admin/purchase-orders']);
+    }
+  }
+
+  navigateToInventory(): void {
+    this.router.navigate(['/admin/inventory']);
+  }
+}

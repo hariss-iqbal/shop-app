@@ -1,0 +1,196 @@
+<!-- AC_REDESIGN_001: Hero Banner Section -->
+<section class="hero-section" aria-labelledby="hero-heading">
+  <div class="hero-content">
+    <div class="hero-text">
+      <span class="hero-badge">New Arrivals Available</span>
+      <h1 id="hero-heading" class="hero-title">
+        Find Your Perfect <span class="text-primary">Smartphone</span>
+      </h1>
+      <p class="hero-subtitle">
+        Discover our wide selection of quality new, used, and refurbished mobile phones.
+        Every device is thoroughly tested and backed by our quality guarantee.
+      </p>
+      <div class="hero-actions">
+        <a routerLink="/catalog" class="no-underline">
+          <p-button
+            label="Shop Now"
+            icon="pi pi-shopping-cart"
+            size="large"
+            [raised]="true"
+            aria-label="Browse our phone catalog"
+          />
+        </a>
+        <a routerLink="/about" class="no-underline">
+          <p-button
+            label="Learn More"
+            icon="pi pi-info-circle"
+            size="large"
+            [outlined]="true"
+            severity="secondary"
+            aria-label="Learn more about Phone Shop"
+          />
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-number">1000+</span>
+          <span class="stat-label">Phones Sold</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">500+</span>
+          <span class="stat-label">Happy Customers</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-number">30</span>
+          <span class="stat-label">Day Warranty</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-image" aria-hidden="true">
+      <div class="phone-device">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-header">
+            <span class="screen-time">9:41</span>
+            <div class="screen-icons">
+              <i class="pi pi-wifi text-xs"></i>
+              <i class="pi pi-battery-full text-xs"></i>
+            </div>
+          </div>
+          <div class="screen-content">
+            <i class="pi pi-mobile text-6xl text-primary mb-2"></i>
+            <span class="screen-brand">Phone Shop</span>
+          </div>
+        </div>
+        <div class="phone-button"></div>
+      </div>
+      <div class="phone-glow"></div>
+    </div>
+  </div>
+</section>
+
+<!-- AC_REDESIGN_002: Feature Icons Section -->
+<section class="features-section" aria-labelledby="features-heading">
+  <h2 id="features-heading" class="sr-only">Why Choose Us</h2>
+  <div class="features-grid">
+    @for (feature of features; track feature.title) {
+      <article class="feature-card">
+        <div class="feature-icon-wrapper">
+          <i [class]="feature.icon" aria-hidden="true"></i>
+        </div>
+        <h3 class="feature-title">{{ feature.title }}</h3>
+        <p class="feature-description">{{ feature.description }}</p>
+      </article>
+    }
+  </div>
+</section>
+
+<!-- Featured Phones Preview Section -->
+<section class="cta-banner" aria-labelledby="cta-heading">
+  <div class="cta-content">
+    <div class="cta-text">
+      <h2 id="cta-heading" class="cta-title">Ready to Browse Our Collection?</h2>
+      <p class="cta-subtitle">
+        Explore hundreds of quality smartphones from top brands like Apple, Samsung, Google, and more.
+      </p>
+    </div>
+    <div class="cta-actions">
+      <a routerLink="/catalog" class="no-underline">
+        <p-button
+          label="View Catalog"
+          icon="pi pi-th-large"
+          size="large"
+          severity="contrast"
+          [raised]="true"
+          aria-label="View our phone catalog"
+        />
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- AC_REDESIGN_003: Customer Testimonials Section -->
+<section class="testimonials-section" aria-labelledby="testimonials-heading">
+  <div class="section-header">
+    <h2 id="testimonials-heading" class="section-title">What Our Customers Say</h2>
+    <p class="section-subtitle">Join hundreds of satisfied customers who found their perfect device with us</p>
+  </div>
+
+  <p-carousel
+    [value]="testimonials"
+    [numVisible]="3"
+    [numScroll]="1"
+    [circular]="true"
+    [autoplayInterval]="5000"
+    [responsiveOptions]="responsiveOptions"
+    [showIndicators]="true"
+    [showNavigators]="true"
+    styleClass="testimonial-carousel"
+  >
+    <ng-template let-testimonial pTemplate="item">
+      <article class="testimonial-card" [attr.aria-label]="'Review by ' + testimonial.name">
+        <div class="testimonial-header">
+          <div class="testimonial-avatar" [attr.aria-hidden]="true">
+            {{ testimonial.avatar }}
+          </div>
+          <div class="testimonial-info">
+            <h4 class="testimonial-name">{{ testimonial.name }}</h4>
+            <span class="testimonial-date">{{ testimonial.date }}</span>
+          </div>
+        </div>
+        <div class="testimonial-rating" [attr.aria-label]="testimonial.rating + ' out of 5 stars'">
+          @for (star of [1, 2, 3, 4, 5]; track star) {
+            <i
+              class="pi"
+              [class.pi-star-fill]="star <= testimonial.rating"
+              [class.pi-star]="star > testimonial.rating"
+              [class.text-yellow-500]="star <= testimonial.rating"
+              [class.text-gray-300]="star > testimonial.rating"
+              aria-hidden="true"
+            ></i>
+          }
+        </div>
+        <blockquote class="testimonial-text">
+          "{{ testimonial.text }}"
+        </blockquote>
+      </article>
+    </ng-template>
+  </p-carousel>
+</section>
+
+<!-- Newsletter / Contact CTA -->
+<section class="contact-cta" aria-labelledby="contact-heading">
+  <div class="contact-content">
+    <i class="pi pi-envelope contact-icon" aria-hidden="true"></i>
+    <h2 id="contact-heading" class="contact-title">Have Questions?</h2>
+    <p class="contact-subtitle">
+      Our team is here to help you find the perfect phone. Get in touch with us today!
+    </p>
+    <div class="contact-actions">
+      <a routerLink="/contact" class="no-underline">
+        <p-button
+          label="Contact Us"
+          icon="pi pi-send"
+          size="large"
+          [raised]="true"
+          aria-label="Contact our team"
+        />
+      </a>
+      <a href="https://wa.me/1234567890"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="no-underline"
+         aria-label="Chat with us on WhatsApp (opens in new tab)">
+        <p-button
+          label="WhatsApp Us"
+          icon="pi pi-whatsapp"
+          size="large"
+          severity="success"
+          [outlined]="true"
+        />
+      </a>
+    </div>
+  </div>
+</section>

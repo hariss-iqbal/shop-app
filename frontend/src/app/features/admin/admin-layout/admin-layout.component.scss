@@ -1,0 +1,29 @@
+/* Admin Layout - Collapsible Sidebar Styles (F-008) */
+
+.sidebar-transition {
+  transition: width 0.2s ease-in-out;
+}
+
+.sidebar-expanded {
+  width: 16rem;
+}
+
+.sidebar-collapsed {
+  width: 4.5rem;
+}
+
+/* Badge dot indicator for collapsed sidebar state */
+.badge-dot {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--p-red-500, #ef4444);
+}
+
+/* Ensure position-relative works for badge dot positioning */
+.position-relative {
+  position: relative;
+}

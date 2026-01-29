@@ -1,0 +1,379 @@
+<div class="contact-page">
+  <!-- Hero Section -->
+  <div class="contact-hero">
+    <div class="hero-content">
+      <span class="hero-badge">Get in Touch</span>
+      <h1 class="hero-title">Contact Us</h1>
+      <p class="hero-subtitle">
+        Have a question or need assistance? We're here to help. Reach out to us through any of the channels below.
+      </p>
+    </div>
+  </div>
+
+  <!-- Quick Contact Cards -->
+  <div class="quick-contact-section">
+    <div class="grid">
+      <!-- Phone Card -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <a [href]="'tel:' + businessInfo.phoneLink"
+           class="quick-contact-card"
+           [attr.aria-label]="'Call us at ' + businessInfo.phoneDisplay">
+          <div class="quick-contact-icon phone-icon">
+            <i class="pi pi-phone" aria-hidden="true"></i>
+          </div>
+          <h3 class="quick-contact-title">Call Us</h3>
+          <span class="quick-contact-value">{{ businessInfo.phoneDisplay }}</span>
+          <span class="quick-contact-action">Tap to call</span>
+        </a>
+      </div>
+
+      <!-- Email Card -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <a [href]="'mailto:' + businessInfo.email"
+           class="quick-contact-card"
+           [attr.aria-label]="'Email us at ' + businessInfo.email">
+          <div class="quick-contact-icon email-icon">
+            <i class="pi pi-envelope" aria-hidden="true"></i>
+          </div>
+          <h3 class="quick-contact-title">Email Us</h3>
+          <span class="quick-contact-value">{{ businessInfo.email }}</span>
+          <span class="quick-contact-action">Send an email</span>
+        </a>
+      </div>
+
+      <!-- WhatsApp Card -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <a [href]="whatsappUrl"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="quick-contact-card"
+           aria-label="Chat with us on WhatsApp">
+          <div class="quick-contact-icon whatsapp-icon">
+            <i class="pi pi-whatsapp" aria-hidden="true"></i>
+          </div>
+          <h3 class="quick-contact-title">WhatsApp</h3>
+          <span class="quick-contact-value">Chat with us</span>
+          <span class="quick-contact-action">Open WhatsApp</span>
+        </a>
+      </div>
+
+      <!-- Hours Card -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <div class="quick-contact-card hours-card">
+          <div class="quick-contact-icon hours-icon">
+            <i class="pi pi-clock" aria-hidden="true"></i>
+          </div>
+          <h3 class="quick-contact-title">Business Hours</h3>
+          <span class="quick-contact-value">{{ businessInfo.hours.weekdays }}</span>
+          <span class="quick-contact-action">{{ businessInfo.hours.weekend }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content: Form + Map -->
+  <div class="main-content-section">
+    <div class="grid">
+      <!-- Contact Form Column -->
+      <div class="col-12 lg:col-7">
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-header-icon">
+              <i class="pi pi-send" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h2 class="form-title">Send us a Message</h2>
+              <p class="form-subtitle">Fill out the form below and we'll get back to you shortly.</p>
+            </div>
+          </div>
+
+          @if (submitted()) {
+            <div class="success-message">
+              <div class="success-icon">
+                <i class="pi pi-check" aria-hidden="true"></i>
+              </div>
+              <h3 class="success-title">Message Sent Successfully!</h3>
+              <p class="success-text">
+                Thank you for reaching out. We'll get back to you as soon as possible.
+              </p>
+              <p-button
+                label="Send Another Message"
+                icon="pi pi-envelope"
+                [outlined]="true"
+                styleClass="success-button"
+                (onClick)="resetForm()"
+              />
+            </div>
+          } @else {
+            <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+              <!-- Honeypot field - invisible to human users -->
+              <div class="honeypot" aria-hidden="true">
+                <label for="website">Website</label>
+                <input
+                  id="website"
+                  type="text"
+                  formControlName="website"
+                  tabindex="-1"
+                  autocomplete="off"
+                />
+              </div>
+
+              <div class="grid">
+                <!-- Name -->
+                <div class="col-12 md:col-6">
+                  <div class="form-field">
+                    <label for="name" class="form-label">
+                      Name <span class="required-mark">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                      <i class="pi pi-user input-icon" aria-hidden="true"></i>
+                      <input
+                        id="name"
+                        pInputText
+                        formControlName="name"
+                        class="form-input"
+                        placeholder="Your full name"
+                        [maxlength]="constraints.NAME_MAX"
+                        aria-required="true"
+                        [class.input-error]="isInvalid('name')"
+                        [attr.aria-invalid]="isInvalid('name')"
+                      />
+                    </div>
+                    @if (isInvalid('name')) {
+                      <small class="error-message">
+                        <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                        Name is required.
+                      </small>
+                    }
+                  </div>
+                </div>
+
+                <!-- Email -->
+                <div class="col-12 md:col-6">
+                  <div class="form-field">
+                    <label for="email" class="form-label">
+                      Email <span class="required-mark">*</span>
+                    </label>
+                    <div class="input-wrapper">
+                      <i class="pi pi-envelope input-icon" aria-hidden="true"></i>
+                      <input
+                        id="email"
+                        pInputText
+                        formControlName="email"
+                        class="form-input"
+                        placeholder="your.email&#64;example.com"
+                        [maxlength]="constraints.EMAIL_MAX"
+                        type="email"
+                        aria-required="true"
+                        [class.input-error]="isInvalid('email')"
+                        [attr.aria-invalid]="isInvalid('email')"
+                      />
+                    </div>
+                    @if (isInvalid('email')) {
+                      <small class="error-message">
+                        <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                        @if (contactForm.get('email')?.errors?.['required']) {
+                          Email is required.
+                        } @else {
+                          Please enter a valid email address.
+                        }
+                      </small>
+                    }
+                  </div>
+                </div>
+
+                <!-- Phone (Optional) -->
+                <div class="col-12 md:col-6">
+                  <div class="form-field">
+                    <label for="phone" class="form-label">
+                      Phone <span class="optional-mark">(optional)</span>
+                    </label>
+                    <div class="input-wrapper">
+                      <i class="pi pi-phone input-icon" aria-hidden="true"></i>
+                      <input
+                        id="phone"
+                        pInputText
+                        formControlName="phone"
+                        class="form-input"
+                        placeholder="Your phone number"
+                        [maxlength]="constraints.PHONE_MAX"
+                        type="tel"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Subject (Optional) -->
+                <div class="col-12 md:col-6">
+                  <div class="form-field">
+                    <label for="subject" class="form-label">
+                      Subject <span class="optional-mark">(optional)</span>
+                    </label>
+                    <div class="input-wrapper">
+                      <i class="pi pi-tag input-icon" aria-hidden="true"></i>
+                      <input
+                        id="subject"
+                        pInputText
+                        formControlName="subject"
+                        class="form-input"
+                        placeholder="Message subject"
+                        [maxlength]="constraints.SUBJECT_MAX"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Message -->
+                <div class="col-12">
+                  <div class="form-field">
+                    <label for="message" class="form-label">
+                      Message <span class="required-mark">*</span>
+                    </label>
+                    <div class="textarea-wrapper">
+                      <textarea
+                        id="message"
+                        pInputTextarea
+                        formControlName="message"
+                        class="form-textarea"
+                        placeholder="How can we help you?"
+                        [rows]="5"
+                        [autoResize]="true"
+                        [maxlength]="constraints.MESSAGE_MAX"
+                        aria-required="true"
+                        [class.input-error]="isInvalid('message')"
+                        [attr.aria-invalid]="isInvalid('message')"
+                      ></textarea>
+                    </div>
+                    <div class="textarea-footer">
+                      @if (isInvalid('message')) {
+                        <small class="error-message">
+                          <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                          Message is required.
+                        </small>
+                      } @else {
+                        <span></span>
+                      }
+                      <small class="char-count">
+                        {{ contactForm.get('message')?.value?.length || 0 }} / {{ constraints.MESSAGE_MAX }}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Rate limit warning -->
+                @if (rateLimited()) {
+                  <div class="col-12">
+                    <div class="rate-limit-warning">
+                      <i class="pi pi-clock" aria-hidden="true"></i>
+                      <span>
+                        Too many submissions. Please wait
+                        @if (rateLimitCountdown() > 0) {
+                          <strong>{{ formatCountdown(rateLimitCountdown()) }}</strong>
+                        } @else {
+                          a few minutes
+                        }
+                        before trying again.
+                      </span>
+                    </div>
+                  </div>
+                }
+
+                <!-- Submit Button -->
+                <div class="col-12">
+                  <p-button
+                    type="submit"
+                    label="Send Message"
+                    icon="pi pi-send"
+                    [loading]="submitting()"
+                    [disabled]="submitting() || rateLimited()"
+                    styleClass="submit-button"
+                  />
+                </div>
+              </div>
+            </form>
+          }
+        </div>
+      </div>
+
+      <!-- Map + Location Info Column -->
+      <div class="col-12 lg:col-5">
+        <div class="location-card">
+          <div class="location-header">
+            <div class="location-header-icon">
+              <i class="pi pi-map-marker" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h2 class="location-title">Visit Our Store</h2>
+              <p class="location-subtitle">Come see us in person!</p>
+            </div>
+          </div>
+
+          <div class="location-address">
+            <i class="pi pi-building" aria-hidden="true"></i>
+            <div>
+              <span class="address-label">Store Address</span>
+              <address class="address-text">{{ businessInfo.address }}</address>
+            </div>
+          </div>
+
+          <div class="map-wrapper">
+            @if (mapLoadFailed()) {
+              <div class="map-fallback" role="region" aria-label="Store location information">
+                <div class="map-fallback-content">
+                  <div class="map-fallback-icon">
+                    <i class="pi pi-map" aria-hidden="true"></i>
+                  </div>
+                  <span class="map-fallback-text">Map unavailable</span>
+                  <address class="map-fallback-address">{{ businessInfo.address }}</address>
+                  <a [href]="businessInfo.mapSearchUrl"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="map-fallback-link"
+                     aria-label="Open location in Google Maps (opens in new tab)">
+                    <i class="pi pi-external-link" aria-hidden="true"></i>
+                    Open in Google Maps
+                  </a>
+                </div>
+              </div>
+            } @else {
+              <div #mapContainer class="map-container" role="region" aria-label="Interactive map showing store location">
+                @if (!mapVisible() || mapLoading()) {
+                  <div class="map-skeleton">
+                    <p-skeleton width="100%" height="100%" styleClass="map-skeleton-inner" />
+                    <div class="map-skeleton-content">
+                      <i class="pi pi-spin pi-spinner text-3xl text-primary mb-2" aria-hidden="true"></i>
+                      <span class="text-color-secondary text-sm">Loading map...</span>
+                    </div>
+                  </div>
+                }
+                @if (mapVisible()) {
+                  <iframe
+                    #mapIframe
+                    [src]="mapEmbedUrl"
+                    class="map-iframe"
+                    [class.map-iframe-hidden]="mapLoading()"
+                    allowfullscreen=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    title="Phone Shop location on Google Maps"
+                    (load)="onMapLoad()"
+                    (error)="onMapLoadError()"
+                  ></iframe>
+                }
+              </div>
+            }
+          </div>
+
+          <a [href]="businessInfo.mapSearchUrl"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="directions-button"
+             aria-label="Get directions in Google Maps">
+            <i class="pi pi-directions" aria-hidden="true"></i>
+            Get Directions
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

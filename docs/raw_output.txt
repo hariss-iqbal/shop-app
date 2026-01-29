@@ -1,0 +1,50 @@
+The research is complete. The output has been generated as a valid JSON file at `/Users/haris/IdeaProjects/general-project-maker/researcher-output.json`.
+
+Here's a summary of the results:
+
+## Research Summary
+
+| Metric | Count |
+|--------|-------|
+| Total Features | 60 |
+| Must (core/MVP) | 36 |
+| Need (important) | 13 |
+| Nice to Have | 11 |
+| Modules | 13 |
+| References | 38 |
+| Phases | 7 |
+
+## Features by Category
+
+**Must (36 features)** cover the complete business requirement:
+- Project scaffolding, database schema, RLS policies, storage configuration, environment config
+- Authentication (login, route guards, session management)
+- Public/admin layouts with responsive navigation
+- Full inventory CRUD with image upload
+- Public catalog with search, filters, sorting, pagination
+- Phone detail page with gallery and WhatsApp integration
+- Supplier management, purchase order lifecycle (create, detail, receive)
+- Sales tracking with mark-as-sold dialog
+- Dashboard with KPI cards and charts
+- Contact page with form, about page
+- Admin messages management
+- Cross-cutting: toast notifications, confirmation dialogs, responsive design, error handling, input sanitization
+
+**Need (13 features)** add important polish:
+- Brand management, loading states/skeleton screens, SEO meta tags
+- Inventory quick status actions, profit margin indicators
+- Accessibility (keyboard navigation, ARIA)
+- Image optimization and lazy loading
+- URL state management for catalog filters
+- PO cancellation workflow, recently added phones on dashboard
+- Database indexes for performance, 404 page
+- Contact form spam prevention
+
+**Nice to Have (11 features)** provide differentiation:
+- Google Maps embed, CSV exports (sales + inventory)
+- Dashboard date range selector, PWA support
+- Low stock alerts, print labels/price tags
+- Supabase Realtime for message count
+- Phone comparison feature, JSON-LD structured data, dark mode toggle
+
+Every feature includes detailed acceptance criteria in Given/When/Then format and is backed by authoritative references.

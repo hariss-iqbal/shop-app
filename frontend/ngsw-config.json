@@ -1,0 +1,65 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/favicon.ico",
+          "/index.html",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/icons/**",
+          "/**/*.+(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "catalog-api",
+      "urls": [
+        "*/rest/v1/phones*",
+        "*/rest/v1/brands*",
+        "*/rest/v1/phone_images*"
+      ],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "1h",
+        "strategy": "freshness",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "storage-images",
+      "urls": [
+        "*/storage/v1/object/public/phone-images/*"
+      ],
+      "cacheConfig": {
+        "maxSize": 200,
+        "maxAge": "7d",
+        "strategy": "freshness",
+        "timeout": "3s"
+      }
+    }
+  ],
+  "navigationUrls": [
+    "/**",
+    "!/**/*.*",
+    "!/**/.*",
+    "!/**/*__*",
+    "!/**/*__*/**"
+  ]
+}

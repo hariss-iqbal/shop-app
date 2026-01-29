@@ -1,0 +1,59 @@
+<div class="error-page-container flex align-items-center justify-content-center min-h-screen surface-ground">
+  <div class="error-content flex flex-column align-items-center gap-4 p-5 text-center surface-card border-round-xl shadow-2" style="max-width: 520px;">
+    <!-- Error Icon with Animation -->
+    <div class="error-icon-wrapper">
+      <i class="pi pi-exclamation-triangle text-7xl text-orange-500" aria-hidden="true"></i>
+    </div>
+
+    <!-- Error Title -->
+    <h1 class="text-4xl font-bold m-0 text-color">Something Went Wrong</h1>
+
+    <!-- Error Description -->
+    <p class="text-lg text-color-secondary m-0 line-height-3">
+      We encountered an unexpected error while processing your request.
+      Our team has been notified and is working to resolve the issue.
+    </p>
+
+    <!-- Helpful Tips -->
+    <div class="tips-container w-full p-3 border-round surface-100 text-left">
+      <p class="text-sm font-semibold text-color m-0 mb-2">You can try:</p>
+      <ul class="text-sm text-color-secondary m-0 pl-4">
+        <li class="mb-1">Refreshing the page</li>
+        <li class="mb-1">Going back to the previous page</li>
+        <li>Returning to the home page</li>
+      </ul>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-3 justify-content-center w-full mt-2">
+      <p-button
+        label="Refresh Page"
+        icon="pi pi-refresh"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="refreshPage()"
+        styleClass="flex-grow-1 sm:flex-grow-0"
+      />
+      <p-button
+        label="Go Back"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="navigateBack()"
+        styleClass="flex-grow-1 sm:flex-grow-0"
+      />
+      <p-button
+        label="Go to Home"
+        icon="pi pi-home"
+        (onClick)="navigateHome()"
+        styleClass="flex-grow-1 sm:flex-grow-0"
+      />
+    </div>
+
+    <!-- Support Link -->
+    <p class="text-sm text-color-secondary m-0 mt-2">
+      If the problem persists, please
+      <a routerLink="/contact" class="text-primary no-underline hover:underline font-medium">contact support</a>.
+    </p>
+  </div>
+</div>

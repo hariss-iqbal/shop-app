@@ -1,0 +1,1142 @@
+// Global styles for Phone Shop application
+// F-036: Mobile-first responsive design
+
+// Base styles — mobile-first
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+// App root
+app-root {
+  display: block;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+//
+// // Scrollbar styling
+// ::-webkit-scrollbar {
+//   width: 8px;
+//   height: 8px;
+// }
+//
+// ::-webkit-scrollbar-track {
+//   background: var(--surface-ground);
+// }
+//
+// ::-webkit-scrollbar-thumb {
+//   background: var(--surface-border);
+//   border-radius: 4px;
+// }
+//
+// ::-webkit-scrollbar-thumb:hover {
+//   background: var(--text-color-secondary);
+// }
+//
+// // PrimeNG component overrides for consistent theming
+// .p-component {
+//   font-family: inherit;
+// }
+//
+// // Card styling
+// .p-card {
+//   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+//   border-radius: 8px;
+// }
+//
+// // Button consistency
+// .p-button {
+//   border-radius: 6px;
+// }
+//
+// // Input field styling
+// .p-inputtext {
+//   border-radius: 6px;
+// }
+//
+// // Dropdown styling
+// .p-dropdown {
+//   border-radius: 6px;
+// }
+//
+// // Fix: p-select dropdown panel transparent background issue
+// .p-select .p-dropdown-panel {
+//   background: var(--surface-ground) !important;
+//   border: 1px solid var(--surface-border) !important;
+//   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+// }
+//
+// .p-select .p-dropdown-item {
+//   background: var(--surface-ground) !important;
+//   color: var(--text-color) !important;
+//
+//   &:hover {
+//     background: rgba(59, 130, 246, 0.08) !important;
+//   }
+//
+//   &.p-highlight {
+//     background: rgba(59, 130, 246, 0.16) !important;
+//     color: #3B82F6 !important;
+//   }
+// }
+//
+// // Table styling
+// .p-datatable {
+//   .p-datatable-header {
+//     background: var(--surface-section);
+//     border: none;
+//     padding: 1rem;
+//   }
+//
+//   .p-datatable-thead > tr > th {
+//     background: var(--surface-section);
+//     color: var(--text-color-secondary);
+//     font-weight: 600;
+//   }
+// }
+//
+// // =====================================================
+// // F-033: Toast Notifications Styling
+// // =====================================================
+//
+// // Toast positioning and base styles
+// .p-toast {
+//   z-index: 10000;
+//
+//   .p-toast-message {
+//     border-radius: 8px;
+//     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+//     margin-bottom: 0.75rem;
+//
+//     // Animation for smoother appearance
+//     animation: toast-slide-in 0.3s ease-out;
+//
+//     .p-toast-message-content {
+//       padding: 1rem;
+//       align-items: flex-start;
+//     }
+//
+//     .p-toast-message-icon {
+//       font-size: 1.5rem;
+//       margin-right: 0.75rem;
+//       flex-shrink: 0;
+//     }
+//
+//     .p-toast-message-text {
+//       flex: 1;
+//
+//       .p-toast-summary {
+//         font-weight: 600;
+//         font-size: 0.95rem;
+//         margin-bottom: 0.25rem;
+//       }
+//
+//       .p-toast-detail {
+//         font-size: 0.875rem;
+//         opacity: 0.9;
+//         line-height: 1.4;
+//       }
+//     }
+//
+//     .p-toast-icon-close {
+//       margin-left: 0.5rem;
+//       opacity: 0.7;
+//       transition: opacity 0.2s ease;
+//
+//       &:hover {
+//         opacity: 1;
+//       }
+//
+//       &:focus-visible {
+//         outline: 2px solid currentColor;
+//         outline-offset: 2px;
+//         border-radius: 4px;
+//       }
+//     }
+//   }
+//
+//   // Success toast styling
+//   .p-toast-message-success {
+//     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+//     border-left: 4px solid #047857;
+//     color: #ffffff;
+//
+//     .p-toast-message-icon {
+//       color: #ffffff;
+//     }
+//   }
+//
+//   // Error toast styling
+//   .p-toast-message-error {
+//     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+//     border-left: 4px solid #b91c1c;
+//     color: #ffffff;
+//
+//     .p-toast-message-icon {
+//       color: #ffffff;
+//     }
+//   }
+//
+//   // Warning toast styling
+//   .p-toast-message-warn {
+//     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+//     border-left: 4px solid #b45309;
+//     color: #ffffff;
+//
+//     .p-toast-message-icon {
+//       color: #ffffff;
+//     }
+//   }
+//
+//   // Info toast styling
+//   .p-toast-message-info {
+//     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+//     border-left: 4px solid #1d4ed8;
+//     color: #ffffff;
+//
+//     .p-toast-message-icon {
+//       color: #ffffff;
+//     }
+//   }
+// }
+//
+// // Toast slide-in animation
+// @keyframes toast-slide-in {
+//   from {
+//     transform: translateX(100%);
+//     opacity: 0;
+//   }
+//   to {
+//     transform: translateX(0);
+//     opacity: 1;
+//   }
+// }
+//
+// // Dialog styling
+// .p-dialog {
+//   border-radius: 12px;
+//   overflow: hidden;
+// }
+//
+// // =====================================================
+// // F-034: Confirmation Dialog Styling
+// // =====================================================
+//
+// .p-confirm-dialog {
+//   max-width: 450px;
+//   border-radius: 12px;
+//   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+//
+//   .p-dialog-header {
+//     padding: 1.25rem 1.5rem;
+//     border-bottom: 1px solid var(--surface-border);
+//
+//     .p-dialog-title {
+//       font-size: 1.125rem;
+//       font-weight: 600;
+//     }
+//   }
+//
+//   .p-dialog-content {
+//     padding: 1.5rem;
+//
+//     .p-confirm-dialog-icon {
+//       font-size: 2rem;
+//       margin-right: 1rem;
+//       flex-shrink: 0;
+//
+//       &.pi-trash {
+//         color: #ef4444;
+//       }
+//
+//       &.pi-exclamation-triangle {
+//         color: #f59e0b;
+//       }
+//     }
+//
+//     .p-confirm-dialog-message {
+//       line-height: 1.6;
+//       color: var(--text-color);
+//
+//       strong {
+//         color: var(--text-color);
+//         font-weight: 600;
+//       }
+//     }
+//   }
+//
+//   .p-dialog-footer {
+//     padding: 1rem 1.5rem;
+//     border-top: 1px solid var(--surface-border);
+//     display: flex;
+//     justify-content: flex-end;
+//     gap: 0.75rem;
+//
+//     .p-button {
+//       min-width: 100px;
+//     }
+//   }
+// }
+//
+// // Confirmation dialog responsive
+// @media screen and (max-width: 480px) {
+//   .p-confirm-dialog {
+//     margin: 1rem;
+//     width: calc(100vw - 2rem) !important;
+//     max-width: calc(100vw - 2rem) !important;
+//
+//     .p-dialog-content {
+//       padding: 1.25rem;
+//
+//       .p-confirm-dialog-icon {
+//         font-size: 1.75rem;
+//       }
+//     }
+//
+//     .p-dialog-footer {
+//       flex-direction: column-reverse;
+//       gap: 0.5rem;
+//
+//       .p-button {
+//         width: 100%;
+//         justify-content: center;
+//       }
+//     }
+//   }
+// }
+//
+// // =====================================================
+// // F-036: Responsive Design — Mobile-First Global Rules
+// // =====================================================
+//
+// // WCAG 2.5.5: Minimum touch target size (44x44 CSS pixels)
+// .p-button {
+//   min-height: 44px;
+//   min-width: 44px;
+// }
+//
+// // Icon-only buttons (rounded action buttons) also meet touch targets
+// .p-button.p-button-icon-only {
+//   min-height: 44px;
+//   min-width: 44px;
+// }
+//
+// // Navigation links in mobile drawers
+// .mobile-nav-link {
+//   min-height: 44px;
+// }
+//
+// // Admin table responsive: horizontal scroll wrapper on mobile
+// .table-responsive-wrapper {
+//   width: 100%;
+//   overflow-x: auto;
+//   -webkit-overflow-scrolling: touch;
+// }
+//
+// // Admin tables: enable horizontal scroll on mobile
+// @media screen and (max-width: 767px) {
+//   .p-datatable {
+//     .p-datatable-wrapper {
+//       overflow-x: auto;
+//       -webkit-overflow-scrolling: touch;
+//     }
+//
+//     .p-datatable-table {
+//       min-width: 700px;
+//     }
+//   }
+//
+//   // Frozen action column on mobile tables
+//   .p-datatable-frozen-column-actions {
+//     position: sticky;
+//     right: 0;
+//     background: var(--surface-section);
+//     z-index: 1;
+//     box-shadow: -2px 0 4px rgba(0, 0, 0, 0.06);
+//   }
+//
+//   // Dialog max width on mobile
+//   .p-dialog {
+//     width: calc(100vw - 2rem) !important;
+//     max-width: calc(100vw - 2rem) !important;
+//     margin: 1rem;
+//   }
+//
+//   // Toast responsive
+//   .p-toast {
+//     width: calc(100vw - 2rem);
+//     max-width: 100%;
+//     left: 1rem;
+//     right: 1rem;
+//
+//     .p-toast-message {
+//       .p-toast-message-content {
+//         padding: 0.875rem;
+//       }
+//
+//       .p-toast-message-icon {
+//         font-size: 1.25rem;
+//       }
+//
+//       .p-toast-message-text {
+//         .p-toast-summary {
+//           font-size: 0.875rem;
+//         }
+//
+//         .p-toast-detail {
+//           font-size: 0.8125rem;
+//         }
+//       }
+//     }
+//   }
+//
+//   // Paginator: compact layout on mobile
+//   .p-paginator {
+//     flex-wrap: wrap;
+//     justify-content: center;
+//     gap: 0.25rem;
+//
+//     .p-paginator-current {
+//       width: 100%;
+//       text-align: center;
+//       order: -1;
+//       margin-bottom: 0.5rem;
+//     }
+//   }
+// }
+//
+// // Ensure images don't overflow containers
+// img {
+//   max-width: 100%;
+//   height: auto;
+// }
+//
+// // Prevent text overflow on small screens
+// .text-break {
+//   word-break: break-word;
+//   overflow-wrap: break-word;
+// }
+//
+// // =====================================================
+// // F-042: Keyboard Accessibility and Focus Management
+// // =====================================================
+//
+// // WCAG 2.4.7: Visible focus indicators for all interactive elements
+// *:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+//   border-radius: 4px;
+// }
+//
+// // PrimeNG button focus indicator
+// .p-button:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+//   box-shadow: none;
+// }
+//
+// // PrimeNG input focus indicator
+// .p-inputtext:focus-visible,
+// .p-dropdown:focus-visible,
+// .p-multiselect:focus-visible,
+// .p-datepicker:focus-visible,
+// .p-textarea:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+// }
+//
+// // Link focus indicators
+// a:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+//   border-radius: 4px;
+// }
+//
+// // Phone card focus styles for catalog grid keyboard navigation
+// .phone-card-focusable:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+//   border-radius: 8px;
+//   box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+// }
+//
+// // PrimeNG table row focus
+// .p-datatable .p-datatable-tbody > tr:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: -3px;
+// }
+//
+// // PrimeNG paginator button focus
+// .p-paginator .p-paginator-page:focus-visible,
+// .p-paginator .p-paginator-first:focus-visible,
+// .p-paginator .p-paginator-prev:focus-visible,
+// .p-paginator .p-paginator-next:focus-visible,
+// .p-paginator .p-paginator-last:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+// }
+//
+// // PrimeNG chip remove button focus
+// .p-chip .p-chip-remove-icon:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+//   border-radius: 50%;
+// }
+//
+// // Admin sidebar nav link focus
+// .admin-nav-link:focus-visible {
+//   outline: 3px solid var(--primary-color, #3B82F6);
+//   outline-offset: 2px;
+//   border-radius: 6px;
+// }
+//
+// // Ensure live regions are present for screen readers
+// [aria-live] {
+//   clip: auto;
+// }
+//
+// // =====================================================
+// // F-056: Dark Mode / Theme Toggle
+// // =====================================================
+// // Applied via .dark-theme class on <html> element.
+// // ThemeService manages toggle, localStorage persistence,
+// // and prefers-color-scheme detection.
+//
+// .dark-theme {
+//   --primary-color: #60a5fa;
+//   --primary-color-text: #0f172a;
+//   --surface-ground: #0f172a;
+//   --surface-section: #1e293b;
+//   --surface-card: #1e293b;
+//   --surface-overlay: #1e293b;
+//   --surface-border: #334155;
+//   --text-color: #f1f5f9;
+//   --text-color-secondary: #94a3b8;
+//   --highlight-bg: rgba(96, 165, 250, 0.16);
+//   --highlight-text-color: #60a5fa;
+//
+//   color-scheme: dark;
+//
+//   // Card shadow adjustment for dark backgrounds
+//   .p-card {
+//     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+//   }
+//
+//   // Table dark overrides
+//   .p-datatable {
+//     .p-datatable-header {
+//       background: var(--surface-section);
+//     }
+//
+//     .p-datatable-thead > tr > th {
+//       background: var(--surface-section);
+//       color: var(--text-color-secondary);
+//       border-color: var(--surface-border);
+//     }
+//
+//     .p-datatable-tbody > tr {
+//       background: var(--surface-card);
+//       color: var(--text-color);
+//
+//       &:nth-child(even) {
+//         background: rgba(255, 255, 255, 0.02);
+//       }
+//
+//       &:hover {
+//         background: rgba(255, 255, 255, 0.05);
+//       }
+//
+//       > td {
+//         border-color: var(--surface-border);
+//       }
+//     }
+//
+//     .p-datatable-footer {
+//       background: var(--surface-section);
+//       border-color: var(--surface-border);
+//     }
+//   }
+//
+//   // Frozen column background in dark mode
+//   .p-datatable-frozen-column-actions {
+//     background: var(--surface-section);
+//   }
+//
+//   // Input dark overrides
+//   .p-inputtext,
+//   .p-dropdown,
+//   .p-multiselect,
+//   .p-textarea,
+//   .p-datepicker,
+//   .p-autocomplete .p-inputtext {
+//     background: #0f172a;
+//     color: var(--text-color);
+//     border-color: var(--surface-border);
+//
+//     &:enabled:hover {
+//       border-color: var(--primary-color);
+//     }
+//   }
+//
+//   // Dropdown panel dark
+//   .p-dropdown-panel,
+//   .p-multiselect-panel,
+//   .p-autocomplete-panel {
+//     background: var(--surface-overlay);
+//     border-color: var(--surface-border);
+//
+//     .p-dropdown-item,
+//     .p-multiselect-item,
+//     .p-autocomplete-item {
+//       color: var(--text-color);
+//
+//       &:hover {
+//         background: rgba(255, 255, 255, 0.05);
+//       }
+//
+//       &.p-highlight {
+//         background: var(--highlight-bg);
+//         color: var(--highlight-text-color);
+//       }
+//     }
+//   }
+//
+//   // Dialog dark overrides
+//   .p-dialog {
+//     background: var(--surface-overlay);
+//
+//     .p-dialog-header {
+//       background: var(--surface-section);
+//       color: var(--text-color);
+//       border-color: var(--surface-border);
+//     }
+//
+//     .p-dialog-content {
+//       background: var(--surface-overlay);
+//       color: var(--text-color);
+//     }
+//
+//     .p-dialog-footer {
+//       background: var(--surface-section);
+//       border-color: var(--surface-border);
+//     }
+//   }
+//
+//   // Sidebar/Drawer dark overrides (PrimeNG 20 uses p-drawer)
+//   .p-sidebar,
+//   .p-drawer {
+//     background: var(--surface-section);
+//     color: var(--text-color);
+//     border-color: var(--surface-border);
+//
+//     .p-drawer-header {
+//       background: var(--surface-section);
+//       color: var(--text-color);
+//       border-color: var(--surface-border);
+//     }
+//
+//     .p-drawer-content {
+//       background: var(--surface-section);
+//       color: var(--text-color);
+//     }
+//
+//     .p-drawer-footer {
+//       background: var(--surface-ground);
+//       border-color: var(--surface-border);
+//     }
+//   }
+//
+//   // Drawer mask (overlay) dark
+//   .p-drawer-mask {
+//     background: rgba(0, 0, 0, 0.6);
+//   }
+//
+//   // Badge contrast
+//   .p-badge {
+//     &.p-badge-danger {
+//       background: #ef4444;
+//       color: #ffffff;
+//     }
+//   }
+//
+//   // Toast dark overrides
+//   .p-toast {
+//     .p-toast-message {
+//       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+//     }
+//
+//     // Dark mode success toast
+//     .p-toast-message-success {
+//       background: linear-gradient(135deg, #059669 0%, #047857 100%);
+//       border-left-color: #10b981;
+//     }
+//
+//     // Dark mode error toast
+//     .p-toast-message-error {
+//       background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+//       border-left-color: #ef4444;
+//     }
+//
+//     // Dark mode warning toast
+//     .p-toast-message-warn {
+//       background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+//       border-left-color: #f59e0b;
+//     }
+//
+//     // Dark mode info toast
+//     .p-toast-message-info {
+//       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+//       border-left-color: #3b82f6;
+//     }
+//   }
+//
+//   // Paginator dark
+//   .p-paginator {
+//     background: var(--surface-section);
+//     border-color: var(--surface-border);
+//     color: var(--text-color);
+//
+//     .p-paginator-page {
+//       color: var(--text-color);
+//
+//       &.p-highlight {
+//         background: var(--highlight-bg);
+//         color: var(--highlight-text-color);
+//       }
+//     }
+//   }
+//
+//   // Chip dark
+//   .p-chip {
+//     background: rgba(255, 255, 255, 0.08);
+//     color: var(--text-color);
+//   }
+//
+//   // Tag dark override for status badges
+//   .p-tag {
+//     &.p-tag-success {
+//       background: rgba(34, 197, 94, 0.16);
+//       color: #4ade80;
+//     }
+//
+//     &.p-tag-warning {
+//       background: rgba(234, 179, 8, 0.16);
+//       color: #fbbf24;
+//     }
+//
+//     &.p-tag-danger {
+//       background: rgba(239, 68, 68, 0.16);
+//       color: #f87171;
+//     }
+//
+//     &.p-tag-info {
+//       background: rgba(96, 165, 250, 0.16);
+//       color: #60a5fa;
+//     }
+//   }
+//
+//   // Confirm dialog dark
+//   .p-confirmdialog,
+//   .p-confirm-dialog {
+//     .p-dialog-header,
+//     .p-dialog-content,
+//     .p-dialog-footer {
+//       background: var(--surface-overlay);
+//       color: var(--text-color);
+//     }
+//
+//     .p-dialog-header {
+//       border-bottom-color: var(--surface-border);
+//     }
+//
+//     .p-dialog-footer {
+//       border-top-color: var(--surface-border);
+//     }
+//
+//     .p-confirm-dialog-icon {
+//       &.pi-trash {
+//         color: #f87171;
+//       }
+//
+//       &.pi-exclamation-triangle {
+//         color: #fbbf24;
+//       }
+//     }
+//   }
+//
+//   // Tooltip dark
+//   .p-tooltip {
+//     .p-tooltip-text {
+//       background: var(--surface-card);
+//       color: var(--text-color);
+//       border: 1px solid var(--surface-border);
+//     }
+//   }
+//
+//   // Mobile frozen column shadow
+//   @media screen and (max-width: 767px) {
+//     .p-datatable-frozen-column-actions {
+//       box-shadow: -2px 0 4px rgba(0, 0, 0, 0.3);
+//     }
+//   }
+//
+//   // Scrollbar dark
+//   &::-webkit-scrollbar-track,
+//   *::-webkit-scrollbar-track {
+//     background: var(--surface-ground);
+//   }
+//
+//   &::-webkit-scrollbar-thumb,
+//   *::-webkit-scrollbar-thumb {
+//     background: var(--surface-border);
+//   }
+//
+//   &::-webkit-scrollbar-thumb:hover,
+//   *::-webkit-scrollbar-thumb:hover {
+//     background: var(--text-color-secondary);
+//   }
+//
+//   // F-042: Focus indicator contrast adjustment for dark theme
+//   .phone-card-focusable:focus-visible {
+//     box-shadow: 0 0 0 6px rgba(96, 165, 250, 0.25);
+//   }
+//
+//   // Navigation active state dark override
+//   .bg-primary-100 {
+//     background-color: rgba(96, 165, 250, 0.16) !important;
+//   }
+//
+//   // DatePicker / Calendar dark overrides
+//   .p-datepicker,
+//   .p-calendar-panel {
+//     background: var(--surface-overlay);
+//     color: var(--text-color);
+//     border-color: var(--surface-border);
+//
+//     .p-datepicker-header {
+//       background: var(--surface-section);
+//       color: var(--text-color);
+//       border-color: var(--surface-border);
+//
+//       .p-datepicker-title {
+//         .p-datepicker-month,
+//         .p-datepicker-year {
+//           color: var(--text-color);
+//
+//           &:hover {
+//             color: var(--primary-color);
+//           }
+//         }
+//       }
+//
+//       .p-datepicker-prev,
+//       .p-datepicker-next {
+//         color: var(--text-color-secondary);
+//
+//         &:hover {
+//           background: rgba(255, 255, 255, 0.05);
+//           color: var(--text-color);
+//         }
+//       }
+//     }
+//
+//     .p-datepicker-calendar {
+//       th {
+//         color: var(--text-color-secondary);
+//       }
+//
+//       td {
+//         > span {
+//           color: var(--text-color);
+//
+//           &:hover {
+//             background: rgba(255, 255, 255, 0.05);
+//           }
+//
+//           &.p-highlight {
+//             background: var(--highlight-bg);
+//             color: var(--highlight-text-color);
+//           }
+//
+//           &.p-disabled {
+//             color: var(--text-color-secondary);
+//             opacity: 0.5;
+//           }
+//         }
+//
+//         &.p-datepicker-today > span {
+//           background: rgba(255, 255, 255, 0.05);
+//           color: var(--primary-color);
+//         }
+//       }
+//     }
+//
+//     .p-monthpicker,
+//     .p-yearpicker {
+//       .p-monthpicker-month,
+//       .p-yearpicker-year {
+//         color: var(--text-color);
+//
+//         &:hover {
+//           background: rgba(255, 255, 255, 0.05);
+//         }
+//
+//         &.p-highlight {
+//           background: var(--highlight-bg);
+//           color: var(--highlight-text-color);
+//         }
+//       }
+//     }
+//
+//     .p-timepicker {
+//       border-color: var(--surface-border);
+//
+//       span {
+//         color: var(--text-color);
+//       }
+//
+//       button {
+//         color: var(--text-color-secondary);
+//
+//         &:hover {
+//           background: rgba(255, 255, 255, 0.05);
+//           color: var(--text-color);
+//         }
+//       }
+//     }
+//
+//     .p-datepicker-buttonbar {
+//       border-color: var(--surface-border);
+//     }
+//   }
+//
+//   // FileUpload dark overrides
+//   .p-fileupload {
+//     background: var(--surface-section);
+//     border-color: var(--surface-border);
+//
+//     .p-fileupload-buttonbar {
+//       background: var(--surface-section);
+//       border-color: var(--surface-border);
+//     }
+//
+//     .p-fileupload-content {
+//       background: var(--surface-card);
+//       border-color: var(--surface-border);
+//     }
+//   }
+//
+//   // ProgressBar dark
+//   .p-progressbar {
+//     background: rgba(255, 255, 255, 0.1);
+//
+//     .p-progressbar-value {
+//       background: var(--primary-color);
+//     }
+//   }
+//
+//   // Skeleton dark
+//   .p-skeleton {
+//     background: rgba(255, 255, 255, 0.06);
+//
+//     &::after {
+//       background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+//     }
+//   }
+//
+//   // Menu dark overrides
+//   .p-menu {
+//     background: var(--surface-overlay);
+//     border-color: var(--surface-border);
+//
+//     .p-menuitem {
+//       .p-menuitem-link {
+//         color: var(--text-color);
+//
+//         &:hover {
+//           background: rgba(255, 255, 255, 0.05);
+//         }
+//
+//         .p-menuitem-icon {
+//           color: var(--text-color-secondary);
+//         }
+//       }
+//     }
+//
+//     .p-menu-separator {
+//       border-color: var(--surface-border);
+//     }
+//   }
+//
+//   // Breadcrumb dark
+//   .p-breadcrumb {
+//     background: var(--surface-section);
+//     border-color: var(--surface-border);
+//
+//     .p-breadcrumb-list {
+//       li {
+//         .p-menuitem-link {
+//           color: var(--text-color-secondary);
+//
+//           &:hover {
+//             color: var(--primary-color);
+//           }
+//         }
+//
+//         &:last-child .p-menuitem-link {
+//           color: var(--text-color);
+//         }
+//
+//         .p-breadcrumb-chevron {
+//           color: var(--text-color-secondary);
+//         }
+//       }
+//     }
+//   }
+//
+//   // TabView dark
+//   .p-tabview {
+//     .p-tabview-nav {
+//       background: var(--surface-section);
+//       border-color: var(--surface-border);
+//
+//       li {
+//         .p-tabview-nav-link {
+//           background: var(--surface-section);
+//           color: var(--text-color-secondary);
+//           border-color: var(--surface-border);
+//
+//           &:hover {
+//             background: rgba(255, 255, 255, 0.03);
+//             color: var(--text-color);
+//           }
+//         }
+//
+//         &.p-highlight .p-tabview-nav-link {
+//           background: var(--surface-section);
+//           color: var(--primary-color);
+//           border-color: var(--primary-color);
+//         }
+//       }
+//     }
+//
+//     .p-tabview-panels {
+//       background: var(--surface-card);
+//       color: var(--text-color);
+//     }
+//   }
+//
+//   // Message / InlineMessage dark
+//   .p-message {
+//     &.p-message-info {
+//       background: rgba(96, 165, 250, 0.16);
+//       border-color: rgba(96, 165, 250, 0.3);
+//       color: #93c5fd;
+//     }
+//
+//     &.p-message-success {
+//       background: rgba(34, 197, 94, 0.16);
+//       border-color: rgba(34, 197, 94, 0.3);
+//       color: #86efac;
+//     }
+//
+//     &.p-message-warn {
+//       background: rgba(234, 179, 8, 0.16);
+//       border-color: rgba(234, 179, 8, 0.3);
+//       color: #fde047;
+//     }
+//
+//     &.p-message-error {
+//       background: rgba(239, 68, 68, 0.16);
+//       border-color: rgba(239, 68, 68, 0.3);
+//       color: #fca5a5;
+//     }
+//   }
+//
+//   // InputSwitch dark
+//   .p-inputswitch {
+//     .p-inputswitch-slider {
+//       background: rgba(255, 255, 255, 0.2);
+//
+//       &:before {
+//         background: var(--surface-card);
+//       }
+//     }
+//
+//     &.p-inputswitch-checked .p-inputswitch-slider {
+//       background: var(--primary-color);
+//     }
+//   }
+//
+//   // Checkbox and RadioButton dark
+//   .p-checkbox {
+//     .p-checkbox-box {
+//       background: var(--surface-ground);
+//       border-color: var(--surface-border);
+//
+//       &.p-highlight {
+//         background: var(--primary-color);
+//         border-color: var(--primary-color);
+//       }
+//     }
+//   }
+//
+//   .p-radiobutton {
+//     .p-radiobutton-box {
+//       background: var(--surface-ground);
+//       border-color: var(--surface-border);
+//
+//       &.p-highlight {
+//         background: var(--surface-ground);
+//         border-color: var(--primary-color);
+//
+//         .p-radiobutton-icon {
+//           background: var(--primary-color);
+//         }
+//       }
+//     }
+//   }
+//
+//   // SelectButton dark
+//   .p-selectbutton {
+//     .p-button {
+//       background: var(--surface-section);
+//       border-color: var(--surface-border);
+//       color: var(--text-color);
+//
+//       &:hover {
+//         background: rgba(255, 255, 255, 0.05);
+//       }
+//
+//       &.p-highlight {
+//         background: var(--highlight-bg);
+//         border-color: var(--primary-color);
+//         color: var(--highlight-text-color);
+//       }
+//     }
+//   }
+//
+//   // InputNumber dark
+//   .p-inputnumber-button-group {
+//     .p-button {
+//       background: var(--surface-section);
+//       border-color: var(--surface-border);
+//       color: var(--text-color);
+//
+//       &:hover {
+//         background: rgba(255, 255, 255, 0.05);
+//       }
+//     }
+//   }
+// }
+//
+// // Smooth theme transition
+// html {
+//   &, & * {
+//     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+//   }
+// }

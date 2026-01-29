@@ -1,0 +1,224 @@
+<div class="min-h-screen flex flex-column">
+  <!-- F-042: Skip Link for keyboard users -->
+  <app-skip-link targetId="admin-main-content" />
+
+  <!-- Mobile Top Bar -->
+  <header class="lg:hidden surface-section border-bottom-1 surface-border p-3 flex align-items-center justify-content-between">
+    <div class="flex align-items-center gap-2">
+      <p-button
+        icon="pi pi-bars"
+        [text]="true"
+        severity="secondary"
+        (onClick)="sidebarVisible.set(true)"
+        ariaLabel="Open menu"
+      />
+      <span class="text-xl font-bold text-primary">Phone Shop</span>
+    </div>
+    <div class="flex align-items-center gap-2">
+      <span class="text-color-secondary text-sm hidden sm:inline">{{ authService.userEmail() }}</span>
+      <!-- F-056: Mobile Theme Toggle -->
+      <p-button
+        [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+        [text]="true"
+        severity="secondary"
+        (onClick)="themeService.toggleTheme()"
+        [ariaLabel]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+      />
+      <p-button
+        icon="pi pi-sign-out"
+        severity="secondary"
+        [text]="true"
+        [loading]="loggingOut"
+        (onClick)="onLogout()"
+        ariaLabel="Logout"
+      />
+    </div>
+  </header>
+
+  <div class="flex flex-grow-1">
+    <!-- Desktop Sidebar (Collapsible) -->
+    <aside [class]="'hidden lg:flex flex-column surface-section border-right-1 surface-border flex-shrink-0 sidebar-transition ' + (sidebarCollapsed() ? 'sidebar-collapsed' : 'sidebar-expanded')"
+           role="navigation"
+           aria-label="Admin navigation">
+      <div class="p-3 border-bottom-1 surface-border flex align-items-center justify-content-between">
+        @if (!sidebarCollapsed()) {
+          <div>
+            <a routerLink="/admin" class="text-xl font-bold text-primary no-underline"
+               aria-label="Phone Shop Admin - Dashboard">
+              Phone Shop
+            </a>
+            <span class="text-sm text-color-secondary block mt-1">Admin Panel</span>
+          </div>
+        }
+        <p-button
+          [icon]="sidebarCollapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'"
+          [text]="true"
+          severity="secondary"
+          (onClick)="toggleSidebar()"
+          [pTooltip]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+          tooltipPosition="right"
+          [ariaLabel]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        />
+      </div>
+
+      <nav class="flex-grow-1 p-2 overflow-y-auto" aria-label="Admin menu">
+        <ul class="list-none p-0 m-0" role="menubar" aria-orientation="vertical">
+          @for (item of navItems; track item.route) {
+            <li class="mb-1" role="none">
+              <a [routerLink]="item.route"
+                 routerLinkActive="bg-primary text-primary-contrast"
+                 [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                 [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer transition-colors transition-duration-150 ' + (sidebarCollapsed() ? 'justify-content-center' : 'justify-content-between')"
+                 role="menuitem"
+                 [pTooltip]="sidebarCollapsed() ? item.label + (item.showBadge && messageCountService.unreadCount() > 0 ? ' (' + messageCountService.unreadCount() + ')' : '') : undefined"
+                 tooltipPosition="right"
+                 [attr.aria-label]="item.showBadge && messageCountService.unreadCount() > 0
+                   ? item.label + ' (' + messageCountService.unreadCount() + ' unread)'
+                   : item.label"
+                 pRipple>
+                <div class="flex align-items-center gap-2 position-relative">
+                  <i [class]="item.icon" aria-hidden="true"></i>
+                  @if (!sidebarCollapsed()) {
+                    <span>{{ item.label }}</span>
+                  }
+                  @if (sidebarCollapsed() && item.showBadge && messageCountService.unreadCount() > 0) {
+                    <span class="badge-dot"></span>
+                  }
+                </div>
+                @if (!sidebarCollapsed() && item.showBadge && messageCountService.unreadCount() > 0) {
+                  <p-badge [value]="messageCountService.unreadCount().toString()" severity="danger" />
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+
+      <div class="p-2 border-top-1 surface-border mt-auto">
+        <a routerLink="/"
+           [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer ' + (sidebarCollapsed() ? 'justify-content-center' : '')"
+           [pTooltip]="sidebarCollapsed() ? 'View Shop' : undefined"
+           tooltipPosition="right"
+           aria-label="View public shop"
+           pRipple>
+          <i class="pi pi-external-link" aria-hidden="true"></i>
+          @if (!sidebarCollapsed()) {
+            <span>View Shop</span>
+          }
+        </a>
+      </div>
+    </aside>
+
+    <!-- Mobile Sidebar (Overlay/Drawer) -->
+    <p-drawer
+      [visible]="sidebarVisible()"
+      (visibleChange)="sidebarVisible.set($event)"
+      [showCloseIcon]="false"
+      styleClass="w-18rem">
+      <ng-template #header>
+        <div class="flex align-items-center justify-content-between w-full">
+          <div>
+            <span class="text-xl font-bold text-primary">Phone Shop</span>
+            <span class="text-sm text-color-secondary block mt-1">Admin Panel</span>
+          </div>
+          <p-button
+            icon="pi pi-times"
+            [text]="true"
+            severity="secondary"
+            (onClick)="sidebarVisible.set(false)"
+            ariaLabel="Close menu"
+          />
+        </div>
+      </ng-template>
+
+      <nav class="mt-3" aria-label="Admin mobile menu">
+        <ul class="list-none p-0 m-0" role="menubar" aria-orientation="vertical">
+          @for (item of navItems; track item.route) {
+            <li class="mb-2" role="none">
+              <a [routerLink]="item.route"
+                 routerLinkActive="bg-primary text-primary-contrast"
+                 [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                 class="flex align-items-center justify-content-between gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer transition-colors transition-duration-150"
+                 role="menuitem"
+                 [attr.aria-label]="item.showBadge && messageCountService.unreadCount() > 0
+                   ? item.label + ' (' + messageCountService.unreadCount() + ' unread)'
+                   : item.label"
+                 (click)="sidebarVisible.set(false)"
+                 pRipple>
+                <div class="flex align-items-center gap-2">
+                  <i [class]="item.icon" aria-hidden="true"></i>
+                  <span>{{ item.label }}</span>
+                </div>
+                @if (item.showBadge && messageCountService.unreadCount() > 0) {
+                  <p-badge [value]="messageCountService.unreadCount().toString()" severity="danger" />
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+
+      <div class="mt-auto pt-3 border-top-1 surface-border">
+        <a routerLink="/"
+           class="flex align-items-center gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer"
+           (click)="sidebarVisible.set(false)"
+           pRipple>
+          <i class="pi pi-external-link"></i>
+          <span>View Shop</span>
+        </a>
+      </div>
+
+      <ng-template #footer>
+        <div class="flex align-items-center gap-2 p-2 surface-ground border-round">
+          <i class="pi pi-user text-color-secondary"></i>
+          <span class="text-color-secondary text-sm flex-grow-1 white-space-nowrap overflow-hidden text-overflow-ellipsis">
+            {{ authService.userEmail() }}
+          </span>
+          <p-button
+            icon="pi pi-sign-out"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            [loading]="loggingOut"
+            (onClick)="onLogout()"
+            ariaLabel="Logout"
+          />
+        </div>
+      </ng-template>
+    </p-drawer>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow-1 flex flex-column min-w-0">
+      <!-- Desktop Top Bar -->
+      <header class="hidden lg:flex surface-section border-bottom-1 surface-border p-3 align-items-center justify-content-end">
+        <div class="flex align-items-center gap-3">
+          <span class="text-color-secondary">{{ authService.userEmail() }}</span>
+          <!-- F-056: Desktop Theme Toggle -->
+          <p-button
+            [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            (onClick)="themeService.toggleTheme()"
+            [pTooltip]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+            tooltipPosition="bottom"
+            [ariaLabel]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+          />
+          <p-button
+            label="Logout"
+            icon="pi pi-sign-out"
+            severity="secondary"
+            [text]="true"
+            [loading]="loggingOut"
+            (onClick)="onLogout()"
+          />
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <main id="admin-main-content" class="flex-grow-1 px-2 py-3 sm:px-3 lg:p-4 surface-ground overflow-y-auto" role="main">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,78 @@
+.login-container {
+  background: linear-gradient(135deg, var(--surface-ground) 0%, var(--surface-100) 100%);
+}
+
+.login-card {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-header {
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.login-icon-wrapper {
+  box-shadow: 0 4px 14px rgba(var(--primary-color-rgb, 99, 102, 241), 0.3);
+}
+
+:host ::ng-deep {
+  .p-password {
+    width: 100%;
+
+    .p-password-input {
+      padding-left: 2.5rem;
+    }
+  }
+
+  .p-inputtext {
+    padding-left: 2.5rem;
+  }
+
+  .p-input-icon-left > i:first-of-type {
+    left: 0.75rem;
+    color: var(--text-color-secondary);
+  }
+
+  .p-password-toggle-icon {
+    right: 0.75rem;
+  }
+
+  .p-button {
+    padding: 0.75rem 1rem;
+
+    &:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(var(--primary-color-rgb, 99, 102, 241), 0.3);
+    }
+
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .p-card {
+    .p-card-body {
+      padding: 1.5rem;
+    }
+
+    .p-card-footer {
+      padding: 0 1.5rem 1rem;
+      border-top: 1px solid var(--surface-border);
+      margin-top: 0.5rem;
+    }
+  }
+
+  .p-message {
+    .p-message-wrapper {
+      padding: 0.75rem 1rem;
+    }
+  }
+}

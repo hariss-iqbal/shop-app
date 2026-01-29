@@ -1,0 +1,101 @@
+.pwa-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0.75rem 1rem;
+  background: var(--surface-overlay);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  border-top: 1px solid var(--surface-border);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pwa-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 800px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.pwa-banner-icon {
+  font-size: 1.25rem;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.pwa-banner-icon.update-icon {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pwa-banner-icon.install-icon {
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.pwa-banner-text {
+  color: var(--text-color);
+  font-size: 0.9375rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+  .pwa-banner {
+    padding: 1rem;
+  }
+
+  .pwa-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .pwa-banner-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pwa-banner-actions :deep(.p-button) {
+    flex: 1;
+    max-width: 140px;
+  }
+}

@@ -1,0 +1,98 @@
+<div class="login-container min-h-screen flex align-items-center justify-content-center surface-ground p-3">
+  <div class="login-card w-full max-w-26rem">
+    <p-card styleClass="shadow-6 border-round-xl overflow-hidden">
+      <ng-template pTemplate="header">
+        <div class="login-header text-center p-4 pb-3 surface-section">
+          <div class="login-icon-wrapper inline-flex align-items-center justify-content-center border-circle bg-primary mb-3"
+               style="width: 4rem; height: 4rem;">
+            <i class="pi pi-mobile text-primary-contrast" style="font-size: 1.75rem;"></i>
+          </div>
+          <h1 class="text-2xl font-semibold text-color m-0">Phone Shop</h1>
+          <p class="text-color-secondary mt-2 mb-0 text-sm">Sign in to access the admin panel</p>
+        </div>
+      </ng-template>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="flex flex-column gap-4 p-2">
+        @if (errorMessage) {
+          <p-message
+            severity="error"
+            [text]="errorMessage"
+            styleClass="w-full border-round"
+            [closable]="false"
+          />
+        }
+
+        <div class="flex flex-column gap-2">
+          <label for="email" class="font-medium text-color text-sm">Email Address</label>
+          <span class="p-input-icon-left w-full">
+            <i class="pi pi-envelope"></i>
+            <input
+              pInputText
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="admin@example.com"
+              class="w-full"
+              autocomplete="email"
+              [class.ng-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+              [class.ng-dirty]="loginForm.get('email')?.touched"
+            />
+          </span>
+          @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+            <small class="p-error flex align-items-center gap-1">
+              <i class="pi pi-exclamation-circle text-xs"></i>
+              @if (loginForm.get('email')?.errors?.['required']) {
+                Email is required
+              } @else if (loginForm.get('email')?.errors?.['email']) {
+                Please enter a valid email address
+              }
+            </small>
+          }
+        </div>
+
+        <div class="flex flex-column gap-2">
+          <label for="password" class="font-medium text-color text-sm">Password</label>
+          <p-password
+            id="password"
+            formControlName="password"
+            placeholder="Enter your password"
+            [feedback]="false"
+            [toggleMask]="true"
+            styleClass="w-full"
+            inputStyleClass="w-full"
+            autocomplete="current-password"
+            [styleClass]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched ? 'ng-invalid ng-dirty' : ''"
+          />
+          @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+            <small class="p-error flex align-items-center gap-1">
+              <i class="pi pi-exclamation-circle text-xs"></i>
+              @if (loginForm.get('password')?.errors?.['required']) {
+                Password is required
+              } @else if (loginForm.get('password')?.errors?.['minlength']) {
+                Password must be at least 6 characters
+              }
+            </small>
+          }
+        </div>
+
+        <p-button
+          type="submit"
+          label="Sign In"
+          icon="pi pi-sign-in"
+          styleClass="w-full mt-2"
+          [loading]="loading"
+          [disabled]="loginForm.invalid || loading"
+        />
+      </form>
+
+      <ng-template pTemplate="footer">
+        <div class="text-center py-2">
+          <a routerLink="/" class="text-primary no-underline hover:underline text-sm font-medium">
+            <i class="pi pi-arrow-left mr-1 text-xs"></i>
+            Back to Shop
+          </a>
+        </div>
+      </ng-template>
+    </p-card>
+  </div>
+</div>

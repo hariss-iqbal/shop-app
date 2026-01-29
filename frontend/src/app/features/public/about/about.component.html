@@ -1,0 +1,239 @@
+<div class="about-page">
+  <!-- Hero Section -->
+  <section class="about-hero" aria-labelledby="hero-heading">
+    <div class="hero-content">
+      <span class="hero-badge">Our Story</span>
+      <h1 id="hero-heading" class="hero-title">About Phone Shop</h1>
+      <p class="hero-subtitle">
+        Your trusted destination for quality mobile phones since 2015. We believe everyone deserves access to premium technology at fair prices.
+      </p>
+    </div>
+  </section>
+
+  <!-- Brand Story Section -->
+  <section class="story-section" aria-labelledby="story-heading">
+    <div class="grid">
+      <div class="col-12 lg:col-6">
+        <div class="story-content">
+          <span class="section-badge">Our Journey</span>
+          <h2 id="story-heading" class="section-title">From Passion to Purpose</h2>
+          <p class="story-text">
+            Phone Shop was founded with a simple yet powerful mission: to make quality mobile devices accessible to everyone.
+            What started as a small family business has grown into a trusted destination for thousands of customers seeking
+            reliable smartphones at fair prices.
+          </p>
+          <p class="story-text">
+            We carefully curate our selection of new, used, and refurbished phones from trusted suppliers. Every device
+            undergoes rigorous testing and inspection before being listed for sale. Our commitment to transparency means
+            you'll always know exactly what you're getting – from battery health to cosmetic condition.
+          </p>
+          <p class="story-text">
+            Today, we continue to serve our community with the same dedication and personal touch that defined our early days,
+            now backed by the expertise and resources to deliver an exceptional shopping experience.
+          </p>
+        </div>
+      </div>
+      <div class="col-12 lg:col-6">
+        <div class="story-image-container" role="img" aria-label="Phone Shop store front illustration">
+          <div class="story-visual">
+            <div class="visual-icon-container">
+              <i class="pi pi-mobile text-6xl text-primary" aria-hidden="true"></i>
+            </div>
+            <div class="visual-stats">
+              <div class="visual-stat">
+                <span class="visual-stat-number">8+</span>
+                <span class="visual-stat-label">Years in Business</span>
+              </div>
+              <div class="visual-stat">
+                <span class="visual-stat-number">5,000+</span>
+                <span class="visual-stat-label">Happy Customers</span>
+              </div>
+              <div class="visual-stat">
+                <span class="visual-stat-number">10,000+</span>
+                <span class="visual-stat-label">Phones Sold</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section class="values-section" aria-labelledby="values-heading">
+    <div class="section-header">
+      <span class="section-badge">What We Stand For</span>
+      <h2 id="values-heading" class="section-title">Our Core Values</h2>
+      <p class="section-subtitle">The principles that guide everything we do</p>
+    </div>
+
+    <div class="values-grid">
+      @for (value of values; track value.title) {
+        <article class="value-card">
+          <div class="value-icon-wrapper" [ngClass]="value.iconClass">
+            <i [class]="value.icon" aria-hidden="true"></i>
+          </div>
+          <h3 class="value-title">{{ value.title }}</h3>
+          <p class="value-description">{{ value.description }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- Team Section -->
+  <section class="team-section" aria-labelledby="team-heading">
+    <div class="section-header">
+      <span class="section-badge">The People Behind Phone Shop</span>
+      <h2 id="team-heading" class="section-title">Meet Our Team</h2>
+      <p class="section-subtitle">A dedicated group of phone enthusiasts ready to help you find your perfect device</p>
+    </div>
+
+    <div class="team-grid">
+      @for (member of teamMembers; track member.name) {
+        <article class="team-card">
+          <div class="team-avatar">
+            <span class="avatar-initials">{{ member.initials }}</span>
+          </div>
+          <h3 class="team-name">{{ member.name }}</h3>
+          <span class="team-role">{{ member.role }}</span>
+          <p class="team-bio">{{ member.bio }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  <!-- Opening Hours & Contact Info Section -->
+  <section class="info-section" aria-labelledby="info-heading">
+    <h2 id="info-heading" class="sr-only">Store Information</h2>
+    <div class="grid">
+      <!-- Opening Hours -->
+      <div class="col-12 lg:col-6">
+        <div class="info-card">
+          <div class="info-header">
+            <div class="info-header-icon hours-icon">
+              <i class="pi pi-clock" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h3 class="info-title">Opening Hours</h3>
+              <p class="info-subtitle">Visit us at a time that works for you</p>
+            </div>
+          </div>
+
+          <div class="hours-list" role="list" aria-label="Store opening hours">
+            @for (day of openingHours; track day.day) {
+              <div class="hours-row" role="listitem">
+                <span class="hours-day">{{ day.day }}</span>
+                <span class="hours-time" [ngClass]="{'hours-closed': day.closed}">
+                  @if (day.closed) {
+                    Closed
+                  } @else {
+                    {{ day.hours }}
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="col-12 lg:col-6">
+        <div class="info-card">
+          <div class="info-header">
+            <div class="info-header-icon location-icon">
+              <i class="pi pi-map-marker" aria-hidden="true"></i>
+            </div>
+            <div>
+              <h3 class="info-title">Visit Us</h3>
+              <p class="info-subtitle">We'd love to see you in person</p>
+            </div>
+          </div>
+
+          <address class="contact-list">
+            <!-- Address -->
+            <a class="contact-item">
+              <div class="contact-icon-wrapper">
+                <i class="pi pi-building" aria-hidden="true"></i>
+              </div>
+              <div class="contact-details">
+                <span class="contact-label">Address</span>
+                <span class="contact-value">123 Mobile Street, Tech City, TC 12345</span>
+              </div>
+            </a>
+
+            <!-- Phone -->
+            <a href="tel:+1234567890"
+               class="contact-item contact-item-link"
+               aria-label="Call us at +1 234 567 890">
+              <div class="contact-icon-wrapper">
+                <i class="pi pi-phone" aria-hidden="true"></i>
+              </div>
+              <div class="contact-details">
+                <span class="contact-label">Phone</span>
+                <span class="contact-value">+1 234 567 890</span>
+              </div>
+            </a>
+
+            <!-- Email -->
+            <a href="mailto:info&#64;phoneshop.com"
+               class="contact-item contact-item-link"
+               aria-label="Email us at info at phoneshop.com">
+              <div class="contact-icon-wrapper">
+                <i class="pi pi-envelope" aria-hidden="true"></i>
+              </div>
+              <div class="contact-details">
+                <span class="contact-label">Email</span>
+                <span class="contact-value">info&#64;phoneshop.com</span>
+              </div>
+            </a>
+
+            <!-- WhatsApp -->
+            <a href="https://wa.me/1234567890"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="contact-item contact-item-link"
+               aria-label="Chat with us on WhatsApp (opens in new tab)">
+              <div class="contact-icon-wrapper whatsapp-wrapper">
+                <i class="pi pi-whatsapp" aria-hidden="true"></i>
+              </div>
+              <div class="contact-details">
+                <span class="contact-label">WhatsApp</span>
+                <span class="contact-value">+1 234 567 890</span>
+              </div>
+            </a>
+          </address>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action Section -->
+  <section class="cta-section" aria-labelledby="cta-heading">
+    <div class="cta-content">
+      <i class="pi pi-shopping-cart cta-icon" aria-hidden="true"></i>
+      <h2 id="cta-heading" class="cta-title">Ready to Find Your Perfect Phone?</h2>
+      <p class="cta-subtitle">
+        Browse our catalog of quality mobile devices or get in touch with our team for personalized assistance.
+      </p>
+      <div class="cta-actions">
+        <a routerLink="/catalog" class="no-underline" aria-label="Browse our phone catalog">
+          <p-button
+            label="Browse Catalog"
+            icon="pi pi-th-large"
+            size="large"
+            [raised]="true"
+          />
+        </a>
+        <a routerLink="/contact" class="no-underline" aria-label="Contact our team">
+          <p-button
+            label="Contact Us"
+            icon="pi pi-envelope"
+            size="large"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </a>
+      </div>
+    </div>
+  </section>
+</div>

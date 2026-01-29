@@ -1,0 +1,55 @@
+@if (pwaService.updateAvailable()) {
+  <div class="pwa-banner" role="alert" aria-live="assertive">
+    <div class="pwa-banner-content">
+      <i class="pi pi-sync pwa-banner-icon update-icon"></i>
+      <span class="pwa-banner-text">A new version of Phone Shop is available!</span>
+      <div class="pwa-banner-actions">
+        <p-button
+          label="Update Now"
+          icon="pi pi-download"
+          size="small"
+          (onClick)="pwaService.applyUpdate()"
+        />
+        <p-button
+          icon="pi pi-times"
+          size="small"
+          severity="secondary"
+          [text]="true"
+          [rounded]="true"
+          (onClick)="pwaService.dismissUpdate()"
+          ariaLabel="Dismiss update notification"
+          pTooltip="Dismiss"
+          tooltipPosition="top"
+        />
+      </div>
+    </div>
+  </div>
+}
+
+@if (pwaService.installPromptAvailable() && !pwaService.updateAvailable()) {
+  <div class="pwa-banner" role="banner">
+    <div class="pwa-banner-content">
+      <i class="pi pi-mobile pwa-banner-icon install-icon"></i>
+      <span class="pwa-banner-text">Install Phone Shop for quick access and offline browsing</span>
+      <div class="pwa-banner-actions">
+        <p-button
+          label="Install"
+          icon="pi pi-download"
+          size="small"
+          (onClick)="pwaService.promptInstall()"
+        />
+        <p-button
+          icon="pi pi-times"
+          size="small"
+          severity="secondary"
+          [text]="true"
+          [rounded]="true"
+          (onClick)="dismissInstall()"
+          ariaLabel="Dismiss install prompt"
+          pTooltip="Dismiss"
+          tooltipPosition="top"
+        />
+      </div>
+    </div>
+  </div>
+}

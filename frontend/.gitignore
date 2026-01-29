@@ -1,0 +1,55 @@
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files with credentials
+# ---------------------------------
+# The following files may contain Supabase credentials and should NOT be committed:
+# - environment.local.ts: For local overrides
+#
+# Note: environment.ts and environment.prod.ts use placeholder values by default.
+# If you replace placeholders with real credentials for local development,
+# consider using environment.local.ts instead and importing from there.
+/src/environments/environment.local.ts
+
+# Optionally ignore environment files if they contain real credentials
+# Uncomment these lines if you've added real credentials to these files:
+# /src/environments/environment.ts
+# /src/environments/environment.prod.ts

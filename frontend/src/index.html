@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Phone Shop</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3B82F6">
+  <meta name="description" content="Browse and shop for phones online. View catalog, compare prices, and contact us for the best deals.">
+  <link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96x96.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-72x72.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Phone Shop">
+  <noscript>Please enable JavaScript to use this application.</noscript>
+  <script>
+    // F-056: Apply saved theme before Angular bootstraps to prevent flash of wrong theme
+    (function() {
+      var theme = localStorage.getItem('phone-shop-theme');
+      var isDark = theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark-theme');
+        // Update meta theme-color for dark mode
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', '#1e293b');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
