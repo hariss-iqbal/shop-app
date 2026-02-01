@@ -1,0 +1,108 @@
+.phone-detail-container {
+  padding-bottom: 100px;
+}
+
+@media (min-width: 992px) {
+  .phone-detail-container {
+    padding-bottom: 0;
+  }
+}
+
+.gallery-container {
+  position: sticky;
+  top: 1rem;
+}
+
+.gallery-main-image {
+  transition: transform 0.3s ease;
+}
+
+.gallery-thumbnail {
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.gallery-thumbnail:hover {
+  border-color: var(--primary-500);
+  transform: scale(1.05);
+}
+
+:host ::ng-deep .p-galleria-thumbnail-item-current .gallery-thumbnail {
+  border-color: var(--primary-500);
+}
+
+.product-info {
+  position: sticky;
+  top: 1rem;
+}
+
+.price-section {
+  border: 1px solid var(--surface-200);
+}
+
+.battery-section {
+  border: 1px solid var(--surface-200);
+}
+
+.review-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+:host ::ng-deep .rating-display .p-rating-icon {
+  font-size: 1rem;
+}
+
+:host ::ng-deep .p-progressbar.battery-excellent .p-progressbar-value {
+  background: linear-gradient(90deg, var(--green-500) 0%, var(--green-400) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-good .p-progressbar-value {
+  background: linear-gradient(90deg, var(--green-400) 0%, var(--green-300) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-fair .p-progressbar-value {
+  background: linear-gradient(90deg, var(--yellow-500) 0%, var(--yellow-400) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-poor .p-progressbar-value {
+  background: linear-gradient(90deg, var(--orange-500) 0%, var(--orange-400) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-critical .p-progressbar-value {
+  background: linear-gradient(90deg, var(--red-500) 0%, var(--red-400) 100%);
+}
+
+.sticky-mobile-bar {
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.condition-new {
+  background: var(--green-100);
+  color: var(--green-700);
+}
+
+.condition-refurbished {
+  background: var(--blue-100);
+  color: var(--blue-700);
+}
+
+.condition-used {
+  background: var(--yellow-100);
+  color: var(--yellow-700);
+}

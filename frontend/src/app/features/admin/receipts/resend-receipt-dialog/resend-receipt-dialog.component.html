@@ -1,0 +1,315 @@
+<p-dialog
+  [header]="'Resend Receipt'"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  (onShow)="onDialogShow()"
+  (onHide)="onDialogHide()"
+  [modal]="true"
+  [closable]="true"
+  [focusOnShow]="true"
+  [focusTrap]="true"
+  [closeOnEscape]="true"
+  [style]="{ width: '520px' }"
+  [breakpoints]="{ '575px': '95vw' }"
+  role="dialog"
+  [ariaLabel]="'Resend receipt ' + (receipt()?.receiptNumber || '')"
+>
+  @if (receipt()) {
+    <div class="flex flex-column gap-4">
+      <!-- Screen reader description -->
+      <span id="resend-receipt-description" class="sr-only">
+        Dialog to resend receipt {{ receipt()!.receiptNumber }} via WhatsApp or Email
+      </span>
+
+      <!-- Receipt Summary Card -->
+      <div class="surface-card border-1 surface-border border-round-lg p-3 shadow-1">
+        <div class="flex align-items-start justify-content-between">
+          <div class="flex align-items-center gap-2 mb-2">
+            <div class="flex align-items-center justify-content-center w-2rem h-2rem border-round-lg bg-primary-100">
+              <i class="pi pi-receipt text-primary text-lg"></i>
+            </div>
+            <span class="font-bold text-lg">{{ receipt()!.receiptNumber }}</span>
+          </div>
+          <div class="text-2xl font-bold text-primary">
+            {{ receipt()!.grandTotal | appCurrency:'1.2-2' }}
+          </div>
+        </div>
+        <div class="flex align-items-center gap-4 text-sm text-color-secondary mt-2">
+          <span class="flex align-items-center gap-1">
+            <i class="pi pi-calendar text-xs"></i>
+            {{ receipt()!.transactionDate | date:'mediumDate' }}
+          </span>
+          <span class="flex align-items-center gap-1">
+            <i class="pi pi-clock text-xs"></i>
+            {{ formatTime(receipt()!.transactionTime) }}
+          </span>
+        </div>
+        @if (receipt()!.customerName) {
+          <div class="flex align-items-center gap-1 text-sm mt-2 pt-2 border-top-1 surface-border">
+            <i class="pi pi-user text-color-secondary text-xs"></i>
+            <span>{{ receipt()!.customerName }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Channel Tabs -->
+      <p-tabs [value]="activeTabIndex" (valueChange)="onTabChange($event)">
+        <p-tablist aria-label="Choose sending method">
+          <p-tab [value]="0" aria-controls="whatsapp-panel">
+            <i class="pi pi-whatsapp text-green-500 mr-2"></i>
+            <span>WhatsApp</span>
+          </p-tab>
+          <p-tab [value]="1" aria-controls="email-panel">
+            <i class="pi pi-envelope text-blue-500 mr-2"></i>
+            <span>Email</span>
+          </p-tab>
+        </p-tablist>
+        <p-tabpanels>
+          <!-- WhatsApp Tab -->
+          <p-tabpanel [value]="0" id="whatsapp-panel">
+            <div class="flex flex-column gap-3 pt-3">
+              <div class="flex flex-column gap-2">
+                <label for="resendPhone" class="font-medium">
+                  Send receipt to phone number
+                </label>
+                <div class="p-inputgroup">
+                  <span class="p-inputgroup-addon">
+                    <i class="pi pi-phone"></i>
+                  </span>
+                  <input
+                    pInputText
+                    id="resendPhone"
+                    [(ngModel)]="phoneNumber"
+                    placeholder="+1234567890"
+                    [disabled]="sending()"
+                    (keyup.enter)="onConfirmWhatsAppResend()"
+                    class="w-full"
+                    aria-describedby="phone-validation-hint"
+                    [attr.aria-invalid]="phoneNumber && !isPhoneValid()"
+                  />
+                </div>
+                @if (phoneNumber && !isPhoneValid()) {
+                  <small id="phone-validation-hint" class="text-red-500" role="alert">
+                    <i class="pi pi-exclamation-circle mr-1"></i>
+                    Please enter a valid phone number (10-15 digits)
+                  </small>
+                }
+                @if (isPhoneUpdated() && isPhoneValid()) {
+                  <small class="text-blue-500 flex align-items-center gap-1">
+                    <i class="pi pi-info-circle"></i>
+                    Sending to updated number (original: {{ formatPhoneDisplay(originalPhone()!) }})
+                  </small>
+                }
+              </div>
+
+              <div class="flex justify-content-end">
+                <p-button
+                  [label]="isPhoneUpdated() ? 'Send to Updated Number' : 'Send via WhatsApp'"
+                  icon="pi pi-whatsapp"
+                  severity="success"
+                  (onClick)="onConfirmWhatsAppResend()"
+                  [disabled]="!isPhoneValid() || sending()"
+                  [loading]="sending() && sendingChannel() === 'whatsapp'"
+                  ariaLabel="Send receipt via WhatsApp"
+                />
+              </div>
+            </div>
+          </p-tabpanel>
+
+          <!-- Email Tab - Feature: F-021 -->
+          <p-tabpanel [value]="1" id="email-panel">
+            <div class="flex flex-column gap-3 pt-3">
+              <div class="flex flex-column gap-2">
+                <label for="resendEmail" class="font-medium">
+                  Send receipt to email address
+                </label>
+                <div class="p-inputgroup">
+                  <span class="p-inputgroup-addon">
+                    <i class="pi pi-at"></i>
+                  </span>
+                  <input
+                    pInputText
+                    id="resendEmail"
+                    [(ngModel)]="emailAddress"
+                    placeholder="customer@example.com"
+                    [disabled]="sending()"
+                    (keyup.enter)="onConfirmEmailResend()"
+                    class="w-full"
+                    aria-describedby="email-validation-hint"
+                    [attr.aria-invalid]="emailAddress && !isEmailValid()"
+                  />
+                </div>
+                @if (emailAddress && !isEmailValid()) {
+                  <small id="email-validation-hint" class="text-red-500" role="alert">
+                    <i class="pi pi-exclamation-circle mr-1"></i>
+                    Please enter a valid email address
+                  </small>
+                }
+                @if (isEmailUpdated() && isEmailValid()) {
+                  <small class="text-blue-500 flex align-items-center gap-1">
+                    <i class="pi pi-info-circle"></i>
+                    Sending to updated email (original: {{ originalEmail() }})
+                  </small>
+                }
+              </div>
+
+              @if (emailError()) {
+                <p-message severity="error" [text]="emailError()!" styleClass="w-full" />
+              }
+
+              <div class="flex justify-content-end">
+                <p-button
+                  [label]="isEmailUpdated() ? 'Send to Updated Email' : 'Send via Email'"
+                  icon="pi pi-envelope"
+                  severity="info"
+                  (onClick)="onConfirmEmailResend()"
+                  [disabled]="!isEmailValid() || sending()"
+                  [loading]="sending() && sendingChannel() === 'email'"
+                  ariaLabel="Send receipt via Email"
+                />
+              </div>
+            </div>
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+
+      <p-divider />
+
+      <!-- Send History Section -->
+      <div class="flex flex-column gap-2" role="region" aria-labelledby="send-history-title">
+        <div class="flex justify-content-between align-items-center">
+          <span id="send-history-title" class="text-sm font-semibold text-color-secondary flex align-items-center gap-2">
+            <i class="pi pi-history"></i>
+            Send History
+            @if (!loadingHistory() && sendHistory().length > 0) {
+              <span class="text-xs font-normal">({{ sendHistory().length }})</span>
+            }
+          </span>
+          @if (sendHistory().length > 5) {
+            <span class="text-xs text-color-secondary">Showing latest 5</span>
+          }
+        </div>
+
+        @if (loadingHistory()) {
+          <!-- Loading state -->
+          <div class="surface-ground border-round p-2">
+            @for (_ of [1, 2]; track $index) {
+              <div class="flex justify-content-between align-items-center p-2 border-bottom-1 surface-border">
+                <div class="flex align-items-center gap-2">
+                  <p-skeleton shape="circle" size="1.5rem" />
+                  <div class="flex flex-column gap-1">
+                    <p-skeleton width="8rem" height="0.875rem" />
+                    <p-skeleton width="5rem" height="0.75rem" />
+                  </div>
+                </div>
+                <p-skeleton width="3rem" height="1.5rem" borderRadius="1rem" />
+              </div>
+            }
+          </div>
+        } @else if (sendHistory().length === 0) {
+          <!-- Empty state -->
+          <div class="surface-ground border-round p-4 text-center">
+            <i class="pi pi-send text-3xl text-color-secondary mb-2"></i>
+            <p class="text-sm text-color-secondary m-0">No send history for this receipt</p>
+            <p class="text-xs text-color-secondary mt-1">Send the receipt to see history here</p>
+          </div>
+        } @else {
+          <!-- Send history list -->
+          <div class="surface-ground border-round overflow-hidden">
+            @for (log of sendHistory().slice(0, 5); track log.id; let last = $last) {
+              <div
+                class="flex justify-content-between align-items-center p-3"
+                [class.border-bottom-1]="!last"
+                [class.surface-border]="!last"
+                [attr.aria-label]="getLogAriaLabel(log)"
+              >
+                <div class="flex align-items-center gap-3">
+                  <div
+                    class="flex align-items-center justify-content-center w-2rem h-2rem border-round"
+                    [class.bg-green-100]="log.channel === 'whatsapp'"
+                    [class.bg-blue-100]="log.channel === 'email'"
+                    [class.bg-purple-100]="log.channel === 'sms'"
+                  >
+                    @if (log.channel === 'whatsapp') {
+                      <i class="pi pi-whatsapp text-green-600"></i>
+                    } @else if (log.channel === 'email') {
+                      <i class="pi pi-envelope text-blue-600"></i>
+                    } @else {
+                      <i class="pi pi-mobile text-purple-600"></i>
+                    }
+                  </div>
+                  <div class="flex flex-column">
+                    <span class="text-sm font-medium">
+                      {{ log.recipientPhone ? formatPhoneDisplay(log.recipientPhone) : log.recipientEmail || 'Unknown' }}
+                    </span>
+                    <span class="text-xs text-color-secondary flex align-items-center gap-1">
+                      <i class="pi pi-clock text-xs"></i>
+                      {{ log.sentAt | date:'short' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex align-items-center gap-2">
+                  <p-tag
+                    [value]="getStatusLabel(log.status)"
+                    [severity]="getStatusSeverity(log.status)"
+                    [rounded]="true"
+                    [icon]="getStatusIcon(log.status)"
+                  />
+                  @if (log.status === 'failed' && log.channel === 'email') {
+                    <p-button
+                      icon="pi pi-refresh"
+                      [rounded]="true"
+                      [text]="true"
+                      size="small"
+                      severity="info"
+                      pTooltip="Retry sending this email"
+                      tooltipPosition="left"
+                      (onClick)="onRetryEmail(log)"
+                      [disabled]="sending()"
+                      ariaLabel="Retry sending email"
+                    />
+                  }
+                  @if (log.status === 'failed' && log.errorMessage) {
+                    <i
+                      class="pi pi-info-circle text-red-500 cursor-pointer"
+                      [pTooltip]="log.errorMessage"
+                      tooltipPosition="left"
+                    ></i>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          @if (hasFailedEmails()) {
+            <div class="flex justify-content-end mt-2">
+              <p-button
+                label="Retry All Failed"
+                icon="pi pi-refresh"
+                severity="warn"
+                [outlined]="true"
+                size="small"
+                (onClick)="onRetryAllFailedEmails()"
+                [disabled]="sending()"
+                [loading]="retryingAll()"
+                ariaLabel="Retry all failed email sends"
+              />
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end">
+      <p-button
+        label="Close"
+        severity="secondary"
+        [text]="true"
+        (onClick)="onCancel()"
+        [disabled]="sending()"
+        ariaLabel="Close dialog"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

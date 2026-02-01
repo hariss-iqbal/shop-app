@@ -1,0 +1,48 @@
+<div class="offline-page">
+  <div class="offline-content">
+    <div class="offline-icon-container">
+      <div class="offline-icon-bg">
+        <i class="pi pi-wifi-slash"></i>
+      </div>
+      <div class="offline-pulse"></div>
+    </div>
+
+    <h1 class="offline-title">You're Offline</h1>
+
+    <p class="offline-message">
+      It looks like you've lost your internet connection.
+      @if (isOnline()) {
+        <span class="text-green-500 font-semibold">Connection restored!</span>
+      }
+    </p>
+
+    <p class="offline-hint">
+      Previously viewed catalog pages may still be available from cache.
+    </p>
+
+    <div class="offline-actions">
+      <p-button
+        [label]="isOnline() ? 'Go Back' : 'Try Again'"
+        [icon]="isOnline() ? 'pi pi-arrow-left' : 'pi pi-refresh'"
+        [loading]="isRetrying()"
+        (onClick)="retry()"
+        styleClass="p-button-lg"
+      />
+      <p-button
+        label="Browse Catalog"
+        icon="pi pi-shopping-bag"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="goToCatalog()"
+        styleClass="p-button-lg"
+      />
+    </div>
+
+    <div class="offline-status">
+      <span class="status-dot" [class.online]="isOnline()"></span>
+      <span class="status-text">
+        {{ isOnline() ? 'Back online' : 'No internet connection' }}
+      </span>
+    </div>
+  </div>
+</div>

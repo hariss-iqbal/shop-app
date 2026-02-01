@@ -1,0 +1,398 @@
+<p-toast />
+
+<div class="grid">
+  <div class="col-12">
+    <div class="flex align-items-center justify-content-between mb-4">
+      <h1 class="text-3xl font-bold m-0">Loyalty Members</h1>
+      <p-button
+        label="Configure Program"
+        icon="pi pi-cog"
+        severity="secondary"
+        routerLink="/admin/loyalty/config"
+      />
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="col-12 md:col-6 lg:col-3">
+    <p-card styleClass="h-full">
+      @if (loading()) {
+        <p-skeleton width="60%" styleClass="mb-2" />
+        <p-skeleton width="40%" height="2rem" />
+      } @else {
+        <div class="flex align-items-center justify-content-between">
+          <div>
+            <span class="block text-color-secondary mb-2">Total Members</span>
+            <span class="text-3xl font-bold">{{ totalMembers() }}</span>
+          </div>
+          <div class="w-3rem h-3rem border-circle bg-blue-100 flex align-items-center justify-content-center">
+            <i class="pi pi-users text-blue-500 text-xl"></i>
+          </div>
+        </div>
+      }
+    </p-card>
+  </div>
+
+  <div class="col-12 md:col-6 lg:col-3">
+    <p-card styleClass="h-full">
+      @if (loading()) {
+        <p-skeleton width="60%" styleClass="mb-2" />
+        <p-skeleton width="40%" height="2rem" />
+      } @else {
+        <div class="flex align-items-center justify-content-between">
+          <div>
+            <span class="block text-color-secondary mb-2">Gold+ Members</span>
+            <span class="text-3xl font-bold">{{ goldPlusMembers() }}</span>
+          </div>
+          <div class="w-3rem h-3rem border-circle bg-yellow-100 flex align-items-center justify-content-center">
+            <i class="pi pi-star-fill text-yellow-500 text-xl"></i>
+          </div>
+        </div>
+      }
+    </p-card>
+  </div>
+
+  <div class="col-12 md:col-6 lg:col-3">
+    <p-card styleClass="h-full">
+      @if (loading()) {
+        <p-skeleton width="60%" styleClass="mb-2" />
+        <p-skeleton width="40%" height="2rem" />
+      } @else {
+        <div class="flex align-items-center justify-content-between">
+          <div>
+            <span class="block text-color-secondary mb-2">Points Outstanding</span>
+            <span class="text-3xl font-bold">{{ totalPointsOutstanding() | number }}</span>
+          </div>
+          <div class="w-3rem h-3rem border-circle bg-green-100 flex align-items-center justify-content-center">
+            <i class="pi pi-ticket text-green-500 text-xl"></i>
+          </div>
+        </div>
+      }
+    </p-card>
+  </div>
+
+  <div class="col-12 md:col-6 lg:col-3">
+    <p-card styleClass="h-full">
+      @if (loading()) {
+        <p-skeleton width="60%" styleClass="mb-2" />
+        <p-skeleton width="40%" height="2rem" />
+      } @else {
+        <div class="flex align-items-center justify-content-between">
+          <div>
+            <span class="block text-color-secondary mb-2">Points Value</span>
+            <span class="text-3xl font-bold">{{ pointsValue() | currency }}</span>
+          </div>
+          <div class="w-3rem h-3rem border-circle bg-purple-100 flex align-items-center justify-content-center">
+            <i class="pi pi-dollar text-purple-500 text-xl"></i>
+          </div>
+        </div>
+      }
+    </p-card>
+  </div>
+
+  <!-- Filters -->
+  <div class="col-12">
+    <p-card>
+      <div class="flex flex-wrap gap-3 align-items-end">
+        <div class="field mb-0">
+          <label class="block font-medium mb-2">Filter by Tier</label>
+          <p-select
+            [(ngModel)]="filterTier"
+            [options]="tierOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All Tiers"
+            [showClear]="true"
+            (onChange)="loadMembers()"
+            styleClass="w-12rem"
+          />
+        </div>
+        <div class="field mb-0">
+          <label class="block font-medium mb-2">Minimum Balance</label>
+          <p-inputNumber
+            [(ngModel)]="filterMinBalance"
+            [min]="0"
+            placeholder="Any"
+            (onBlur)="loadMembers()"
+            inputStyleClass="w-8rem"
+          />
+        </div>
+        <p-button
+          label="Clear Filters"
+          icon="pi pi-filter-slash"
+          severity="secondary"
+          [text]="true"
+          (onClick)="clearFilters()"
+        />
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Members Table -->
+  <div class="col-12">
+    <p-card>
+      <p-table
+        [value]="members()"
+        [loading]="loading()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [totalRecords]="totalMembers()"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} members"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-striped"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="customer.name">
+              Customer <p-sortIcon field="customer.name" />
+            </th>
+            <th pSortableColumn="currentTier">
+              Tier <p-sortIcon field="currentTier" />
+            </th>
+            <th pSortableColumn="currentBalance" class="text-right">
+              Balance <p-sortIcon field="currentBalance" />
+            </th>
+            <th pSortableColumn="lifetimePointsEarned" class="text-right">
+              Lifetime Earned <p-sortIcon field="lifetimePointsEarned" />
+            </th>
+            <th pSortableColumn="lifetimeSpend" class="text-right">
+              Lifetime Spend <p-sortIcon field="lifetimeSpend" />
+            </th>
+            <th>Progress</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-member>
+          <tr>
+            <td>
+              <div class="flex flex-column">
+                <span class="font-medium">{{ member.customer?.name || 'Unknown' }}</span>
+                <span class="text-color-secondary text-sm">{{ member.customer?.phone }}</span>
+              </div>
+            </td>
+            <td>
+              <p-tag
+                [value]="member.tierLabel"
+                [severity]="getTierSeverity(member.currentTier)"
+              />
+            </td>
+            <td class="text-right font-medium">
+              {{ member.currentBalance | number }}
+            </td>
+            <td class="text-right">
+              {{ member.lifetimePointsEarned | number }}
+            </td>
+            <td class="text-right">
+              {{ member.lifetimeSpend | currency }}
+            </td>
+            <td>
+              @if (member.nextTier) {
+                <div class="flex flex-column gap-1">
+                  <p-progressBar
+                    [value]="calculateProgress(member)"
+                    [showValue]="false"
+                    styleClass="h-1rem"
+                  />
+                  <span class="text-xs text-color-secondary">
+                    {{ member.pointsToNextTier | number }} pts to {{ member.nextTier }}
+                  </span>
+                </div>
+              } @else {
+                <span class="text-color-secondary">Max tier</span>
+              }
+            </td>
+            <td class="text-center">
+              <div class="flex justify-content-center gap-2">
+                <p-button
+                  icon="pi pi-eye"
+                  severity="info"
+                  [rounded]="true"
+                  [text]="true"
+                  pTooltip="View Details"
+                  (onClick)="viewMember(member)"
+                />
+                <p-button
+                  icon="pi pi-plus"
+                  severity="success"
+                  [rounded]="true"
+                  [text]="true"
+                  pTooltip="Adjust Points"
+                  (onClick)="openAdjustDialog(member)"
+                />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center p-4">
+              <i class="pi pi-users text-4xl text-color-secondary mb-3 block"></i>
+              <span class="text-color-secondary">No loyalty members found</span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>
+
+<!-- Member Details Dialog -->
+<p-dialog
+  [(visible)]="showDetailsDialog"
+  [header]="selectedMember()?.customer?.name + ' - Loyalty Profile'"
+  [modal]="true"
+  [style]="{ width: '700px' }"
+  [maximizable]="true"
+>
+  @if (selectedMember()) {
+    @let member = selectedMember()!;
+    <div class="grid">
+      <!-- Summary -->
+      <div class="col-12 md:col-6">
+        <div class="surface-100 border-round p-3">
+          <span class="text-color-secondary block mb-1">Current Balance</span>
+          <span class="text-2xl font-bold">{{ member.currentBalance | number }} pts</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="surface-100 border-round p-3">
+          <span class="text-color-secondary block mb-1">Current Tier</span>
+          <p-tag [value]="member.tierLabel" [severity]="getTierSeverity(member.currentTier)" />
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="surface-100 border-round p-3">
+          <span class="text-color-secondary block mb-1">Lifetime Earned</span>
+          <span class="font-bold">{{ member.lifetimePointsEarned | number }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="surface-100 border-round p-3">
+          <span class="text-color-secondary block mb-1">Lifetime Redeemed</span>
+          <span class="font-bold">{{ member.lifetimePointsRedeemed | number }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="surface-100 border-round p-3">
+          <span class="text-color-secondary block mb-1">Lifetime Spend</span>
+          <span class="font-bold">{{ member.lifetimeSpend | currency }}</span>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="col-12">
+        <h4 class="mt-3 mb-2">Recent Transactions</h4>
+        @if (loadingTransactions()) {
+          <p-skeleton width="100%" height="150px" />
+        } @else if (memberTransactions().length === 0) {
+          <p class="text-color-secondary">No transactions yet</p>
+        } @else {
+          <div class="flex flex-column gap-2" style="max-height: 300px; overflow-y: auto;">
+            @for (tx of memberTransactions(); track tx.id) {
+              <div class="surface-50 border-round p-3 flex align-items-center justify-content-between">
+                <div class="flex align-items-center gap-3">
+                  <i [class]="getTransactionIcon(tx.transactionType)" class="text-xl"></i>
+                  <div>
+                    <span class="font-medium">{{ tx.transactionTypeLabel }}</span>
+                    <span class="text-color-secondary text-sm block">
+                      {{ tx.createdAt | date:'short' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span
+                    class="font-bold"
+                    [class.text-green-500]="tx.points > 0"
+                    [class.text-red-500]="tx.points < 0"
+                  >
+                    {{ tx.points > 0 ? '+' : '' }}{{ tx.points | number }}
+                  </span>
+                  <span class="text-color-secondary text-sm block">
+                    Balance: {{ tx.balanceAfter | number }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</p-dialog>
+
+<!-- Adjust Points Dialog -->
+<p-dialog
+  [(visible)]="showAdjustDialog"
+  header="Adjust Points"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+>
+  @if (adjustMember()) {
+    <div class="flex flex-column gap-4">
+      <div class="surface-100 border-round p-3">
+        <span class="text-color-secondary block mb-1">Customer</span>
+        <span class="font-bold">{{ adjustMember()!.customer?.name }}</span>
+        <span class="text-color-secondary block">
+          Current Balance: {{ adjustMember()!.currentBalance | number }} pts
+        </span>
+      </div>
+
+      <div class="field">
+        <label class="block font-medium mb-2">Adjustment Type</label>
+        <p-select
+          [(ngModel)]="adjustType"
+          [options]="adjustTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="field">
+        <label class="block font-medium mb-2">Points</label>
+        <p-inputNumber
+          [(ngModel)]="adjustPoints"
+          [min]="1"
+          inputStyleClass="w-full"
+          placeholder="Enter points amount"
+        />
+        <small class="text-color-secondary">
+          @if (adjustType === 'add') {
+            Will add {{ adjustPoints || 0 }} points
+          } @else {
+            Will remove {{ adjustPoints || 0 }} points
+          }
+        </small>
+      </div>
+
+      <div class="field">
+        <label class="block font-medium mb-2">Reason</label>
+        <textarea
+          pTextarea
+          [(ngModel)]="adjustReason"
+          rows="3"
+          class="w-full"
+          placeholder="Enter reason for adjustment"
+        ></textarea>
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      severity="secondary"
+      [text]="true"
+      (onClick)="showAdjustDialog = false"
+    />
+    <p-button
+      label="Apply Adjustment"
+      icon="pi pi-check"
+      [loading]="adjusting()"
+      [disabled]="!adjustPoints || !adjustReason"
+      (onClick)="applyAdjustment()"
+    />
+  </ng-template>
+</p-dialog>

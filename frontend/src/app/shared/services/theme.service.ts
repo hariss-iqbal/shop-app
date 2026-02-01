@@ -56,8 +56,8 @@ export class ThemeService {
       return ThemeMode.DARK;
     }
 
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return prefersDark ? ThemeMode.DARK : ThemeMode.LIGHT;
+    // Default to light theme for new users
+    return ThemeMode.LIGHT;
   }
 
   private applyTheme(theme: ThemeMode): void {

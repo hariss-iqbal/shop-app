@@ -1,0 +1,58 @@
+<div class="offline-indicator flex align-items-center gap-2" role="status" aria-live="polite">
+  <!-- Offline Mode Indicator -->
+  @if (isOffline()) {
+    <div class="offline-badge animate-fade-in"
+         [pTooltip]="offlineTooltip()"
+         tooltipPosition="bottom">
+      <span class="offline-pulse-dot"></span>
+      <i class="pi pi-wifi-off"></i>
+      <span class="offline-text">Offline</span>
+    </div>
+  }
+
+  <!-- Pending Items Badge -->
+  @if (hasPendingItems() && !isSyncing()) {
+    <div class="pending-badge animate-fade-in"
+         [pTooltip]="pendingTooltip()"
+         tooltipPosition="bottom"
+         [class.clickable]="isOnline()"
+         (click)="isOnline() && triggerSync()">
+      <i class="pi pi-clock"></i>
+      <span class="pending-count">{{ pendingCount() }}</span>
+      @if (isOnline()) {
+        <i class="pi pi-sync sync-hint"></i>
+      }
+    </div>
+  }
+
+  <!-- Conflicts Badge -->
+  @if (hasConflicts()) {
+    <a routerLink="/admin/sync-status"
+       class="conflict-badge animate-pulse-subtle"
+       [pTooltip]="conflictTooltip()"
+       tooltipPosition="bottom">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span class="conflict-count">{{ conflictCount() }}</span>
+    </a>
+  }
+
+  <!-- Sync Progress -->
+  @if (isSyncing()) {
+    <div class="sync-progress-container">
+      <div class="sync-spinner">
+        <i class="pi pi-sync"></i>
+      </div>
+      <div class="sync-progress-bar">
+        <div class="sync-progress-fill" [style.width.%]="syncProgress()"></div>
+      </div>
+      <span class="sync-text">{{ syncProgress() }}%</span>
+    </div>
+  }
+
+  <!-- Online Status Indicator (subtle) -->
+  @if (isOnline() && !hasPendingItems() && !hasConflicts() && !isSyncing()) {
+    <div class="online-indicator" pTooltip="Connected" tooltipPosition="bottom">
+      <span class="online-dot"></span>
+    </div>
+  }
+</div>

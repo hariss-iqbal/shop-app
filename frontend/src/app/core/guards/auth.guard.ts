@@ -6,14 +6,15 @@ import { of } from 'rxjs';
 import { SupabaseAuthService } from '../services/supabase-auth.service';
 
 /**
- * Maximum time to wait for auth initialization (in milliseconds).
+ * Maximum time to wait for auth and role initialization (in milliseconds).
  * After this timeout, the guard will redirect to login.
  */
-const AUTH_INIT_TIMEOUT = 5000;
+const AUTH_INIT_TIMEOUT = 10000;
 
 /**
  * Auth guard that protects admin routes.
  * Redirects unauthenticated users to login with returnUrl preservation.
+ * Waits for both authentication AND role to be initialized before proceeding.
  */
 export const authGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const authService = inject(SupabaseAuthService);
@@ -26,34 +27,21 @@ export const authGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, state: 
     return false;
   };
 
-  // If not loading, check authentication immediately
+  // If auth initialization is complete, check immediately
   if (!authService.loading()) {
-    if (authService.isAuthenticated()) {
-      return true;
-    }
-    return redirectToLogin();
+    return authService.isAuthenticated() ? true : redirectToLogin();
   }
 
-  // Wait for loading to complete using reactive approach
+  // Wait for auth initialization to complete
   const loading$ = toObservable(authService.loading);
 
   return loading$.pipe(
-    // Wait for loading to become false
     filter(loading => !loading),
-    // Take only the first emission
     first(),
-    // Check authentication status
-    map(() => {
-      if (authService.isAuthenticated()) {
-        return true;
-      }
-      return redirectToLogin();
-    }),
-    // Add timeout to prevent indefinite waiting
+    map(() => authService.isAuthenticated() ? true : redirectToLogin()),
     timeout(AUTH_INIT_TIMEOUT),
-    // Handle timeout by redirecting to login
     catchError(() => {
-      console.warn('Auth guard timed out waiting for auth initialization');
+      console.warn('Auth guard timed out waiting for initialization');
       return of(redirectToLogin());
     })
   );

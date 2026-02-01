@@ -18,35 +18,7 @@ import { PhoneStatus, PhoneStatusLabels, PhoneStatusColors } from '../../../../e
     TagModule,
     TooltipModule
   ],
-  template: `
-    <div class="flex align-items-center gap-2">
-      <p-tag
-        [value]="getStatusLabel(phone().status)"
-        [severity]="getStatusSeverity(phone().status)"
-        [attr.aria-label]="'Phone status: ' + getStatusLabel(phone().status)"
-      />
-      <p-button
-        icon="pi pi-chevron-down"
-        [rounded]="true"
-        [text]="true"
-        size="small"
-        severity="secondary"
-        [loading]="updating()"
-        [disabled]="updating()"
-        (onClick)="menu.toggle($event)"
-        pTooltip="Change Status"
-        tooltipPosition="top"
-        [ariaLabel]="'Change status for ' + phone().brandName + ' ' + phone().model"
-      />
-      <p-menu
-        #menu
-        [model]="menuItems()"
-        [popup]="true"
-        appendTo="body"
-        [ariaLabel]="'Status actions menu'"
-      />
-    </div>
-  `
+  templateUrl: './inventory-status-actions.component.html'
 })
 export class InventoryStatusActionsComponent {
   private phoneService = inject(PhoneService);

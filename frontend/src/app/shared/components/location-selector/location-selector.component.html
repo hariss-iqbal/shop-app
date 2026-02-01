@@ -1,0 +1,31 @@
+<p-select
+  [options]="locations()"
+  [(ngModel)]="selectedLocationId"
+  (onChange)="onLocationChange($event)"
+  optionLabel="name"
+  optionValue="id"
+  [placeholder]="placeholder()"
+  [showClear]="showClear()"
+  [filter]="locations().length > 5"
+  filterBy="name,code"
+  [style]="{ 'min-width': '200px' }"
+  appendTo="body">
+  <ng-template let-location pTemplate="item">
+    <div class="flex align-items-center gap-2">
+      <span class="font-medium">{{ location.name }}</span>
+      <span class="text-color-secondary text-sm">({{ location.code }})</span>
+      @if (location.isPrimary) {
+        <i class="pi pi-star-fill text-yellow-500 text-xs"></i>
+      }
+      @if (location.isDefault) {
+        <i class="pi pi-check-circle text-green-500 text-xs"></i>
+      }
+    </div>
+  </ng-template>
+  <ng-template let-location pTemplate="selectedItem">
+    <div class="flex align-items-center gap-2">
+      <span class="font-medium">{{ location.name }}</span>
+      <span class="text-color-secondary text-sm">({{ location.code }})</span>
+    </div>
+  </ng-template>
+</p-select>

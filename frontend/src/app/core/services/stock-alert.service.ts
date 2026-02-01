@@ -42,6 +42,9 @@ export class StockAlertService {
     if (request.enableBrandZeroAlert !== undefined) {
       updatePayload['enable_brand_zero_alert'] = request.enableBrandZeroAlert;
     }
+    if (request.allowOversell !== undefined) {
+      updatePayload['allow_oversell'] = request.allowOversell;
+    }
 
     const { data, error } = await this.supabase
       .from('stock_alert_configs')
@@ -123,7 +126,8 @@ export class StockAlertService {
       .from('stock_alert_configs')
       .insert({
         low_stock_threshold: 5,
-        enable_brand_zero_alert: true
+        enable_brand_zero_alert: true,
+        allow_oversell: true
       })
       .select()
       .single();
@@ -140,6 +144,7 @@ export class StockAlertService {
       id: data['id'] as string,
       lowStockThreshold: data['low_stock_threshold'] as number,
       enableBrandZeroAlert: data['enable_brand_zero_alert'] as boolean,
+      allowOversell: data['allow_oversell'] as boolean ?? true,
       createdAt: data['created_at'] as string,
       updatedAt: data['updated_at'] as string | null,
     };

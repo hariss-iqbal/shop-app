@@ -44,7 +44,10 @@ describe('PhoneComparisonComponent', () => {
       notes: null,
       primaryImageUrl: 'https://example.com/iphone.jpg',
       createdAt: new Date().toISOString(),
-      updatedAt: null
+      updatedAt: null,
+      taxRate: 10,
+      isTaxInclusive: false,
+      isTaxExempt: false
     },
     {
       id: 'phone-2',
@@ -69,7 +72,10 @@ describe('PhoneComparisonComponent', () => {
       notes: null,
       primaryImageUrl: null,
       createdAt: new Date().toISOString(),
-      updatedAt: null
+      updatedAt: null,
+      taxRate: 10,
+      isTaxInclusive: false,
+      isTaxExempt: false
     },
     {
       id: 'phone-3',
@@ -94,7 +100,10 @@ describe('PhoneComparisonComponent', () => {
       notes: null,
       primaryImageUrl: 'https://example.com/iphone13.jpg',
       createdAt: new Date().toISOString(),
-      updatedAt: null
+      updatedAt: null,
+      taxRate: 10,
+      isTaxInclusive: false,
+      isTaxExempt: false
     }
   ];
 

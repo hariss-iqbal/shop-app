@@ -15,7 +15,15 @@
       <span class="text-xl font-bold text-primary">Phone Shop</span>
     </div>
     <div class="flex align-items-center gap-2">
-      <span class="text-color-secondary text-sm hidden sm:inline">{{ authService.userEmail() }}</span>
+      <!-- F-020: Offline Mode Indicator -->
+      <app-offline-indicator />
+      @if (authService.userRole()) {
+        <p-tag
+          [value]="getRoleDisplayName(authService.userRole()!)"
+          [severity]="getRoleSeverity(authService.userRole()!)"
+          styleClass="text-xs"
+        />
+      }
       <!-- F-056: Mobile Theme Toggle -->
       <p-button
         [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
@@ -63,7 +71,7 @@
 
       <nav class="flex-grow-1 p-2 overflow-y-auto" aria-label="Admin menu">
         <ul class="list-none p-0 m-0" role="menubar" aria-orientation="vertical">
-          @for (item of navItems; track item.route) {
+          @for (item of navItems(); track item.route) {
             <li class="mb-1" role="none">
               <a [routerLink]="item.route"
                  routerLinkActive="bg-primary text-primary-contrast"
@@ -133,7 +141,7 @@
 
       <nav class="mt-3" aria-label="Admin mobile menu">
         <ul class="list-none p-0 m-0" role="menubar" aria-orientation="vertical">
-          @for (item of navItems; track item.route) {
+          @for (item of navItems(); track item.route) {
             <li class="mb-2" role="none">
               <a [routerLink]="item.route"
                  routerLinkActive="bg-primary text-primary-contrast"
@@ -169,20 +177,31 @@
       </div>
 
       <ng-template #footer>
-        <div class="flex align-items-center gap-2 p-2 surface-ground border-round">
-          <i class="pi pi-user text-color-secondary"></i>
-          <span class="text-color-secondary text-sm flex-grow-1 white-space-nowrap overflow-hidden text-overflow-ellipsis">
-            {{ authService.userEmail() }}
-          </span>
-          <p-button
-            icon="pi pi-sign-out"
-            severity="secondary"
-            [text]="true"
-            size="small"
-            [loading]="loggingOut"
-            (onClick)="onLogout()"
-            ariaLabel="Logout"
-          />
+        <div class="flex flex-column gap-2 p-2 surface-ground border-round">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-user text-color-secondary"></i>
+            <span class="text-color-secondary text-sm flex-grow-1 white-space-nowrap overflow-hidden text-overflow-ellipsis">
+              {{ authService.userEmail() }}
+            </span>
+          </div>
+          <div class="flex align-items-center justify-content-between">
+            @if (authService.userRole()) {
+              <p-tag
+                [value]="getRoleDisplayName(authService.userRole()!)"
+                [severity]="getRoleSeverity(authService.userRole()!)"
+                styleClass="text-xs"
+              />
+            }
+            <p-button
+              icon="pi pi-sign-out"
+              severity="secondary"
+              [text]="true"
+              size="small"
+              [loading]="loggingOut"
+              (onClick)="onLogout()"
+              ariaLabel="Logout"
+            />
+          </div>
         </div>
       </ng-template>
     </p-drawer>
@@ -190,9 +209,19 @@
     <!-- Main Content Area -->
     <div class="flex-grow-1 flex flex-column min-w-0">
       <!-- Desktop Top Bar -->
-      <header class="hidden lg:flex surface-section border-bottom-1 surface-border p-3 align-items-center justify-content-end">
+      <header class="hidden lg:flex surface-section border-bottom-1 surface-border p-3 align-items-center justify-content-between">
+        <!-- F-020: Offline Mode Indicator -->
+        <div class="flex align-items-center">
+          <app-offline-indicator />
+        </div>
         <div class="flex align-items-center gap-3">
           <span class="text-color-secondary">{{ authService.userEmail() }}</span>
+          @if (authService.userRole()) {
+            <p-tag
+              [value]="getRoleDisplayName(authService.userRole()!)"
+              [severity]="getRoleSeverity(authService.userRole()!)"
+            />
+          }
           <!-- F-056: Desktop Theme Toggle -->
           <p-button
             [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
@@ -216,9 +245,28 @@
       </header>
 
       <!-- Content Area -->
-      <main id="admin-main-content" class="flex-grow-1 px-2 py-3 sm:px-3 lg:p-4 surface-ground overflow-y-auto" role="main">
+      <!-- F-025: Add bottom padding on mobile to account for bottom navigation -->
+      <main
+        id="admin-main-content"
+        class="flex-grow-1 px-2 py-3 sm:px-3 lg:p-4 surface-ground overflow-y-auto"
+        [class.pb-7]="viewportService.isMobile() || viewportService.isTablet()"
+        role="main"
+      >
         <router-outlet />
       </main>
     </div>
   </div>
+
+  <!-- F-025: Mobile Bottom Navigation -->
+  <app-mobile-bottom-nav />
+
+  <!-- F-025: Mobile Quick Actions FAB -->
+  <app-mobile-quick-actions
+    [showScanBarcode]="true"
+    [showNewSale]="true"
+    [showCustomerLookup]="true"
+    [showViewReceipts]="true"
+    [showProcessRefund]="authService.permissions()?.canProcessRefunds ?? false"
+    (actionTriggered)="onQuickAction($event)"
+  />
 </div>

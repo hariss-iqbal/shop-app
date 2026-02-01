@@ -1,0 +1,586 @@
+<div class="grid" role="main" aria-label="Sales Dashboard">
+  <!-- Header with Date Range Selector -->
+  <div class="col-12 flex flex-column gap-3 mb-4">
+    <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-3">
+      <h1 class="text-3xl font-bold m-0">Sales Dashboard</h1>
+      <p-button
+        icon="pi pi-refresh"
+        label="Refresh"
+        [outlined]="true"
+        severity="secondary"
+        (onClick)="loadAll()"
+        [loading]="loading()"
+        styleClass="w-full sm:w-auto"
+        ariaLabel="Refresh dashboard data"
+      />
+    </div>
+    <div class="flex flex-column sm:flex-row align-items-start sm:align-items-center gap-3" role="group" aria-label="Date range filter">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-calendar text-color-secondary" aria-hidden="true"></i>
+        <span class="text-color-secondary font-medium" id="period-label">Period:</span>
+      </div>
+      <p-select
+        [options]="dateRangeOptions"
+        [(ngModel)]="selectedDateRange"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onDateRangeChange()"
+        styleClass="w-full sm:w-14rem"
+        ariaLabelledBy="period-label"
+      />
+      @if (selectedDateRange === customRangeValue) {
+        <p-datepicker
+          [(ngModel)]="customStartDate"
+          [showIcon]="true"
+          [maxDate]="customEndDate || today"
+          dateFormat="yy-mm-dd"
+          placeholder="Start date"
+          (onSelect)="onCustomDateChange()"
+          styleClass="w-full sm:w-auto"
+          inputStyleClass="w-full sm:w-10rem"
+          ariaLabel="Custom start date"
+        />
+        <span class="text-color-secondary font-medium" aria-hidden="true">to</span>
+        <p-datepicker
+          [(ngModel)]="customEndDate"
+          [showIcon]="true"
+          [minDate]="customStartDate!"
+          [maxDate]="today"
+          dateFormat="yy-mm-dd"
+          placeholder="End date"
+          (onSelect)="onCustomDateChange()"
+          styleClass="w-full sm:w-auto"
+          inputStyleClass="w-full sm:w-10rem"
+          ariaLabel="Custom end date"
+        />
+      }
+      @if (activeDateRangeLabel()) {
+        <span class="text-sm text-color-secondary" aria-live="polite">{{ activeDateRangeLabel() }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- Stock Alerts -->
+  <div class="col-12">
+    <app-stock-alerts-panel
+      [alerts]="stockAlerts()"
+      [config]="stockAlertConfig()"
+      [loading]="alertsLoading()"
+      (configureClicked)="navigateToDashboard()"
+    />
+  </div>
+
+  <!-- KPI Cards Section -->
+  <section class="col-12" aria-label="Key Performance Indicators">
+    <div class="grid">
+      <!-- Today's Total Sales -->
+      <div class="col-12 md:col-6 xl:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center gap-3" aria-busy="true">
+              <p-skeleton shape="circle" size="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="40%" height="1.75rem" />
+              </div>
+            </div>
+          } @else {
+            <div class="flex align-items-center gap-3" role="article">
+              <div class="w-3rem h-3rem border-round bg-blue-100 flex align-items-center justify-content-center flex-shrink-0">
+                <i class="pi pi-dollar text-blue-500 text-2xl" aria-hidden="true"></i>
+              </div>
+              <div>
+                <span class="text-color-secondary text-sm block mb-1">Total Revenue</span>
+                <span class="text-2xl font-bold text-color">{{ kpis().totalRevenue | appCurrency }}</span>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Transaction Count -->
+      <div class="col-12 md:col-6 xl:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center gap-3" aria-busy="true">
+              <p-skeleton shape="circle" size="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="40%" height="1.75rem" />
+              </div>
+            </div>
+          } @else {
+            <div class="flex align-items-center gap-3" role="article">
+              <div class="w-3rem h-3rem border-round bg-green-100 flex align-items-center justify-content-center flex-shrink-0">
+                <i class="pi pi-shopping-cart text-green-500 text-2xl" aria-hidden="true"></i>
+              </div>
+              <div>
+                <span class="text-color-secondary text-sm block mb-1">Transaction Count</span>
+                <span class="text-2xl font-bold text-color">{{ kpis().transactionCount }}</span>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Average Order Value -->
+      <div class="col-12 md:col-6 xl:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center gap-3" aria-busy="true">
+              <p-skeleton shape="circle" size="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="40%" height="1.75rem" />
+              </div>
+            </div>
+          } @else {
+            <div class="flex align-items-center gap-3" role="article">
+              <div class="w-3rem h-3rem border-round bg-purple-100 flex align-items-center justify-content-center flex-shrink-0">
+                <i class="pi pi-chart-line text-purple-500 text-2xl" aria-hidden="true"></i>
+              </div>
+              <div>
+                <span class="text-color-secondary text-sm block mb-1">Avg. Order Value</span>
+                <span class="text-2xl font-bold text-color">{{ kpis().averageOrderValue | appCurrency:'1.2-2' }}</span>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Total Profit -->
+      <div class="col-12 md:col-6 xl:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center gap-3" aria-busy="true">
+              <p-skeleton shape="circle" size="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="40%" height="1.75rem" />
+              </div>
+            </div>
+          } @else {
+            <div class="flex align-items-center gap-3" role="article">
+              <div class="w-3rem h-3rem border-round bg-orange-100 flex align-items-center justify-content-center flex-shrink-0">
+                <i class="pi pi-trending-up text-orange-500 text-2xl" aria-hidden="true"></i>
+              </div>
+              <div>
+                <span class="text-color-secondary text-sm block mb-1">Total Profit</span>
+                <span class="text-2xl font-bold text-color">{{ kpis().totalProfit | appCurrency }}</span>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Profit Margin -->
+      <div class="col-12 md:col-6 xl:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center gap-3" aria-busy="true">
+              <p-skeleton shape="circle" size="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="40%" height="1.75rem" />
+              </div>
+            </div>
+          } @else {
+            <div class="flex align-items-center gap-3" role="article">
+              <div class="w-3rem h-3rem border-round bg-teal-100 flex align-items-center justify-content-center flex-shrink-0">
+                <i class="pi pi-percentage text-teal-500 text-2xl" aria-hidden="true"></i>
+              </div>
+              <div>
+                <span class="text-color-secondary text-sm block mb-1">Profit Margin</span>
+                <span class="text-2xl font-bold text-color">{{ kpis().profitMargin | number:'1.1-1' }}%</span>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Total Sales Count -->
+      <div class="col-12 md:col-6 xl:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center gap-3" aria-busy="true">
+              <p-skeleton shape="circle" size="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="40%" height="1.75rem" />
+              </div>
+            </div>
+          } @else {
+            <div class="flex align-items-center gap-3" role="article">
+              <div class="w-3rem h-3rem border-round bg-pink-100 flex align-items-center justify-content-center flex-shrink-0">
+                <i class="pi pi-box text-pink-500 text-2xl" aria-hidden="true"></i>
+              </div>
+              <div>
+                <span class="text-color-secondary text-sm block mb-1">Units Sold</span>
+                <span class="text-2xl font-bold text-color">{{ kpis().totalSales }}</span>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Charts Section -->
+  <section class="col-12" aria-label="Sales Charts">
+    <div class="grid">
+      <!-- Sales Trend Line Chart -->
+      <div class="col-12 lg:col-7">
+        <p-card>
+          <ng-template #header>
+            <div class="flex align-items-center justify-content-between px-3 pt-3">
+              <h2 class="text-xl font-semibold text-color m-0">Sales Trend</h2>
+              <i class="pi pi-chart-line text-color-secondary text-xl" aria-hidden="true"></i>
+            </div>
+          </ng-template>
+          @if (chartsLoading()) {
+            <div class="flex align-items-center justify-content-center" style="height: 300px" aria-busy="true">
+              <p-skeleton width="100%" height="300px" />
+            </div>
+          } @else if (hasSalesData()) {
+            <div role="img" aria-label="Line chart showing sales trends over time">
+              <p-chart
+                type="line"
+                [data]="salesTrendChartData()"
+                [options]="lineChartOptions()"
+                [responsive]="true"
+                height="300px"
+              />
+            </div>
+          } @else {
+            <div class="flex flex-column align-items-center justify-content-center text-color-secondary" style="height: 300px" role="status">
+              <i class="pi pi-chart-line text-4xl mb-3" aria-hidden="true"></i>
+              <span class="text-lg">No sales data available</span>
+              <span class="text-sm mt-1">Sales will appear here once transactions are recorded</span>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Sales by Brand Doughnut Chart -->
+      <div class="col-12 lg:col-5">
+        <p-card>
+          <ng-template #header>
+            <div class="flex align-items-center justify-content-between px-3 pt-3">
+              <h2 class="text-xl font-semibold text-color m-0">Sales by Brand</h2>
+              <i class="pi pi-chart-pie text-color-secondary text-xl" aria-hidden="true"></i>
+            </div>
+          </ng-template>
+          @if (chartsLoading()) {
+            <div class="flex align-items-center justify-content-center" style="height: 300px" aria-busy="true">
+              <p-skeleton width="100%" height="300px" />
+            </div>
+          } @else if (hasBrandData()) {
+            <div role="img" aria-label="Doughnut chart showing sales distribution by brand">
+              <p-chart
+                type="doughnut"
+                [data]="brandChartData()"
+                [options]="doughnutChartOptions()"
+                [responsive]="true"
+                height="300px"
+              />
+            </div>
+          } @else {
+            <div class="flex flex-column align-items-center justify-content-center text-color-secondary" style="height: 300px" role="status">
+              <i class="pi pi-chart-pie text-4xl mb-3" aria-hidden="true"></i>
+              <span class="text-lg">No brand data available</span>
+              <span class="text-sm mt-1">Sales by brand will appear here</span>
+            </div>
+          }
+        </p-card>
+      </div>
+    </div>
+  </section>
+
+  <!-- Top Products Section -->
+  <section class="col-12 lg:col-6" aria-label="Top selling products">
+    <p-card>
+      <ng-template #header>
+        <div class="flex align-items-center justify-content-between px-3 pt-3">
+          <h2 class="text-xl font-semibold text-color m-0">Top Products</h2>
+          <p-button
+            icon="pi pi-external-link"
+            [text]="true"
+            severity="secondary"
+            size="small"
+            (onClick)="showProductReport = true"
+            ariaLabel="View detailed product report"
+            pTooltip="View detailed report"
+          />
+        </div>
+      </ng-template>
+      @if (loading()) {
+        <div class="flex flex-column gap-3" aria-busy="true">
+          @for (_ of skeletonRows; track $index) {
+            <div class="flex align-items-center gap-3">
+              <p-skeleton width="25%" />
+              <p-skeleton width="25%" />
+              <p-skeleton width="15%" />
+              <p-skeleton width="20%" />
+            </div>
+          }
+        </div>
+      } @else if (topProducts().length > 0) {
+        <p-table
+          [value]="topProducts()"
+          [rowHover]="true"
+          (onRowSelect)="onProductClick($any($event).data)"
+          selectionMode="single"
+          dataKey="phoneId"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [tableStyle]="{ 'min-width': '30rem' }"
+          ariaLabel="Top selling products table"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col">Product</th>
+              <th scope="col" class="text-right">Units</th>
+              <th scope="col" class="text-right">Revenue</th>
+              <th scope="col" class="text-right">Profit</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-product>
+            <tr [pSelectableRow]="product" class="cursor-pointer">
+              <td>
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ product.brandName }}</span>
+                  <span class="text-sm text-color-secondary">{{ product.model }}</span>
+                </div>
+              </td>
+              <td class="text-right font-medium">{{ product.unitsSold }}</td>
+              <td class="text-right">{{ product.totalRevenue | appCurrency }}</td>
+              <td class="text-right">
+                <span [class]="product.totalProfit >= 0 ? 'text-green-500' : 'text-red-500'">
+                  {{ product.totalProfit | appCurrency }}
+                </span>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="flex flex-column align-items-center justify-content-center text-color-secondary py-5" role="status">
+          <i class="pi pi-box text-4xl mb-3" aria-hidden="true"></i>
+          <span class="text-lg">No products sold yet</span>
+        </div>
+      }
+    </p-card>
+  </section>
+
+  <!-- Sales by Cashier Section -->
+  <section class="col-12 lg:col-6" aria-label="Sales by cashier">
+    <p-card>
+      <ng-template #header>
+        <div class="flex align-items-center justify-content-between px-3 pt-3">
+          <h2 class="text-xl font-semibold text-color m-0">Sales by Cashier</h2>
+          <i class="pi pi-users text-color-secondary text-xl" aria-hidden="true"></i>
+        </div>
+      </ng-template>
+      @if (loading()) {
+        <div class="flex flex-column gap-3" aria-busy="true">
+          @for (_ of skeletonRows; track $index) {
+            <div class="flex align-items-center gap-3">
+              <p-skeleton width="30%" />
+              <p-skeleton width="15%" />
+              <p-skeleton width="20%" />
+              <p-skeleton width="20%" />
+            </div>
+          }
+        </div>
+      } @else if (salesByCashier().length > 0) {
+        <p-table
+          [value]="salesByCashier()"
+          [rowHover]="true"
+          dataKey="cashierId"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [tableStyle]="{ 'min-width': '30rem' }"
+          ariaLabel="Sales by cashier table"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col">Cashier</th>
+              <th scope="col" class="text-right">Sales</th>
+              <th scope="col" class="text-right">Revenue</th>
+              <th scope="col" class="text-right">Avg. Order</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-cashier>
+            <tr>
+              <td>
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ cashier.cashierName || 'Unknown' }}</span>
+                  <span class="text-sm text-color-secondary">{{ cashier.cashierEmail || cashier.cashierId || 'N/A' }}</span>
+                </div>
+              </td>
+              <td class="text-right font-medium">{{ cashier.totalSales }}</td>
+              <td class="text-right">{{ cashier.totalRevenue | appCurrency }}</td>
+              <td class="text-right">{{ cashier.averageOrderValue | appCurrency:'1.2-2' }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="flex flex-column align-items-center justify-content-center text-color-secondary py-5" role="status">
+          <i class="pi pi-users text-4xl mb-3" aria-hidden="true"></i>
+          <span class="text-lg">No cashier data available</span>
+        </div>
+      }
+    </p-card>
+  </section>
+
+  <!-- Daily Sales Summary -->
+  <section class="col-12" aria-label="Daily sales summary">
+    <p-card>
+      <ng-template #header>
+        <div class="flex align-items-center justify-content-between px-3 pt-3">
+          <h2 class="text-xl font-semibold text-color m-0">Daily Summary</h2>
+          <i class="pi pi-calendar text-color-secondary text-xl" aria-hidden="true"></i>
+        </div>
+      </ng-template>
+      @if (loading()) {
+        <div class="flex flex-column gap-3" aria-busy="true">
+          @for (_ of skeletonRows; track $index) {
+            <div class="flex align-items-center gap-3">
+              <p-skeleton width="20%" />
+              <p-skeleton width="15%" />
+              <p-skeleton width="20%" />
+              <p-skeleton width="20%" />
+            </div>
+          }
+        </div>
+      } @else if (dailySummary().length > 0) {
+        <p-table
+          [value]="dailySummary()"
+          [rowHover]="true"
+          dataKey="date"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [paginator]="dailySummary().length > 10"
+          [rows]="10"
+          [tableStyle]="{ 'min-width': '40rem' }"
+          ariaLabel="Daily sales summary table"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col" pSortableColumn="date">Date <p-sortIcon field="date" /></th>
+              <th scope="col" pSortableColumn="count" class="text-right">Transactions <p-sortIcon field="count" /></th>
+              <th scope="col" pSortableColumn="revenue" class="text-right">Revenue <p-sortIcon field="revenue" /></th>
+              <th scope="col" pSortableColumn="profit" class="text-right">Profit <p-sortIcon field="profit" /></th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-day>
+            <tr>
+              <td>{{ day.date | date:'mediumDate' }}</td>
+              <td class="text-right font-medium">{{ day.count }}</td>
+              <td class="text-right">{{ day.revenue | appCurrency:'1.2-2' }}</td>
+              <td class="text-right">
+                <span [class]="day.profit >= 0 ? 'text-green-500' : 'text-red-500'">
+                  {{ day.profit | appCurrency:'1.2-2' }}
+                </span>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="flex flex-column align-items-center justify-content-center text-color-secondary py-5" role="status">
+          <i class="pi pi-calendar text-4xl mb-3" aria-hidden="true"></i>
+          <span class="text-lg">No daily data available</span>
+        </div>
+      }
+    </p-card>
+  </section>
+</div>
+
+<!-- Product Sales Report Dialog -->
+<p-dialog
+  [(visible)]="showProductReport"
+  [modal]="true"
+  [style]="{ width: '90vw', maxWidth: '1200px' }"
+  header="Detailed Product Sales Report"
+  [dismissableMask]="true"
+>
+  @if (productReportLoading()) {
+    <div class="flex align-items-center justify-content-center py-5">
+      <p-skeleton width="100%" height="200px" />
+    </div>
+  } @else if (productReport().length > 0) {
+    <div class="mb-3 flex flex-wrap gap-3">
+      <p-card styleClass="flex-1">
+        <div class="text-center">
+          <span class="text-color-secondary text-sm block mb-1">Total Units</span>
+          <span class="text-xl font-bold">{{ productReportSummary().totalUnits }}</span>
+        </div>
+      </p-card>
+      <p-card styleClass="flex-1">
+        <div class="text-center">
+          <span class="text-color-secondary text-sm block mb-1">Total Revenue</span>
+          <span class="text-xl font-bold">{{ productReportSummary().totalRevenue | appCurrency }}</span>
+        </div>
+      </p-card>
+      <p-card styleClass="flex-1">
+        <div class="text-center">
+          <span class="text-color-secondary text-sm block mb-1">Total Profit</span>
+          <span class="text-xl font-bold">{{ productReportSummary().totalProfit | appCurrency }}</span>
+        </div>
+      </p-card>
+      <p-card styleClass="flex-1">
+        <div class="text-center">
+          <span class="text-color-secondary text-sm block mb-1">Avg. Price</span>
+          <span class="text-xl font-bold">{{ productReportSummary().averagePrice | appCurrency:'1.2-2' }}</span>
+        </div>
+      </p-card>
+    </div>
+    <p-table
+      [value]="productReport()"
+      [rowHover]="true"
+      [paginator]="productReport().length > 10"
+      [rows]="10"
+      [scrollable]="true"
+      scrollDirection="horizontal"
+      [tableStyle]="{ 'min-width': '50rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th scope="col">Brand</th>
+          <th scope="col">Model</th>
+          <th scope="col">Condition</th>
+          <th scope="col">Date</th>
+          <th scope="col" class="text-right">Sale Price</th>
+          <th scope="col" class="text-right">Cost</th>
+          <th scope="col" class="text-right">Profit</th>
+          <th scope="col">Buyer</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-item>
+        <tr>
+          <td>{{ item.brandName }}</td>
+          <td class="font-medium">{{ item.model }}</td>
+          <td>
+            <p-tag
+              [value]="item.condition | titlecase"
+              [severity]="getConditionSeverity(item.condition)"
+            />
+          </td>
+          <td>{{ item.saleDate | date:'mediumDate' }}</td>
+          <td class="text-right">{{ item.salePrice | appCurrency:'1.2-2' }}</td>
+          <td class="text-right">{{ item.costPrice | appCurrency:'1.2-2' }}</td>
+          <td class="text-right">
+            <span [class]="item.profit >= 0 ? 'text-green-500' : 'text-red-500'">
+              {{ item.profit | appCurrency:'1.2-2' }}
+            </span>
+          </td>
+          <td>{{ item.buyerName || '-' }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  } @else {
+    <div class="flex flex-column align-items-center justify-content-center text-color-secondary py-5">
+      <i class="pi pi-inbox text-4xl mb-3" aria-hidden="true"></i>
+      <span class="text-lg">No product sales data available</span>
+    </div>
+  }
+</p-dialog>

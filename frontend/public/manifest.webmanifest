@@ -1,9 +1,11 @@
 {
-  "name": "Phone Shop",
+  "name": "Phone Shop POS",
   "short_name": "Phone Shop",
-  "description": "Browse and shop for phones online. View catalog, compare prices, and contact us for the best deals.",
-  "start_url": "/",
+  "description": "Mobile-optimized Point of Sale system for phone retail. Manage sales, inventory, receipts, and customer transactions.",
+  "start_url": "/admin/dashboard",
+  "id": "/admin/dashboard",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#3B82F6",
@@ -57,7 +59,73 @@
       "purpose": "maskable any"
     }
   ],
+  "screenshots": [
+    {
+      "src": "icons/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Phone Shop Dashboard"
+    },
+    {
+      "src": "icons/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Phone Shop Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Sale",
+      "short_name": "New Sale",
+      "description": "Create a new sales transaction",
+      "url": "/admin/sales/new",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "View Receipts",
+      "short_name": "Receipts",
+      "description": "Browse and search receipts",
+      "url": "/admin/receipts",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Inventory",
+      "short_name": "Inventory",
+      "description": "Manage phone inventory",
+      "url": "/admin/inventory",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Customer Lookup",
+      "short_name": "Customers",
+      "description": "Search for customer information",
+      "url": "/admin/sales/customer-lookup",
+      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
   "scope": "/",
   "lang": "en",
-  "categories": ["shopping", "business"]
+  "dir": "ltr",
+  "categories": ["shopping", "business", "productivity"],
+  "iarc_rating_id": "",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "share_target": {
+    "action": "/admin/sales/new",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

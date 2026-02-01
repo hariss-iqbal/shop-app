@@ -1,0 +1,207 @@
+<p-dialog
+  header="Receipt Lookup"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  (onShow)="onDialogShow()"
+  (onHide)="onDialogHide()"
+  [modal]="true"
+  [closable]="true"
+  [focusOnShow]="true"
+  [focusTrap]="true"
+  [closeOnEscape]="true"
+  [style]="{ width: '550px' }"
+  [breakpoints]="{ '575px': '95vw' }"
+  role="dialog"
+  aria-label="Receipt barcode scanner"
+>
+  <!-- Input Method Tabs -->
+  <p-tabs [(value)]="activeTab" styleClass="mb-4">
+    <p-tablist>
+      <p-tab value="manual">
+        <i class="pi pi-keyboard mr-2"></i>
+        Manual Entry
+      </p-tab>
+      <p-tab value="camera">
+        <i class="pi pi-camera mr-2"></i>
+        Camera Scan
+      </p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <!-- Manual Entry Tab -->
+      <p-tabpanel value="manual">
+        <div class="pt-3">
+          <label for="barcodeInput" class="block font-medium mb-2">
+            <i class="pi pi-barcode mr-2"></i>
+            Scan or Enter Receipt Code
+          </label>
+          <p-iconfield class="w-full">
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              pInputText
+              id="barcodeInput"
+              [(ngModel)]="scannedCode"
+              (keyup.enter)="onLookup()"
+              placeholder="Scan barcode or enter receipt number..."
+              class="w-full"
+              [disabled]="loading()"
+              autocomplete="off"
+              autofocus
+            />
+          </p-iconfield>
+          <small class="text-color-secondary block mt-2">
+            <i class="pi pi-info-circle mr-1"></i>
+            Use a barcode scanner or manually enter the receipt number
+          </small>
+          <div class="flex justify-content-end mt-3">
+            <p-button
+              label="Lookup"
+              icon="pi pi-search"
+              (onClick)="onLookup()"
+              [disabled]="!scannedCode.trim() || loading()"
+              [loading]="loading()"
+            />
+          </div>
+        </div>
+      </p-tabpanel>
+
+      <!-- Camera Scan Tab -->
+      <p-tabpanel value="camera">
+        <div class="pt-3 text-center">
+          <app-barcode-scanner
+            [buttonLabel]="'Start Camera Scan'"
+            [buttonIcon]="'pi pi-camera'"
+            [buttonSeverity]="'primary'"
+            [showLabel]="true"
+            [dialogHeader]="'Scan Receipt QR Code'"
+            [autoStart]="true"
+            [closeOnScan]="true"
+            (scanned)="onCameraScanned($event)"
+          />
+          <p class="text-color-secondary text-sm mt-3">
+            <i class="pi pi-qrcode mr-1"></i>
+            Point your camera at the QR code on the receipt
+          </p>
+        </div>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+
+  <p-divider />
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex flex-column gap-3">
+      <p-skeleton width="100%" height="2rem" />
+      <p-skeleton width="60%" height="1.5rem" />
+      <p-skeleton width="80%" height="1rem" />
+      <p-skeleton width="70%" height="1rem" />
+    </div>
+  }
+
+  <!-- Not Found State -->
+  @if (!loading() && searched() && lookupResult() && !lookupResult()!.found) {
+    <div class="text-center py-4">
+      <i class="pi pi-search text-4xl text-color-secondary mb-3"></i>
+      <h3 class="text-lg font-semibold text-color mb-2">Receipt Not Found</h3>
+      <p class="text-color-secondary mb-0">
+        No receipt found with code "{{ lastSearchedCode() }}".
+      </p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (!loading() && searched() && lookupResult() && !lookupResult()!.success) {
+    <p-message severity="error" [text]="lookupResult()!.error || 'An error occurred'" styleClass="w-full" />
+  }
+
+  <!-- Receipt Found -->
+  @if (!loading() && lookupResult()?.found && lookupResult()!.receipt) {
+    <p-card styleClass="surface-ground">
+      <div class="flex align-items-center justify-content-between mb-3">
+        <p-tag severity="success" value="Found" [rounded]="true" />
+        <span class="text-sm text-color-secondary">{{ lookupResult()!.receipt!.createdAt | date:'short' }}</span>
+      </div>
+
+      <!-- Receipt Number -->
+      <h3 class="text-xl font-bold font-mono text-primary mt-0 mb-3">
+        {{ lookupResult()!.receipt!.receiptNumber }}
+      </h3>
+
+      <!-- Details Grid -->
+      <div class="grid">
+        <div class="col-6">
+          <span class="text-color-secondary text-sm">Date</span>
+          <div class="font-medium">{{ formatDate(lookupResult()!.receipt!.transactionDate) }}</div>
+        </div>
+        <div class="col-6">
+          <span class="text-color-secondary text-sm">Time</span>
+          <div class="font-medium">{{ formatTime(lookupResult()!.receipt!.transactionTime) }}</div>
+        </div>
+        <div class="col-6 mt-3">
+          <span class="text-color-secondary text-sm">Items</span>
+          <div class="font-medium">{{ lookupResult()!.receipt!.itemCount }}</div>
+        </div>
+        <div class="col-6 mt-3">
+          <span class="text-color-secondary text-sm">Subtotal</span>
+          <div class="font-medium">{{ lookupResult()!.receipt!.subtotal | appCurrency:'1.2-2' }}</div>
+        </div>
+        @if (lookupResult()!.receipt!.taxAmount > 0) {
+          <div class="col-6 mt-3">
+            <span class="text-color-secondary text-sm">Tax</span>
+            <div class="font-medium">{{ lookupResult()!.receipt!.taxAmount | appCurrency:'1.2-2' }}</div>
+          </div>
+        }
+        <div class="col-6 mt-3">
+          <span class="text-color-secondary text-sm">Total</span>
+          <div class="text-lg font-bold text-primary">{{ lookupResult()!.receipt!.grandTotal | appCurrency:'1.2-2' }}</div>
+        </div>
+      </div>
+
+      @if (lookupResult()!.receipt!.customerName || lookupResult()!.receipt!.customerPhone) {
+        <p-divider />
+        <div class="mt-3">
+          <span class="text-color-secondary text-sm block mb-2">Customer</span>
+          @if (lookupResult()!.receipt!.customerName) {
+            <div class="font-medium">{{ lookupResult()!.receipt!.customerName }}</div>
+          }
+          @if (lookupResult()!.receipt!.customerPhone) {
+            <div class="text-sm text-color-secondary">{{ lookupResult()!.receipt!.customerPhone }}</div>
+          }
+          @if (lookupResult()!.receipt!.customerEmail) {
+            <div class="text-sm text-color-secondary">{{ lookupResult()!.receipt!.customerEmail }}</div>
+          }
+        </div>
+      }
+    </p-card>
+
+    <div class="flex justify-content-end gap-2 mt-4">
+      <p-button
+        label="View Full Receipt"
+        icon="pi pi-eye"
+        (onClick)="onViewReceipt()"
+        pTooltip="View complete receipt details"
+        tooltipPosition="top"
+      />
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-between">
+      <p-button
+        label="Clear"
+        icon="pi pi-eraser"
+        severity="secondary"
+        [text]="true"
+        (onClick)="onClear()"
+        [disabled]="!scannedCode && !lookupResult()"
+      />
+      <p-button
+        label="Close"
+        severity="secondary"
+        [text]="true"
+        (onClick)="onClose()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

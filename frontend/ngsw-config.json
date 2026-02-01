@@ -43,6 +43,36 @@
       }
     },
     {
+      "name": "sales-api",
+      "urls": [
+        "*/rest/v1/sales*",
+        "*/rest/v1/receipts*",
+        "*/rest/v1/customers*"
+      ],
+      "cacheConfig": {
+        "maxSize": 200,
+        "maxAge": "30m",
+        "strategy": "freshness",
+        "timeout": "5s"
+      }
+    },
+    {
+      "name": "admin-api",
+      "urls": [
+        "*/rest/v1/suppliers*",
+        "*/rest/v1/purchase_orders*",
+        "*/rest/v1/store_locations*",
+        "*/rest/v1/location_inventory*",
+        "*/rest/v1/inventory_transfers*"
+      ],
+      "cacheConfig": {
+        "maxSize": 100,
+        "maxAge": "15m",
+        "strategy": "freshness",
+        "timeout": "5s"
+      }
+    },
+    {
       "name": "storage-images",
       "urls": [
         "*/storage/v1/object/public/phone-images/*"

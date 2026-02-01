@@ -7,6 +7,7 @@ export interface PhoneImage {
   phoneId: string;
   imageUrl: string;
   storagePath: string;
+  publicId?: string;
   isPrimary: boolean;
   displayOrder: number;
   createdAt: string;
@@ -15,7 +16,8 @@ export interface PhoneImage {
 export interface CreatePhoneImageRequest {
   phoneId: string;
   imageUrl: string;
-  storagePath: string;
+  storagePath?: string;
+  publicId?: string;
   isPrimary?: boolean;
   displayOrder?: number;
 }

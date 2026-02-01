@@ -1,0 +1,33 @@
+:host {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0));
+  right: 16px;
+  z-index: 999;
+}
+
+:host ::ng-deep {
+  .mobile-fab {
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+
+    .p-button-icon {
+      font-size: 1.25rem;
+    }
+  }
+
+  .p-speeddial-action {
+    width: 48px !important;
+    height: 48px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+    .p-button-icon {
+      font-size: 1.125rem;
+    }
+  }
+
+  .p-speeddial-action-icon {
+    font-size: 1.125rem;
+  }
+}

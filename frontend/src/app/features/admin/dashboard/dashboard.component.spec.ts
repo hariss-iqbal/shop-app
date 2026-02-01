@@ -64,6 +64,7 @@ describe('DashboardComponent', () => {
       id: 'config-1',
       lowStockThreshold: 5,
       enableBrandZeroAlert: true,
+      allowOversell: true,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: null
     }
@@ -198,9 +199,11 @@ describe('DashboardComponent', () => {
     }));
 
     it('should have all date range options', () => {
-      expect(component.dateRangeOptions.length).toBe(6);
+      expect(component.dateRangeOptions.length).toBe(8);
 
       const values = component.dateRangeOptions.map(o => o.value);
+      expect(values).toContain(DashboardDateRange.TODAY);
+      expect(values).toContain(DashboardDateRange.LAST_7_DAYS);
       expect(values).toContain(DashboardDateRange.THIS_MONTH);
       expect(values).toContain(DashboardDateRange.LAST_30_DAYS);
       expect(values).toContain(DashboardDateRange.THIS_QUARTER);

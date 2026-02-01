@@ -1,0 +1,394 @@
+<p-dialog
+  [(visible)]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [closable]="!processing()"
+  [draggable]="false"
+  [resizable]="false"
+  [header]="dialogHeader"
+  [style]="{ width: '780px', maxWidth: '95vw' }"
+  [contentStyle]="{ 'max-height': '75vh', 'overflow-y': 'auto' }"
+>
+  @if (checkingRefundable()) {
+    <div class="flex flex-column align-items-center justify-content-center py-6">
+      <p-progressSpinner [style]="{ width: '48px', height: '48px' }" strokeWidth="4" />
+      <span class="mt-3 text-color-secondary text-lg">Checking receipt status...</span>
+    </div>
+  } @else if (refundableInfo()?.canPartialRefund === false) {
+    <div class="flex flex-column align-items-center gap-4 py-5">
+      <div class="w-5rem h-5rem border-circle bg-red-100 flex align-items-center justify-content-center">
+        <i class="pi pi-times text-4xl text-red-500"></i>
+      </div>
+      <div class="text-center">
+        <h3 class="text-xl font-semibold m-0 mb-2">Cannot Process Partial Refund</h3>
+        <p class="text-color-secondary m-0">{{ refundableInfo()?.reason || 'Unknown error' }}</p>
+      </div>
+      @if (refundableInfo()?.existingRefundNumber) {
+        <p-tag severity="secondary" [value]="'Full Refund: ' + refundableInfo()?.existingRefundNumber" />
+      }
+      @if (refundableInfo()?.existingPartialRefunds?.length) {
+        <div class="surface-ground border-round p-3 w-full">
+          <div class="flex align-items-center gap-2 mb-3">
+            <i class="pi pi-history text-color-secondary"></i>
+            <span class="font-medium">Previous Partial Refunds</span>
+          </div>
+          @for (pr of refundableInfo()?.existingPartialRefunds; track pr.refundNumber) {
+            <div class="flex justify-content-between align-items-center py-2 border-bottom-1 surface-border">
+              <div class="flex align-items-center gap-2">
+                <span class="font-mono text-sm">{{ pr.refundNumber }}</span>
+                <span class="text-color-secondary text-sm">{{ pr.refundDate | date:'shortDate' }}</span>
+              </div>
+              <span class="font-semibold text-red-500">-{{ pr.refundAmount | appCurrency:'1.2-2' }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  } @else if (refundableInfo()?.canPartialRefund && !refundProcessed()) {
+    <div class="flex flex-column gap-4">
+      <!-- Receipt Info Header -->
+      <div class="flex flex-wrap gap-3 p-3 surface-ground border-round">
+        <div class="flex-1 min-w-10rem">
+          <span class="block text-color-secondary text-sm mb-1">Receipt</span>
+          <span class="font-bold font-mono text-lg">{{ refundableInfo()?.receiptNumber }}</span>
+        </div>
+        <div class="flex-1 min-w-10rem">
+          <span class="block text-color-secondary text-sm mb-1">Date</span>
+          <span class="font-medium">{{ refundableInfo()?.transactionDate | date:'mediumDate' }}</span>
+        </div>
+        <div class="flex-1 min-w-10rem">
+          <span class="block text-color-secondary text-sm mb-1">Customer</span>
+          <span class="font-medium">{{ refundableInfo()?.customerName || 'Walk-in Customer' }}</span>
+        </div>
+        <div class="flex-1 min-w-10rem">
+          <span class="block text-color-secondary text-sm mb-1">Original Total</span>
+          <span class="font-bold text-lg">{{ refundableInfo()?.originalGrandTotal | appCurrency:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      @if (refundableInfo()?.existingPartialRefunds?.length) {
+        <p-message
+          severity="warn"
+          styleClass="w-full"
+        >
+          <ng-template pTemplate="content">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-info-circle"></i>
+              <span>This receipt has <strong>{{ refundableInfo()?.existingPartialRefunds?.length }}</strong> previous partial refund(s). <strong>{{ refundableInfo()?.alreadyRefundedItemCount }}</strong> item(s) already refunded.</span>
+            </div>
+          </ng-template>
+        </p-message>
+      }
+
+      <!-- Items Selection -->
+      <div>
+        <div class="flex align-items-center justify-content-between mb-3">
+          <span class="font-semibold text-lg">Select Items to Refund</span>
+          @if (hasSelectableItems()) {
+            <span class="text-sm text-color-secondary">{{ selectedCount() }} of {{ totalSelectableCount() }} selected</span>
+          }
+        </div>
+        <p-table
+          [value]="selectableItems()"
+          [scrollable]="true"
+          scrollHeight="280px"
+          styleClass="p-datatable-sm p-datatable-striped"
+          [rowHover]="true"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 50px" class="text-center">
+                <p-checkbox
+                  [ngModel]="allSelected()"
+                  [binary]="true"
+                  (onChange)="toggleSelectAll($event)"
+                  [disabled]="!hasSelectableItems()"
+                  pTooltip="Select all items"
+                  tooltipPosition="top"
+                />
+              </th>
+              <th>Item Details</th>
+              <th style="width: 110px" class="text-right">Original</th>
+              <th style="width: 140px" class="text-center">Return Price</th>
+              <th style="width: 130px" class="text-center">Status</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr [class.opacity-60]="!item.canRefund" [class.surface-50]="item.selected && item.canRefund">
+              <td class="text-center">
+                <p-checkbox
+                  [(ngModel)]="item.selected"
+                  [binary]="true"
+                  [disabled]="!item.canRefund"
+                  (onChange)="onItemSelectionChange()"
+                />
+              </td>
+              <td>
+                <div class="flex flex-column gap-1">
+                  <span class="font-medium">{{ item.itemName }}</span>
+                  @if (item.brandName) {
+                    <span class="text-color-secondary text-sm">{{ item.brandName }}</span>
+                  }
+                  @if (item.quantity > 1) {
+                    <span class="text-color-secondary text-xs">Qty: {{ item.quantity }}</span>
+                  }
+                </div>
+              </td>
+              <td class="text-right font-mono">
+                {{ item.unitPrice | appCurrency:'1.2-2' }}
+              </td>
+              <td class="text-center">
+                @if (item.canRefund && item.selected) {
+                  <div class="flex flex-column align-items-center gap-1">
+                    <p-inputNumber
+                      [(ngModel)]="item.returnPrice"
+                      [min]="0"
+                      [maxFractionDigits]="2"
+                      mode="currency"
+                      currency="USD"
+                      inputStyleClass="w-7rem text-center text-sm"
+                      (onInput)="onReturnPriceChange(item)"
+                    />
+                    @if (item.hasCustomPrice) {
+                      <span class="text-xs" [class]="item.requiresApproval ? 'text-orange-600' : 'text-blue-600'">
+                        {{ getPriceDifference(item) }}
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <span class="text-color-secondary">—</span>
+                }
+              </td>
+              <td class="text-center">
+                @if (item.alreadyRefunded) {
+                  <p-tag severity="secondary" value="Already Refunded" [rounded]="true" styleClass="text-xs" />
+                } @else if (item.selected && item.requiresApproval) {
+                  <p-tag severity="warn" value="Approval Needed" [rounded]="true" styleClass="text-xs" pTooltip="Return price exceeds original" tooltipPosition="left" />
+                } @else if (item.selected && item.canRestoreInventory) {
+                  <p-tag severity="success" value="Will Restore" [rounded]="true" styleClass="text-xs" pTooltip="Inventory will be restored" tooltipPosition="left" />
+                } @else if (item.canRefund) {
+                  <span class="text-color-secondary text-sm">Available</span>
+                } @else {
+                  <span class="text-color-secondary">—</span>
+                }
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="text-center py-4">
+                <i class="pi pi-inbox text-4xl text-color-secondary mb-2"></i>
+                <p class="m-0 text-color-secondary">No items available for refund</p>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      @if (selectedCount() > 0) {
+        <!-- Refund Summary -->
+        <div class="border-1 border-round surface-border">
+          <div class="p-3 surface-ground border-bottom-1 surface-border">
+            <span class="font-semibold">Refund Summary</span>
+          </div>
+          <div class="p-3">
+            <div class="flex justify-content-between align-items-center mb-2">
+              <span class="text-color-secondary">Selected Items</span>
+              <span class="font-medium">{{ selectedCount() }} item(s)</span>
+            </div>
+            <div class="flex justify-content-between align-items-center mb-2">
+              <span class="text-color-secondary">Subtotal</span>
+              <span class="font-mono">{{ calculatedSubtotal() | appCurrency:'1.2-2' }}</span>
+            </div>
+            @if ((refundableInfo()?.taxRate ?? 0) > 0) {
+              <div class="flex justify-content-between align-items-center mb-2">
+                <span class="text-color-secondary">Tax ({{ refundableInfo()?.taxRate }}%)</span>
+                <span class="font-mono">{{ calculatedTax() | appCurrency:'1.2-2' }}</span>
+              </div>
+            }
+            <p-divider styleClass="my-2" />
+            <div class="flex justify-content-between align-items-center">
+              <span class="font-bold text-lg">Total Refund</span>
+              <span class="font-bold text-2xl text-red-600">-{{ calculatedTotal() | appCurrency:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        @if (requiresManagerApproval()) {
+          <div class="border-1 border-orange-300 border-round bg-orange-50 p-3">
+            <div class="flex align-items-start gap-3">
+              <i class="pi pi-exclamation-triangle text-orange-500 text-xl mt-1"></i>
+              <div class="flex-1">
+                <div class="font-semibold text-orange-700 mb-2">Manager Approval Required</div>
+                <p class="text-sm text-orange-600 m-0 mb-3">One or more items have a return price higher than the original sale price.</p>
+                <div class="flex align-items-center gap-2 mb-2">
+                  <p-checkbox
+                    [(ngModel)]="managerApproved"
+                    [binary]="true"
+                    inputId="managerApproval"
+                  />
+                  <label for="managerApproval" class="font-medium cursor-pointer">I confirm manager approval has been granted</label>
+                </div>
+                @if (managerApproved) {
+                  <div class="mt-3">
+                    <label for="approvalReason" class="block text-sm font-medium mb-2">Approval Reason (Optional)</label>
+                    <textarea
+                      pInputTextarea
+                      id="approvalReason"
+                      [(ngModel)]="managerApprovalReason"
+                      [rows]="2"
+                      [maxlength]="500"
+                      placeholder="Enter reason for price override approval..."
+                      class="w-full"
+                    ></textarea>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Refund Details -->
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <label for="refundReason" class="block font-medium mb-2">Refund Reason</label>
+            <textarea
+              pInputTextarea
+              id="refundReason"
+              [(ngModel)]="refundReason"
+              [rows]="3"
+              [maxlength]="500"
+              placeholder="Enter reason for refund (optional)"
+              class="w-full"
+            ></textarea>
+            <small class="text-color-secondary">{{ refundReason.length }}/500</small>
+          </div>
+          <div class="col-12 md:col-6">
+            <label for="notes" class="block font-medium mb-2">Internal Notes</label>
+            <textarea
+              pInputTextarea
+              id="notes"
+              [(ngModel)]="notes"
+              [rows]="3"
+              [maxlength]="2000"
+              placeholder="Additional notes (optional)"
+              class="w-full"
+            ></textarea>
+          </div>
+        </div>
+
+        @if (itemsWithInventoryRestore() > 0) {
+          <div class="flex align-items-center gap-2 p-3 bg-green-50 border-round border-1 border-green-200">
+            <i class="pi pi-box text-green-600"></i>
+            <span class="text-green-700"><strong>{{ itemsWithInventoryRestore() }}</strong> item(s) will be restored to inventory</span>
+          </div>
+        }
+      }
+    </div>
+  } @else if (refundProcessed()) {
+    <div class="flex flex-column align-items-center gap-4 py-4">
+      <div class="w-6rem h-6rem border-circle bg-green-100 flex align-items-center justify-content-center">
+        <i class="pi pi-check text-5xl text-green-600"></i>
+      </div>
+      <div class="text-center">
+        <h3 class="text-xl font-semibold m-0 mb-1">Partial Refund Complete</h3>
+        <p class="text-color-secondary m-0">The refund has been processed successfully</p>
+      </div>
+
+      <div class="w-full surface-ground border-round p-4">
+        <div class="grid">
+          <div class="col-6">
+            <span class="block text-color-secondary text-sm mb-1">Refund Number</span>
+            <span class="font-bold font-mono text-primary text-lg">{{ refundResult()?.refundNumber }}</span>
+          </div>
+          <div class="col-6 text-right">
+            <span class="block text-color-secondary text-sm mb-1">Amount Refunded</span>
+            <span class="font-bold text-2xl text-red-600">-{{ refundResult()?.refundAmount | appCurrency:'1.2-2' }}</span>
+          </div>
+        </div>
+        <p-divider styleClass="my-3" />
+        <div class="flex flex-wrap gap-4">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-shopping-cart text-color-secondary"></i>
+            <span><strong>{{ refundResult()?.itemsRefunded }}</strong> items refunded</span>
+          </div>
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-box text-green-600"></i>
+            <span><strong>{{ refundResult()?.inventoryRestored }}</strong> items restored</span>
+          </div>
+          @if (refundResult()?.hasCustomPrices) {
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-tag text-orange-500"></i>
+              <span>Custom prices applied</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (refundResult()?.items?.length) {
+        <div class="w-full">
+          <div class="font-semibold mb-2">Refunded Items</div>
+          <div class="surface-ground border-round">
+            @for (item of refundResult()?.items; track item.itemName; let last = $last) {
+              <div class="flex justify-content-between align-items-center p-3" [class.border-bottom-1]="!last" [class.surface-border]="!last">
+                <div class="flex flex-column gap-1">
+                  <span class="font-medium">{{ item.itemName }}</span>
+                  @if (item.isCustomPrice) {
+                    <span class="text-xs text-orange-600">
+                      Custom: {{ item.returnPrice | appCurrency:'1.2-2' }}
+                      <span class="text-color-secondary">(was {{ item.originalUnitPrice | appCurrency:'1.2-2' }})</span>
+                    </span>
+                  }
+                </div>
+                <span class="font-semibold text-red-600">-{{ item.total | appCurrency:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    @if (!checkingRefundable() && refundableInfo()?.canPartialRefund === false) {
+      <p-button
+        label="Close"
+        severity="secondary"
+        (onClick)="onClose()"
+      />
+    } @else if (!checkingRefundable() && refundableInfo()?.canPartialRefund && !refundProcessed()) {
+      <div class="flex align-items-center justify-content-between w-full">
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [text]="true"
+          [disabled]="processing()"
+          (onClick)="onClose()"
+        />
+        <p-button
+          [label]="processing() ? 'Processing...' : 'Process Refund (' + (calculatedTotal() | appCurrency:'1.2-2') + ')'"
+          icon="pi pi-check"
+          severity="danger"
+          [loading]="processing()"
+          [disabled]="!canProcessRefund()"
+          (onClick)="onProcessRefund()"
+        />
+      </div>
+    } @else if (refundProcessed()) {
+      <div class="flex gap-2">
+        <p-button
+          label="Print Receipt"
+          icon="pi pi-print"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="onPrintRefund()"
+        />
+        <p-button
+          label="Done"
+          icon="pi pi-check"
+          (onClick)="onClose()"
+        />
+      </div>
+    }
+  </ng-template>
+</p-dialog>

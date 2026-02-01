@@ -1,5 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { CloudinaryService } from './cloudinary.service';
+import { environment } from '@env/environment';
 import {
   PhoneImage,
   PhoneImageListResponse,
@@ -9,9 +11,9 @@ import {
   UploadProgress
 } from '../../models/phone-image.model';
 
-const STORAGE_BUCKET = 'phone-images';
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const CLOUDINARY_FOLDER = 'phone-images';
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export interface FileValidationResult {
   valid: boolean;
@@ -23,12 +25,13 @@ export interface FileValidationResult {
 })
 export class PhoneImageService {
   private supabase = inject(SupabaseService);
+  private cloudinary = inject(CloudinaryService);
 
   validateFile(file: File): FileValidationResult {
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return {
         valid: false,
-        error: `Invalid file type: ${file.type}. Allowed types: JPEG, PNG, WebP`
+        error: `Invalid file type: ${file.type}. Allowed types: JPEG, PNG, WebP, GIF`
       };
     }
 
@@ -36,7 +39,7 @@ export class PhoneImageService {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       return {
         valid: false,
-        error: `File size (${sizeMB}MB) exceeds maximum allowed (5MB)`
+        error: `File size (${sizeMB}MB) exceeds maximum allowed (10MB)`
       };
     }
 
@@ -53,58 +56,58 @@ export class PhoneImageService {
       throw new Error(validation.error);
     }
 
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const uniqueFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-    const storagePath = `${phoneId}/${uniqueFileName}`;
-
     onProgress?.({
       fileName: file.name,
       progress: 0,
       status: 'uploading'
     });
 
-    const { error: uploadError } = await this.supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(storagePath, file, {
-        cacheControl: '3600',
-        upsert: false
+    try {
+      // Upload to Cloudinary with environment-specific folder
+      const envFolder = environment.production ? 'prod' : 'dev';
+      const cloudinaryResult = await this.cloudinary.uploadImage(
+        file,
+        `${CLOUDINARY_FOLDER}/${envFolder}/${phoneId}`,
+        (cloudinaryProgress) => {
+          onProgress?.({
+            fileName: file.name,
+            progress: cloudinaryProgress.percentage / 2, // First half of progress
+            status: 'uploading'
+          });
+        }
+      );
+
+      onProgress?.({
+        fileName: file.name,
+        progress: 50,
+        status: 'uploading'
       });
 
-    if (uploadError) {
+      // Create database record with Cloudinary data
+      const imageRecord = await this.createImageRecord({
+        phoneId,
+        imageUrl: cloudinaryResult.secureUrl,
+        storagePath: '', // Empty for Cloudinary images (kept for backward compatibility)
+        publicId: cloudinaryResult.publicId
+      });
+
+      onProgress?.({
+        fileName: file.name,
+        progress: 100,
+        status: 'completed'
+      });
+
+      return imageRecord;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       onProgress?.({
         fileName: file.name,
         progress: 0,
         status: 'error',
-        error: uploadError.message
+        error: errorMessage
       });
-      throw new Error(`Upload failed: ${uploadError.message}`);
+      throw error;
     }
-
-    onProgress?.({
-      fileName: file.name,
-      progress: 50,
-      status: 'uploading'
-    });
-
-    const { data: publicUrlData } = this.supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(storagePath);
-
-    const imageUrl = publicUrlData.publicUrl;
-
-    const imageRecord = await this.createImageRecord({
-      phoneId,
-      imageUrl,
-      storagePath
-    });
-
-    onProgress?.({
-      fileName: file.name,
-      progress: 100,
-      status: 'completed'
-    });
-
-    return imageRecord;
   }
 
   async uploadMultipleImages(
@@ -171,11 +174,6 @@ export class PhoneImageService {
   }
 
   private async createImageRecord(request: CreatePhoneImageRequest): Promise<PhoneImage> {
-    const { data: _countData } = await this.supabase
-      .from('phone_images')
-      .select('id', { count: 'exact', head: true })
-      .eq('phone_id', request.phoneId);
-
     const { data: maxOrderData } = await this.supabase
       .from('phone_images')
       .select('display_order')
@@ -194,15 +192,28 @@ export class PhoneImageService {
 
     const isFirstImage = !existingImages || existingImages.length === 0;
 
+    const insertData: Record<string, unknown> = {
+      phone_id: request.phoneId,
+      image_url: request.imageUrl,
+      is_primary: request.isPrimary ?? isFirstImage,
+      display_order: request.displayOrder ?? (maxOrder + 1)
+    };
+
+    // Include storage_path for backward compatibility (can be empty for Cloudinary)
+    if (request.storagePath !== undefined) {
+      insertData['storage_path'] = request.storagePath;
+    } else {
+      insertData['storage_path'] = '';
+    }
+
+    // Include public_id if provided (Cloudinary images)
+    if (request.publicId) {
+      insertData['public_id'] = request.publicId;
+    }
+
     const { data, error } = await this.supabase
       .from('phone_images')
-      .insert({
-        phone_id: request.phoneId,
-        image_url: request.imageUrl,
-        storage_path: request.storagePath,
-        is_primary: request.isPrimary ?? isFirstImage,
-        display_order: request.displayOrder ?? (maxOrder + 1)
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -279,14 +290,32 @@ export class PhoneImageService {
       throw new Error('Image not found');
     }
 
-    const { error: storageError } = await this.supabase.storage
-      .from(STORAGE_BUCKET)
-      .remove([image.storagePath]);
+    // Delete from Cloudinary if public_id exists
+    if (image.publicId) {
+      try {
+        // Note: Cloudinary deletion requires backend API with secret
+        // For now, we'll delete from DB only. In production, call backend endpoint
+        // await this.cloudinary.deleteImage(image.publicId);
+        console.warn('Cloudinary image deletion should be done via backend API:', image.publicId);
+      } catch (error) {
+        console.warn('Failed to delete from Cloudinary:', error);
+      }
+    } else if (image.storagePath) {
+      // Delete from Supabase storage if storage_path exists (legacy)
+      try {
+        const { error: storageError } = await this.supabase.storage
+          .from('phone-images')
+          .remove([image.storagePath]);
 
-    if (storageError) {
-      console.warn('Failed to delete from storage:', storageError.message);
+        if (storageError) {
+          console.warn('Failed to delete from Supabase storage:', storageError.message);
+        }
+      } catch (error) {
+        console.warn('Failed to delete from Supabase storage:', error);
+      }
     }
 
+    // Delete database record
     const { error: dbError } = await this.supabase
       .from('phone_images')
       .delete()
@@ -296,6 +325,7 @@ export class PhoneImageService {
       throw new Error(dbError.message);
     }
 
+    // Set new primary image if deleted was primary
     if (image.isPrimary) {
       const { data: remainingImages } = await this.supabase
         .from('phone_images')
@@ -317,11 +347,27 @@ export class PhoneImageService {
     const { data: images } = await this.getImagesByPhoneId(phoneId);
 
     if (images.length > 0) {
-      const storagePaths = images.map(img => img.storagePath);
-      await this.supabase.storage
-        .from(STORAGE_BUCKET)
-        .remove(storagePaths);
+      // Delete images from Cloudinary/Supabase
+      for (const image of images) {
+        if (image.publicId) {
+          try {
+            // Note: Cloudinary deletion requires backend API
+            console.warn('Cloudinary image deletion should be done via backend API:', image.publicId);
+          } catch (error) {
+            console.warn('Failed to delete from Cloudinary:', error);
+          }
+        } else if (image.storagePath) {
+          try {
+            await this.supabase.storage
+              .from('phone-images')
+              .remove([image.storagePath]);
+          } catch (error) {
+            console.warn('Failed to delete from Supabase storage:', error);
+          }
+        }
+      }
 
+      // Delete all database records
       await this.supabase
         .from('phone_images')
         .delete()
@@ -334,10 +380,28 @@ export class PhoneImageService {
       id: data['id'] as string,
       phoneId: data['phone_id'] as string,
       imageUrl: data['image_url'] as string,
-      storagePath: data['storage_path'] as string,
+      storagePath: data['storage_path'] as string || '',
+      publicId: data['public_id'] as string | undefined,
       isPrimary: data['is_primary'] as boolean,
       displayOrder: data['display_order'] as number,
       createdAt: data['created_at'] as string
     };
+  }
+
+  /**
+   * Check if an image is stored in Cloudinary
+   */
+  isCloudinaryImage(image: PhoneImage): boolean {
+    return !!image.publicId || this.cloudinary.isCloudinaryUrl(image.imageUrl);
+  }
+
+  /**
+   * Get the public ID from a phone image
+   */
+  getImagePublicId(image: PhoneImage): string | null {
+    if (image.publicId) {
+      return image.publicId;
+    }
+    return this.cloudinary.getPublicIdFromUrl(image.imageUrl);
   }
 }

@@ -1,0 +1,156 @@
+.label-container {
+  border: 2px dashed var(--surface-300);
+  border-radius: 8px;
+  padding: 24px;
+  background: var(--surface-0);
+}
+
+.label-content {
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.label-header {
+  margin-bottom: 12px;
+}
+
+.label-brand {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.label-model {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  line-height: 1.2;
+}
+
+.label-specs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.label-spec-item {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  background: var(--surface-100);
+  padding: 4px 12px;
+  border-radius: 16px;
+}
+
+.label-divider {
+  height: 1px;
+  background: var(--surface-300);
+  margin: 16px auto;
+  width: 60%;
+}
+
+.label-price {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  margin-bottom: 16px;
+}
+
+.label-qr {
+  margin-top: 8px;
+}
+
+.label-qr-image {
+  display: block;
+  margin: 0 auto;
+}
+
+.label-qr-hint {
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+  margin-top: 4px;
+}
+
+@media print {
+  :host ::ng-deep .p-dialog-mask {
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+
+  :host ::ng-deep .p-dialog {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  :host ::ng-deep .p-dialog-header {
+    display: none !important;
+  }
+
+  :host ::ng-deep .p-dialog-footer {
+    display: none !important;
+  }
+
+  .print-hide,
+  :host ::ng-deep .print-hide {
+    display: none !important;
+  }
+
+  .label-container {
+    border: 2px solid #000;
+    border-radius: 4px;
+    padding: 20px;
+    background: #fff;
+    page-break-inside: avoid;
+    width: 3in;
+    min-height: 2in;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .label-brand {
+    font-size: 10pt;
+    color: #666;
+  }
+
+  .label-model {
+    font-size: 14pt;
+    color: #000;
+  }
+
+  .label-spec-item {
+    font-size: 8pt;
+    color: #333;
+    background: #eee;
+    border: 1px solid #ccc;
+  }
+
+  .label-divider {
+    background: #000;
+  }
+
+  .label-price {
+    font-size: 24pt;
+    color: #000;
+  }
+
+  .label-qr-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .label-qr-hint {
+    font-size: 7pt;
+    color: #666;
+  }
+}

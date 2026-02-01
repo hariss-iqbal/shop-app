@@ -11,13 +11,22 @@ import { FloatLabelModule } from 'primeng/floatlabel';
 import { DividerModule } from 'primeng/divider';
 import { TagModule } from 'primeng/tag';
 import { ImageModule } from 'primeng/image';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { SaleService } from '../../../../core/services/sale.service';
+import { CustomerService } from '../../../../core/services/customer.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { Phone } from '../../../../models/phone.model';
+import { CustomerWithStats } from '../../../../models/customer.model';
+import { CustomerFormDialogComponent } from '../../customers/customer-form-dialog.component';
 
+/**
+ * Mark as Sold Dialog Component
+ * Feature: F-019 Customer Contact Management - Customer auto-fill during sale
+ * Feature: F-025 Mark as Sold workflow
+ */
 @Component({
   selector: 'app-mark-as-sold-dialog',
   imports: [
@@ -33,221 +42,15 @@ import { Phone } from '../../../../models/phone.model';
     FloatLabelModule,
     DividerModule,
     TagModule,
-    ImageModule
+    ImageModule,
+    ProgressSpinnerModule,
+    CustomerFormDialogComponent
   ],
-  template: `
-    <p-dialog
-      header="Complete Sale"
-      [visible]="visible()"
-      (visibleChange)="onVisibleChange($event)"
-      (onShow)="onDialogShow()"
-      (onHide)="onDialogHide()"
-      [modal]="true"
-      [closable]="true"
-      [focusOnShow]="true"
-      [focusTrap]="true"
-      [closeOnEscape]="true"
-      [style]="{ width: '520px' }"
-      [breakpoints]="{ '575px': '95vw' }"
-      role="dialog"
-      aria-label="Complete Sale Dialog"
-      styleClass="mark-as-sold-dialog"
-    >
-      @if (phone(); as p) {
-        <!-- Phone Summary Card -->
-        <div class="surface-ground border-round p-3 mb-4">
-          <div class="flex align-items-center gap-3">
-            @if (p.primaryImageUrl) {
-              <p-image
-                [src]="p.primaryImageUrl"
-                [alt]="p.model"
-                width="60"
-                imageClass="border-round shadow-1"
-              />
-            } @else {
-              <div class="flex align-items-center justify-content-center bg-surface-200 border-round" style="width: 60px; height: 60px;">
-                <i class="pi pi-mobile text-2xl text-color-secondary"></i>
-              </div>
-            }
-            <div class="flex-1">
-              <div class="flex align-items-center gap-2 mb-1">
-                @if (p.brandLogoUrl) {
-                  <img [src]="p.brandLogoUrl" [alt]="p.brandName" width="16" height="16" class="border-round" />
-                }
-                <span class="font-semibold text-lg">{{ p.brandName }} {{ p.model }}</span>
-              </div>
-              <div class="flex align-items-center gap-3 text-color-secondary text-sm">
-                @if (p.storageGb) {
-                  <span><i class="pi pi-database mr-1"></i>{{ p.storageGb }}GB</span>
-                }
-                @if (p.color) {
-                  <span><i class="pi pi-palette mr-1"></i>{{ p.color }}</span>
-                }
-                @if (p.imei) {
-                  <span class="text-xs">IMEI: {{ p.imei }}</span>
-                }
-              </div>
-              <div class="flex align-items-center gap-2 mt-2">
-                <span class="text-color-secondary text-sm">Cost:</span>
-                <span class="font-medium">{{ p.costPrice | currency }}</span>
-                <span class="text-color-secondary text-sm ml-2">List Price:</span>
-                <span class="font-medium text-primary">{{ p.sellingPrice | currency }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sale Details Section -->
-        <div class="mb-3">
-          <div class="flex align-items-center gap-2 mb-3">
-            <i class="pi pi-dollar text-primary"></i>
-            <span class="font-medium">Sale Details</span>
-            <span class="text-color-secondary text-sm">(* required)</span>
-          </div>
-
-          <div class="grid">
-            <div class="col-12 md:col-6">
-              <p-floatlabel variant="on">
-                <p-inputNumber
-                  id="salePrice"
-                  [(ngModel)]="salePrice"
-                  mode="currency"
-                  currency="USD"
-                  [minFractionDigits]="2"
-                  [maxFractionDigits]="2"
-                  [min]="0"
-                  styleClass="w-full"
-                />
-                <label for="salePrice">Sale Price *</label>
-              </p-floatlabel>
-            </div>
-            <div class="col-12 md:col-6">
-              <p-floatlabel variant="on">
-                <p-datepicker
-                  id="saleDate"
-                  [(ngModel)]="saleDate"
-                  [showIcon]="true"
-                  [iconDisplay]="'input'"
-                  dateFormat="yy-mm-dd"
-                  styleClass="w-full"
-                />
-                <label for="saleDate">Sale Date *</label>
-              </p-floatlabel>
-            </div>
-          </div>
-
-          @if (salePrice !== null && salePrice >= 0) {
-            <div class="flex align-items-center gap-2 mt-3 p-2 border-round" [class]="getProfitClass()">
-              <i class="pi" [class]="getProfitIcon()"></i>
-              <span class="font-medium">Estimated Profit:</span>
-              <span class="font-bold">{{ getEstimatedProfit() | currency }}</span>
-              <span class="text-sm">({{ getProfitMargin() | number:'1.1-1' }}% margin)</span>
-            </div>
-          }
-        </div>
-
-        <p-divider />
-
-        <!-- Buyer Information Section -->
-        <div class="mb-3">
-          <div class="flex align-items-center gap-2 mb-3">
-            <i class="pi pi-user text-primary"></i>
-            <span class="font-medium">Buyer Information</span>
-            <p-tag value="Optional" severity="secondary" styleClass="text-xs" />
-          </div>
-
-          <div class="flex flex-column gap-3">
-            <p-floatlabel variant="on">
-              <input
-                pInputText
-                id="buyerName"
-                [(ngModel)]="buyerName"
-                [maxlength]="200"
-                class="w-full"
-              />
-              <label for="buyerName">Buyer Name</label>
-            </p-floatlabel>
-
-            <div class="grid">
-              <div class="col-12 md:col-6">
-                <p-floatlabel variant="on">
-                  <input
-                    pInputText
-                    id="buyerPhone"
-                    [(ngModel)]="buyerPhone"
-                    [maxlength]="30"
-                    class="w-full"
-                  />
-                  <label for="buyerPhone">Phone Number</label>
-                </p-floatlabel>
-              </div>
-              <div class="col-12 md:col-6">
-                <p-floatlabel variant="on">
-                  <input
-                    pInputText
-                    id="buyerEmail"
-                    [(ngModel)]="buyerEmail"
-                    type="email"
-                    [maxlength]="255"
-                    class="w-full"
-                  />
-                  <label for="buyerEmail">Email Address</label>
-                </p-floatlabel>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p-divider />
-
-        <!-- Notes Section -->
-        <div>
-          <div class="flex align-items-center gap-2 mb-3">
-            <i class="pi pi-file-edit text-primary"></i>
-            <span class="font-medium">Notes</span>
-            <p-tag value="Optional" severity="secondary" styleClass="text-xs" />
-          </div>
-
-          <p-floatlabel variant="on">
-            <textarea
-              pTextarea
-              id="notes"
-              [(ngModel)]="notes"
-              [maxlength]="2000"
-              rows="3"
-              [autoResize]="true"
-              class="w-full"
-            ></textarea>
-            <label for="notes">Sale notes or comments</label>
-          </p-floatlabel>
-        </div>
-      }
-
-      <ng-template pTemplate="footer">
-        <div class="flex justify-content-end gap-2">
-          <p-button
-            label="Cancel"
-            severity="secondary"
-            [text]="true"
-            (onClick)="onCancel()"
-            ariaLabel="Cancel sale"
-          />
-          <p-button
-            label="Confirm Sale"
-            icon="pi pi-check"
-            severity="success"
-            [loading]="saving()"
-            [disabled]="!isFormValid()"
-            (onClick)="onConfirm()"
-            ariaLabel="Confirm sale"
-          />
-        </div>
-      </ng-template>
-    </p-dialog>
-  `
+  templateUrl: './mark-as-sold-dialog.component.html'
 })
 export class MarkAsSoldDialogComponent implements OnChanges {
   private saleService = inject(SaleService);
+  private customerService = inject(CustomerService);
   private sanitizer = inject(InputSanitizationService);
   private toastService = inject(ToastService);
   private focusService = inject(FocusManagementService);
@@ -265,6 +68,13 @@ export class MarkAsSoldDialogComponent implements OnChanges {
   buyerPhone = '';
   buyerEmail = '';
   notes = '';
+
+  // Customer lookup state - Feature: F-019
+  customerLookupLoading = signal(false);
+  customerLookupStatus = signal<'idle' | 'found' | 'not_found'>('idle');
+  selectedCustomer = signal<CustomerWithStats | null>(null);
+  showCustomerFormDialog = signal(false);
+  private customerLookupTimeout: ReturnType<typeof setTimeout> | null = null;
 
   dialogHeader = computed(() => {
     const p = this.phone();
@@ -326,6 +136,81 @@ export class MarkAsSoldDialogComponent implements OnChanges {
     this.visibleChange.emit(false);
   }
 
+  /**
+   * Look up customer by phone number when phone field loses focus
+   * Feature: F-019 Customer Contact Management
+   */
+  async onBuyerPhoneLookup(): Promise<void> {
+    const phone = this.buyerPhone.trim();
+
+    // Reset if phone is empty or too short
+    if (phone.length < 5) {
+      this.customerLookupStatus.set('idle');
+      this.selectedCustomer.set(null);
+      return;
+    }
+
+    // Debounce to avoid multiple rapid lookups
+    if (this.customerLookupTimeout) {
+      clearTimeout(this.customerLookupTimeout);
+    }
+
+    this.customerLookupTimeout = setTimeout(async () => {
+      this.customerLookupLoading.set(true);
+
+      try {
+        const customer = await this.customerService.lookupByPhone(phone);
+
+        if (customer) {
+          this.selectedCustomer.set(customer);
+          this.customerLookupStatus.set('found');
+
+          // Auto-fill customer info - Feature: F-019 AC3
+          this.buyerName = customer.name;
+          if (customer.email) {
+            this.buyerEmail = customer.email;
+          }
+
+          this.toastService.info('Customer Found', `${customer.name} - ${customer.totalTransactions} previous transaction(s)`);
+        } else {
+          this.selectedCustomer.set(null);
+          this.customerLookupStatus.set('not_found');
+        }
+      } catch (error) {
+        console.error('Error looking up customer:', error);
+        this.customerLookupStatus.set('not_found');
+      } finally {
+        this.customerLookupLoading.set(false);
+      }
+    }, 300);
+  }
+
+  /**
+   * Open the create customer dialog
+   * Feature: F-019 Customer Contact Management - AC1
+   */
+  openCreateCustomerDialog(): void {
+    this.showCustomerFormDialog.set(true);
+  }
+
+  /**
+   * Handle new customer creation from the dialog
+   * Feature: F-019 Customer Contact Management - AC2
+   */
+  onCustomerCreated(customer: CustomerWithStats): void {
+    this.selectedCustomer.set(customer);
+    this.customerLookupStatus.set('found');
+
+    // Fill buyer info
+    this.buyerPhone = customer.phone;
+    this.buyerName = customer.name;
+    if (customer.email) {
+      this.buyerEmail = customer.email;
+    }
+
+    this.toastService.success('Customer Created', `${customer.name} has been added`);
+  }
+
   async onConfirm(): Promise<void> {
     const p = this.phone();
     if (!p || !this.isFormValid()) return;
@@ -342,7 +227,8 @@ export class MarkAsSoldDialogComponent implements OnChanges {
         buyerName: this.sanitizer.sanitizeOrNull(this.buyerName),
         buyerPhone: this.sanitizer.sanitizeOrNull(this.buyerPhone),
         buyerEmail: this.buyerEmail?.trim() || null,
-        notes: this.sanitizer.sanitizeOrNull(this.notes)
+        notes: this.sanitizer.sanitizeOrNull(this.notes),
+        customerId: this.selectedCustomer()?.id || null
       });
 
       this.toastService.success('Sale Confirmed', `${p.brandName} ${p.model} has been marked as sold`);
@@ -363,6 +249,9 @@ export class MarkAsSoldDialogComponent implements OnChanges {
     this.buyerPhone = '';
     this.buyerEmail = '';
     this.notes = '';
+    // Reset customer lookup state
+    this.customerLookupStatus.set('idle');
+    this.selectedCustomer.set(null);
   }
 
   private formatDate(date: Date): string {

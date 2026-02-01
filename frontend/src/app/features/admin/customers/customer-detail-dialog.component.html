@@ -1,0 +1,312 @@
+<p-dialog
+  [header]="customerData()?.customer?.name || 'Customer Details'"
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [style]="{ width: '50rem', maxWidth: '95vw' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  @if (loading()) {
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <p-skeleton width="30%" height="1rem" styleClass="mb-2" />
+        <p-skeleton width="70%" height="1.5rem" />
+      </div>
+      <div class="col-12 md:col-6">
+        <p-skeleton width="30%" height="1rem" styleClass="mb-2" />
+        <p-skeleton width="70%" height="1.5rem" />
+      </div>
+      <div class="col-12">
+        <p-skeleton width="100%" height="6rem" />
+      </div>
+    </div>
+  } @else if (customerData()) {
+    <!-- Customer Info -->
+    <div class="grid mb-4">
+      <div class="col-12 md:col-6">
+        <div class="flex align-items-center gap-3 mb-4">
+          <div class="w-4rem h-4rem border-circle bg-primary-100 flex align-items-center justify-content-center">
+            <span class="text-primary font-bold text-xl">{{ getInitials(customerData()!.customer.name) }}</span>
+          </div>
+          <div>
+            <h3 class="m-0 mb-1">{{ customerData()!.customer.name }}</h3>
+            <span class="text-color-secondary font-mono">{{ formatPhone(customerData()!.customer.phone) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          @if (customerData()!.customer.email) {
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-envelope text-color-secondary"></i>
+              <a [href]="'mailto:' + customerData()!.customer.email" class="text-primary no-underline hover:underline">
+                {{ customerData()!.customer.email }}
+              </a>
+            </div>
+          }
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-calendar text-color-secondary"></i>
+            <span>Customer since {{ customerData()!.customer.createdAt | date:'mediumDate' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid mb-4">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="text-center">
+            <span class="block text-color-secondary mb-2">Total Transactions</span>
+            <span class="text-2xl font-bold text-primary">{{ customerData()!.stats.totalTransactions }}</span>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="text-center">
+            <span class="block text-color-secondary mb-2">Total Spent</span>
+            <span class="text-2xl font-bold">{{ customerData()!.stats.totalSpent | appCurrency:'1.2-2' }}</span>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="text-center">
+            <span class="block text-color-secondary mb-2">Last Purchase</span>
+            @if (customerData()!.stats.lastPurchaseDate) {
+              <span class="text-2xl font-bold">{{ customerData()!.stats.lastPurchaseDate | date:'mediumDate' }}</span>
+            } @else {
+              <span class="text-2xl font-bold text-color-secondary">-</span>
+            }
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    @if (customerData()!.customer.notes) {
+      <div class="mb-4">
+        <h4 class="mt-0 mb-2">Notes</h4>
+        <div class="p-3 surface-ground border-round">
+          <p class="m-0 white-space-pre-wrap">{{ customerData()!.customer.notes }}</p>
+        </div>
+      </div>
+    }
+
+    <p-divider />
+
+    <!-- Purchase History with Email Option - Feature: F-021 -->
+    <div class="flex justify-content-between align-items-center mb-3">
+      <h4 class="m-0">Purchase History</h4>
+      @if (customerData()!.sales.length > 0) {
+        <p-button
+          label="Email Receipts"
+          icon="pi pi-envelope"
+          severity="info"
+          [outlined]="!showEmailSection()"
+          (onClick)="toggleEmailSection()"
+          size="small"
+          [pTooltip]="emailButtonTooltip()"
+          tooltipPosition="left"
+        />
+      }
+    </div>
+
+    <!-- Email Receipts Section - Feature: F-021 -->
+    @if (showEmailSection()) {
+      <div class="mb-4 p-3 surface-ground border-round">
+        <div class="flex flex-column gap-3">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-envelope text-blue-500"></i>
+            <span class="font-semibold">Email Receipts to Customer</span>
+          </div>
+
+          <!-- Email Address -->
+          <div class="flex flex-column gap-2">
+            <label for="customerEmail" class="text-sm font-medium">Email Address</label>
+            <div class="flex gap-2">
+              <input
+                pInputText
+                id="customerEmail"
+                [(ngModel)]="emailAddress"
+                placeholder="customer@example.com"
+                class="flex-1"
+                [disabled]="emailSending()"
+              />
+            </div>
+            @if (hasEmailOnFile() && !emailAddress) {
+              <small class="text-blue-500">
+                <i class="pi pi-info-circle mr-1"></i>
+                Pre-filled with customer's email on file
+              </small>
+            }
+            @if (emailAddress && !isEmailValid()) {
+              <small class="text-red-500">Please enter a valid email address</small>
+            }
+          </div>
+
+          <!-- Receipt Selection -->
+          @if (salesForEmail.length > 0) {
+            <div class="flex flex-column gap-2">
+              <div class="flex justify-content-between align-items-center">
+                <label class="text-sm font-medium">Select Receipts to Email</label>
+                <div class="flex gap-2">
+                  <p-button
+                    label="Select All"
+                    [text]="true"
+                    size="small"
+                    (onClick)="selectAllReceipts()"
+                    [disabled]="emailSending()"
+                  />
+                  <p-button
+                    label="Clear"
+                    [text]="true"
+                    size="small"
+                    (onClick)="clearReceiptSelection()"
+                    [disabled]="emailSending()"
+                  />
+                </div>
+              </div>
+              <div class="max-h-12rem overflow-y-auto border-1 surface-border border-round p-2">
+                @for (sale of salesForEmail; track sale.id) {
+                  <div class="flex align-items-center gap-2 p-2 hover:surface-hover border-round">
+                    <p-checkbox
+                      [(ngModel)]="sale.selected"
+                      [binary]="true"
+                      [inputId]="'receipt-' + sale.id"
+                      [disabled]="emailSending()"
+                    />
+                    <label [for]="'receipt-' + sale.id" class="flex-1 cursor-pointer">
+                      <span class="font-medium">{{ sale.brandName }} {{ sale.phoneName }}</span>
+                      <span class="text-color-secondary text-sm ml-2">
+                        {{ sale.saleDate | date:'shortDate' }} -
+                        {{ sale.salePrice | appCurrency:'1.2-2' }}
+                      </span>
+                    </label>
+                  </div>
+                }
+              </div>
+              <small class="text-color-secondary">
+                {{ selectedReceiptCount() }} receipt(s) selected
+              </small>
+            </div>
+          }
+
+          <!-- Email Error -->
+          @if (emailError()) {
+            <p-message severity="error" [text]="emailError()!" />
+          }
+
+          <!-- Email Success -->
+          @if (emailSuccess()) {
+            <p-message severity="success" [text]="emailSuccess()!" />
+          }
+
+          <!-- Send Button -->
+          <div class="flex justify-content-end gap-2">
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [text]="true"
+              (onClick)="hideEmailSection()"
+              [disabled]="emailSending()"
+            />
+            <p-button
+              label="Send Email"
+              icon="pi pi-send"
+              severity="info"
+              (onClick)="sendEmailReceipts()"
+              [disabled]="!canSendEmail() || emailSending()"
+              [loading]="emailSending()"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (customerData()!.sales.length > 0) {
+      <p-table
+        [value]="customerData()!.sales"
+        [paginator]="customerData()!.sales.length > 5"
+        [rows]="5"
+        [rowHover]="true"
+        dataKey="id"
+        styleClass="p-datatable-sm"
+        [scrollable]="true"
+        scrollDirection="horizontal"
+        [tableStyle]="{ 'min-width': '30rem' }"
+      >
+        <ng-template #header>
+          <tr>
+            <th>Phone</th>
+            <th>Date</th>
+            <th>Price</th>
+            <th style="width: 4rem">View</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-sale>
+          <tr>
+            <td>
+              <span class="font-medium">{{ sale.brandName }} {{ sale.phoneName }}</span>
+            </td>
+            <td>{{ sale.saleDate | date:'mediumDate' }}</td>
+            <td>
+              <span class="font-medium">{{ sale.salePrice | appCurrency:'1.2-2' }}</span>
+            </td>
+            <td>
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                pTooltip="View Phone"
+                tooltipPosition="top"
+                [routerLink]="['/admin/inventory', sale.phoneId, 'edit']"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4" class="text-center text-color-secondary p-3">
+              No purchase history
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <div class="text-center p-4 surface-ground border-round">
+        <i class="pi pi-shopping-cart text-4xl text-color-secondary mb-2"></i>
+        <p class="text-color-secondary m-0">No purchases yet</p>
+      </div>
+    }
+  } @else {
+    <div class="text-center p-4">
+      <i class="pi pi-exclamation-circle text-4xl text-color-secondary mb-2"></i>
+      <p class="text-color-secondary">Customer not found</p>
+    </div>
+  }
+
+  <ng-template #footer>
+    <div class="flex justify-content-between w-full">
+      <p-button
+        label="Close"
+        icon="pi pi-times"
+        severity="secondary"
+        [text]="true"
+        (onClick)="visibleChange.emit(false)"
+      />
+      @if (customerData()) {
+        <p-button
+          label="Edit Customer"
+          icon="pi pi-pencil"
+          (onClick)="onEdit()"
+        />
+      }
+    </div>
+  </ng-template>
+</p-dialog>

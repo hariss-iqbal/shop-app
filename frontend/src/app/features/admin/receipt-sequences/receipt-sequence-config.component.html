@@ -1,0 +1,697 @@
+<div class="flex flex-column gap-4">
+  <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+      <h2 class="m-0 mb-1">Receipt Number Configuration</h2>
+      <p class="m-0 text-500 text-sm">Manage receipt number sequences for your registers and locations</p>
+    </div>
+    <div class="flex gap-2">
+      @if (storeLocations().length > 0) {
+        <p-button
+          label="Create from Location"
+          icon="pi pi-map-marker"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="openLocationSelectDialog()"
+        ></p-button>
+      }
+      <p-button
+        label="Add Register"
+        icon="pi pi-plus"
+        (onClick)="openCreateDialog()"
+      ></p-button>
+    </div>
+  </div>
+
+  <!-- Preview Card -->
+  <p-card styleClass="surface-card">
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center justify-content-between p-3 pb-0">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-eye text-primary text-xl"></i>
+          <h3 class="m-0">Next Receipt Number Preview</h3>
+        </div>
+      </div>
+    </ng-template>
+    <div class="flex align-items-center gap-4 flex-wrap">
+      <div class="flex-1" style="min-width: 200px;">
+        <label class="block mb-2 font-semibold text-sm text-500">Select Register</label>
+        <p-select
+          [options]="activeSequences()"
+          [(ngModel)]="selectedPreviewRegisterId"
+          optionLabel="registerName"
+          optionValue="registerId"
+          placeholder="Select a register"
+          (onChange)="loadPreview()"
+          styleClass="w-full"
+        >
+          <ng-template let-seq pTemplate="item">
+            <div class="flex align-items-center gap-2">
+              <span class="font-mono text-sm text-500">{{ seq.registerId }}</span>
+              <span>{{ seq.registerName }}</span>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="flex-1" style="min-width: 200px;">
+        <label class="block mb-2 font-semibold text-sm text-500">Next Receipt Number</label>
+        <div class="flex align-items-center gap-3">
+          <div class="surface-100 border-round px-4 py-3 flex-1">
+            <div class="text-2xl font-bold font-mono text-primary">
+              {{ previewNumber() || '---' }}
+            </div>
+            @if (nextSequence()) {
+              <div class="text-xs text-500 mt-1">Sequence #{{ nextSequence() | number }}</div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="flex align-items-end" style="min-width: fit-content;">
+        <p-button
+          label="Generate Now"
+          icon="pi pi-bolt"
+          severity="success"
+          [disabled]="!selectedPreviewRegisterId || generating()"
+          [loading]="generating()"
+          (onClick)="generateReceiptNumber()"
+        ></p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Main Content with Tabs -->
+  <p-tabs value="0">
+    <p-tablist>
+      <p-tab value="0">
+        <i class="pi pi-list mr-2"></i>
+        Registers & Sequences
+      </p-tab>
+      <p-tab value="1">
+        <i class="pi pi-history mr-2"></i>
+        Generation History
+      </p-tab>
+      <p-tab value="2">
+        <i class="pi pi-info-circle mr-2"></i>
+        Format Reference
+      </p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <!-- Registers Tab -->
+      <p-tabpanel value="0">
+        <p-table
+          [value]="sequences()"
+          [loading]="loading()"
+          [paginator]="sequences().length > 10"
+          [rows]="10"
+          styleClass="p-datatable-sm p-datatable-striped"
+          [rowHover]="true"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 120px">Register ID</th>
+              <th>Name</th>
+              <th>Format Preview</th>
+              <th style="width: 120px">Current Seq</th>
+              <th style="width: 100px">Status</th>
+              <th style="width: 140px">Last Generated</th>
+              <th style="width: 130px">Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-seq>
+            <tr>
+              <td>
+                <span class="font-mono font-semibold text-primary">{{ seq.registerId }}</span>
+              </td>
+              <td>{{ seq.registerName }}</td>
+              <td>
+                <code class="surface-100 px-2 py-1 border-round text-sm">{{ getFormatPreview(seq) }}</code>
+              </td>
+              <td>
+                <span class="font-mono font-semibold">{{ seq.currentSequence | number }}</span>
+              </td>
+              <td>
+                <p-tag
+                  [value]="seq.isActive ? 'Active' : 'Inactive'"
+                  [severity]="seq.isActive ? 'success' : 'secondary'"
+                  [rounded]="true"
+                ></p-tag>
+              </td>
+              <td>
+                <span class="text-sm">
+                  {{ seq.lastGeneratedAt ? (seq.lastGeneratedAt | date:'short') : 'Never' }}
+                </span>
+              </td>
+              <td>
+                <div class="flex gap-1">
+                  <p-button
+                    icon="pi pi-pencil"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    pTooltip="Edit"
+                    tooltipPosition="top"
+                    (onClick)="openEditDialog(seq)"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-history"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    pTooltip="View Logs"
+                    tooltipPosition="top"
+                    (onClick)="viewLogsForSequence(seq)"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-refresh"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    severity="warn"
+                    pTooltip="Reset Sequence"
+                    tooltipPosition="top"
+                    (onClick)="openResetDialog(seq)"
+                  ></p-button>
+                  @if (seq.registerId !== 'DEFAULT') {
+                    <p-button
+                      icon="pi pi-trash"
+                      [rounded]="true"
+                      [text]="true"
+                      size="small"
+                      severity="danger"
+                      pTooltip="Delete"
+                      tooltipPosition="top"
+                      (onClick)="confirmDelete(seq)"
+                    ></p-button>
+                  }
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center p-5">
+                <div class="flex flex-column align-items-center gap-3">
+                  <i class="pi pi-inbox text-4xl text-300"></i>
+                  <span class="text-500">No registers configured</span>
+                  <p-button
+                    label="Create First Register"
+                    icon="pi pi-plus"
+                    size="small"
+                    (onClick)="openCreateDialog()"
+                  ></p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-tabpanel>
+
+      <!-- Generation History Tab -->
+      <p-tabpanel value="1">
+        <div class="flex flex-column gap-3">
+          <!-- Filters -->
+          <div class="flex gap-3 flex-wrap align-items-end">
+            <div>
+              <label class="block mb-2 text-sm font-semibold">Register</label>
+              <p-select
+                [options]="sequenceOptionsForLogs()"
+                [(ngModel)]="logsFilter.sequenceId"
+                optionLabel="registerName"
+                optionValue="id"
+                placeholder="All Registers"
+                [showClear]="true"
+                (onChange)="loadLogs()"
+                styleClass="w-15rem"
+              ></p-select>
+            </div>
+            <div>
+              <label class="block mb-2 text-sm font-semibold">Receipt Number</label>
+              <input
+                type="text"
+                pInputText
+                [(ngModel)]="logsFilter.receiptNumber"
+                placeholder="Search..."
+                class="w-12rem"
+                (keyup.enter)="loadLogs()"
+              />
+            </div>
+            <p-button
+              label="Search"
+              icon="pi pi-search"
+              (onClick)="loadLogs()"
+              [loading]="logsLoading()"
+            ></p-button>
+            <p-button
+              label="Clear"
+              icon="pi pi-times"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="clearLogsFilter()"
+            ></p-button>
+          </div>
+
+          <!-- Logs Table -->
+          <p-table
+            [value]="logs()"
+            [loading]="logsLoading()"
+            styleClass="p-datatable-sm p-datatable-striped"
+            [rowHover]="true"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 200px">Receipt Number</th>
+                <th style="width: 120px">Sequence</th>
+                <th>Register</th>
+                <th style="width: 180px">Generated At</th>
+                <th style="width: 100px">Linked</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-log>
+              <tr>
+                <td>
+                  <code class="font-mono font-semibold text-primary">{{ log.receiptNumber }}</code>
+                </td>
+                <td>
+                  <span class="font-mono">{{ log.sequenceValue | number }}</span>
+                </td>
+                <td>
+                  {{ getSequenceNameById(log.sequenceId) }}
+                </td>
+                <td>
+                  {{ log.generatedAt | date:'medium' }}
+                </td>
+                <td>
+                  @if (log.receiptId) {
+                    <p-tag value="Yes" severity="success" [rounded]="true"></p-tag>
+                  } @else {
+                    <p-tag value="No" severity="secondary" [rounded]="true"></p-tag>
+                  }
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="5" class="text-center p-5">
+                  <div class="flex flex-column align-items-center gap-2">
+                    <i class="pi pi-history text-4xl text-300"></i>
+                    <span class="text-500">No generation logs found</span>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+
+          <!-- Pagination -->
+          @if (logsTotal() > logsPageSize) {
+            <p-paginator
+              [rows]="logsPageSize"
+              [totalRecords]="logsTotal()"
+              [first]="(logsPage() - 1) * logsPageSize"
+              (onPageChange)="onLogsPageChange($event)"
+              [showCurrentPageReport]="true"
+              currentPageReportTemplate="Showing {first} to {last} of {totalRecords} logs"
+            ></p-paginator>
+          }
+        </div>
+      </p-tabpanel>
+
+      <!-- Format Reference Tab -->
+      <p-tabpanel value="2">
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <div class="surface-card p-4 border-round border-1 surface-border h-full">
+              <h4 class="mt-0 mb-3 flex align-items-center gap-2">
+                <i class="pi pi-code text-primary"></i>
+                Available Placeholders
+              </h4>
+              <div class="flex flex-column gap-2">
+                @for (placeholder of formatPatternPlaceholders; track placeholder.value) {
+                  <div class="flex align-items-center gap-3 p-2 surface-hover border-round">
+                    <code class="surface-100 px-3 py-2 border-round font-mono font-semibold text-primary" style="min-width: 100px;">
+                      {{ placeholder.value }}
+                    </code>
+                    <span class="text-600">{{ placeholder.description }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+          <div class="col-12 md:col-6">
+            <div class="surface-card p-4 border-round border-1 surface-border h-full">
+              <h4 class="mt-0 mb-3 flex align-items-center gap-2">
+                <i class="pi pi-file-edit text-primary"></i>
+                Example Patterns
+              </h4>
+              <div class="flex flex-column gap-2">
+                @for (template of formatPatternTemplates; track template.name) {
+                  <div class="flex flex-column gap-1 p-3 surface-hover border-round">
+                    <div class="flex align-items-center justify-content-between">
+                      <span class="font-semibold">{{ template.name }}</span>
+                      <span class="text-primary font-mono font-bold">{{ template.example }}</span>
+                    </div>
+                    <code class="text-sm text-500 font-mono">{{ template.pattern }}</code>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 p-4 surface-card border-round border-1 surface-border">
+          <h4 class="mt-0 mb-3 flex align-items-center gap-2">
+            <i class="pi pi-calendar text-primary"></i>
+            Date Formats
+          </h4>
+          <div class="grid">
+            @for (format of dateFormatOptions; track format.value) {
+              <div class="col-6 md:col-4 lg:col-2">
+                <div class="text-center p-3 surface-hover border-round">
+                  <div class="font-mono font-semibold text-lg text-primary">{{ format.example }}</div>
+                  <div class="text-sm text-500 mt-1">{{ format.label }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>
+
+<!-- Create/Edit Dialog -->
+<p-dialog
+  [header]="editingSequence() ? 'Edit Register' : 'Add Register'"
+  [(visible)]="dialogVisible"
+  [style]="{ width: '650px' }"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  styleClass="p-fluid"
+>
+  <form [formGroup]="sequenceForm" class="flex flex-column gap-4">
+    <div class="grid">
+      <div class="col-6">
+        <label for="registerId" class="block mb-2 font-semibold">Register ID <span class="text-red-500">*</span></label>
+        <input
+          id="registerId"
+          type="text"
+          pInputText
+          formControlName="registerId"
+          class="w-full"
+          [readonly]="!!editingSequence()"
+          placeholder="e.g., STORE-A, POS-1"
+        />
+        @if (sequenceForm.get('registerId')?.invalid && sequenceForm.get('registerId')?.touched) {
+          <small class="text-red-500">Register ID is required (max {{ constraints.REGISTER_ID_MAX }} chars)</small>
+        }
+      </div>
+      <div class="col-6">
+        <label for="registerName" class="block mb-2 font-semibold">Register Name <span class="text-red-500">*</span></label>
+        <input
+          id="registerName"
+          type="text"
+          pInputText
+          formControlName="registerName"
+          class="w-full"
+          placeholder="e.g., Main Store, Point of Sale 1"
+        />
+        @if (sequenceForm.get('registerName')?.invalid && sequenceForm.get('registerName')?.touched) {
+          <small class="text-red-500">Register name is required</small>
+        }
+      </div>
+    </div>
+
+    <p-divider></p-divider>
+
+    <div class="grid">
+      <div class="col-6">
+        <label for="prefix" class="block mb-2 font-semibold">Prefix</label>
+        <input
+          id="prefix"
+          type="text"
+          pInputText
+          formControlName="prefix"
+          class="w-full"
+          placeholder="e.g., RCP, INV"
+        />
+        <small class="text-500">Appears at the start of the receipt number</small>
+      </div>
+      <div class="col-6">
+        <label for="separator" class="block mb-2 font-semibold">Separator</label>
+        <input
+          id="separator"
+          type="text"
+          pInputText
+          formControlName="separator"
+          class="w-full"
+          placeholder="e.g., -, /"
+        />
+        <small class="text-500">Character between pattern parts</small>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="col-6">
+        <label for="sequencePadding" class="block mb-2 font-semibold">Sequence Padding</label>
+        <p-inputNumber
+          inputId="sequencePadding"
+          formControlName="sequencePadding"
+          [min]="constraints.SEQUENCE_PADDING_MIN"
+          [max]="constraints.SEQUENCE_PADDING_MAX"
+          [showButtons]="true"
+          styleClass="w-full"
+        ></p-inputNumber>
+        <small class="text-500">Number of digits (e.g., 4 = 0001)</small>
+      </div>
+      <div class="col-6">
+        @if (!editingSequence()) {
+          <label for="startingSequence" class="block mb-2 font-semibold">Starting Sequence</label>
+          <p-inputNumber
+            inputId="startingSequence"
+            formControlName="startingSequence"
+            [min]="1"
+            [showButtons]="true"
+            styleClass="w-full"
+          ></p-inputNumber>
+          <small class="text-500">First receipt number value</small>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label for="formatPattern" class="block mb-2 font-semibold">Format Pattern</label>
+      <div class="flex gap-2">
+        <input
+          id="formatPattern"
+          type="text"
+          pInputText
+          formControlName="formatPattern"
+          class="flex-1"
+          placeholder="{PREFIX}{SEP}{DATE}{SEP}{SEQ}"
+        />
+        <p-select
+          [options]="formatPatternTemplates"
+          optionLabel="name"
+          placeholder="Templates"
+          (onChange)="applyTemplate($event.value)"
+          [showClear]="false"
+          styleClass="w-10rem"
+        ></p-select>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="col-6">
+        <div class="flex align-items-center gap-2">
+          <p-checkbox
+            formControlName="includeDate"
+            [binary]="true"
+            inputId="includeDate"
+          ></p-checkbox>
+          <label for="includeDate" class="font-semibold">Include Date</label>
+        </div>
+      </div>
+      <div class="col-6">
+        @if (sequenceForm.get('includeDate')?.value) {
+          <label for="dateFormat" class="block mb-2 font-semibold">Date Format</label>
+          <p-select
+            inputId="dateFormat"
+            formControlName="dateFormat"
+            [options]="dateFormatOptions"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+          >
+            <ng-template let-option pTemplate="item">
+              <div class="flex align-items-center justify-content-between w-full">
+                <span>{{ option.label }}</span>
+                <span class="text-500 font-mono">({{ option.example }})</span>
+              </div>
+            </ng-template>
+          </p-select>
+        }
+      </div>
+    </div>
+
+    <div class="flex align-items-center gap-2">
+      <p-checkbox
+        formControlName="isActive"
+        [binary]="true"
+        inputId="isActive"
+      ></p-checkbox>
+      <label for="isActive" class="font-semibold">Active</label>
+      <span class="text-500 text-sm ml-2">(Only active registers can generate numbers)</span>
+    </div>
+
+    <div class="surface-100 p-4 border-round">
+      <div class="flex align-items-center justify-content-between mb-2">
+        <label class="font-semibold text-sm text-500">Live Preview</label>
+        <i class="pi pi-eye text-500"></i>
+      </div>
+      <div class="text-2xl font-mono font-bold text-primary">
+        {{ formPreview() }}
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closeDialog()"
+      ></p-button>
+      <p-button
+        [label]="editingSequence() ? 'Update' : 'Create'"
+        icon="pi pi-check"
+        [disabled]="sequenceForm.invalid || saving()"
+        [loading]="saving()"
+        (onClick)="saveSequence()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Location Select Dialog -->
+<p-dialog
+  header="Create Register from Store Location"
+  [(visible)]="locationSelectDialogVisible"
+  [style]="{ width: '500px' }"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+>
+  <div class="flex flex-column gap-3">
+    <p class="text-500 m-0">Select a store location to create a receipt sequence register:</p>
+    <p-select
+      [options]="availableLocationsForRegister()"
+      [(ngModel)]="selectedLocationForRegister"
+      optionLabel="name"
+      placeholder="Select a location"
+      styleClass="w-full"
+    >
+      <ng-template let-loc pTemplate="item">
+        <div class="flex align-items-center gap-2">
+          <span class="font-mono text-500">{{ loc.code }}</span>
+          <span>{{ loc.name }}</span>
+          @if (loc.isPrimary) {
+            <p-tag value="Primary" severity="info" [rounded]="true"></p-tag>
+          }
+        </div>
+      </ng-template>
+    </p-select>
+
+    @if (selectedLocationForRegister) {
+      <div class="surface-100 p-3 border-round">
+        <div class="text-sm text-500 mb-1">Will create register:</div>
+        <div class="font-mono font-semibold">{{ selectedLocationForRegister.code }}</div>
+        <div class="text-sm">{{ selectedLocationForRegister.name }}</div>
+      </div>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closeLocationSelectDialog()"
+      ></p-button>
+      <p-button
+        label="Create Register"
+        icon="pi pi-plus"
+        [disabled]="!selectedLocationForRegister"
+        (onClick)="createFromLocation()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Reset Dialog -->
+<p-dialog
+  header="Reset Sequence"
+  [(visible)]="resetDialogVisible"
+  [style]="{ width: '450px' }"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+>
+  @if (resettingSequence()) {
+    <div class="flex flex-column gap-4">
+      <div class="surface-100 p-3 border-round">
+        <div class="text-sm text-500 mb-1">Register</div>
+        <div class="font-semibold">{{ resettingSequence()?.registerName }}</div>
+        <div class="font-mono text-500 text-sm">{{ resettingSequence()?.registerId }}</div>
+      </div>
+
+      <div class="flex align-items-center gap-4">
+        <div class="flex-1">
+          <div class="text-sm text-500 mb-1">Current Sequence</div>
+          <div class="font-mono font-semibold text-xl">{{ resettingSequence()?.currentSequence | number }}</div>
+        </div>
+        <i class="pi pi-arrow-right text-500"></i>
+        <div class="flex-1">
+          <label for="newStartingValue" class="block mb-1 text-sm text-500">New Starting Value</label>
+          <p-inputNumber
+            inputId="newStartingValue"
+            [(ngModel)]="newStartingValue"
+            [min]="1"
+            [showButtons]="true"
+            styleClass="w-full"
+          ></p-inputNumber>
+        </div>
+      </div>
+
+      <div class="flex align-items-start gap-2 p-3 border-round surface-warn">
+        <i class="pi pi-exclamation-triangle text-orange-500 mt-1"></i>
+        <div class="text-sm">
+          <div class="font-semibold text-orange-700">Warning</div>
+          <div class="text-orange-600">This may cause duplicate receipt numbers if the new value overlaps with existing numbers.</div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closeResetDialog()"
+      ></p-button>
+      <p-button
+        label="Reset Sequence"
+        icon="pi pi-refresh"
+        severity="warn"
+        [disabled]="!newStartingValue || newStartingValue < 1 || saving()"
+        [loading]="saving()"
+        (onClick)="resetSequence()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>

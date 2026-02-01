@@ -1,0 +1,205 @@
+<div class="flex flex-column gap-4">
+  <div class="flex justify-content-between align-items-center">
+    <h2 class="m-0">New Inventory Transfer</h2>
+    <p-button
+      label="Cancel"
+      [text]="true"
+      (onClick)="goBack()">
+    </p-button>
+  </div>
+
+  <div class="grid">
+    <div class="col-12 md:col-6">
+      <p-card header="Transfer Details">
+        <div class="flex flex-column gap-3">
+          <div class="flex flex-column gap-2">
+            <label for="sourceLocation">Source Location *</label>
+            <p-select
+              [options]="sourceLocations()"
+              [(ngModel)]="sourceLocationId"
+              (onChange)="onSourceLocationChange()"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Select source location"
+              [style]="{ width: '100%' }">
+              <ng-template let-location pTemplate="item">
+                <div class="flex align-items-center gap-2">
+                  <span>{{ location.name }}</span>
+                  <span class="text-color-secondary">({{ location.code }})</span>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+
+          <div class="flex flex-column gap-2">
+            <label for="destinationLocation">Destination Location *</label>
+            <p-select
+              [options]="destinationLocations()"
+              [(ngModel)]="destinationLocationId"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Select destination location"
+              [disabled]="!sourceLocationId"
+              [style]="{ width: '100%' }">
+              <ng-template let-location pTemplate="item">
+                <div class="flex align-items-center gap-2">
+                  <span>{{ location.name }}</span>
+                  <span class="text-color-secondary">({{ location.code }})</span>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+
+          <div class="flex flex-column gap-2">
+            <label for="notes">Notes</label>
+            <textarea
+              pTextarea
+              id="notes"
+              [(ngModel)]="notes"
+              placeholder="Transfer notes..."
+              rows="3"
+              maxlength="2000">
+            </textarea>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <p-card header="Available Inventory">
+        @if (sourceLocationId) {
+          <p-table
+            [value]="availableInventory()"
+            [loading]="loadingInventory()"
+            [scrollable]="true"
+            scrollHeight="300px"
+            styleClass="p-datatable-sm">
+
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Phone</th>
+                <th>Available</th>
+                <th>Action</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-item>
+              <tr>
+                <td>
+                  <div class="flex flex-column">
+                    <span class="font-medium">{{ item.phone?.model }}</span>
+                    <span class="text-color-secondary text-sm">{{ item.phone?.brandName }}</span>
+                  </div>
+                </td>
+                <td>{{ item.quantity }}</td>
+                <td>
+                  <p-button
+                    icon="pi pi-plus"
+                    [rounded]="true"
+                    [text]="true"
+                    pTooltip="Add to transfer"
+                    [disabled]="isItemAdded(item)"
+                    (onClick)="addItem(item)">
+                  </p-button>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="3" class="text-center">
+                  No inventory available at this location.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        } @else {
+          <div class="text-center p-4 text-color-secondary">
+            Select a source location to view available inventory.
+          </div>
+        }
+      </p-card>
+    </div>
+  </div>
+
+  <p-card header="Transfer Items">
+    @if (transferItems().length > 0) {
+      <p-table
+        [value]="transferItems()"
+        styleClass="p-datatable-sm">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Phone</th>
+            <th>Brand</th>
+            <th style="width: 150px">Quantity</th>
+            <th style="width: 200px">Notes</th>
+            <th style="width: 80px">Action</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-item let-i="rowIndex">
+          <tr>
+            <td>{{ item.phone?.model }}</td>
+            <td>{{ item.phone?.brandName }}</td>
+            <td>
+              <p-inputNumber
+                [(ngModel)]="item.quantity"
+                [min]="1"
+                [max]="item.maxQuantity"
+                [showButtons]="true"
+                buttonLayout="horizontal"
+                spinnerMode="horizontal"
+                [style]="{ width: '120px' }">
+              </p-inputNumber>
+            </td>
+            <td>
+              <input
+                pInputText
+                [(ngModel)]="item.notes"
+                placeholder="Item notes..."
+                maxlength="500"
+                [style]="{ width: '100%' }" />
+            </td>
+            <td>
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                (onClick)="removeItem(i)">
+              </p-button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="footer">
+          <tr>
+            <td colspan="5" class="text-right font-bold">
+              Total Items: {{ totalItems() }}
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <div class="text-center p-4 text-color-secondary">
+        No items added yet. Select items from the available inventory above.
+      </div>
+    }
+  </p-card>
+
+  <div class="flex justify-content-end gap-2">
+    <p-button
+      label="Cancel"
+      [text]="true"
+      (onClick)="goBack()">
+    </p-button>
+    <p-button
+      label="Create Transfer"
+      icon="pi pi-check"
+      [disabled]="!canSubmit()"
+      [loading]="submitting()"
+      (onClick)="submitTransfer()">
+    </p-button>
+  </div>
+</div>

@@ -1,0 +1,261 @@
+<div class="grid">
+  <div class="col-12 flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-3 mb-4">
+    <h1 class="text-3xl font-bold m-0">{{ isEditMode() ? 'Edit Supplier' : 'Add Supplier' }}</h1>
+    <p-button
+      label="Back to Suppliers"
+      icon="pi pi-arrow-left"
+      [outlined]="true"
+      (onClick)="goBack()"
+      styleClass="w-full sm:w-auto" />
+  </div>
+
+  @if (pageLoading()) {
+    <div class="col-12">
+      <p-card>
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <p-skeleton width="30%" height="1rem" styleClass="mb-2" />
+            <p-skeleton width="100%" height="2.5rem" />
+          </div>
+          <div class="col-12 md:col-6">
+            <p-skeleton width="30%" height="1rem" styleClass="mb-2" />
+            <p-skeleton width="100%" height="2.5rem" />
+          </div>
+          <div class="col-12 md:col-6">
+            <p-skeleton width="30%" height="1rem" styleClass="mb-2" />
+            <p-skeleton width="100%" height="2.5rem" />
+          </div>
+          <div class="col-12 md:col-6">
+            <p-skeleton width="30%" height="1rem" styleClass="mb-2" />
+            <p-skeleton width="100%" height="2.5rem" />
+          </div>
+          <div class="col-12">
+            <p-skeleton width="20%" height="1rem" styleClass="mb-2" />
+            <p-skeleton width="100%" height="4rem" />
+          </div>
+          <div class="col-12">
+            <p-skeleton width="20%" height="1rem" styleClass="mb-2" />
+            <p-skeleton width="100%" height="4rem" />
+          </div>
+        </div>
+      </p-card>
+    </div>
+  } @else {
+    <div class="col-12">
+      <p-card>
+        <form [formGroup]="supplierForm" (ngSubmit)="onSubmit()">
+          <div class="grid">
+            <div class="col-12 md:col-6 field">
+              <label for="name" class="font-semibold block mb-2">
+                Name <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="name"
+                type="text"
+                pInputText
+                formControlName="name"
+                class="w-full"
+                [maxlength]="constraints.NAME_MAX"
+                placeholder="Enter supplier name" />
+              @if (supplierForm.get('name')?.invalid && supplierForm.get('name')?.touched) {
+                <small class="p-error block mt-1">Supplier name is required</small>
+              }
+            </div>
+
+            <div class="col-12 md:col-6 field">
+              <label for="contactPerson" class="font-semibold block mb-2">Contact Person</label>
+              <input
+                id="contactPerson"
+                type="text"
+                pInputText
+                formControlName="contactPerson"
+                class="w-full"
+                [maxlength]="constraints.CONTACT_PERSON_MAX"
+                placeholder="Enter contact person name" />
+            </div>
+
+            <div class="col-12 md:col-6 field">
+              <label for="contactEmail" class="font-semibold block mb-2">Email</label>
+              <input
+                id="contactEmail"
+                type="email"
+                pInputText
+                formControlName="contactEmail"
+                class="w-full"
+                [maxlength]="constraints.CONTACT_EMAIL_MAX"
+                placeholder="Enter email address" />
+              @if (supplierForm.get('contactEmail')?.invalid && supplierForm.get('contactEmail')?.touched) {
+                <small class="p-error block mt-1">Please enter a valid email address</small>
+              }
+            </div>
+
+            <div class="col-12 md:col-6 field">
+              <label for="contactPhone" class="font-semibold block mb-2">Phone</label>
+              <input
+                id="contactPhone"
+                type="tel"
+                pInputText
+                formControlName="contactPhone"
+                class="w-full"
+                [maxlength]="constraints.CONTACT_PHONE_MAX"
+                placeholder="Enter phone number" />
+            </div>
+
+            <div class="col-12 field">
+              <div class="flex justify-content-between align-items-center mb-2">
+                <label for="address" class="font-semibold">Address</label>
+                <small class="text-color-secondary">
+                  {{ supplierForm.get('address')?.value?.length || 0 }}/{{ constraints.ADDRESS_MAX }}
+                </small>
+              </div>
+              <textarea
+                id="address"
+                pTextarea
+                formControlName="address"
+                class="w-full"
+                rows="3"
+                [maxlength]="constraints.ADDRESS_MAX"
+                placeholder="Enter supplier address"
+                aria-describedby="address-count"></textarea>
+            </div>
+
+            <div class="col-12 field">
+              <div class="flex justify-content-between align-items-center mb-2">
+                <label for="notes" class="font-semibold">Notes</label>
+                <small class="text-color-secondary">
+                  {{ supplierForm.get('notes')?.value?.length || 0 }}/{{ constraints.NOTES_MAX }}
+                </small>
+              </div>
+              <textarea
+                id="notes"
+                pTextarea
+                formControlName="notes"
+                class="w-full"
+                rows="3"
+                [maxlength]="constraints.NOTES_MAX"
+                placeholder="Additional notes about the supplier"
+                aria-describedby="notes-count"></textarea>
+            </div>
+
+            <div class="col-12 flex justify-content-end gap-2 mt-4">
+              <p-button
+                label="Cancel"
+                [outlined]="true"
+                severity="secondary"
+                (onClick)="goBack()" />
+              <p-button
+                [label]="isEditMode() ? 'Update Supplier' : 'Create Supplier'"
+                icon="pi pi-check"
+                type="submit"
+                [loading]="saving()"
+                [disabled]="supplierForm.invalid || saving()" />
+            </div>
+          </div>
+        </form>
+      </p-card>
+    </div>
+
+    @if (isEditMode()) {
+      <div class="col-12 mt-4">
+        <p-card>
+          <ng-template #header>
+            <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-2 p-3 pb-0">
+              <h2 class="text-xl font-semibold m-0">Purchase Order History</h2>
+              <p-button
+                label="New Purchase Order"
+                icon="pi pi-plus"
+                size="small"
+                routerLink="/admin/purchase-orders/new"
+                [queryParams]="{ supplierId: supplierId }"
+                styleClass="w-full sm:w-auto" />
+            </div>
+          </ng-template>
+
+          @if (purchaseOrdersLoading()) {
+            <div class="flex align-items-center justify-content-center p-4">
+              <i class="pi pi-spin pi-spinner text-2xl"></i>
+            </div>
+          } @else if (purchaseOrders().length === 0) {
+            <div class="flex flex-column align-items-center gap-3 p-4">
+              <i class="pi pi-shopping-cart text-4xl text-color-secondary"></i>
+              <span class="text-color-secondary">No purchase orders found for this supplier</span>
+              <p-button
+                label="Create First Purchase Order"
+                icon="pi pi-plus"
+                [outlined]="true"
+                routerLink="/admin/purchase-orders/new"
+                [queryParams]="{ supplierId: supplierId }" />
+            </div>
+          } @else {
+            <p-table
+              [value]="purchaseOrders()"
+              [paginator]="purchaseOrders().length > 5"
+              [rows]="5"
+              [rowsPerPageOptions]="[5, 10, 25]"
+              [showCurrentPageReport]="true"
+              currentPageReportTemplate="Showing {first} to {last} of {totalRecords} orders"
+              [rowHover]="true"
+              dataKey="id"
+              styleClass="p-datatable-sm"
+              [scrollable]="true"
+              scrollDirection="horizontal"
+              [tableStyle]="{ 'min-width': '45rem' }"
+            >
+              <ng-template #header>
+                <tr>
+                  <th pSortableColumn="poNumber">
+                    PO Number
+                    <p-sortIcon field="poNumber" />
+                  </th>
+                  <th pSortableColumn="orderDate">
+                    Order Date
+                    <p-sortIcon field="orderDate" />
+                  </th>
+                  <th pSortableColumn="totalAmount">
+                    Total Amount
+                    <p-sortIcon field="totalAmount" />
+                  </th>
+                  <th>Items</th>
+                  <th pSortableColumn="status">
+                    Status
+                    <p-sortIcon field="status" />
+                  </th>
+                  <th style="width: 5rem">Actions</th>
+                </tr>
+              </ng-template>
+
+              <ng-template #body let-po>
+                <tr>
+                  <td>
+                    <span class="font-medium">{{ po.poNumber }}</span>
+                  </td>
+                  <td>{{ po.orderDate | date:'mediumDate' }}</td>
+                  <td>{{ po.totalAmount | currency }}</td>
+                  <td>{{ po.items.length }} item(s)</td>
+                  <td>
+                    <p-tag
+                      [value]="getStatusLabel(po.status)"
+                      [severity]="getStatusSeverity(po.status)"
+                    />
+                  </td>
+                  <td>
+                    <p-button
+                      icon="pi pi-eye"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="info"
+                      size="small"
+                      pTooltip="View Details"
+                      tooltipPosition="top"
+                      [routerLink]="['/admin/purchase-orders', po.id]"
+                    />
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          }
+        </p-card>
+      </div>
+    }
+  }
+</div>

@@ -4,6 +4,7 @@ import { JsonLdService } from './json-ld.service';
 import { PhoneDetail } from '../../models/phone.model';
 import { PhoneCondition } from '../../enums/phone-condition.enum';
 import { PhoneStatus } from '../../enums/phone-status.enum';
+import { environment } from '../../../environments/environment';
 
 describe('JsonLdService', () => {
   let service: JsonLdService;
@@ -33,6 +34,9 @@ describe('JsonLdService', () => {
     primaryImageUrl: 'https://example.com/phone-primary.jpg',
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: null,
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false,
     images: [
       { id: 'img-1', imageUrl: 'https://example.com/phone1.jpg', isPrimary: true, displayOrder: 0 },
       { id: 'img-2', imageUrl: 'https://example.com/phone2.jpg', isPrimary: false, displayOrder: 1 },
@@ -203,7 +207,7 @@ describe('JsonLdService', () => {
 
         expect(jsonLd.offers['@type']).toBe('Offer');
         expect(jsonLd.offers.price).toBe(1200);
-        expect(jsonLd.offers.priceCurrency).toBe('USD');
+        expect(jsonLd.offers.priceCurrency).toBe(environment.currency.code);
       });
 
       it('should set product URL in offer', () => {
@@ -344,7 +348,7 @@ describe('JsonLdService', () => {
       // Verify offer structure
       expect(jsonLd.offers['@type']).toBe('Offer');
       expect(jsonLd.offers.price).toBe(1200);
-      expect(jsonLd.offers.priceCurrency).toBe('USD');
+      expect(jsonLd.offers.priceCurrency).toBe(environment.currency.code);
       expect(jsonLd.offers.availability).toBe('https://schema.org/InStock');
       expect(jsonLd.offers.itemCondition).toBe('https://schema.org/NewCondition');
       expect(jsonLd.offers.url).toBe('http://localhost:4200/phone/phone-123');

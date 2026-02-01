@@ -1,0 +1,115 @@
+<p-dialog
+  [header]="customer ? 'Edit Customer' : 'Add Customer'"
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [style]="{ width: '30rem', maxWidth: '95vw' }"
+  [breakpoints]="{ '768px': '95vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="!saving()"
+>
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-column gap-4 pt-3">
+    <!-- Phone -->
+    <p-floatlabel>
+      <input
+        pInputText
+        id="phone"
+        formControlName="phone"
+        [maxlength]="CUSTOMER_VALIDATION.PHONE_MAX"
+        class="w-full"
+      />
+      <label for="phone">Phone Number *</label>
+    </p-floatlabel>
+    @if (form.get('phone')?.invalid && form.get('phone')?.touched) {
+      <small class="text-red-500 -mt-3">
+        @if (form.get('phone')?.errors?.['required']) {
+          Phone number is required
+        } @else if (form.get('phone')?.errors?.['maxlength']) {
+          Phone number must not exceed {{ CUSTOMER_VALIDATION.PHONE_MAX }} characters
+        }
+      </small>
+    }
+
+    <!-- Name -->
+    <p-floatlabel>
+      <input
+        pInputText
+        id="name"
+        formControlName="name"
+        [maxlength]="CUSTOMER_VALIDATION.NAME_MAX"
+        class="w-full"
+      />
+      <label for="name">Customer Name *</label>
+    </p-floatlabel>
+    @if (form.get('name')?.invalid && form.get('name')?.touched) {
+      <small class="text-red-500 -mt-3">
+        @if (form.get('name')?.errors?.['required']) {
+          Name is required
+        } @else if (form.get('name')?.errors?.['maxlength']) {
+          Name must not exceed {{ CUSTOMER_VALIDATION.NAME_MAX }} characters
+        }
+      </small>
+    }
+
+    <!-- Email -->
+    <p-floatlabel>
+      <input
+        pInputText
+        id="email"
+        formControlName="email"
+        type="email"
+        [maxlength]="CUSTOMER_VALIDATION.EMAIL_MAX"
+        class="w-full"
+      />
+      <label for="email">Email (optional)</label>
+    </p-floatlabel>
+    @if (form.get('email')?.invalid && form.get('email')?.touched) {
+      <small class="text-red-500 -mt-3">
+        @if (form.get('email')?.errors?.['email']) {
+          Please enter a valid email address
+        } @else if (form.get('email')?.errors?.['maxlength']) {
+          Email must not exceed {{ CUSTOMER_VALIDATION.EMAIL_MAX }} characters
+        }
+      </small>
+    }
+
+    <!-- Notes -->
+    <p-floatlabel>
+      <textarea
+        pTextarea
+        id="notes"
+        formControlName="notes"
+        [rows]="4"
+        [maxlength]="CUSTOMER_VALIDATION.NOTES_MAX"
+        class="w-full"
+      ></textarea>
+      <label for="notes">Notes (optional)</label>
+    </p-floatlabel>
+    @if (form.get('notes')?.value?.length > 0) {
+      <small class="text-color-secondary -mt-3">
+        {{ form.get('notes')?.value?.length }} / {{ CUSTOMER_VALIDATION.NOTES_MAX }} characters
+      </small>
+    }
+  </form>
+
+  <ng-template #footer>
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        icon="pi pi-times"
+        severity="secondary"
+        [text]="true"
+        [disabled]="saving()"
+        (onClick)="onVisibleChange(false)"
+      />
+      <p-button
+        [label]="customer ? 'Update' : 'Create'"
+        icon="pi pi-check"
+        [loading]="saving()"
+        [disabled]="form.invalid || saving()"
+        (onClick)="onSubmit()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

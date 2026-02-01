@@ -1,0 +1,380 @@
+<div class="p-4">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <h2 class="m-0">Coupon Management</h2>
+    <p-button
+      label="Create Coupon"
+      icon="pi pi-plus"
+      (onClick)="openCreateDialog()"
+    ></p-button>
+  </div>
+
+  <!-- Summary Cards -->
+  @if (summary()) {
+    <div class="grid mb-4">
+      <div class="col-12 md:col-3">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center bg-primary border-circle" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-ticket text-xl text-white"></i>
+            </div>
+            <div>
+              <span class="block text-500 font-medium mb-1">Total Coupons</span>
+              <span class="text-900 font-bold text-xl">{{ summary()!.totalCoupons }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-3">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center bg-green-500 border-circle" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-check text-xl text-white"></i>
+            </div>
+            <div>
+              <span class="block text-500 font-medium mb-1">Active</span>
+              <span class="text-900 font-bold text-xl">{{ summary()!.activeCoupons }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-3">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center bg-blue-500 border-circle" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-refresh text-xl text-white"></i>
+            </div>
+            <div>
+              <span class="block text-500 font-medium mb-1">Redemptions</span>
+              <span class="text-900 font-bold text-xl">{{ summary()!.totalRedemptions }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-3">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center bg-purple-500 border-circle" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-dollar text-xl text-white"></i>
+            </div>
+            <div>
+              <span class="block text-500 font-medium mb-1">Total Discounts</span>
+              <span class="text-900 font-bold text-xl">${{ summary()!.totalDiscountGiven.toFixed(2) }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  }
+
+  <!-- Filters -->
+  <p-card styleClass="mb-4">
+    <div class="grid">
+      <div class="col-12 md:col-4">
+        <span class="p-input-icon-left w-full">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            pInputText
+            placeholder="Search by code..."
+            class="w-full"
+            [(ngModel)]="searchCode"
+            (input)="onSearch()"
+          />
+        </span>
+      </div>
+      <div class="col-12 md:col-3">
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="selectedStatus"
+          placeholder="Filter by status"
+          [showClear]="true"
+          styleClass="w-full"
+          (onChange)="loadCoupons()"
+        ></p-select>
+      </div>
+      <div class="col-12 md:col-3">
+        <p-select
+          [options]="discountTypeOptions"
+          [(ngModel)]="selectedDiscountType"
+          placeholder="Filter by type"
+          [showClear]="true"
+          styleClass="w-full"
+          (onChange)="loadCoupons()"
+        ></p-select>
+      </div>
+      <div class="col-12 md:col-2">
+        <p-button
+          label="Reset"
+          icon="pi pi-refresh"
+          severity="secondary"
+          styleClass="w-full"
+          (onClick)="resetFilters()"
+        ></p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Table -->
+  <p-card>
+    @if (loading()) {
+      <div class="flex justify-content-center p-5">
+        <p-progressSpinner></p-progressSpinner>
+      </div>
+    } @else {
+      <p-table
+        [value]="coupons()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [tableStyle]="{ 'min-width': '60rem' }"
+        [sortField]="'createdAt'"
+        [sortOrder]="-1"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="code">Code <p-sortIcon field="code"></p-sortIcon></th>
+            <th>Discount</th>
+            <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+            <th>Redemptions</th>
+            <th pSortableColumn="validFrom">Valid From <p-sortIcon field="validFrom"></p-sortIcon></th>
+            <th pSortableColumn="validUntil">Valid Until <p-sortIcon field="validUntil"></p-sortIcon></th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-coupon>
+          <tr>
+            <td>
+              <span class="font-bold">{{ coupon.code }}</span>
+              @if (coupon.description) {
+                <br>
+                <span class="text-500 text-sm">{{ coupon.description }}</span>
+              }
+            </td>
+            <td>
+              <span class="font-semibold">{{ formatDiscount(coupon) }}</span>
+              @if (coupon.maxDiscountAmount) {
+                <br>
+                <span class="text-500 text-sm">Max: ${{ coupon.maxDiscountAmount }}</span>
+              }
+            </td>
+            <td>
+              <p-tag
+                [value]="getStatusLabel(coupon.status)"
+                [severity]="getStatusSeverity(coupon.status)"
+              ></p-tag>
+              @if (coupon.requiresManagerApproval) {
+                <br>
+                <span class="text-orange-500 text-sm">
+                  <i class="pi pi-lock mr-1"></i>Manager approval
+                </span>
+              }
+            </td>
+            <td>
+              @if (coupon.maxRedemptions) {
+                <span>{{ coupon.currentRedemptions }} / {{ coupon.maxRedemptions }}</span>
+              } @else {
+                <span>{{ coupon.currentRedemptions }} (unlimited)</span>
+              }
+            </td>
+            <td>{{ formatDate(coupon.validFrom) }}</td>
+            <td>
+              @if (coupon.validUntil) {
+                {{ formatDate(coupon.validUntil) }}
+                @if (coupon.daysUntilExpiry !== null && coupon.daysUntilExpiry <= 7 && coupon.daysUntilExpiry >= 0) {
+                  <br>
+                  <span class="text-orange-500 text-sm">
+                    {{ coupon.daysUntilExpiry === 0 ? 'Expires today' : coupon.daysUntilExpiry + ' days left' }}
+                  </span>
+                }
+              } @else {
+                <span class="text-500">No expiry</span>
+              }
+            </td>
+            <td>
+              <div class="flex gap-2">
+                <p-button
+                  icon="pi pi-pencil"
+                  [rounded]="true"
+                  [text]="true"
+                  pTooltip="Edit"
+                  (onClick)="openEditDialog(coupon)"
+                ></p-button>
+                @if (coupon.status === 'active') {
+                  <p-button
+                    icon="pi pi-ban"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    pTooltip="Disable"
+                    (onClick)="confirmDisable(coupon)"
+                  ></p-button>
+                } @else if (coupon.status === 'disabled') {
+                  <p-button
+                    icon="pi pi-check"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    pTooltip="Enable"
+                    (onClick)="enableCoupon(coupon)"
+                  ></p-button>
+                }
+                <p-button
+                  icon="pi pi-trash"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="danger"
+                  pTooltip="Delete"
+                  (onClick)="confirmDelete(coupon)"
+                ></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center p-4">
+              <i class="pi pi-ticket text-4xl text-300 mb-3"></i>
+              <p class="text-500">No coupons found</p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </p-card>
+
+  <!-- Create/Edit Dialog -->
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [header]="editingCoupon ? 'Edit Coupon' : 'Create Coupon'"
+    [modal]="true"
+    [style]="{ width: '500px' }"
+    [closable]="true"
+  >
+    <div class="grid">
+      <div class="col-12">
+        <label for="code" class="block font-medium mb-2">Coupon Code *</label>
+        <input
+          id="code"
+          type="text"
+          pInputText
+          class="w-full"
+          [(ngModel)]="formData.code"
+          [disabled]="!!editingCoupon"
+          placeholder="e.g., SAVE20"
+          maxlength="50"
+        />
+      </div>
+      <div class="col-12">
+        <label for="description" class="block font-medium mb-2">Description</label>
+        <textarea
+          id="description"
+          pInputTextarea
+          class="w-full"
+          [(ngModel)]="formData.description"
+          placeholder="e.g., 20% off your purchase"
+          [rows]="2"
+          maxlength="500"
+        ></textarea>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="discountType" class="block font-medium mb-2">Discount Type *</label>
+        <p-select
+          id="discountType"
+          [options]="discountTypeOptions"
+          [(ngModel)]="formData.discountType"
+          placeholder="Select type"
+          styleClass="w-full"
+        ></p-select>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="discountValue" class="block font-medium mb-2">Discount Value *</label>
+        <p-inputNumber
+          id="discountValue"
+          [(ngModel)]="formData.discountValue"
+          [min]="0"
+          [max]="formData.discountType === 'percentage' ? 100 : 1000000"
+          [suffix]="formData.discountType === 'percentage' ? '%' : ''"
+          [prefix]="formData.discountType === 'fixed_amount' ? '$' : ''"
+          styleClass="w-full"
+        ></p-inputNumber>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="minPurchase" class="block font-medium mb-2">Minimum Purchase</label>
+        <p-inputNumber
+          id="minPurchase"
+          [(ngModel)]="formData.minPurchaseAmount"
+          [min]="0"
+          prefix="$"
+          styleClass="w-full"
+          placeholder="Optional"
+        ></p-inputNumber>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="maxDiscount" class="block font-medium mb-2">Max Discount Cap</label>
+        <p-inputNumber
+          id="maxDiscount"
+          [(ngModel)]="formData.maxDiscountAmount"
+          [min]="0"
+          prefix="$"
+          styleClass="w-full"
+          placeholder="Optional"
+        ></p-inputNumber>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="validFrom" class="block font-medium mb-2">Valid From *</label>
+        <p-datepicker
+          id="validFrom"
+          [(ngModel)]="formData.validFromDate"
+          dateFormat="yy-mm-dd"
+          styleClass="w-full"
+          [showIcon]="true"
+        ></p-datepicker>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="validUntil" class="block font-medium mb-2">Valid Until</label>
+        <p-datepicker
+          id="validUntil"
+          [(ngModel)]="formData.validUntilDate"
+          dateFormat="yy-mm-dd"
+          styleClass="w-full"
+          [showIcon]="true"
+          [minDate]="formData.validFromDate"
+        ></p-datepicker>
+      </div>
+      <div class="col-12 md:col-6">
+        <label for="maxRedemptions" class="block font-medium mb-2">Max Redemptions</label>
+        <p-inputNumber
+          id="maxRedemptions"
+          [(ngModel)]="formData.maxRedemptions"
+          [min]="1"
+          styleClass="w-full"
+          placeholder="Unlimited"
+        ></p-inputNumber>
+      </div>
+      <div class="col-12 md:col-6">
+        <label class="block font-medium mb-2">Manager Approval</label>
+        <div class="flex align-items-center gap-2 mt-2">
+          <p-toggleswitch [(ngModel)]="formData.requiresManagerApproval"></p-toggleswitch>
+          <span class="text-500">Require manager approval</span>
+        </div>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        (onClick)="dialogVisible = false"
+      ></p-button>
+      <p-button
+        [label]="editingCoupon ? 'Update' : 'Create'"
+        icon="pi pi-check"
+        (onClick)="saveCoupon()"
+        [loading]="saving()"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+</div>

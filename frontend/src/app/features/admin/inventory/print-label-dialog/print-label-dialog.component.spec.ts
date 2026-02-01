@@ -52,7 +52,10 @@ describe('PrintLabelDialogComponent', () => {
     notes: null,
     primaryImageUrl: null,
     createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z'
+    updatedAt: '2024-01-15T10:00:00Z',
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false
   };
 
   let mockFocusService: jasmine.SpyObj<FocusManagementService>;

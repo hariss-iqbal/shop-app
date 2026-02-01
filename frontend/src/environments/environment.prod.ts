@@ -11,15 +11,25 @@ import { Environment } from './environment.type';
  */
 export const environment: Environment = {
   production: true,
-  siteUrl: 'https://your-domain.com',
+  siteUrl: 'https://shop-app-phi-wine.vercel.app',
   siteName: 'Phone Shop',
+  currency: {
+    code: 'PKR',
+    locale: 'en-PK',
+    symbol: 'Rs.',
+    decimals: 0
+  },
   supabase: {
-    url: 'YOUR_SUPABASE_URL',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY'
+    url: 'https://dgatqyxfpvocoyinpshg.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnYXRxeXhmcHZvY295aW5wc2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3MTYzNTQsImV4cCI6MjA4NTI5MjM1NH0.oNHOwCQ2HlllocQ0hsjVPTJD5qt-KoRZvzaQT8eWfME'
   },
   recaptcha: {
     enabled: false,
     siteKey: ''
+  },
+  cloudinary: {
+    cloudName: 'dvvqiwfmk',
+    uploadPreset: 'phone-shop-unsigned'
   },
   whatsapp: {
     phoneNumber: '1234567890'
@@ -35,6 +45,7 @@ export const environment: Environment = {
       weekend: 'Sun: Closed'
     },
     mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933185!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a23e28c1191%3A0x49f75d3281df052a!2s123%20Mobile%20St%2C%20New%20York%2C%20NY!5e0!3m2!1sen!2sus!4v1700000000000',
-    mapSearchUrl: 'https://www.google.com/maps/search/?api=1&query=123+Mobile+Street+Tech+City'
+    mapSearchUrl: 'https://www.google.com/maps/search/?api=1&query=123+Mobile+Street+Tech+City',
+    storeId: 'MAIN'
   }
 };

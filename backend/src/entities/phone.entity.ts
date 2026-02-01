@@ -26,6 +26,12 @@ export interface Phone {
   notes: string | null;
   created_at: string;
   updated_at: string | null;
+  /** Tax rate percentage (0-100). E.g., 10 for 10% tax rate */
+  tax_rate: number;
+  /** When true, selling_price includes tax. When false, tax is added on top */
+  is_tax_inclusive: boolean;
+  /** When true, item is tax exempt (0% tax) and clearly marked on receipts */
+  is_tax_exempt: boolean;
 }
 
 export interface PhoneInsert {
@@ -47,6 +53,9 @@ export interface PhoneInsert {
   notes?: string | null;
   created_at?: string;
   updated_at?: string | null;
+  tax_rate?: number;
+  is_tax_inclusive?: boolean;
+  is_tax_exempt?: boolean;
 }
 
 export interface PhoneUpdate {
@@ -67,6 +76,9 @@ export interface PhoneUpdate {
   supplier_id?: string | null;
   notes?: string | null;
   updated_at?: string | null;
+  tax_rate?: number;
+  is_tax_inclusive?: boolean;
+  is_tax_exempt?: boolean;
 }
 
 export interface PhoneWithRelations extends Phone {

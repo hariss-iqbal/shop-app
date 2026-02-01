@@ -27,3 +27,119 @@
 .position-relative {
   position: relative;
 }
+
+/* =====================================================
+   F-025: Mobile-Optimized Interface Styles
+   ===================================================== */
+
+/* Mobile touch-friendly button sizes (WCAG 2.5.5 minimum 44x44px) */
+:host ::ng-deep {
+  .p-button {
+    min-height: 44px;
+  }
+
+  .p-button.p-button-icon-only {
+    min-width: 44px;
+  }
+}
+
+/* Mobile navigation link styling */
+.mobile-nav-link {
+  min-height: 48px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+
+  &:active {
+    background-color: var(--surface-hover);
+  }
+}
+
+/* Tablet-specific adjustments */
+@media screen and (min-width: 768px) and (max-width: 991px) {
+  :host ::ng-deep {
+    /* Larger touch targets on tablets */
+    .p-button {
+      min-height: 48px;
+    }
+
+    .p-button.p-button-icon-only {
+      min-width: 48px;
+    }
+  }
+}
+
+/* Mobile-specific adjustments */
+@media screen and (max-width: 767px) {
+  /* Ensure content doesn't get hidden behind bottom nav */
+  :host {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
+  }
+
+  /* Mobile header adjustments */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  /* Larger touch targets for mobile */
+  :host ::ng-deep {
+    .p-card {
+      margin-left: -0.5rem;
+      margin-right: -0.5rem;
+      border-radius: 0;
+    }
+
+    /* Full-width buttons on mobile */
+    .mobile-full-width-btn {
+      width: 100%;
+    }
+  }
+}
+
+/* Safe area insets for notched devices (iPhone X+, etc.) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  :host {
+    /* Already handled by mobile-bottom-nav component */
+  }
+}
+
+/* Reduced motion preference support */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-transition {
+    transition: none;
+  }
+
+  :host ::ng-deep .p-button {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .badge-dot {
+    outline: 2px solid var(--surface-section);
+  }
+
+  :host ::ng-deep {
+    .p-button:focus-visible {
+      outline-width: 3px;
+    }
+  }
+}
+
+/* Landscape mode on mobile - reduce header height */
+@media screen and (max-width: 767px) and (orientation: landscape) {
+  header {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  :host ::ng-deep .p-drawer {
+    max-height: 100vh;
+  }
+}

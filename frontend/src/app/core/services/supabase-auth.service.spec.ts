@@ -2,11 +2,13 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { SupabaseAuthService, LoginCredentials } from './supabase-auth.service';
 import { SupabaseService } from './supabase.service';
+import { AuditLogService } from './audit-log.service';
 
 describe('SupabaseAuthService', () => {
   let service: SupabaseAuthService;
   let mockSupabaseService: jasmine.SpyObj<SupabaseService>;
   let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuditLogService: jasmine.SpyObj<AuditLogService>;
   let authStateCallback: ((event: string, session: any) => void) | null = null;
 
   const mockUser = {
@@ -45,21 +47,30 @@ describe('SupabaseAuthService', () => {
         signInWithPassword: jasmine.createSpy('signInWithPassword'),
         signOut: jasmine.createSpy('signOut'),
         refreshSession: jasmine.createSpy('refreshSession')
+      },
+      client: {
+        rpc: jasmine.createSpy('rpc').and.returnValue(
+          Promise.resolve({ data: 'cashier', error: null })
+        )
       }
     });
 
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const auditLogServiceSpy = jasmine.createSpyObj('AuditLogService', ['logAuthEvent']);
+    auditLogServiceSpy.logAuthEvent.and.returnValue(Promise.resolve());
 
     TestBed.configureTestingModule({
       providers: [
         SupabaseAuthService,
         { provide: SupabaseService, useValue: supabaseServiceSpy },
-        { provide: Router, useValue: routerSpy }
+        { provide: Router, useValue: routerSpy },
+        { provide: AuditLogService, useValue: auditLogServiceSpy }
       ]
     });
 
     mockSupabaseService = TestBed.inject(SupabaseService) as jasmine.SpyObj<SupabaseService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    mockAuditLogService = TestBed.inject(AuditLogService) as jasmine.SpyObj<AuditLogService>;
     service = TestBed.inject(SupabaseAuthService);
   });
 
@@ -385,6 +396,11 @@ describe('SupabaseAuthService', () => {
           signInWithPassword: jasmine.createSpy('signInWithPassword'),
           signOut: jasmine.createSpy('signOut'),
           refreshSession: jasmine.createSpy('refreshSession')
+        },
+        client: {
+          rpc: jasmine.createSpy('rpc').and.returnValue(
+            Promise.resolve({ data: 'cashier', error: null })
+          )
         }
       });
 
@@ -392,7 +408,8 @@ describe('SupabaseAuthService', () => {
         providers: [
           SupabaseAuthService,
           { provide: SupabaseService, useValue: supabaseServiceWithSession },
-          { provide: Router, useValue: mockRouter }
+          { provide: Router, useValue: mockRouter },
+          { provide: AuditLogService, useValue: mockAuditLogService }
         ]
       });
 

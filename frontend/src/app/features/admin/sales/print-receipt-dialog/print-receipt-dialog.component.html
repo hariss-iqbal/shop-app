@@ -1,0 +1,513 @@
+<p-dialog
+  [header]="dialogHeader()"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  (onShow)="onDialogShow()"
+  (onHide)="onDialogHide()"
+  [modal]="true"
+  [closable]="true"
+  [focusOnShow]="true"
+  [focusTrap]="true"
+  [closeOnEscape]="true"
+  [style]="{ width: '900px', maxWidth: '95vw' }"
+  [breakpoints]="{ '960px': '95vw' }"
+  role="dialog"
+  [attr.aria-label]="dialogHeader()"
+  styleClass="receipt-dialog"
+>
+  <!-- Print Controls -->
+  <div class="flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-3 mb-4 no-print">
+    <div class="flex align-items-center gap-3">
+      <p-checkbox
+        [(ngModel)]="showQrCode"
+        [binary]="true"
+        inputId="showQrReceipt"
+        label="Include QR Code"
+      />
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <p-button
+        label="Email"
+        icon="pi pi-envelope"
+        severity="info"
+        (onClick)="onSendEmail()"
+        [disabled]="!canSendEmail()"
+        [loading]="emailSending()"
+        [pTooltip]="emailTooltip()"
+        tooltipPosition="bottom"
+        ariaLabel="Send receipt via Email"
+      />
+      <p-button
+        label="WhatsApp"
+        icon="pi pi-whatsapp"
+        severity="success"
+        (onClick)="onSharePdf()"
+        [loading]="pdfSharing()"
+        pTooltip="Download PDF and open WhatsApp"
+        tooltipPosition="bottom"
+        ariaLabel="Send PDF via WhatsApp"
+      />
+      <p-button
+        label="PDF"
+        icon="pi pi-file-pdf"
+        severity="secondary"
+        (onClick)="onDownloadPdf()"
+        ariaLabel="Download receipt as PDF"
+      />
+      <p-button
+        label="Print"
+        icon="pi pi-print"
+        (onClick)="onPrint()"
+        ariaLabel="Print receipt"
+      />
+    </div>
+  </div>
+
+  <!-- Email Input (shown when no customer email or manual entry requested) -->
+  @if (showEmailInput()) {
+    <div class="mb-4 p-3 surface-ground border-round no-print">
+      <div class="flex flex-column gap-2">
+        <label for="emailAddress" class="font-medium">
+          <i class="pi pi-envelope text-blue-500 mr-2"></i>
+          Enter customer email address
+        </label>
+        <div class="flex gap-2">
+          <input
+            pInputText
+            id="emailAddress"
+            [(ngModel)]="manualEmailAddress"
+            placeholder="customer@example.com"
+            class="flex-1"
+            (keyup.enter)="onSendEmailWithManualAddress()"
+            [disabled]="emailSending()"
+          />
+          <p-button
+            icon="pi pi-send"
+            severity="info"
+            (onClick)="onSendEmailWithManualAddress()"
+            [disabled]="!isManualEmailValid() || emailSending()"
+            [loading]="emailSending()"
+            ariaLabel="Send to this email"
+          />
+          <p-button
+            icon="pi pi-times"
+            severity="secondary"
+            [text]="true"
+            (onClick)="hideEmailInput()"
+            [disabled]="emailSending()"
+            ariaLabel="Cancel"
+          />
+        </div>
+        @if (manualEmailAddress && !isManualEmailValid()) {
+          <small class="text-red-500">Please enter a valid email address</small>
+        }
+        @if (lastEmailError()) {
+          <p-message severity="error" [text]="lastEmailError()!" styleClass="mt-2" />
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Email Error with Retry -->
+  @if (lastEmailError() && !showEmailInput()) {
+    <div class="mb-4 p-3 surface-ground border-round border-1 border-red-200 no-print">
+      <div class="flex align-items-center gap-2 text-red-600 mb-2">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span class="font-medium">Email Error</span>
+      </div>
+      <p class="text-sm text-color-secondary mb-3">{{ lastEmailError() }}</p>
+      <div class="flex gap-2">
+        <p-button
+          label="Try Again"
+          icon="pi pi-refresh"
+          severity="info"
+          size="small"
+          (onClick)="onRetryEmail()"
+          [disabled]="emailSending()"
+          [loading]="emailSending()"
+        />
+        <p-button
+          label="Dismiss"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          (onClick)="dismissEmailError()"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- WhatsApp Phone Input (shown when no customer phone) -->
+  @if (showWhatsAppInput()) {
+    <div class="mb-4 p-3 surface-ground border-round no-print">
+      <div class="flex flex-column gap-2">
+        <label for="whatsappPhone" class="font-medium">
+          <i class="pi pi-whatsapp text-green-500 mr-2"></i>
+          Enter customer phone for WhatsApp
+        </label>
+        <div class="flex gap-2">
+          <input
+            pInputText
+            id="whatsappPhone"
+            [(ngModel)]="manualPhoneNumber"
+            placeholder="+1234567890"
+            class="flex-1"
+            (keyup.enter)="onSendWhatsAppWithManualPhone()"
+            [disabled]="pdfSharing()"
+          />
+          <p-button
+            icon="pi pi-send"
+            severity="success"
+            (onClick)="onSendWhatsAppWithManualPhone()"
+            [disabled]="!isManualPhoneValid() || pdfSharing()"
+            [loading]="pdfSharing()"
+            ariaLabel="Send to this number"
+          />
+          <p-button
+            icon="pi pi-times"
+            severity="secondary"
+            [text]="true"
+            (onClick)="hideWhatsAppInput()"
+            [disabled]="pdfSharing()"
+            ariaLabel="Cancel"
+          />
+        </div>
+        @if (manualPhoneNumber && !isManualPhoneValid()) {
+          <small class="text-red-500">Please enter a valid phone number (10-15 digits)</small>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- WhatsApp Error with Retry -->
+  @if (lastWhatsAppError()) {
+    <div class="mb-4 p-3 surface-ground border-round border-1 border-red-200 no-print">
+      <div class="flex align-items-center gap-2 text-red-600 mb-2">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span class="font-medium">WhatsApp Error</span>
+      </div>
+      <p class="text-sm text-color-secondary mb-3">{{ lastWhatsAppError() }}</p>
+      @if (lastWhatsAppLink()) {
+        <div class="flex gap-2">
+          <p-button
+            label="Try Again"
+            icon="pi pi-refresh"
+            severity="success"
+            size="small"
+            (onClick)="onRetryWhatsApp()"
+          />
+          <p-button
+            label="Dismiss"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            (onClick)="lastWhatsAppError.set(null); lastWhatsAppLink.set(null)"
+          />
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Professional Receipt Preview -->
+  @if (receiptData()) {
+    <div class="receipt-container">
+      <!-- Header -->
+      <header class="receipt-header">
+        <div class="header-left">
+          <h1 class="receipt-title">Sales Receipt</h1>
+          <p class="receipt-subtitle">Transaction Record</p>
+        </div>
+        <div class="header-right">
+          <div class="info-grid">
+            <span class="info-label">Receipt #</span>
+            <span class="info-value">{{ receiptData()!.receiptNumber }}</span>
+            <span class="info-label">Date</span>
+            <span class="info-value">{{ receiptData()!.transactionDate }}</span>
+            <span class="info-label">Time</span>
+            <span class="info-value">{{ receiptData()!.transactionTime }}</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Store Info -->
+      <div class="store-section">
+        <p class="section-label">From</p>
+        <div class="store-info">
+          <p class="store-name">{{ storeConfig.name }}</p>
+          <p>{{ storeConfig.address }}</p>
+          <p>Tel: {{ storeConfig.phone }}</p>
+          <p>{{ storeConfig.email }}</p>
+        </div>
+      </div>
+
+      <!-- Customer Info -->
+      @if (receiptData()!.customerName || receiptData()!.customerPhone || receiptData()!.customerEmail) {
+        <div class="customer-section">
+          <p class="section-label">Recipient</p>
+          <div class="customer-info">
+            @if (receiptData()!.customerName) {
+              <p class="customer-name">{{ receiptData()!.customerName }}</p>
+            }
+            @if (receiptData()!.customerPhone) {
+              <p>Tel: {{ receiptData()!.customerPhone }}</p>
+            }
+            @if (receiptData()!.customerEmail) {
+              <p>{{ receiptData()!.customerEmail }}</p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Items Table -->
+      <div class="items-section">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th class="text-left">Description</th>
+              <th class="text-right">Unit Price</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of receiptData()!.items; track $index) {
+              <tr>
+                <td class="item-description">
+                  <span class="item-name">{{ item.name }}</span>
+                  @if (item.isTaxExempt) {
+                    <span class="tax-exempt-badge">Tax Exempt</span>
+                  } @else if (item.taxRate && item.taxRate > 0) {
+                    <span class="tax-info">{{ item.taxRate }}% tax: {{ item.taxAmount | appCurrency:'1.2-2' }}</span>
+                  }
+                </td>
+                <td class="text-right item-price">{{ item.unitPrice | appCurrency:'1.2-2' }}</td>
+                <td class="text-right item-qty">{{ item.quantity }}</td>
+                <td class="text-right item-total">{{ item.total | appCurrency:'1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Totals Section -->
+      <div class="totals-section">
+        <div class="totals-wrapper">
+          <div class="totals-row">
+            <span class="totals-label">Subtotal</span>
+            <span class="totals-value">{{ receiptData()!.subtotal | appCurrency:'1.2-2' }}</span>
+          </div>
+
+          <!-- Tax Breakdown -->
+          @if (receiptData()!.taxBreakdown && receiptData()!.taxBreakdown!.length > 0) {
+            @for (taxEntry of receiptData()!.taxBreakdown; track taxEntry.taxRate) {
+              <div class="totals-row">
+                @if (taxEntry.taxRate === 0) {
+                  <span class="totals-label">
+                    <i class="pi pi-info-circle text-xs mr-1"></i>
+                    Tax Exempt ({{ taxEntry.itemCount }} item{{ taxEntry.itemCount !== 1 ? 's' : '' }})
+                  </span>
+                  <span class="totals-value text-color-secondary">-</span>
+                } @else {
+                  <span class="totals-label">Tax {{ taxEntry.taxRate }}%</span>
+                  <span class="totals-value">{{ taxEntry.taxAmount | appCurrency:'1.2-2' }}</span>
+                }
+              </div>
+            }
+          } @else if (receiptData()!.taxAmount > 0) {
+            <div class="totals-row">
+              <span class="totals-label">Tax {{ receiptData()!.taxRate | number:'1.1-1' }}%</span>
+              <span class="totals-value">{{ receiptData()!.taxAmount | appCurrency:'1.2-2' }}</span>
+            </div>
+          }
+
+          <!-- Discount -->
+          @if (receiptData()!.discount) {
+            <div class="totals-row discount-row">
+              <span class="totals-label">
+                <i class="pi pi-tag mr-1"></i>
+                Discount
+                @if (receiptData()!.discount!.couponCode) {
+                  <span class="coupon-code">({{ receiptData()!.discount!.couponCode }})</span>
+                }
+              </span>
+              <span class="totals-value">-{{ receiptData()!.discount!.discountAmount | appCurrency:'1.2-2' }}</span>
+            </div>
+          }
+
+          <div class="totals-divider"></div>
+
+          <div class="totals-row grand-total-row">
+            <span class="grand-total-label">Total</span>
+            <span class="grand-total-value">{{ receiptData()!.finalTotal ?? receiptData()!.grandTotal | appCurrency:'1.2-2' }}</span>
+          </div>
+
+          <!-- Savings Note -->
+          @if (receiptData()!.discount) {
+            <div class="savings-note">
+              <span>Original: {{ receiptData()!.grandTotal | appCurrency:'1.2-2' }}</span>
+              <span class="savings-amount">You saved {{ receiptData()!.discount!.discountAmount | appCurrency:'1.2-2' }}!</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Payment Details -->
+      @if (receiptData()!.payments && receiptData()!.payments!.length > 0) {
+        <div class="payment-section">
+          <p class="section-label">
+            <i class="pi pi-credit-card mr-2"></i>
+            {{ receiptData()!.payments!.length > 1 ? 'Payments' : 'Payment Method' }}
+          </p>
+          <div class="payment-details">
+            @for (payment of receiptData()!.payments; track $index) {
+              <div class="payment-row">
+                <div class="payment-info">
+                  <span class="payment-method">{{ getPaymentMethodLabel(payment.method) }}</span>
+                  @if (payment.cardLastFour) {
+                    <span class="card-last-four">****{{ payment.cardLastFour }}</span>
+                  }
+                  @if (payment.transactionReference) {
+                    <span class="transaction-ref">Ref: {{ payment.transactionReference }}</span>
+                  }
+                </div>
+                <span class="payment-amount">{{ payment.amount | appCurrency:'1.2-2' }}</span>
+              </div>
+              @if (payment.cashTendered && payment.cashTendered > payment.amount) {
+                <div class="cash-details">
+                  <span>Tendered: {{ payment.cashTendered | appCurrency:'1.2-2' }}</span>
+                  @if (payment.changeGiven) {
+                    <span>Change: {{ payment.changeGiven | appCurrency:'1.2-2' }}</span>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Loyalty Points -->
+      @if (receiptData()!.loyalty) {
+        <div class="loyalty-section">
+          <div class="loyalty-header">
+            <span class="loyalty-title">
+              <i class="pi pi-star-fill mr-2"></i>
+              Loyalty Points
+            </span>
+            <span class="loyalty-tier">{{ receiptData()!.loyalty!.tier }}</span>
+          </div>
+          <div class="loyalty-details">
+            <div class="loyalty-row">
+              @if (receiptData()!.loyalty!.pointsEarned > 0) {
+                <div class="loyalty-item">
+                  <span class="loyalty-label">Points Earned</span>
+                  <span class="points-earned">+{{ receiptData()!.loyalty!.pointsEarned | number }}</span>
+                </div>
+              }
+              @if (receiptData()!.loyalty!.pointsRedeemed > 0) {
+                <div class="loyalty-item">
+                  <span class="loyalty-label">Points Redeemed</span>
+                  <span class="points-redeemed">-{{ receiptData()!.loyalty!.pointsRedeemed | number }}</span>
+                </div>
+              }
+              <div class="loyalty-item">
+                <span class="loyalty-label">New Balance</span>
+                <span class="loyalty-balance">{{ receiptData()!.loyalty!.balanceAfter | number }} pts</span>
+              </div>
+            </div>
+            @if (receiptData()!.loyalty!.tierMultiplier > 1) {
+              <div class="tier-bonus">
+                {{ receiptData()!.loyalty!.tierMultiplier }}x tier bonus applied
+              </div>
+            }
+            @if (receiptData()!.loyalty!.redemptionDiscount > 0) {
+              <div class="redemption-discount">
+                Points Discount Applied: -{{ receiptData()!.loyalty!.redemptionDiscount | appCurrency:'1.2-2' }}
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- QR Code -->
+      @if (showQrCode) {
+        <div class="qr-section">
+          <img
+            [src]="qrCodeUrl()"
+            [alt]="'QR code for receipt ' + receiptData()!.receiptNumber"
+            width="100"
+            height="100"
+            class="qr-image"
+          />
+          <p class="qr-hint">Scan to verify receipt</p>
+        </div>
+      }
+
+      <!-- Footer -->
+      <footer class="receipt-footer">
+        <p class="section-label">Terms & Notes</p>
+        <div class="footer-content">
+          <p>This document serves as a final proof of purchase. Please retain for your records.</p>
+          <p>Thank you for your business. We appreciate your continued support.</p>
+          @if (receiptData()!.notes) {
+            <p class="receipt-notes"><strong>Note:</strong> {{ receiptData()!.notes }}</p>
+          }
+        </div>
+      </footer>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex flex-column md:flex-row justify-content-between gap-2 no-print">
+      <div class="flex gap-2">
+        @if (hasCustomerEmail()) {
+          <p-button
+            label="Resend Email"
+            icon="pi pi-envelope"
+            severity="info"
+            [outlined]="true"
+            (onClick)="onResendEmail()"
+            [loading]="emailSending()"
+            pTooltip="Send receipt again to customer email"
+            tooltipPosition="top"
+            ariaLabel="Resend receipt via Email"
+          />
+        }
+        @if (hasCustomerPhone()) {
+          <p-button
+            label="Resend WhatsApp"
+            icon="pi pi-whatsapp"
+            severity="success"
+            [outlined]="true"
+            (onClick)="onSharePdf()"
+            [loading]="pdfSharing()"
+            pTooltip="Download PDF and open WhatsApp"
+            tooltipPosition="top"
+            ariaLabel="Resend PDF via WhatsApp"
+          />
+        }
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Close"
+          severity="secondary"
+          [text]="true"
+          (onClick)="onClose()"
+          ariaLabel="Close receipt dialog"
+        />
+        <p-button
+          label="PDF"
+          icon="pi pi-file-pdf"
+          severity="secondary"
+          (onClick)="onDownloadPdf()"
+          ariaLabel="Download receipt as PDF"
+        />
+        <p-button
+          label="Print"
+          icon="pi pi-print"
+          (onClick)="onPrint()"
+          ariaLabel="Print receipt"
+        />
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,295 @@
+<div class="grid">
+  <div class="col-12 flex align-items-center justify-content-between mb-4">
+    <h1 class="text-3xl font-bold m-0">Customers</h1>
+    <p-button
+      label="Add Customer"
+      icon="pi pi-plus"
+      (onClick)="openCreateDialog()"
+    />
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="col-12 mb-4">
+    <div class="grid">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Total Customers</span>
+                <span class="text-3xl font-bold text-primary">{{ totalCustomers() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-primary-100 flex align-items-center justify-content-center">
+                <i class="pi pi-users text-primary text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Active Customers</span>
+                <span class="text-3xl font-bold text-green-500">{{ activeCustomers() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-green-100 flex align-items-center justify-content-center">
+                <i class="pi pi-check-circle text-green-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Total Revenue</span>
+                <span class="text-3xl font-bold">{{ totalRevenue() | appCurrency:'1.2-2' }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-blue-100 flex align-items-center justify-content-center">
+                <i class="pi pi-dollar text-blue-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers Table -->
+  <div class="col-12">
+    <p-card>
+      <!-- Search -->
+      <div class="flex flex-column md:flex-row md:align-items-center gap-3 mb-4">
+        <p-iconfield iconPosition="left" class="w-full md:w-20rem">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearch()"
+            placeholder="Search by name or phone..."
+            class="w-full"
+          />
+        </p-iconfield>
+        @if (searchQuery) {
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            severity="secondary"
+            [text]="true"
+            (onClick)="clearSearch()"
+          />
+        }
+      </div>
+
+      <!-- Table -->
+      <p-table
+        [value]="customers()"
+        [loading]="loading()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} customers"
+        [rowHover]="true"
+        dataKey="id"
+        styleClass="p-datatable-sm"
+        [sortField]="'createdAt'"
+        [sortOrder]="-1"
+        [scrollable]="true"
+        scrollDirection="horizontal"
+        [tableStyle]="{ 'min-width': '60rem' }"
+      >
+        <ng-template #header>
+          <tr>
+            <th pSortableColumn="name" style="width: 20%">
+              Name
+              <p-sortIcon field="name" />
+            </th>
+            <th pSortableColumn="phone" style="width: 15%">
+              Phone
+              <p-sortIcon field="phone" />
+            </th>
+            <th style="width: 20%">Email</th>
+            <th pSortableColumn="totalTransactions" style="width: 12%">
+              Transactions
+              <p-sortIcon field="totalTransactions" />
+            </th>
+            <th pSortableColumn="totalSpent" style="width: 13%">
+              Total Spent
+              <p-sortIcon field="totalSpent" />
+            </th>
+            <th pSortableColumn="lastPurchaseDate" style="width: 12%">
+              Last Purchase
+              <p-sortIcon field="lastPurchaseDate" />
+            </th>
+            <th style="width: 8%" alignFrozen="right" pFrozenColumn [frozen]="true">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-customer>
+          <tr>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <div class="w-2rem h-2rem border-circle bg-primary-100 flex align-items-center justify-content-center">
+                  <span class="text-primary font-bold text-sm">{{ getInitials(customer.name) }}</span>
+                </div>
+                <span class="font-medium">{{ customer.name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="font-mono">{{ formatPhone(customer.phone) }}</span>
+            </td>
+            <td>
+              @if (customer.email) {
+                <a [href]="'mailto:' + customer.email" class="text-primary no-underline hover:underline">
+                  {{ customer.email }}
+                </a>
+              } @else {
+                <span class="text-color-secondary">-</span>
+              }
+            </td>
+            <td>
+              @if (customer.totalTransactions > 0) {
+                <p-tag
+                  [value]="customer.totalTransactions.toString()"
+                  severity="info"
+                />
+              } @else {
+                <span class="text-color-secondary">0</span>
+              }
+            </td>
+            <td>
+              <span class="font-medium">{{ customer.totalSpent | appCurrency:'1.2-2' }}</span>
+            </td>
+            <td>
+              @if (customer.lastPurchaseDate) {
+                {{ customer.lastPurchaseDate | date:'mediumDate' }}
+              } @else {
+                <span class="text-color-secondary">-</span>
+              }
+            </td>
+            <td alignFrozen="right" pFrozenColumn [frozen]="true">
+              <div class="flex align-items-center gap-1">
+                <p-button
+                  icon="pi pi-eye"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="info"
+                  size="small"
+                  pTooltip="View Details"
+                  tooltipPosition="top"
+                  (onClick)="viewCustomer(customer)"
+                />
+                <p-button
+                  icon="pi pi-pencil"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  size="small"
+                  pTooltip="Edit"
+                  tooltipPosition="top"
+                  (onClick)="editCustomer(customer)"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="danger"
+                  size="small"
+                  pTooltip="Delete"
+                  tooltipPosition="top"
+                  (onClick)="confirmDelete(customer)"
+                />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="7" class="text-center p-4">
+              <div class="flex flex-column align-items-center gap-3">
+                <i class="pi pi-users text-4xl text-color-secondary"></i>
+                @if (searchQuery) {
+                  <span class="text-color-secondary">No customers found matching "{{ searchQuery }}"</span>
+                  <p-button
+                    label="Clear Search"
+                    icon="pi pi-times"
+                    severity="secondary"
+                    (onClick)="clearSearch()"
+                  />
+                } @else {
+                  <span class="text-color-secondary">No customers yet</span>
+                  <p-button
+                    label="Add First Customer"
+                    icon="pi pi-plus"
+                    (onClick)="openCreateDialog()"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #loadingbody>
+          @for (_ of skeletonRows; track $index) {
+            <tr>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="80%" /></td>
+              <td><p-skeleton width="40%" /></td>
+              <td><p-skeleton width="50%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton shape="circle" size="2rem" /></td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>
+
+<!-- Form Dialog -->
+<app-customer-form-dialog
+  [visible]="showFormDialog()"
+  [customer]="selectedCustomer()"
+  (visibleChange)="showFormDialog.set($event)"
+  (saved)="onCustomerSaved($event)"
+/>
+
+<!-- Detail Dialog -->
+<app-customer-detail-dialog
+  [visible]="showDetailDialog()"
+  [customerId]="selectedCustomerId()"
+  (visibleChange)="showDetailDialog.set($event)"
+  (edit)="editCustomerFromDetail($event)"
+/>

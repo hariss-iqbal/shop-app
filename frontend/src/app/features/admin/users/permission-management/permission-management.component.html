@@ -1,0 +1,150 @@
+<div class="flex flex-column gap-4">
+  <!-- Header -->
+  <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+    <div class="flex align-items-center gap-3">
+      <p-button
+        icon="pi pi-arrow-left"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        routerLink="/admin/users"
+        pTooltip="Back to Users"
+        tooltipPosition="right"
+      />
+      <div>
+        <h1 class="text-2xl font-bold text-900 m-0">Permission Management</h1>
+        <p class="text-color-secondary mt-1 mb-0">Configure what each role can access</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Legend -->
+  <div class="flex flex-wrap gap-3">
+    <p-card styleClass="flex-1" [style]="{ minWidth: '200px' }">
+      <div class="flex align-items-center gap-3">
+        <p-tag value="Administrator" severity="danger" />
+        <span class="text-color-secondary text-sm">Full system access</span>
+      </div>
+    </p-card>
+    <p-card styleClass="flex-1" [style]="{ minWidth: '200px' }">
+      <div class="flex align-items-center gap-3">
+        <p-tag value="Manager" severity="warn" />
+        <span class="text-color-secondary text-sm">Operations & reports</span>
+      </div>
+    </p-card>
+    <p-card styleClass="flex-1" [style]="{ minWidth: '200px' }">
+      <div class="flex align-items-center gap-3">
+        <p-tag value="Cashier" severity="info" />
+        <span class="text-color-secondary text-sm">Sales only</span>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Permissions Table -->
+  <p-card>
+    @if (loading()) {
+      <div class="flex align-items-center justify-content-center py-6">
+        <p-progressSpinner strokeWidth="4" styleClass="w-3rem h-3rem" />
+      </div>
+    } @else {
+      <p-table
+        [value]="permissionRows()"
+        [rowGroupMode]="'subheader'"
+        groupRowsBy="permission.category"
+        styleClass="p-datatable-sm"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width: 40%">Permission</th>
+            <th style="width: 20%" class="text-center">
+              <p-tag value="Admin" severity="danger" />
+            </th>
+            <th style="width: 20%" class="text-center">
+              <p-tag value="Manager" severity="warn" />
+            </th>
+            <th style="width: 20%" class="text-center">
+              <p-tag value="Cashier" severity="info" />
+            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template #groupheader let-row>
+          <tr>
+            <td colspan="4" class="font-bold surface-100">
+              <i class="pi pi-folder mr-2"></i>
+              {{ row.permission.category }}
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-row>
+          <tr>
+            <td>
+              <div class="flex flex-column gap-1">
+                <span class="font-medium">{{ row.permission.label }}</span>
+                <span class="text-color-secondary text-sm">{{ row.permission.description }}</span>
+              </div>
+            </td>
+            <td class="text-center">
+              @if (row.saving.admin) {
+                <p-progressSpinner strokeWidth="4" styleClass="w-1rem h-1rem" />
+              } @else {
+                <p-toggleSwitch
+                  [(ngModel)]="row.admin"
+                  (onChange)="onPermissionChange(row, 'admin', $event.checked)"
+                  [disabled]="isProtectedPermission(row.permission.key, 'admin')"
+                  [pTooltip]="isProtectedPermission(row.permission.key, 'admin') ? 'Cannot disable critical admin permission' : ''"
+                />
+              }
+            </td>
+            <td class="text-center">
+              @if (row.saving.manager) {
+                <p-progressSpinner strokeWidth="4" styleClass="w-1rem h-1rem" />
+              } @else {
+                <p-toggleSwitch
+                  [(ngModel)]="row.manager"
+                  (onChange)="onPermissionChange(row, 'manager', $event.checked)"
+                />
+              }
+            </td>
+            <td class="text-center">
+              @if (row.saving.cashier) {
+                <p-progressSpinner strokeWidth="4" styleClass="w-1rem h-1rem" />
+              } @else {
+                <p-toggleSwitch
+                  [(ngModel)]="row.cashier"
+                  (onChange)="onPermissionChange(row, 'cashier', $event.checked)"
+                />
+              }
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="4" class="text-center py-4">
+              <i class="pi pi-lock text-4xl text-color-secondary mb-3"></i>
+              <p class="text-color-secondary m-0">No permissions configured</p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </p-card>
+
+  <!-- Info Message -->
+  <p-card styleClass="surface-ground">
+    <div class="flex align-items-start gap-3">
+      <i class="pi pi-info-circle text-primary text-xl mt-1"></i>
+      <div>
+        <h4 class="m-0 mb-2">How Permissions Work</h4>
+        <ul class="m-0 pl-4 text-color-secondary">
+          <li>Changes take effect immediately for all users with that role</li>
+          <li>Users need to refresh their browser to see updated permissions</li>
+          <li>Admin permissions for "Manage Users" and "System Settings" cannot be disabled</li>
+          <li>Be careful when modifying permissions as it affects all users with that role</li>
+        </ul>
+      </div>
+    </div>
+  </p-card>
+</div>

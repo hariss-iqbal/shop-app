@@ -6,12 +6,14 @@
 export interface UpdateStockAlertConfigDto {
   lowStockThreshold?: number;
   enableBrandZeroAlert?: boolean;
+  allowOversell?: boolean;
 }
 
 export interface StockAlertConfigResponseDto {
   id: string;
   lowStockThreshold: number;
   enableBrandZeroAlert: boolean;
+  allowOversell: boolean;
   createdAt: string;
   updatedAt: string | null;
 }

@@ -24,6 +24,7 @@ import { ToastService } from '../../../shared/services/toast.service';
 import { MessageCountService } from '../../../shared/services/message-count.service';
 import { ThemeService } from '../../../shared/services/theme.service';
 import { ThemeMode } from '../../../enums/theme-mode.enum';
+import { Permission } from '../../../enums/user-role.enum';
 
 describe('AdminLayoutComponent', () => {
   let component: AdminLayoutComponent;
@@ -37,26 +38,36 @@ describe('AdminLayoutComponent', () => {
   let mockUnreadCount: WritableSignal<number>;
   let mockLoading: WritableSignal<boolean>;
   let mockCurrentTheme: WritableSignal<ThemeMode>;
+  let mockPermissions: WritableSignal<Record<Permission, boolean> | null>;
 
-  const expectedNavItems = [
-    { label: 'Dashboard', icon: 'pi pi-chart-bar', route: '/admin/dashboard' },
-    { label: 'Inventory', icon: 'pi pi-mobile', route: '/admin/inventory' },
-    { label: 'Brands', icon: 'pi pi-tag', route: '/admin/brands' },
-    { label: 'Purchase Orders', icon: 'pi pi-file', route: '/admin/purchase-orders' },
-    { label: 'Suppliers', icon: 'pi pi-truck', route: '/admin/suppliers' },
-    { label: 'Sales', icon: 'pi pi-dollar', route: '/admin/sales' },
-    { label: 'Messages', icon: 'pi pi-envelope', route: '/admin/messages', showBadge: true },
-    { label: 'Storage', icon: 'pi pi-cloud', route: '/admin/storage' }
-  ];
+  // Mock permissions that grant access to the basic nav items
+  const mockPermissionsValue: Record<Permission, boolean> = {
+    canAccessDashboard: true,
+    canAccessInventory: true,
+    canAccessBrands: true,
+    canAccessPurchaseOrders: true,
+    canAccessSuppliers: true,
+    canAccessSales: true,
+    canAccessMessages: true,
+    canAccessStorage: true,
+    canManageUsers: false,
+    canProcessRefunds: false,
+    canAccessAuditLogs: false,
+    canAccessReceiptSequences: false,
+    canAccessReports: false,
+    canAccessSystemSettings: false
+  };
 
   beforeEach(async () => {
     mockUserEmail = signal<string | null>('admin@example.com');
     mockUnreadCount = signal<number>(3);
     mockLoading = signal<boolean>(false);
     mockCurrentTheme = signal<ThemeMode>(ThemeMode.LIGHT);
+    mockPermissions = signal<Record<Permission, boolean> | null>(mockPermissionsValue);
 
     mockAuthService = jasmine.createSpyObj('SupabaseAuthService', ['signOut'], {
-      userEmail: mockUserEmail.asReadonly()
+      userEmail: mockUserEmail.asReadonly(),
+      permissions: mockPermissions.asReadonly()
     });
 
     mockToastService = jasmine.createSpyObj('ToastService', ['success', 'error', 'info', 'warn']);
@@ -112,12 +123,20 @@ describe('AdminLayoutComponent', () => {
     });
 
     it('should initialize with correct navigation items (AC1)', () => {
-      expect(component.navItems.length).toBe(8);
-      expect(component.navItems).toEqual(expectedNavItems);
+      // NavItems are filtered based on permissions
+      // With our mock permissions, we should have nav items for all permitted sections
+      const navItems = component.navItems();
+      expect(navItems.length).toBeGreaterThan(0);
+
+      // Verify some key nav items are present
+      const labels = navItems.map((item: any) => item.label);
+      expect(labels).toContain('Dashboard');
+      expect(labels).toContain('Inventory');
+      expect(labels).toContain('Messages');
     });
 
     it('should include all required navigation links (AC1)', () => {
-      const labels = component.navItems.map(item => item.label);
+      const labels = component.navItems().map((item: any) => item.label);
       expect(labels).toContain('Dashboard');
       expect(labels).toContain('Inventory');
       expect(labels).toContain('Brands');
@@ -129,11 +148,11 @@ describe('AdminLayoutComponent', () => {
     });
 
     it('should have showBadge true only for Messages item (AC2)', () => {
-      const messagesItem = component.navItems.find(item => item.label === 'Messages');
-      const otherItems = component.navItems.filter(item => item.label !== 'Messages');
+      const messagesItem = component.navItems().find((item: any) => item.label === 'Messages');
+      const otherItems = component.navItems().filter((item: any) => item.label !== 'Messages');
 
       expect(messagesItem?.showBadge).toBe(true);
-      otherItems.forEach(item => {
+      otherItems.forEach((item: any) => {
         expect(item.showBadge).toBeFalsy();
       });
     });
@@ -321,47 +340,47 @@ describe('AdminLayoutComponent', () => {
 
   describe('navigation item structure (AC1)', () => {
     it('should have correct route for Dashboard', () => {
-      const dashboard = component.navItems.find(item => item.label === 'Dashboard');
+      const dashboard = component.navItems().find((item: any) => item.label === 'Dashboard');
       expect(dashboard?.route).toBe('/admin/dashboard');
     });
 
     it('should have correct route for Inventory', () => {
-      const inventory = component.navItems.find(item => item.label === 'Inventory');
+      const inventory = component.navItems().find((item: any) => item.label === 'Inventory');
       expect(inventory?.route).toBe('/admin/inventory');
     });
 
     it('should have correct route for Brands', () => {
-      const brands = component.navItems.find(item => item.label === 'Brands');
+      const brands = component.navItems().find((item: any) => item.label === 'Brands');
       expect(brands?.route).toBe('/admin/brands');
     });
 
     it('should have correct route for Purchase Orders', () => {
-      const purchaseOrders = component.navItems.find(item => item.label === 'Purchase Orders');
+      const purchaseOrders = component.navItems().find((item: any) => item.label === 'Purchase Orders');
       expect(purchaseOrders?.route).toBe('/admin/purchase-orders');
     });
 
     it('should have correct route for Suppliers', () => {
-      const suppliers = component.navItems.find(item => item.label === 'Suppliers');
+      const suppliers = component.navItems().find((item: any) => item.label === 'Suppliers');
       expect(suppliers?.route).toBe('/admin/suppliers');
     });
 
     it('should have correct route for Sales', () => {
-      const sales = component.navItems.find(item => item.label === 'Sales');
+      const sales = component.navItems().find((item: any) => item.label === 'Sales');
       expect(sales?.route).toBe('/admin/sales');
     });
 
     it('should have correct route for Messages', () => {
-      const messages = component.navItems.find(item => item.label === 'Messages');
+      const messages = component.navItems().find((item: any) => item.label === 'Messages');
       expect(messages?.route).toBe('/admin/messages');
     });
 
     it('should have correct route for Storage', () => {
-      const storage = component.navItems.find(item => item.label === 'Storage');
+      const storage = component.navItems().find((item: any) => item.label === 'Storage');
       expect(storage?.route).toBe('/admin/storage');
     });
 
     it('should have appropriate icons for all navigation items', () => {
-      component.navItems.forEach(item => {
+      component.navItems().forEach((item: any) => {
         expect(item.icon).toBeTruthy();
         expect(item.icon.startsWith('pi pi-')).toBe(true);
       });

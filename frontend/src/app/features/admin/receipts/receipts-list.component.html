@@ -1,0 +1,606 @@
+<div class="grid">
+  <div class="col-12 flex align-items-center justify-content-between mb-4">
+    <h1 class="text-3xl font-bold m-0">Receipts</h1>
+    <div class="flex gap-2">
+      <p-button
+        label="Scan Receipt"
+        icon="pi pi-barcode"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="showBarcodeScannerDialog.set(true)"
+        pTooltip="Scan barcode or enter receipt number"
+        tooltipPosition="bottom"
+      />
+      <p-button
+        label="Export CSV"
+        icon="pi pi-download"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="onExportCsv()"
+        [disabled]="loading()"
+      />
+    </div>
+  </div>
+
+  <!-- Saved Searches (Quick Access) -->
+  @if (savedSearches().length > 0) {
+    <div class="col-12">
+      <div class="flex align-items-center gap-2 flex-wrap">
+        <span class="text-color-secondary font-medium">Quick Access:</span>
+        @for (search of savedSearches(); track search.id) {
+          <p-button
+            [label]="search.name"
+            [severity]="activeSearchId() === search.id ? 'primary' : 'secondary'"
+            [outlined]="activeSearchId() !== search.id"
+            size="small"
+            (onClick)="onApplySavedSearch(search)"
+          />
+        }
+        <p-button
+          icon="pi pi-cog"
+          severity="secondary"
+          [text]="true"
+          size="small"
+          pTooltip="Manage Saved Searches"
+          tooltipPosition="top"
+          (onClick)="showManageSavedSearchesDialog = true"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- Search and Filters -->
+  <div class="col-12">
+    <p-card>
+      <div class="grid">
+        <!-- Receipt Number Search -->
+        <div class="col-12 md:col-3">
+          <label for="receiptSearch" class="block font-medium mb-2">Receipt Number</label>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              pInputText
+              id="receiptSearch"
+              [(ngModel)]="receiptNumberSearch"
+              (input)="onSearchChange()"
+              placeholder="e.g., RCP100"
+              class="w-full"
+            />
+          </p-iconfield>
+        </div>
+
+        <!-- Customer Phone Search -->
+        <div class="col-12 md:col-3">
+          <label for="phoneSearch" class="block font-medium mb-2">Customer Phone</label>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-phone" />
+            <input
+              pInputText
+              id="phoneSearch"
+              [(ngModel)]="customerPhoneSearch"
+              (input)="onSearchChange()"
+              placeholder="Search by phone..."
+              class="w-full"
+            />
+          </p-iconfield>
+        </div>
+
+        <!-- Customer Name Search -->
+        <div class="col-12 md:col-3">
+          <label for="nameSearch" class="block font-medium mb-2">Customer Name</label>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-user" />
+            <input
+              pInputText
+              id="nameSearch"
+              [(ngModel)]="customerNameSearch"
+              (input)="onSearchChange()"
+              placeholder="Search by name..."
+              class="w-full"
+            />
+          </p-iconfield>
+        </div>
+
+        <!-- Customer Email Search -->
+        <div class="col-12 md:col-3">
+          <label for="emailSearch" class="block font-medium mb-2">Customer Email</label>
+          <p-iconfield>
+            <p-inputicon styleClass="pi pi-envelope" />
+            <input
+              pInputText
+              id="emailSearch"
+              [(ngModel)]="customerEmailSearch"
+              (input)="onSearchChange()"
+              placeholder="Search by email..."
+              class="w-full"
+            />
+          </p-iconfield>
+        </div>
+
+        <!-- Date Range -->
+        <div class="col-12 md:col-4">
+          <label class="block font-medium mb-2">Date Range</label>
+          <div class="flex gap-2">
+            <p-datepicker
+              [(ngModel)]="startDate"
+              (onSelect)="onDateFilterChange()"
+              (onClear)="onDateFilterChange()"
+              [showClear]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="From"
+              [showIcon]="true"
+              styleClass="w-full"
+            />
+            <p-datepicker
+              [(ngModel)]="endDate"
+              (onSelect)="onDateFilterChange()"
+              (onClear)="onDateFilterChange()"
+              [showClear]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="To"
+              [showIcon]="true"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Amount Range -->
+        <div class="col-12 md:col-4">
+          <label class="block font-medium mb-2">Amount Range</label>
+          <div class="flex gap-2 align-items-center">
+            <p-inputnumber
+              [(ngModel)]="minAmount"
+              (onBlur)="onAmountFilterChange()"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              mode="currency"
+              currency="USD"
+              placeholder="Min"
+              [showClear]="true"
+              styleClass="w-full"
+            />
+            <span class="text-color-secondary">-</span>
+            <p-inputnumber
+              [(ngModel)]="maxAmount"
+              (onBlur)="onAmountFilterChange()"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              mode="currency"
+              currency="USD"
+              placeholder="Max"
+              [showClear]="true"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="col-12 md:col-4">
+          <label class="block font-medium mb-2">Sort By</label>
+          <div class="flex gap-2">
+            <p-select
+              [(ngModel)]="sortField"
+              [options]="sortFieldOptions"
+              (onChange)="onSortChange()"
+              placeholder="Select field"
+              styleClass="w-full"
+            />
+            <p-select
+              [(ngModel)]="sortOrder"
+              [options]="sortOrderOptions"
+              (onChange)="onSortChange()"
+              placeholder="Order"
+              styleClass="w-8rem"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex align-items-center justify-content-between mt-3">
+        <div class="flex gap-2">
+          @if (hasActiveFilters()) {
+            <p-button
+              label="Clear All Filters"
+              icon="pi pi-filter-slash"
+              severity="secondary"
+              [text]="true"
+              (onClick)="clearFilters()"
+            />
+          }
+        </div>
+        <div class="flex gap-2">
+          @if (hasActiveFilters()) {
+            <p-button
+              label="Save Search"
+              icon="pi pi-bookmark"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="onShowSaveSearchDialog()"
+            />
+          }
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Results Summary -->
+  @if (!loading() && totalRecords() > 0) {
+    <div class="col-12 mt-2">
+      <div class="flex align-items-center gap-3 flex-wrap">
+        <span class="text-color-secondary">
+          Found <strong>{{ totalRecords() }}</strong> receipt{{ totalRecords() === 1 ? '' : 's' }}
+        </span>
+        @if (hasActiveFilters()) {
+          <p-tag severity="info" value="Filtered" [rounded]="true" />
+        }
+        @if (customerPhoneSearch.trim()) {
+          <span class="text-color-secondary text-sm flex align-items-center gap-1">
+            <i class="pi pi-sort-amount-down text-xs"></i>
+            Sorted by date (newest first)
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Receipts Table -->
+  <div class="col-12 mt-2">
+    <p-card>
+      <p-table
+        [value]="receipts()"
+        [loading]="loading()"
+        [paginator]="true"
+        [rows]="20"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} receipts"
+        [rowHover]="true"
+        dataKey="id"
+        styleClass="p-datatable-sm"
+        [sortField]="'createdAt'"
+        [sortOrder]="-1"
+        [scrollable]="true"
+        scrollDirection="horizontal"
+        [tableStyle]="{ 'min-width': '60rem' }"
+        [totalRecords]="totalRecords()"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+      >
+        <ng-template #header>
+          <tr>
+            <th pSortableColumn="receiptNumber" style="width: 15%">
+              Receipt #
+              <p-sortIcon field="receiptNumber" />
+            </th>
+            <th pSortableColumn="transactionDate" style="width: 12%">
+              Date
+              <p-sortIcon field="transactionDate" />
+            </th>
+            <th style="width: 8%">Time</th>
+            <th style="width: 8%">Items</th>
+            <th pSortableColumn="grandTotal" style="width: 12%">
+              Total
+              <p-sortIcon field="grandTotal" />
+            </th>
+            <th style="width: 18%">Customer</th>
+            <th style="width: 15%">Phone</th>
+            <th style="width: 12%" alignFrozen="right" pFrozenColumn [frozen]="true">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-receipt>
+          <tr>
+            <td>
+              <span class="font-mono font-medium text-primary cursor-pointer hover:underline" (click)="onViewReceipt(receipt)">
+                {{ receipt.receiptNumber }}
+              </span>
+            </td>
+            <td>{{ receipt.transactionDate | date:'mediumDate' }}</td>
+            <td>{{ formatTime(receipt.transactionTime) }}</td>
+            <td>{{ receipt.items?.length || 0 }}</td>
+            <td>
+              <span class="font-semibold">{{ receipt.grandTotal | appCurrency:'1.2-2' }}</span>
+            </td>
+            <td>
+              @if (receipt.customerName) {
+                {{ receipt.customerName }}
+              } @else {
+                <span class="text-color-secondary">-</span>
+              }
+            </td>
+            <td>
+              @if (receipt.customerPhone) {
+                <span class="font-mono">{{ receipt.customerPhone }}</span>
+              } @else {
+                <span class="text-color-secondary">-</span>
+              }
+            </td>
+            <td alignFrozen="right" pFrozenColumn [frozen]="true">
+              <div class="flex align-items-center gap-1">
+                @if (receiptRefundStatus().get(receipt.id) === 'full') {
+                  <p-tag severity="warn" value="Fully Refunded" [rounded]="true" pTooltip="This receipt has been fully refunded" tooltipPosition="top" />
+                } @else if (!authService.canProcessRefunds()) {
+                  <!-- F-013: Cashier refund blocked - show message prompting manager assistance -->
+                  <p-tag
+                    severity="info"
+                    value="Refund: Manager Required"
+                    [rounded]="true"
+                    pTooltip="Refunds require Manager or Admin privileges. Please contact your manager for assistance."
+                    tooltipPosition="top"
+                  />
+                } @else if (receiptRefundStatus().get(receipt.id) === 'partial') {
+                  <p-button
+                    icon="pi pi-refresh"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="warn"
+                    size="small"
+                    pTooltip="Process Additional Partial Refund"
+                    tooltipPosition="top"
+                    (onClick)="onProcessPartialRefund(receipt)"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-refresh"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
+                    size="small"
+                    pTooltip="Full Refund"
+                    tooltipPosition="top"
+                    (onClick)="onProcessRefund(receipt)"
+                  />
+                  <p-button
+                    icon="pi pi-list"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="warn"
+                    size="small"
+                    pTooltip="Partial Refund"
+                    tooltipPosition="top"
+                    (onClick)="onProcessPartialRefund(receipt)"
+                  />
+                }
+                <p-button
+                  icon="pi pi-replay"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="success"
+                  size="small"
+                  pTooltip="Resend via WhatsApp"
+                  tooltipPosition="top"
+                  (onClick)="onResendReceipt(receipt)"
+                />
+                <p-button
+                  icon="pi pi-file-pdf"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  size="small"
+                  pTooltip="Download PDF"
+                  tooltipPosition="top"
+                  (onClick)="onDownloadPdf(receipt)"
+                />
+                <p-button
+                  icon="pi pi-print"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  size="small"
+                  pTooltip="Print Receipt"
+                  tooltipPosition="top"
+                  (onClick)="onPrintReceipt(receipt)"
+                />
+                <p-button
+                  icon="pi pi-eye"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="info"
+                  size="small"
+                  pTooltip="View Receipt"
+                  tooltipPosition="top"
+                  (onClick)="onViewReceipt(receipt)"
+                />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="8" class="text-center p-4">
+              <div class="flex flex-column align-items-center gap-3 py-4">
+                <i class="pi pi-receipt text-5xl text-color-secondary"></i>
+                @if (hasActiveFilters()) {
+                  <div class="flex flex-column align-items-center gap-2">
+                    <span class="text-lg font-medium text-color">No receipts found</span>
+                    <span class="text-color-secondary text-sm">No receipts match your current search criteria</span>
+                    @if (customerPhoneSearch.trim()) {
+                      <span class="text-color-secondary text-sm">
+                        Try checking the phone number format or search by receipt number
+                      </span>
+                    }
+                  </div>
+                  <p-button
+                    label="Clear All Filters"
+                    icon="pi pi-filter-slash"
+                    severity="secondary"
+                    [outlined]="true"
+                    (onClick)="clearFilters()"
+                  />
+                } @else {
+                  <div class="flex flex-column align-items-center gap-2">
+                    <span class="text-lg font-medium text-color">No receipts yet</span>
+                    <span class="text-color-secondary text-sm">Receipts are automatically saved when sales are completed</span>
+                    <span class="text-color-secondary text-xs">Complete a sale to see your first receipt here</span>
+                  </div>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #loadingbody>
+          @for (_ of skeletonRows; track $index) {
+            <tr>
+              <td><p-skeleton width="80%" /></td>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="40%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton shape="circle" size="2rem" /></td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>
+
+<!-- Save Search Dialog -->
+<p-dialog
+  header="Save Search"
+  [(visible)]="showSaveSearchDialog"
+  [modal]="true"
+  [style]="{ width: '400px' }"
+  [closable]="true"
+>
+  <div class="flex flex-column gap-3">
+    <div>
+      <label for="searchName" class="block font-medium mb-2">Search Name</label>
+      <input
+        pInputText
+        id="searchName"
+        [(ngModel)]="newSearchName"
+        placeholder="e.g., Today's Sales"
+        class="w-full"
+        [maxlength]="100"
+      />
+    </div>
+    <div class="flex align-items-center gap-2">
+      <p-checkbox [(ngModel)]="newSearchIsDefault" [binary]="true" inputId="isDefault" />
+      <label for="isDefault">Set as default search</label>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [text]="true"
+        (onClick)="showSaveSearchDialog = false"
+      />
+      <p-button
+        label="Save"
+        icon="pi pi-check"
+        (onClick)="onSaveSearch()"
+        [disabled]="!newSearchName.trim()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Manage Saved Searches Dialog -->
+<p-dialog
+  header="Manage Saved Searches"
+  [(visible)]="showManageSavedSearchesDialog"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [closable]="true"
+>
+  @if (savedSearches().length === 0) {
+    <div class="text-center py-4">
+      <i class="pi pi-bookmark text-4xl text-color-secondary mb-3"></i>
+      <p class="text-color-secondary">No saved searches yet</p>
+    </div>
+  } @else {
+    <div class="flex flex-column gap-2">
+      @for (search of savedSearches(); track search.id) {
+        <div class="flex align-items-center justify-content-between p-3 border-1 border-round surface-border">
+          <div class="flex align-items-center gap-2">
+            <span class="font-medium">{{ search.name }}</span>
+            @if (search.isDefault) {
+              <p-tag severity="success" value="Default" [rounded]="true" />
+            }
+          </div>
+          <div class="flex gap-1">
+            <p-button
+              icon="pi pi-play"
+              [rounded]="true"
+              [text]="true"
+              severity="primary"
+              size="small"
+              pTooltip="Apply"
+              tooltipPosition="top"
+              (onClick)="onApplySavedSearch(search); showManageSavedSearchesDialog = false"
+            />
+            <p-button
+              icon="pi pi-trash"
+              [rounded]="true"
+              [text]="true"
+              severity="danger"
+              size="small"
+              pTooltip="Delete"
+              tooltipPosition="top"
+              (onClick)="onDeleteSavedSearch(search)"
+            />
+          </div>
+        </div>
+      }
+    </div>
+  }
+</p-dialog>
+
+<!-- Print Receipt Dialog -->
+<app-print-receipt-dialog
+  [receiptData]="selectedReceiptData()"
+  [receiptId]="selectedReceiptId()"
+  [visible]="showReceiptDialog()"
+  (visibleChange)="showReceiptDialog.set($event)"
+  (whatsAppSent)="onWhatsAppSent($event)"
+/>
+
+<!-- Resend Receipt Dialog -->
+<app-resend-receipt-dialog
+  [receipt]="selectedReceiptForResend()"
+  [visible]="showResendDialog()"
+  (visibleChange)="showResendDialog.set($event)"
+  (resendComplete)="onResendComplete($event)"
+/>
+
+<!-- Process Refund Dialog -->
+<app-process-refund-dialog
+  [receiptId]="selectedReceiptForRefund()"
+  [visible]="showRefundDialog()"
+  (visibleChange)="showRefundDialog.set($event)"
+  (refundCompleted)="onRefundCompleted($event)"
+  (printRefundReceipt)="onPrintRefundReceipt($event)"
+/>
+
+<!-- Process Partial Refund Dialog -->
+<app-process-partial-refund-dialog
+  [receiptId]="selectedReceiptForPartialRefund()"
+  [visible]="showPartialRefundDialog()"
+  (visibleChange)="showPartialRefundDialog.set($event)"
+  (refundCompleted)="onPartialRefundCompleted($event)"
+  (printRefundReceipt)="onPrintRefundReceipt($event)"
+/>
+
+<!-- Print Refund Receipt Dialog -->
+<app-print-refund-receipt-dialog
+  [refund]="refundToPrint()"
+  [visible]="showPrintRefundDialog()"
+  (visibleChange)="showPrintRefundDialog.set($event)"
+/>
+
+<!-- Barcode Scanner Dialog -->
+<app-barcode-scanner-dialog
+  [visible]="showBarcodeScannerDialog()"
+  (visibleChange)="showBarcodeScannerDialog.set($event)"
+  (receiptSelected)="onBarcodeReceiptSelected($event)"
+/>
+
+<p-confirmDialog />

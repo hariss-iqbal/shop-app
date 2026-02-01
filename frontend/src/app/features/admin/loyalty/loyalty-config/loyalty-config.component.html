@@ -1,0 +1,324 @@
+<p-toast />
+
+<div class="grid">
+  <div class="col-12">
+    <div class="flex align-items-center justify-content-between mb-4">
+      <h1 class="text-3xl font-bold m-0">Loyalty Program Configuration</h1>
+      <p-button
+        label="Save Changes"
+        icon="pi pi-save"
+        [loading]="saving()"
+        [disabled]="loading() || !hasChanges()"
+        (onClick)="saveConfig()"
+      />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="col-12 md:col-6">
+      <p-card>
+        <p-skeleton width="100%" height="300px" />
+      </p-card>
+    </div>
+    <div class="col-12 md:col-6">
+      <p-card>
+        <p-skeleton width="100%" height="300px" />
+      </p-card>
+    </div>
+  } @else if (config()) {
+    <!-- Program Status -->
+    <div class="col-12">
+      <p-card>
+        <div class="flex align-items-center justify-content-between">
+          <div>
+            <h3 class="m-0 mb-2">Program Status</h3>
+            <p class="text-color-secondary m-0">
+              Enable or disable the loyalty points program
+            </p>
+          </div>
+          <div class="flex align-items-center gap-3">
+            <p-tag
+              [value]="config()!.isEnabled ? 'Active' : 'Inactive'"
+              [severity]="config()!.isEnabled ? 'success' : 'secondary'"
+            />
+            <p-toggleswitch
+              [(ngModel)]="editConfig.isEnabled"
+              (onChange)="markChanged()"
+            />
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Points Earning Configuration -->
+    <div class="col-12 md:col-6">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-3 pb-0">
+            <h3 class="m-0">
+              <i class="pi pi-plus-circle mr-2 text-green-500"></i>
+              Points Earning
+            </h3>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-column gap-4">
+          <div class="field">
+            <label class="block font-medium mb-2">
+              Points Per Dollar
+              <i class="pi pi-info-circle ml-1 text-color-secondary"
+                 pTooltip="Number of points earned per dollar spent"></i>
+            </label>
+            <p-inputNumber
+              [(ngModel)]="editConfig.pointsPerDollar"
+              [min]="0"
+              [max]="100"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              mode="decimal"
+              inputStyleClass="w-full"
+              (onInput)="markChanged()"
+            />
+            <small class="text-color-secondary">
+              Example: 1.00 = 1 point per $1 spent
+            </small>
+          </div>
+
+          <p-divider />
+
+          <div>
+            <h4 class="m-0 mb-3">Tier Multipliers</h4>
+            <p class="text-color-secondary text-sm mb-3">
+              Higher tiers earn more points per purchase
+            </p>
+
+            <div class="flex flex-column gap-3">
+              @for (tier of tiers; track tier.value) {
+                <div class="flex align-items-center justify-content-between">
+                  <div class="flex align-items-center gap-2">
+                    <p-tag
+                      [value]="tier.label"
+                      severity="warn"
+                    />
+                  </div>
+                  <div class="flex align-items-center gap-2">
+                    <p-inputNumber
+                      [(ngModel)]="editConfig[tier.multiplierKey]"
+                      [min]="1"
+                      [max]="10"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                      mode="decimal"
+                      inputStyleClass="w-6rem"
+                      (onInput)="markChanged()"
+                    />
+                    <span class="text-color-secondary">x</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Points Redemption Configuration -->
+    <div class="col-12 md:col-6">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-3 pb-0">
+            <h3 class="m-0">
+              <i class="pi pi-minus-circle mr-2 text-blue-500"></i>
+              Points Redemption
+            </h3>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-column gap-4">
+          <div class="field">
+            <label class="block font-medium mb-2">
+              Redemption Rate ($ per point)
+              <i class="pi pi-info-circle ml-1 text-color-secondary"
+                 pTooltip="Dollar value per point when redeeming"></i>
+            </label>
+            <p-inputNumber
+              [(ngModel)]="editConfig.redemptionRate"
+              [min]="0.001"
+              [max]="1"
+              [minFractionDigits]="3"
+              [maxFractionDigits]="4"
+              mode="decimal"
+              inputStyleClass="w-full"
+              (onInput)="markChanged()"
+            />
+            <small class="text-color-secondary">
+              Example: 0.01 = 100 points = $1 discount
+            </small>
+          </div>
+
+          <div class="field">
+            <label class="block font-medium mb-2">
+              Minimum Points to Redeem
+            </label>
+            <p-inputNumber
+              [(ngModel)]="editConfig.minPointsToRedeem"
+              [min]="1"
+              [max]="10000"
+              inputStyleClass="w-full"
+              (onInput)="markChanged()"
+            />
+          </div>
+
+          <div class="field">
+            <label class="block font-medium mb-2">
+              Maximum Redemption (% of purchase)
+              <i class="pi pi-info-circle ml-1 text-color-secondary"
+                 pTooltip="Maximum percentage of purchase that can be paid with points"></i>
+            </label>
+            <p-inputNumber
+              [(ngModel)]="editConfig.maxRedemptionPercent"
+              [min]="1"
+              [max]="100"
+              suffix="%"
+              inputStyleClass="w-full"
+              (onInput)="markChanged()"
+            />
+          </div>
+
+          <div class="field">
+            <label class="block font-medium mb-2">
+              Points Expiration (days)
+              <i class="pi pi-info-circle ml-1 text-color-secondary"
+                 pTooltip="Days until points expire (0 = never expire)"></i>
+            </label>
+            <p-inputNumber
+              [(ngModel)]="editConfig.pointsExpirationDays"
+              [min]="0"
+              [max]="3650"
+              inputStyleClass="w-full"
+              (onInput)="markChanged()"
+            />
+            <small class="text-color-secondary">
+              Set to 0 for points that never expire
+            </small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Tier Thresholds -->
+    <div class="col-12">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-3 pb-0">
+            <h3 class="m-0">
+              <i class="pi pi-chart-line mr-2 text-purple-500"></i>
+              Tier Thresholds
+            </h3>
+          </div>
+        </ng-template>
+
+        <p class="text-color-secondary mb-4">
+          Lifetime points required to reach each tier level
+        </p>
+
+        <div class="grid">
+          <div class="col-12 md:col-4">
+            <div class="field">
+              <label class="block font-medium mb-2">
+                <p-tag value="Silver" severity="info" class="mr-2" />
+                Threshold
+              </label>
+              <p-inputNumber
+                [(ngModel)]="editConfig.silverThreshold"
+                [min]="1"
+                [max]="1000000"
+                inputStyleClass="w-full"
+                (onInput)="markChanged()"
+              />
+            </div>
+          </div>
+          <div class="col-12 md:col-4">
+            <div class="field">
+              <label class="block font-medium mb-2">
+                <p-tag value="Gold" severity="warn" class="mr-2" />
+                Threshold
+              </label>
+              <p-inputNumber
+                [(ngModel)]="editConfig.goldThreshold"
+                [min]="1"
+                [max]="1000000"
+                inputStyleClass="w-full"
+                (onInput)="markChanged()"
+              />
+            </div>
+          </div>
+          <div class="col-12 md:col-4">
+            <div class="field">
+              <label class="block font-medium mb-2">
+                <p-tag value="Platinum" severity="success" class="mr-2" />
+                Threshold
+              </label>
+              <p-inputNumber
+                [(ngModel)]="editConfig.platinumThreshold"
+                [min]="1"
+                [max]="1000000"
+                inputStyleClass="w-full"
+                (onInput)="markChanged()"
+              />
+            </div>
+          </div>
+        </div>
+
+        @if (thresholdError()) {
+          <p-message
+            severity="error"
+            [text]="thresholdError()!"
+            styleClass="mt-3 w-full"
+          />
+        }
+      </p-card>
+    </div>
+
+    <!-- Preview Card -->
+    <div class="col-12">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-3 pb-0">
+            <h3 class="m-0">
+              <i class="pi pi-eye mr-2 text-cyan-500"></i>
+              Configuration Preview
+            </h3>
+          </div>
+        </ng-template>
+
+        <div class="grid">
+          <div class="col-12 md:col-6 lg:col-3">
+            <div class="surface-100 border-round p-3">
+              <span class="text-color-secondary block mb-2">$100 Purchase (Bronze)</span>
+              <span class="text-2xl font-bold">{{ calculatePreviewPoints(100, editConfig.bronzeMultiplier) }} pts</span>
+            </div>
+          </div>
+          <div class="col-12 md:col-6 lg:col-3">
+            <div class="surface-100 border-round p-3">
+              <span class="text-color-secondary block mb-2">$100 Purchase (Gold)</span>
+              <span class="text-2xl font-bold">{{ calculatePreviewPoints(100, editConfig.goldMultiplier) }} pts</span>
+            </div>
+          </div>
+          <div class="col-12 md:col-6 lg:col-3">
+            <div class="surface-100 border-round p-3">
+              <span class="text-color-secondary block mb-2">500 Points Value</span>
+              <span class="text-2xl font-bold">{{ 500 * editConfig.redemptionRate | currency }}</span>
+            </div>
+          </div>
+          <div class="col-12 md:col-6 lg:col-3">
+            <div class="surface-100 border-round p-3">
+              <span class="text-color-secondary block mb-2">Points for $1 Discount</span>
+              <span class="text-2xl font-bold">{{ Math.ceil(1 / editConfig.redemptionRate) }} pts</span>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  }
+</div>

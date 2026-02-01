@@ -1,0 +1,7 @@
+:host ::ng-deep .receipt-card {
+  border: 2px dashed var(--surface-300);
+}
+
+:host ::ng-deep .receipt-card .p-card-body {
+  padding: 1.5rem;
+}

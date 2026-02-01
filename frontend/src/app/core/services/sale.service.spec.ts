@@ -417,7 +417,8 @@ describe('SaleService', () => {
     it('should create sale and update phone status', async () => {
       const result = await service.markAsSold(markAsSoldRequest);
 
-      expect(result.id).toBe('sale-1');
+      expect(result.success).toBe(true);
+      expect(result.sale?.id).toBe('sale-1');
       expect(result.phoneId).toBe('phone-1');
     });
 

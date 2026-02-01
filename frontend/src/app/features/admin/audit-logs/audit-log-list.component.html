@@ -1,0 +1,597 @@
+<div class="grid">
+  <div class="col-12 flex align-items-center justify-content-between mb-4">
+    <div class="flex align-items-center gap-3">
+      <h1 class="text-3xl font-bold m-0">Audit Logs</h1>
+      <p-tag
+        value="Immutable Records"
+        severity="secondary"
+        icon="pi pi-lock"
+        pTooltip="Audit logs cannot be modified or deleted for compliance purposes"
+        tooltipPosition="right"
+      />
+    </div>
+    <p-button
+      label="Export to CSV"
+      icon="pi pi-download"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="loading() || auditLogs().length === 0"
+      (onClick)="onExportCsv()"
+      pTooltip="Export audit log data"
+      tooltipPosition="left"
+    />
+  </div>
+
+  <!-- Summary Statistics -->
+  <div class="col-12 mb-4">
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Total Events</span>
+                <span class="text-3xl font-bold">{{ summary()?.totalEvents || 0 }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-blue-100 flex align-items-center justify-content-center">
+                <i class="pi pi-list text-blue-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Sales Events</span>
+                <span class="text-3xl font-bold text-green-500">{{ getSalesEventCount() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-green-100 flex align-items-center justify-content-center">
+                <i class="pi pi-shopping-cart text-green-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Refund Events</span>
+                <span class="text-3xl font-bold text-orange-500">{{ getRefundEventCount() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-orange-100 flex align-items-center justify-content-center">
+                <i class="pi pi-replay text-orange-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Permission Changes</span>
+                <span class="text-3xl font-bold text-purple-500">{{ getPermissionEventCount() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-purple-100 flex align-items-center justify-content-center">
+                <i class="pi pi-users text-purple-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Stats Row -->
+  <div class="col-12 mb-4">
+    <div class="grid">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Inventory Changes</span>
+                <span class="text-3xl font-bold text-cyan-500">{{ getInventoryEventCount() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-cyan-100 flex align-items-center justify-content-center">
+                <i class="pi pi-box text-cyan-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">Login/Logout Events</span>
+                <span class="text-3xl font-bold text-indigo-500">{{ getAuthEventCount() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-indigo-100 flex align-items-center justify-content-center">
+                <i class="pi pi-sign-in text-indigo-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          @if (loading()) {
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex-1">
+                <p-skeleton width="60%" styleClass="mb-2" />
+                <p-skeleton width="50%" height="2rem" />
+              </div>
+              <p-skeleton shape="circle" size="3rem" />
+            </div>
+          } @else {
+            <div class="flex align-items-center justify-content-between">
+              <div>
+                <span class="block text-color-secondary mb-2">System Events</span>
+                <span class="text-3xl font-bold text-yellow-500">{{ getSystemEventCount() }}</span>
+              </div>
+              <div class="w-3rem h-3rem border-circle bg-yellow-100 flex align-items-center justify-content-center">
+                <i class="pi pi-cog text-yellow-500 text-xl"></i>
+              </div>
+            </div>
+          }
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Logs Table -->
+  <div class="col-12">
+    <p-card>
+      <!-- Filters -->
+      <div class="flex flex-column gap-3 mb-4">
+        <!-- Date Range and Search -->
+        <div class="flex flex-column md:flex-row md:align-items-center gap-3">
+          <div class="flex align-items-center gap-2">
+            <label for="startDate" class="font-medium white-space-nowrap">From:</label>
+            <p-datepicker
+              id="startDate"
+              [(ngModel)]="startDate"
+              (onSelect)="onFilterChange()"
+              (onClear)="onFilterChange()"
+              [showClear]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="Start date"
+              [showIcon]="true"
+              styleClass="w-full md:w-12rem"
+            />
+          </div>
+          <div class="flex align-items-center gap-2">
+            <label for="endDate" class="font-medium white-space-nowrap">To:</label>
+            <p-datepicker
+              id="endDate"
+              [(ngModel)]="endDate"
+              (onSelect)="onFilterChange()"
+              (onClear)="onFilterChange()"
+              [showClear]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="End date"
+              [showIcon]="true"
+              styleClass="w-full md:w-12rem"
+            />
+          </div>
+          <p-iconfield class="flex-1">
+            <p-inputicon styleClass="pi pi-search" />
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="searchText"
+              placeholder="Search logs..."
+              (input)="onSearchDebounce()"
+              class="w-full"
+            />
+          </p-iconfield>
+        </div>
+
+        <!-- Event Type Filter -->
+        <div class="flex flex-column md:flex-row md:align-items-center gap-3">
+          <label class="font-medium white-space-nowrap">Event Types:</label>
+          <p-multiselect
+            [options]="eventTypeOptions()"
+            [(ngModel)]="selectedEventTypes"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All event types"
+            [showClear]="true"
+            (onChange)="onFilterChange()"
+            styleClass="w-full md:w-25rem"
+            [filter]="true"
+          />
+
+          @if (hasActiveFilters()) {
+            <p-button
+              label="Clear Filters"
+              icon="pi pi-filter-slash"
+              severity="secondary"
+              [text]="true"
+              (onClick)="clearFilters()"
+            />
+          }
+        </div>
+
+        <!-- Quick Filters -->
+        <div class="flex flex-wrap gap-2">
+          @for (group of eventTypeGroups; track group.category) {
+            <p-chip
+              [label]="group.label"
+              [class.bg-primary]="isGroupSelected(group.category)"
+              [class.text-primary-contrast]="isGroupSelected(group.category)"
+              class="cursor-pointer"
+              (click)="toggleGroup(group.category)"
+            />
+          }
+        </div>
+      </div>
+
+      <!-- Table -->
+      <p-table
+        [value]="auditLogs()"
+        [loading]="loading()"
+        [paginator]="true"
+        [rows]="20"
+        [rowsPerPageOptions]="[10, 20, 50, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} events"
+        [rowHover]="true"
+        dataKey="id"
+        styleClass="p-datatable-sm"
+        [sortField]="'eventTimestamp'"
+        [sortOrder]="-1"
+        [scrollable]="true"
+        scrollDirection="horizontal"
+        [tableStyle]="{ 'min-width': '70rem' }"
+      >
+        <ng-template #header>
+          <tr>
+            <th pSortableColumn="eventTimestamp" style="width: 15%">
+              Timestamp
+              <p-sortIcon field="eventTimestamp" />
+            </th>
+            <th pSortableColumn="eventType" style="width: 15%">
+              Event
+              <p-sortIcon field="eventType" />
+            </th>
+            <th pSortableColumn="userEmail" style="width: 18%">
+              User
+              <p-sortIcon field="userEmail" />
+            </th>
+            <th style="width: 10%">Entity</th>
+            <th style="width: 10%">Amount</th>
+            <th style="width: 20%">Description</th>
+            <th style="width: 12%" alignFrozen="right" pFrozenColumn [frozen]="true">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-log>
+          <tr>
+            <td>
+              <span class="text-sm">{{ log.eventTimestamp | date:'short' }}</span>
+            </td>
+            <td>
+              <p-tag
+                [value]="getEventLabel(log.eventType)"
+                [severity]="getEventSeverity(log.eventType)"
+                [icon]="getEventIcon(log.eventType)"
+              />
+            </td>
+            <td>
+              <div class="flex flex-column">
+                <span class="font-medium">{{ log.userEmail || 'System' }}</span>
+                @if (log.userRole) {
+                  <span class="text-sm text-color-secondary">{{ log.userRole }}</span>
+                }
+              </div>
+            </td>
+            <td>
+              <div class="flex flex-column">
+                <span class="font-medium">{{ log.entityType }}</span>
+                @if (log.entityId) {
+                  <span class="text-sm text-color-secondary font-mono">{{ log.entityId.slice(0, 8) }}...</span>
+                }
+              </div>
+            </td>
+            <td>
+              @if (log.amount !== null) {
+                <span class="font-medium">{{ log.amount | appCurrency:'1.2-2' }}</span>
+              } @else {
+                <span class="text-color-secondary">-</span>
+              }
+            </td>
+            <td>
+              <span
+                class="text-sm"
+                [pTooltip]="log.eventDescription || ''"
+                tooltipPosition="top"
+              >
+                {{ truncateDescription(log.eventDescription) }}
+              </span>
+            </td>
+            <td alignFrozen="right" pFrozenColumn [frozen]="true">
+              <div class="flex align-items-center gap-1">
+                <p-button
+                  icon="pi pi-eye"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="info"
+                  size="small"
+                  pTooltip="View Details"
+                  tooltipPosition="top"
+                  (onClick)="onViewDetails(log)"
+                />
+                @if (log.clientIp) {
+                  <p-button
+                    icon="pi pi-globe"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    size="small"
+                    [pTooltip]="'IP: ' + log.clientIp"
+                    tooltipPosition="top"
+                  />
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="7" class="text-center p-4">
+              <div class="flex flex-column align-items-center gap-3">
+                <i class="pi pi-list text-4xl text-color-secondary"></i>
+                @if (hasActiveFilters()) {
+                  <span class="text-color-secondary">No audit logs found for the selected filters</span>
+                  <p-button
+                    label="Clear Filters"
+                    icon="pi pi-filter-slash"
+                    severity="secondary"
+                    (onClick)="clearFilters()"
+                  />
+                } @else {
+                  <span class="text-color-secondary">No audit logs recorded yet</span>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #loadingbody>
+          @for (_ of skeletonRows; track $index) {
+            <tr>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="80%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="50%" /></td>
+              <td><p-skeleton width="40%" /></td>
+              <td><p-skeleton width="90%" /></td>
+              <td><p-skeleton shape="circle" size="2rem" /></td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>
+
+<!-- Detail Dialog -->
+<p-dialog
+  header="Audit Log Details"
+  [visible]="showDetailDialog()"
+  (visibleChange)="showDetailDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '50vw', maxWidth: '700px' }"
+  [breakpoints]="{ '960px': '90vw' }"
+>
+  @if (selectedLog()) {
+    <div class="grid">
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">Event Type</span>
+          <p-tag
+            [value]="getEventLabel(selectedLog()!.eventType)"
+            [severity]="getEventSeverity(selectedLog()!.eventType)"
+            [icon]="getEventIcon(selectedLog()!.eventType)"
+          />
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">Timestamp</span>
+          <span>{{ selectedLog()!.eventTimestamp | date:'medium' }}</span>
+        </div>
+      </div>
+
+      <p-divider styleClass="col-12" />
+
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">User</span>
+          <span>{{ selectedLog()!.userEmail || 'System' }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">User Role</span>
+          <span>{{ selectedLog()!.userRole || '-' }}</span>
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">Client IP</span>
+          <span class="font-mono">{{ selectedLog()!.clientIp || '-' }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">Amount</span>
+          @if (selectedLog()!.amount !== null) {
+            <span class="font-medium">{{ selectedLog()!.amount | appCurrency:'1.2-2' }}</span>
+          } @else {
+            <span>-</span>
+          }
+        </div>
+      </div>
+
+      @if (selectedLog()!.userAgent) {
+        <div class="col-12">
+          <div class="flex flex-column gap-2">
+            <span class="font-bold text-color-secondary">User Agent</span>
+            <span class="text-sm text-color-secondary font-mono" style="word-break: break-all;">{{ selectedLog()!.userAgent }}</span>
+          </div>
+        </div>
+      }
+
+      <p-divider styleClass="col-12" />
+
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">Entity Type</span>
+          <span>{{ selectedLog()!.entityType }}</span>
+        </div>
+      </div>
+      <div class="col-12 md:col-6">
+        <div class="flex flex-column gap-2">
+          <span class="font-bold text-color-secondary">Entity ID</span>
+          <span class="font-mono text-sm">{{ selectedLog()!.entityId || '-' }}</span>
+        </div>
+      </div>
+
+      @if (selectedLog()!.referenceNumber) {
+        <div class="col-12 md:col-6">
+          <div class="flex flex-column gap-2">
+            <span class="font-bold text-color-secondary">Reference Number</span>
+            <span>{{ selectedLog()!.referenceNumber }}</span>
+          </div>
+        </div>
+      }
+
+      @if (selectedLog()!.originalReferenceNumber) {
+        <div class="col-12 md:col-6">
+          <div class="flex flex-column gap-2">
+            <span class="font-bold text-color-secondary">Original Reference</span>
+            <span>{{ selectedLog()!.originalReferenceNumber }}</span>
+          </div>
+        </div>
+      }
+
+      @if (selectedLog()!.reason) {
+        <p-divider styleClass="col-12" />
+        <div class="col-12">
+          <div class="flex flex-column gap-2">
+            <span class="font-bold text-color-secondary">Reason</span>
+            <span>{{ selectedLog()!.reason }}</span>
+          </div>
+        </div>
+      }
+
+      @if (selectedLog()!.changes) {
+        <p-divider styleClass="col-12" />
+        <div class="col-12">
+          <div class="flex flex-column gap-2">
+            <span class="font-bold text-color-secondary">Changes</span>
+            <pre class="bg-surface-100 p-3 border-round text-sm overflow-auto max-h-10rem">{{ selectedLog()!.changes | json }}</pre>
+          </div>
+        </div>
+      }
+
+      @if (selectedLog()!.previousState || selectedLog()!.newState) {
+        <p-divider styleClass="col-12" />
+        @if (selectedLog()!.previousState) {
+          <div class="col-12 md:col-6">
+            <div class="flex flex-column gap-2">
+              <span class="font-bold text-color-secondary">Previous State</span>
+              <pre class="bg-surface-100 p-3 border-round text-sm overflow-auto max-h-10rem">{{ selectedLog()!.previousState | json }}</pre>
+            </div>
+          </div>
+        }
+        @if (selectedLog()!.newState) {
+          <div class="col-12 md:col-6">
+            <div class="flex flex-column gap-2">
+              <span class="font-bold text-color-secondary">New State</span>
+              <pre class="bg-surface-100 p-3 border-round text-sm overflow-auto max-h-10rem">{{ selectedLog()!.newState | json }}</pre>
+            </div>
+          </div>
+        }
+      }
+
+      @if (selectedLog()!.metadata) {
+        <p-divider styleClass="col-12" />
+        <div class="col-12">
+          <div class="flex flex-column gap-2">
+            <span class="font-bold text-color-secondary">Metadata</span>
+            <pre class="bg-surface-100 p-3 border-round text-sm overflow-auto max-h-10rem">{{ selectedLog()!.metadata | json }}</pre>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Close"
+      severity="secondary"
+      (onClick)="showDetailDialog.set(false)"
+    />
+  </ng-template>
+</p-dialog>

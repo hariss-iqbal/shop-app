@@ -1,5 +1,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Sale, SaleInsert, SaleUpdate, SaleWithRelations } from '../entities/sale.entity';
+import {
+  SaleWithInventoryDeductionResult,
+  BatchSaleWithInventoryDeductionResult,
+  InventoryAvailabilityResult,
+  RevertSaleResult
+} from '../entities/inventory-deduction-log.entity';
 
 /**
  * Sale Repository
@@ -15,6 +21,7 @@ export class SaleRepository {
     startDate?: string;
     endDate?: string;
     brandId?: string;
+    locationId?: string;
     limit?: number;
     offset?: number;
   }): Promise<SaleWithRelations[]> {
@@ -26,6 +33,11 @@ export class SaleRepository {
           id,
           model,
           brand:brands(id, name)
+        ),
+        location:store_locations(
+          id,
+          name,
+          code
         )
       `);
 
@@ -34,6 +46,9 @@ export class SaleRepository {
     }
     if (options?.endDate) {
       query = query.lte('sale_date', options.endDate);
+    }
+    if (options?.locationId) {
+      query = query.eq('location_id', options.locationId);
     }
 
     query = query.order('sale_date', { ascending: false });
@@ -60,6 +75,11 @@ export class SaleRepository {
           id,
           model,
           brand:brands(id, name)
+        ),
+        location:store_locations(
+          id,
+          name,
+          code
         )
       `)
       .eq('id', id)
@@ -191,5 +211,156 @@ export class SaleRepository {
       count: data.count,
       revenue: data.revenue
     }));
+  }
+
+  /**
+   * Find all sales for a customer by their phone number
+   * Uses substring matching to handle different phone number formats
+   * Returns sales sorted by date with most recent first
+   */
+  async findByBuyerPhone(buyerPhone: string): Promise<SaleWithRelations[]> {
+    const cleanedPhone = buyerPhone.replace(/[^\d]/g, '');
+
+    const { data, error } = await this.supabase
+      .from(this.tableName)
+      .select(`
+        *,
+        phone:phones(
+          id,
+          model,
+          brand:brands(id, name)
+        ),
+        location:store_locations(
+          id,
+          name,
+          code
+        )
+      `)
+      .ilike('buyer_phone', `%${cleanedPhone}%`)
+      .order('sale_date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  /**
+   * Complete a sale with automatic inventory deduction using atomic RPC
+   * Feature: F-008 Automatic Inventory Deduction
+   * Feature: F-024 Multi-Location Inventory Support
+   */
+  async completeSaleWithInventoryDeduction(
+    phoneId: string,
+    saleDate: string,
+    salePrice: number,
+    buyerName?: string | null,
+    buyerPhone?: string | null,
+    buyerEmail?: string | null,
+    notes?: string | null,
+    locationId?: string | null
+  ): Promise<SaleWithInventoryDeductionResult> {
+    const { data, error } = await this.supabase.rpc('complete_sale_with_inventory_deduction', {
+      p_phone_id: phoneId,
+      p_sale_date: saleDate,
+      p_sale_price: salePrice,
+      p_buyer_name: buyerName || null,
+      p_buyer_phone: buyerPhone || null,
+      p_buyer_email: buyerEmail || null,
+      p_notes: notes || null,
+      p_location_id: locationId || null
+    });
+
+    if (error) throw error;
+
+    return {
+      success: data.success,
+      saleId: data.saleId,
+      phoneId: data.phoneId,
+      previousStatus: data.previousStatus,
+      newStatus: data.newStatus,
+      warning: data.warning,
+      inventoryDeducted: data.inventoryDeducted,
+      error: data.error
+    };
+  }
+
+  /**
+   * Complete multiple sales with automatic inventory deduction using atomic RPC
+   * Feature: F-008 Automatic Inventory Deduction
+   * Feature: F-024 Multi-Location Inventory Support
+   */
+  async completeBatchSaleWithInventoryDeduction(
+    items: Array<{ phoneId: string; salePrice: number }>,
+    saleDate: string,
+    buyerName?: string | null,
+    buyerPhone?: string | null,
+    buyerEmail?: string | null,
+    notes?: string | null,
+    locationId?: string | null
+  ): Promise<BatchSaleWithInventoryDeductionResult> {
+    const { data, error } = await this.supabase.rpc('complete_batch_sale_with_inventory_deduction', {
+      p_items: items.map(item => ({
+        phoneId: item.phoneId,
+        salePrice: item.salePrice
+      })),
+      p_sale_date: saleDate,
+      p_buyer_name: buyerName || null,
+      p_buyer_phone: buyerPhone || null,
+      p_buyer_email: buyerEmail || null,
+      p_notes: notes || null,
+      p_location_id: locationId || null
+    });
+
+    if (error) throw error;
+
+    return {
+      success: data.success,
+      totalItems: data.totalItems,
+      processedItems: data.processedItems,
+      sales: data.sales,
+      warnings: data.warnings,
+      inventoryDeducted: data.inventoryDeducted,
+      error: data.error
+    };
+  }
+
+  /**
+   * Check inventory availability for phones before sale
+   * Feature: F-008 Automatic Inventory Deduction
+   */
+  async checkInventoryAvailability(phoneIds: string[]): Promise<InventoryAvailabilityResult> {
+    const { data, error } = await this.supabase.rpc('check_inventory_availability', {
+      p_phone_ids: phoneIds
+    });
+
+    if (error) throw error;
+
+    return {
+      allAvailable: data.allAvailable,
+      hasWarnings: data.hasWarnings,
+      allowOversell: data.allowOversell,
+      phones: data.phones,
+      warnings: data.warnings
+    };
+  }
+
+  /**
+   * Revert a sale and restore inventory (phone status)
+   * Feature: F-008 Automatic Inventory Deduction
+   */
+  async revertSaleRestoreInventory(saleId: string): Promise<RevertSaleResult> {
+    const { data, error } = await this.supabase.rpc('revert_sale_restore_inventory', {
+      p_sale_id: saleId
+    });
+
+    if (error) throw error;
+
+    return {
+      success: data.success,
+      phoneId: data.phoneId,
+      previousStatus: data.previousStatus,
+      newStatus: data.newStatus,
+      inventoryRestored: data.inventoryRestored,
+      error: data.error
+    };
   }
 }

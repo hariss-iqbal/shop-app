@@ -28,6 +28,12 @@ export interface Phone {
   primaryImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
+  /** Tax rate percentage (0-100). E.g., 10 for 10% tax rate */
+  taxRate: number;
+  /** When true, selling_price includes tax. When false, tax is added on top */
+  isTaxInclusive: boolean;
+  /** When true, item is tax exempt (0% tax) and clearly marked on receipts */
+  isTaxExempt: boolean;
 }
 
 export interface CreatePhoneRequest {
@@ -46,6 +52,9 @@ export interface CreatePhoneRequest {
   purchaseDate?: string | null;
   supplierId?: string | null;
   notes?: string | null;
+  taxRate?: number;
+  isTaxInclusive?: boolean;
+  isTaxExempt?: boolean;
 }
 
 export interface UpdatePhoneRequest {
@@ -64,6 +73,9 @@ export interface UpdatePhoneRequest {
   purchaseDate?: string | null;
   supplierId?: string | null;
   notes?: string | null;
+  taxRate?: number;
+  isTaxInclusive?: boolean;
+  isTaxExempt?: boolean;
 }
 
 export interface PhoneListResponse {
@@ -102,4 +114,27 @@ export interface PhoneDetailImage {
 
 export interface PhoneDetail extends Phone {
   images: PhoneDetailImage[];
+}
+
+/**
+ * Location inventory for a phone
+ * Feature: F-024 Multi-Location Inventory Support
+ */
+export interface PhoneLocationInventory {
+  locationId: string;
+  locationName: string;
+  locationCode: string;
+  quantity: number;
+  minStockLevel: number;
+  maxStockLevel: number | null;
+  lastRestocked: string | null;
+}
+
+/**
+ * Phone with location inventory data
+ * Feature: F-024 Multi-Location Inventory Support
+ */
+export interface PhoneWithInventory extends Phone {
+  locationInventory?: PhoneLocationInventory[];
+  totalStock?: number;
 }

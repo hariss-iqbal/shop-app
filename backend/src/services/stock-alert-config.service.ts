@@ -32,7 +32,8 @@ export class StockAlertConfigService {
 
     const configUpdate: StockAlertConfigUpdate = {
       ...(dto.lowStockThreshold !== undefined && { low_stock_threshold: dto.lowStockThreshold }),
-      ...(dto.enableBrandZeroAlert !== undefined && { enable_brand_zero_alert: dto.enableBrandZeroAlert })
+      ...(dto.enableBrandZeroAlert !== undefined && { enable_brand_zero_alert: dto.enableBrandZeroAlert }),
+      ...(dto.allowOversell !== undefined && { allow_oversell: dto.allowOversell })
     };
 
     const config = await this.stockAlertConfigRepository.update(existing.id, configUpdate);
@@ -84,6 +85,7 @@ export class StockAlertConfigService {
       id: config.id,
       lowStockThreshold: config.low_stock_threshold,
       enableBrandZeroAlert: config.enable_brand_zero_alert,
+      allowOversell: config.allow_oversell,
       createdAt: config.created_at,
       updatedAt: config.updated_at
     };

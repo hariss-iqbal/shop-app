@@ -4,17 +4,34 @@
   <meta charset="utf-8">
   <title>Phone Shop</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- F-025: Mobile-Optimized Viewport Settings -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
   <meta name="theme-color" content="#3B82F6">
-  <meta name="description" content="Browse and shop for phones online. View catalog, compare prices, and contact us for the best deals.">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1e293b">
+  <meta name="description" content="Mobile-optimized Point of Sale system for phone retail. Manage sales, inventory, receipts, and customer transactions.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Favicons and App Icons -->
   <link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96x96.png">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-72x72.png">
   <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- Apple-specific PWA meta tags -->
   <link rel="apple-touch-icon" href="icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192x192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Phone Shop">
-  <noscript>Please enable JavaScript to use this application.</noscript>
+  <link rel="apple-touch-startup-image" href="icons/icon-512x512.png">
+
+  <!-- Microsoft Tile -->
+  <meta name="msapplication-TileImage" content="icons/icon-144x144.png">
+  <meta name="msapplication-TileColor" content="#3B82F6">
+
+  <!-- Preconnect to Supabase for faster API calls -->
+  <link rel="dns-prefetch" href="https://supabase.co">
+
   <script>
     // F-056: Apply saved theme before Angular bootstraps to prevent flash of wrong theme
     (function() {
@@ -23,13 +40,67 @@
       if (isDark) {
         document.documentElement.classList.add('dark-theme');
         // Update meta theme-color for dark mode
-        var meta = document.querySelector('meta[name="theme-color"]');
+        var meta = document.querySelector('meta[name="theme-color"]:not([media])');
         if (meta) meta.setAttribute('content', '#1e293b');
+      }
+
+      // F-025: Detect and mark touch device for CSS optimizations
+      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        document.documentElement.classList.add('touch-device');
+      }
+
+      // F-025: Detect standalone mode (PWA installed)
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        document.documentElement.classList.add('pwa-standalone');
       }
     })();
   </script>
+
+  <style>
+    /* Critical CSS for initial paint - prevents layout shift */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+
+    app-root {
+      display: block;
+      min-height: 100vh;
+    }
+
+    /* F-025: Safe area insets for notched devices */
+    .pwa-standalone body {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    /* F-025: Prevent pull-to-refresh on mobile in PWA mode */
+    .pwa-standalone {
+      overscroll-behavior-y: contain;
+    }
+
+    /* F-025: Touch device optimizations */
+    .touch-device * {
+      -webkit-touch-callout: none;
+    }
+
+    .touch-device button,
+    .touch-device a,
+    .touch-device input,
+    .touch-device select,
+    .touch-device textarea {
+      touch-action: manipulation;
+    }
+  </style>
 </head>
 <body>
+  <noscript>Please enable JavaScript to use this application.</noscript>
   <app-root></app-root>
 </body>
 </html>

@@ -12,6 +12,7 @@ describe('StockAlertsPanelComponent', () => {
     id: 'config-1',
     lowStockThreshold: 5,
     enableBrandZeroAlert: true,
+    allowOversell: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: null
   };

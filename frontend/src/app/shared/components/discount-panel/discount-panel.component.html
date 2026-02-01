@@ -1,0 +1,282 @@
+<div class="discount-panel">
+  <!-- Toggle Button -->
+  @if (!expanded()) {
+    <p-button
+      label="Apply Discount"
+      icon="pi pi-percentage"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="expand()"
+      styleClass="w-full"
+    ></p-button>
+  }
+
+  <!-- Expanded Panel -->
+  @if (expanded()) {
+    <div class="border-1 surface-border border-round p-3">
+      <div class="flex justify-content-between align-items-center mb-3">
+        <span class="font-semibold">Apply Discount</span>
+        <p-button
+          icon="pi pi-times"
+          [rounded]="true"
+          [text]="true"
+          severity="secondary"
+          (onClick)="collapse()"
+        ></p-button>
+      </div>
+
+      <!-- Mode Tabs -->
+      <div class="flex gap-2 mb-3">
+        <p-button
+          label="Coupon Code"
+          [severity]="mode() === 'coupon' ? 'primary' : 'secondary'"
+          [outlined]="mode() !== 'coupon'"
+          (onClick)="setMode('coupon')"
+          styleClass="flex-1"
+        ></p-button>
+        <p-button
+          label="Manual Discount"
+          [severity]="mode() === 'manual' ? 'primary' : 'secondary'"
+          [outlined]="mode() !== 'manual'"
+          (onClick)="setMode('manual')"
+          styleClass="flex-1"
+        ></p-button>
+      </div>
+
+      <!-- Coupon Mode -->
+      @if (mode() === 'coupon') {
+        <div class="grid">
+          <div class="col-12">
+            <div class="p-inputgroup">
+              <input
+                type="text"
+                pInputText
+                [(ngModel)]="couponCode"
+                placeholder="Enter coupon code"
+                class="w-full"
+                (keyup.enter)="validateCoupon()"
+              />
+              <p-button
+                icon="pi pi-check"
+                [loading]="validating()"
+                (onClick)="validateCoupon()"
+                [disabled]="!couponCode"
+              ></p-button>
+            </div>
+          </div>
+
+          <!-- Validation Result -->
+          @if (validationResult()) {
+            <div class="col-12">
+              @if (validationResult()!.isValid) {
+                <p-message severity="success" styleClass="w-full">
+                  <div class="flex flex-column w-full">
+                    <span class="font-bold">{{ validationResult()!.coupon?.code }}</span>
+                    @if (validationResult()!.coupon?.description) {
+                      <span class="text-sm">{{ validationResult()!.coupon?.description }}</span>
+                    }
+                    <span class="text-sm mt-1">
+                      Discount: {{ formatDiscountValue(validationResult()!.coupon!.discountType, validationResult()!.coupon!.discountValue) }}
+                    </span>
+                    <p-divider></p-divider>
+                    <div class="flex justify-content-between">
+                      <span>You save:</span>
+                      <span class="font-bold text-green-500">${{ validationResult()!.discountAmount?.toFixed(2) }}</span>
+                    </div>
+                    <div class="flex justify-content-between">
+                      <span>New total:</span>
+                      <span class="font-bold">${{ validationResult()!.finalPrice?.toFixed(2) }}</span>
+                    </div>
+                  </div>
+                </p-message>
+
+                @if (validationResult()!.requiresManagerApproval) {
+                  <p-message severity="warn" styleClass="w-full mt-2">
+                    <i class="pi pi-lock mr-2"></i>
+                    This coupon requires manager approval
+                  </p-message>
+                }
+              } @else {
+                <p-message severity="error" styleClass="w-full">
+                  {{ validationResult()!.error || 'Invalid coupon code' }}
+                </p-message>
+              }
+            </div>
+          }
+
+          <!-- Apply Coupon Button -->
+          @if (validationResult()?.isValid) {
+            <div class="col-12">
+              @if (validationResult()!.requiresManagerApproval) {
+                <p-button
+                  label="Request Manager Approval"
+                  icon="pi pi-lock"
+                  severity="warn"
+                  styleClass="w-full"
+                  (onClick)="openApprovalDialog()"
+                ></p-button>
+              } @else {
+                <p-button
+                  label="Apply Coupon"
+                  icon="pi pi-check"
+                  styleClass="w-full"
+                  (onClick)="applyCouponDiscount()"
+                ></p-button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Manual Mode -->
+      @if (mode() === 'manual') {
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <label class="block font-medium mb-2">Type</label>
+            <p-select
+              [options]="discountTypeOptions"
+              [(ngModel)]="manualDiscountType"
+              styleClass="w-full"
+              (onChange)="calculateManualDiscount()"
+            ></p-select>
+          </div>
+          <div class="col-12 md:col-6">
+            <label class="block font-medium mb-2">Value</label>
+            <p-inputNumber
+              [(ngModel)]="manualDiscountValue"
+              [min]="0"
+              [max]="manualDiscountType === 'percentage' ? (config()?.maxDiscountPercentage || 100) : (config()?.maxDiscountAmount || 1000000)"
+              [suffix]="manualDiscountType === 'percentage' ? '%' : ''"
+              [prefix]="manualDiscountType === 'fixed_amount' ? '$' : ''"
+              styleClass="w-full"
+              (ngModelChange)="calculateManualDiscount()"
+            ></p-inputNumber>
+          </div>
+
+          <!-- Manual Discount Preview -->
+          @if (manualDiscountValue > 0) {
+            <div class="col-12">
+              <div class="surface-100 border-round p-3">
+                <div class="flex justify-content-between mb-2">
+                  <span>Original Price:</span>
+                  <span>${{ originalPrice.toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-content-between mb-2 text-green-500">
+                  <span>Discount:</span>
+                  <span>-${{ calculatedDiscountAmount().toFixed(2) }}</span>
+                </div>
+                <p-divider></p-divider>
+                <div class="flex justify-content-between font-bold">
+                  <span>Final Price:</span>
+                  <span>${{ calculatedFinalPrice().toFixed(2) }}</span>
+                </div>
+
+                @if (calculatedDiscountPercentage() > (config()?.managerApprovalThreshold || 10)) {
+                  <p-message severity="warn" styleClass="w-full mt-2">
+                    <i class="pi pi-lock mr-2"></i>
+                    Discount exceeds {{ config()?.managerApprovalThreshold || 10 }}%. Manager approval required.
+                  </p-message>
+                }
+              </div>
+            </div>
+
+            <div class="col-12">
+              @if (calculatedDiscountPercentage() > (config()?.managerApprovalThreshold || 10)) {
+                <p-button
+                  label="Request Manager Approval"
+                  icon="pi pi-lock"
+                  severity="warn"
+                  styleClass="w-full"
+                  (onClick)="openApprovalDialog()"
+                ></p-button>
+              } @else {
+                <p-button
+                  label="Apply Discount"
+                  icon="pi pi-check"
+                  styleClass="w-full"
+                  (onClick)="applyManualDiscount()"
+                ></p-button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Applied Discount Display -->
+  @if (appliedDiscount()) {
+    <div class="mt-3 surface-100 border-round p-3">
+      <div class="flex justify-content-between align-items-center">
+        <div>
+          <span class="font-semibold text-green-500">Discount Applied</span>
+          @if (appliedDiscount()!.couponCode) {
+            <span class="ml-2 text-500">({{ appliedDiscount()!.couponCode }})</span>
+          }
+          <div class="text-sm text-500 mt-1">
+            {{ formatDiscountValue(appliedDiscount()!.discountType, appliedDiscount()!.discountValue) }} off
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-green-500 font-bold">-${{ appliedDiscount()!.discountAmount.toFixed(2) }}</div>
+          <p-button
+            icon="pi pi-times"
+            [rounded]="true"
+            [text]="true"
+            severity="danger"
+            pTooltip="Remove discount"
+            (onClick)="removeDiscount()"
+          ></p-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Manager Approval Dialog -->
+  <p-dialog
+    [(visible)]="approvalDialogVisible"
+    header="Manager Approval Required"
+    [modal]="true"
+    [style]="{ width: '400px' }"
+  >
+    <p class="text-500 mb-3">
+      This discount exceeds the approval threshold and requires manager authorization.
+    </p>
+
+    <div class="mb-3">
+      <label class="block font-medium mb-2">Manager ID / PIN</label>
+      <input
+        type="password"
+        pInputText
+        class="w-full"
+        [(ngModel)]="approvalManagerId"
+        placeholder="Enter manager ID or PIN"
+      />
+    </div>
+
+    <div class="mb-3">
+      <label class="block font-medium mb-2">Reason for Discount</label>
+      <textarea
+        pInputTextarea
+        class="w-full"
+        [(ngModel)]="approvalReason"
+        placeholder="Enter reason for this discount"
+        [rows]="3"
+      ></textarea>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        (onClick)="approvalDialogVisible = false"
+      ></p-button>
+      <p-button
+        label="Approve & Apply"
+        icon="pi pi-check"
+        (onClick)="approveAndApply()"
+        [disabled]="!approvalManagerId || !approvalReason"
+      ></p-button>
+    </ng-template>
+  </p-dialog>
+</div>

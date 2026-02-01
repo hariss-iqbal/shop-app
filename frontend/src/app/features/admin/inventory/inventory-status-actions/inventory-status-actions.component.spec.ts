@@ -40,6 +40,9 @@ describe('InventoryStatusActionsComponent', () => {
     primaryImageUrl: null,
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: null,
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false,
     ...overrides
   });
 

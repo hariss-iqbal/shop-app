@@ -1,0 +1,42 @@
+<div class="not-found-container flex align-items-center justify-content-center" style="min-height: 60vh;">
+  <div class="not-found-card flex flex-column align-items-center gap-4 p-5 text-center surface-card border-round-xl shadow-2" style="max-width: 520px;">
+    <!-- Animated 404 Icon -->
+    <div class="not-found-icon-wrapper">
+      <div class="icon-circle">
+        <i class="pi pi-search text-5xl" aria-hidden="true"></i>
+      </div>
+    </div>
+
+    <!-- 404 Error Code with gradient -->
+    <h1 class="error-code text-8xl font-bold m-0">404</h1>
+
+    <!-- Page Not Found Message -->
+    <h2 class="text-3xl font-semibold m-0 text-color">Page Not Found</h2>
+
+    <!-- Description -->
+    <p class="not-found-description text-lg text-color-secondary m-0 line-height-3">
+      The page you are looking for does not exist or has been moved.
+      Let's get you back on track.
+    </p>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-wrap gap-3 justify-content-center w-full mt-2">
+      <p-button
+        label="Go Back"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="navigateBack()"
+        ariaLabel="Go back to the previous page"
+        styleClass="flex-grow-1 sm:flex-grow-0"
+      />
+      <p-button
+        label="Back to Catalog"
+        icon="pi pi-home"
+        (onClick)="navigateHome()"
+        ariaLabel="Return to the catalog home page"
+        styleClass="flex-grow-1 sm:flex-grow-0"
+      />
+    </div>
+  </div>
+</div>

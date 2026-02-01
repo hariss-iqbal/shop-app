@@ -45,6 +45,9 @@ describe('PhoneDetailComponent', () => {
     primaryImageUrl: 'https://example.com/phone.jpg',
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: null,
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false,
     images: [
       { id: 'img-1', imageUrl: 'https://example.com/phone1.jpg', isPrimary: true, displayOrder: 0 },
       { id: 'img-2', imageUrl: 'https://example.com/phone2.jpg', isPrimary: false, displayOrder: 1 }

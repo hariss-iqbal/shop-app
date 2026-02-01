@@ -1,0 +1,233 @@
+<div class="flex flex-column gap-4">
+  <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-3">
+    <div>
+      <h2 class="m-0 mb-1">Location Inventory</h2>
+      <p class="m-0 text-color-secondary text-sm">View and manage stock levels at each location</p>
+    </div>
+    <div class="flex gap-2 align-items-center flex-wrap">
+      <p-select
+        [options]="locations()"
+        [(ngModel)]="selectedLocationId"
+        (onChange)="onLocationChange()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select Location"
+        [filter]="locations().length > 5"
+        filterBy="name,code"
+        [style]="{ 'min-width': '220px' }">
+        <ng-template let-location pTemplate="selectedItem">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-map-marker text-primary"></i>
+            <span class="font-medium">{{ location.name }}</span>
+          </div>
+        </ng-template>
+        <ng-template let-location pTemplate="item">
+          <div class="flex align-items-center justify-content-between w-full">
+            <div class="flex align-items-center gap-2">
+              <span>{{ location.name }}</span>
+              <span class="text-color-secondary text-sm">({{ location.code }})</span>
+            </div>
+            @if (location.isPrimary) {
+              <i class="pi pi-star-fill text-yellow-500 text-xs"></i>
+            }
+          </div>
+        </ng-template>
+      </p-select>
+      <p-button
+        icon="pi pi-arrows-h"
+        label="Transfer Stock"
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/admin/inventory-transfers/new"
+        pTooltip="Create a new stock transfer">
+      </p-button>
+    </div>
+  </div>
+
+  @if (selectedLocationId) {
+    <!-- Statistics Cards -->
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-3">
+        <div class="surface-card shadow-1 border-round p-3">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center border-round bg-blue-100 text-blue-600" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-box text-xl"></i>
+            </div>
+            <div class="flex flex-column">
+              <span class="text-2xl font-bold text-900">{{ stats()?.totalProducts || 0 }}</span>
+              <span class="text-color-secondary text-sm">Unique Products</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <div class="surface-card shadow-1 border-round p-3">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center border-round bg-purple-100 text-purple-600" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-hashtag text-xl"></i>
+            </div>
+            <div class="flex flex-column">
+              <span class="text-2xl font-bold text-900">{{ stats()?.totalUnits || 0 }}</span>
+              <span class="text-color-secondary text-sm">Total Units</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <div class="surface-card shadow-1 border-round p-3">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center border-round bg-green-100 text-green-600" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-dollar text-xl"></i>
+            </div>
+            <div class="flex flex-column">
+              <span class="text-2xl font-bold text-green-600">{{ stats()?.totalValue | currency }}</span>
+              <span class="text-color-secondary text-sm">Stock Value</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <div class="surface-card shadow-1 border-round p-3" [class.border-left-3]="(stats()?.lowStockCount || 0) > 0" [class.border-red-500]="(stats()?.lowStockCount || 0) > 0">
+          <div class="flex align-items-center gap-3">
+            <div class="flex align-items-center justify-content-center border-round" [class.bg-red-100]="(stats()?.lowStockCount || 0) > 0" [class.text-red-600]="(stats()?.lowStockCount || 0) > 0" [class.bg-gray-100]="(stats()?.lowStockCount || 0) === 0" [class.text-gray-600]="(stats()?.lowStockCount || 0) === 0" style="width: 3rem; height: 3rem;">
+              <i class="pi pi-exclamation-triangle text-xl"></i>
+            </div>
+            <div class="flex flex-column">
+              <span class="text-2xl font-bold" [class.text-red-600]="(stats()?.lowStockCount || 0) > 0">{{ stats()?.lowStockCount || 0 }}</span>
+              <span class="text-color-secondary text-sm">Low Stock Alerts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <p-table
+      #inventoryTable
+      [value]="inventory()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} items"
+      [globalFilterFields]="['phone.model', 'phone.brandName']"
+      styleClass="p-datatable-sm"
+      [rowHover]="true">
+
+      <ng-template pTemplate="caption">
+        <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-2">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input
+              pInputText
+              type="text"
+              (input)="inventoryTable.filterGlobal($any($event.target).value, 'contains')"
+              placeholder="Search products..."
+              class="w-full md:w-auto" />
+          </span>
+          <div class="flex align-items-center gap-2">
+            <p-tag [value]="selectedLocation()?.name || ''" icon="pi pi-map-marker"></p-tag>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="phone.model">Phone <p-sortIcon field="phone.model"></p-sortIcon></th>
+          <th pSortableColumn="phone.brandName">Brand <p-sortIcon field="phone.brandName"></p-sortIcon></th>
+          <th>Condition</th>
+          <th pSortableColumn="quantity" class="text-right">Qty <p-sortIcon field="quantity"></p-sortIcon></th>
+          <th pSortableColumn="phone.sellingPrice" class="text-right">Unit Price <p-sortIcon field="phone.sellingPrice"></p-sortIcon></th>
+          <th class="text-right">Total Value</th>
+          <th>Stock Status</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <div class="flex align-items-center justify-content-center border-round surface-100" style="width: 2.5rem; height: 2.5rem;">
+                <i class="pi pi-mobile text-color-secondary"></i>
+              </div>
+              <span class="font-medium">{{ item.phone?.model || 'Unknown' }}</span>
+            </div>
+          </td>
+          <td>{{ item.phone?.brandName || '-' }}</td>
+          <td>
+            <p-tag
+              [value]="item.phone?.condition | titlecase"
+              [severity]="getConditionSeverity(item.phone?.condition)">
+            </p-tag>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-lg">{{ item.quantity }}</span>
+          </td>
+          <td class="text-right">{{ item.phone?.sellingPrice | currency }}</td>
+          <td class="text-right font-medium">{{ (item.quantity * (item.phone?.sellingPrice || 0)) | currency }}</td>
+          <td>
+            @if (item.minStockLevel !== null) {
+              @if (item.quantity <= item.minStockLevel) {
+                <div class="flex align-items-center gap-2">
+                  <p-tag value="Low Stock" severity="danger" icon="pi pi-exclamation-circle"></p-tag>
+                </div>
+              } @else if (item.quantity <= item.minStockLevel * 1.5) {
+                <p-tag value="Warning" severity="warn" icon="pi pi-exclamation-triangle"></p-tag>
+              } @else {
+                <p-tag value="In Stock" severity="success" icon="pi pi-check-circle"></p-tag>
+              }
+            } @else {
+              <p-tag value="In Stock" severity="success" icon="pi pi-check-circle"></p-tag>
+            }
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center p-5">
+            <div class="flex flex-column align-items-center gap-3">
+              <i class="pi pi-inbox text-4xl text-color-secondary"></i>
+              <span class="text-lg text-color-secondary">No inventory items at this location</span>
+              <p-button
+                label="Transfer Stock Here"
+                icon="pi pi-arrows-h"
+                severity="secondary"
+                [outlined]="true"
+                routerLink="/admin/inventory-transfers/new">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="summary">
+        <div class="flex justify-content-between align-items-center">
+          <span class="text-color-secondary">{{ inventory().length }} products in inventory</span>
+          <span class="font-medium">Total Value: <span class="text-primary">{{ stats()?.totalValue | currency }}</span></span>
+        </div>
+      </ng-template>
+    </p-table>
+  } @else {
+    <!-- No Location Selected State -->
+    <div class="surface-card shadow-1 border-round p-5">
+      <div class="flex flex-column align-items-center gap-4 text-center">
+        <div class="flex align-items-center justify-content-center border-round bg-primary-100" style="width: 5rem; height: 5rem;">
+          <i class="pi pi-map-marker text-primary text-4xl"></i>
+        </div>
+        <div>
+          <h3 class="m-0 mb-2">Select a Location</h3>
+          <p class="m-0 text-color-secondary">Choose a store location from the dropdown above to view its inventory</p>
+        </div>
+        @if (locations().length === 0) {
+          <p-button
+            label="Add Store Location"
+            icon="pi pi-plus"
+            routerLink="/admin/locations">
+          </p-button>
+        }
+      </div>
+    </div>
+  }
+</div>

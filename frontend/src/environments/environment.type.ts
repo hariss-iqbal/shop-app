@@ -8,6 +8,21 @@ export interface Environment {
   /** Display name of the application. */
   siteName: string;
 
+  /**
+   * Currency configuration for the application.
+   * Controls how monetary values are displayed throughout the app.
+   */
+  currency: {
+    /** ISO 4217 currency code (e.g., 'PKR', 'USD', 'EUR'). */
+    code: string;
+    /** Locale for number formatting (e.g., 'en-PK', 'en-US'). */
+    locale: string;
+    /** Currency symbol for simple display (e.g., 'Rs.', '$'). */
+    symbol: string;
+    /** Number of decimal places to show (0 for whole numbers, 2 for cents). */
+    decimals: number;
+  };
+
   /** Supabase connection configuration. Only the public anon key is allowed here. */
   supabase: {
     /**
@@ -31,6 +46,19 @@ export interface Environment {
 
     /** reCAPTCHA v3 site key (public). */
     siteKey: string;
+  };
+
+  /**
+   * Cloudinary configuration for image storage and optimization.
+   * Cloudinary provides 25GB/month free bandwidth vs Supabase's 1GB limit.
+   * Used for phone image uploads, transformations, and delivery.
+   */
+  cloudinary: {
+    /** Cloudinary cloud name (from dashboard). */
+    cloudName: string;
+
+    /** Unsigned upload preset name (configured in Cloudinary dashboard). */
+    uploadPreset: string;
   };
 
   /**
@@ -64,5 +92,11 @@ export interface Environment {
     mapEmbedUrl: string;
     /** Google Maps search URL for fallback link */
     mapSearchUrl: string;
+    /**
+     * Store identifier for QR codes and receipts.
+     * Used in multi-store environments to identify receipt origin.
+     * Feature: F-017 Barcode/QR Code on Receipts
+     */
+    storeId?: string;
   };
 }

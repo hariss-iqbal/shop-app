@@ -1,0 +1,12 @@
+@if (isVisible()) {
+  <button
+    type="button"
+    class="back-to-top-button"
+    (click)="scrollToTop()"
+    pTooltip="Back to top"
+    tooltipPosition="left"
+    aria-label="Scroll back to top of page"
+  >
+    <i class="pi pi-chevron-up" aria-hidden="true"></i>
+  </button>
+}

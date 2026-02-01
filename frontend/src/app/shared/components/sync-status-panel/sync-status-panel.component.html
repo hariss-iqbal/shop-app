@@ -1,0 +1,218 @@
+<p-card header="Offline Sync Status">
+  <div class="grid">
+    <!-- Status Summary -->
+    <div class="col-12 md:col-6 lg:col-3">
+      <div class="surface-card p-3 border-round">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-wifi text-xl" [class.text-green-500]="isOnline()" [class.text-orange-500]="!isOnline()"></i>
+          <div>
+            <div class="text-sm text-500">Connection</div>
+            <div class="font-bold">{{ isOnline() ? 'Online' : 'Offline' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <div class="surface-card p-3 border-round">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-clock text-xl text-blue-500"></i>
+          <div>
+            <div class="text-sm text-500">Pending</div>
+            <div class="font-bold">{{ pendingCount() }} transactions</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <div class="surface-card p-3 border-round">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-exclamation-triangle text-xl text-red-500"></i>
+          <div>
+            <div class="text-sm text-500">Conflicts</div>
+            <div class="font-bold">{{ conflictCount() }} items</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <div class="surface-card p-3 border-round">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-sync text-xl text-purple-500"></i>
+          <div>
+            <div class="text-sm text-500">Last Sync</div>
+            <div class="font-bold">{{ lastSyncDisplay() }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync Progress -->
+  @if (isSyncing()) {
+    <div class="mt-4">
+      <div class="flex justify-content-between mb-2">
+        <span>Syncing...</span>
+        <span>{{ syncProgress() }}%</span>
+      </div>
+      <p-progressBar [value]="syncProgress()" [showValue]="false"></p-progressBar>
+    </div>
+  }
+
+  <!-- Action Buttons -->
+  <div class="flex gap-2 mt-4">
+    <p-button
+      label="Sync Now"
+      icon="pi pi-sync"
+      [disabled]="!isOnline() || isSyncing() || pendingCount() === 0"
+      [loading]="isSyncing()"
+      (onClick)="syncNow()">
+    </p-button>
+
+    @if (conflictCount() > 0) {
+      <p-button
+        label="Resolve Conflicts"
+        icon="pi pi-exclamation-triangle"
+        severity="danger"
+        (onClick)="showConflictDialog()">
+      </p-button>
+    }
+
+    <p-button
+      label="Refresh"
+      icon="pi pi-refresh"
+      [outlined]="true"
+      (onClick)="refreshData()">
+    </p-button>
+  </div>
+
+  <!-- Pending Transactions Table -->
+  @if (transactions().length > 0) {
+    <div class="mt-4">
+      <h4>Pending Transactions</h4>
+      <p-table [value]="transactions()" [paginator]="true" [rows]="5" [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} transactions">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td>
+              <p-tag [value]="getTypeLabel(item.type)" [severity]="getTypeSeverity(item.type)"></p-tag>
+            </td>
+            <td>{{ item.displayName }}</td>
+            <td>{{ item.amount | currency }}</td>
+            <td>
+              <p-tag [value]="getStatusLabel(item.status)" [severity]="getStatusSeverity(item.status)"></p-tag>
+            </td>
+            <td>{{ item.createdAt | date:'short' }}</td>
+            <td>
+              <div class="flex gap-1">
+                @if (item.status === 'failed') {
+                  <p-button
+                    icon="pi pi-refresh"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    pTooltip="Retry"
+                    (onClick)="retryItem(item)">
+                  </p-button>
+                }
+                <p-button
+                  icon="pi pi-trash"
+                  [rounded]="true"
+                  [text]="true"
+                  size="small"
+                  severity="danger"
+                  pTooltip="Discard"
+                  (onClick)="discardItem(item)">
+                </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="text-center p-4 text-500">
+              No pending transactions
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  }
+</p-card>
+
+<!-- Conflict Resolution Dialog -->
+<p-dialog
+  header="Resolve Sync Conflicts"
+  [(visible)]="conflictDialogVisible"
+  [modal]="true"
+  [style]="{width: '600px'}"
+  [draggable]="false"
+  [resizable]="false">
+
+  @if (selectedConflict()) {
+    <div class="p-4">
+      <div class="mb-4">
+        <h4 class="m-0 mb-2">{{ conflictInfo().title }}</h4>
+        <p class="text-500 m-0">{{ conflictInfo().description }}</p>
+      </div>
+
+      <div class="surface-100 p-3 border-round mb-4">
+        <div class="text-sm text-500 mb-1">Local Version</div>
+        <div class="font-bold">{{ conflictInfo().localSummary }}</div>
+      </div>
+
+      <div class="font-bold mb-2">Resolution Options:</div>
+      <div class="flex flex-column gap-2">
+        @for (option of conflictInfo().options; track option.action) {
+          <p-button
+            [label]="option.label"
+            [severity]="option.recommended ? 'primary' : 'secondary'"
+            [outlined]="!option.recommended"
+            class="w-full"
+            (onClick)="resolveConflict(option.action)">
+          </p-button>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="p-4 text-center text-500">
+      Select a conflict to resolve
+    </div>
+  }
+
+  <!-- Conflict List -->
+  @if (conflicts().length > 0) {
+    <div class="border-top-1 surface-border pt-4">
+      <div class="font-bold mb-2">All Conflicts ({{ conflicts().length }})</div>
+      <div class="flex flex-column gap-2 max-h-20rem overflow-auto">
+        @for (conflict of conflicts(); track conflict.id) {
+          <div
+            class="p-3 border-round cursor-pointer"
+            [class.surface-100]="selectedConflict()?.id !== conflict.id"
+            [class.surface-200]="selectedConflict()?.id === conflict.id"
+            (click)="selectConflict(conflict)">
+            <div class="flex justify-content-between align-items-center">
+              <span>{{ getConflictDisplayName(conflict) }}</span>
+              <p-tag [value]="conflict.conflictData?.conflictType || 'Unknown'" severity="danger" size="small"></p-tag>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>

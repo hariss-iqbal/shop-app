@@ -66,7 +66,7 @@ export class JsonLdService {
     const offer: JsonLdOffer = {
       '@type': 'Offer',
       price: phone.sellingPrice,
-      priceCurrency: 'USD',
+      priceCurrency: environment.currency.code,
       availability: this.mapAvailability(phone.status),
       itemCondition: this.mapCondition(phone.condition),
       url: productUrl

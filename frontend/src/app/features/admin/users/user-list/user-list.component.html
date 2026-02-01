@@ -1,0 +1,196 @@
+<div class="flex flex-column gap-4">
+  <!-- Header -->
+  <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-900 m-0">User Management</h1>
+      <p class="text-color-secondary mt-1 mb-0">Manage user roles and permissions</p>
+    </div>
+    <p-button
+      label="Manage Permissions"
+      icon="pi pi-lock"
+      severity="secondary"
+      [outlined]="true"
+      routerLink="/admin/permissions"
+    />
+  </div>
+
+  <!-- Role Statistics -->
+  <div class="grid">
+    @for (stat of roleStats(); track stat.role) {
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="text-color-secondary text-sm block mb-1">{{ getRoleDisplayName(stat.role) }}s</span>
+              <span class="text-2xl font-bold text-900">{{ stat.count }}</span>
+            </div>
+            <p-tag
+              [value]="getRoleDisplayName(stat.role)"
+              [severity]="getRoleSeverity(stat.role)"
+            />
+          </div>
+        </p-card>
+      </div>
+    }
+  </div>
+
+  <!-- Users Table -->
+  <p-card>
+    <p-table
+      [value]="users()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} users"
+      styleClass="p-datatable-sm"
+      [globalFilterFields]="['email', 'role']">
+      <ng-template #header>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created</th>
+          <th>Last Sign In</th>
+          <th style="width: 150px">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-user>
+        <tr>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-user text-color-secondary"></i>
+              <span>{{ user.email || user.userId }}</span>
+              @if (user.userId === authService.user()?.id) {
+                <p-tag value="You" severity="info" styleClass="text-xs" />
+              }
+            </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="getRoleDisplayName(user.role)"
+              [severity]="getRoleSeverity(user.role)"
+            />
+          </td>
+          <td>{{ user.createdAt | date:'medium' }}</td>
+          <td>
+            @if (user.lastSignInAt) {
+              {{ user.lastSignInAt | date:'medium' }}
+            } @else {
+              <span class="text-color-secondary">Never</span>
+            }
+          </td>
+          <td>
+            @if (user.userId !== authService.user()?.id) {
+              <p-button
+                icon="pi pi-pencil"
+                severity="secondary"
+                [text]="true"
+                size="small"
+                pTooltip="Change Role"
+                (onClick)="openEditDialog(user)"
+              />
+            } @else {
+              <span class="text-color-secondary text-sm">Cannot edit own role</span>
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="5" class="text-center py-4">
+            <i class="pi pi-users text-4xl text-color-secondary mb-3"></i>
+            <p class="text-color-secondary m-0">No users found</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+
+  <!-- Edit Role Dialog -->
+  <p-dialog
+    header="Change User Role"
+    [(visible)]="editDialogVisible"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+    [closable]="true"
+    [draggable]="false">
+    @if (selectedUser()) {
+      <div class="flex flex-column gap-4">
+        <div>
+          <label class="block text-color-secondary text-sm mb-2">User</label>
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-user text-color-secondary"></i>
+            <span class="font-medium">{{ selectedUser()!.email || selectedUser()!.userId }}</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-color-secondary text-sm mb-2">Current Role</label>
+          <p-tag
+            [value]="getRoleDisplayName(selectedUser()!.role)"
+            [severity]="getRoleSeverity(selectedUser()!.role)"
+          />
+        </div>
+
+        <div>
+          <label class="block text-color-secondary text-sm mb-2" for="newRole">New Role</label>
+          <p-select
+            id="newRole"
+            [(ngModel)]="newRole"
+            [options]="roleOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select a role"
+            styleClass="w-full"
+          />
+        </div>
+
+        <div class="surface-100 border-round p-3">
+          <h4 class="text-sm font-semibold m-0 mb-2">Role Permissions:</h4>
+          @if (newRole) {
+            <ul class="list-none p-0 m-0 text-sm">
+              @switch (newRole) {
+                @case ('admin') {
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>Full system access</li>
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>User management</li>
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>System settings</li>
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>Process refunds</li>
+                }
+                @case ('manager') {
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>Dashboard & Reports</li>
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>Inventory management</li>
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>Sales & Refunds</li>
+                  <li class="mb-1"><i class="pi pi-times text-red-500 mr-2"></i>No user management</li>
+                  <li class="mb-1"><i class="pi pi-times text-red-500 mr-2"></i>No system settings</li>
+                }
+                @case ('cashier') {
+                  <li class="mb-1"><i class="pi pi-check text-green-500 mr-2"></i>Process sales</li>
+                  <li class="mb-1"><i class="pi pi-times text-red-500 mr-2"></i>No refunds</li>
+                  <li class="mb-1"><i class="pi pi-times text-red-500 mr-2"></i>No inventory access</li>
+                  <li class="mb-1"><i class="pi pi-times text-red-500 mr-2"></i>No reports</li>
+                }
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    }
+
+    <ng-template #footer>
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [text]="true"
+        (onClick)="editDialogVisible = false"
+      />
+      <p-button
+        label="Save Changes"
+        icon="pi pi-check"
+        [loading]="saving()"
+        [disabled]="!newRole || newRole === selectedUser()?.role"
+        (onClick)="saveRoleChange()"
+      />
+    </ng-template>
+  </p-dialog>
+</div>

@@ -316,7 +316,10 @@ export class PhoneService {
         status: request.status || PhoneStatus.AVAILABLE,
         purchase_date: request.purchaseDate,
         supplier_id: request.supplierId,
-        notes: request.notes
+        notes: request.notes,
+        tax_rate: request.taxRate ?? 0,
+        is_tax_inclusive: request.isTaxInclusive ?? false,
+        is_tax_exempt: request.isTaxExempt ?? false
       })
       .select()
       .single();
@@ -347,6 +350,9 @@ export class PhoneService {
     if (request.purchaseDate !== undefined) updateData['purchase_date'] = request.purchaseDate;
     if (request.supplierId !== undefined) updateData['supplier_id'] = request.supplierId;
     if (request.notes !== undefined) updateData['notes'] = request.notes;
+    if (request.taxRate !== undefined) updateData['tax_rate'] = request.taxRate;
+    if (request.isTaxInclusive !== undefined) updateData['is_tax_inclusive'] = request.isTaxInclusive;
+    if (request.isTaxExempt !== undefined) updateData['is_tax_exempt'] = request.isTaxExempt;
 
     const { error } = await this.supabase
       .from('phones')
@@ -433,14 +439,13 @@ export class PhoneService {
     const { data, error } = await this.supabase
       .from('phones')
       .select('storage_gb')
-      .eq('status', PhoneStatus.AVAILABLE)
-      .not('storage_gb', 'is', null);
+      .eq('status', PhoneStatus.AVAILABLE);
 
     if (error) {
       throw new Error(error.message);
     }
 
-    const storageValues = [...new Set((data || []).map(p => p.storage_gb as number))];
+    const storageValues = [...new Set((data || []).map(p => p.storage_gb as number).filter(gb => gb != null))];
     return storageValues.sort((a, b) => a - b);
   }
 
@@ -513,7 +518,10 @@ export class PhoneService {
       notes: data['notes'] as string | null,
       primaryImageUrl: primaryImage?.['image_url'] as string | null,
       createdAt: data['created_at'] as string,
-      updatedAt: data['updated_at'] as string | null
+      updatedAt: data['updated_at'] as string | null,
+      taxRate: (data['tax_rate'] as number) ?? 0,
+      isTaxInclusive: (data['is_tax_inclusive'] as boolean) ?? false,
+      isTaxExempt: (data['is_tax_exempt'] as boolean) ?? false
     };
   }
 }

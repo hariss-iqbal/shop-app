@@ -21,6 +21,12 @@ export interface CreatePhoneDto {
   purchaseDate?: string | null;
   supplierId?: string | null;
   notes?: string | null;
+  /** Tax rate percentage (0-100). E.g., 10 for 10% tax rate */
+  taxRate?: number;
+  /** When true, selling_price includes tax. When false, tax is added on top */
+  isTaxInclusive?: boolean;
+  /** When true, item is tax exempt (0% tax) and clearly marked on receipts */
+  isTaxExempt?: boolean;
 }
 
 export interface UpdatePhoneDto {
@@ -39,6 +45,9 @@ export interface UpdatePhoneDto {
   purchaseDate?: string | null;
   supplierId?: string | null;
   notes?: string | null;
+  taxRate?: number;
+  isTaxInclusive?: boolean;
+  isTaxExempt?: boolean;
 }
 
 export interface PhoneResponseDto {
@@ -65,6 +74,12 @@ export interface PhoneResponseDto {
   primaryImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
+  /** Tax rate percentage (0-100) */
+  taxRate: number;
+  /** When true, selling_price includes tax */
+  isTaxInclusive: boolean;
+  /** When true, item is tax exempt (0% tax) */
+  isTaxExempt: boolean;
 }
 
 export interface PhoneListResponseDto {
@@ -98,4 +113,35 @@ export interface UpdatePhoneStatusDto {
 export interface BulkUpdatePhoneStatusDto {
   ids: string[];
   status: PhoneStatus;
+}
+
+/**
+ * Phone location inventory DTO
+ * Feature: F-024 Multi-Location Inventory Support
+ */
+export interface PhoneLocationInventoryDto {
+  locationId: string;
+  locationName: string;
+  locationCode: string;
+  quantity: number;
+  minStockLevel: number;
+  maxStockLevel: number | null;
+  lastRestocked: string | null;
+}
+
+/**
+ * Phone response with location inventory
+ * Feature: F-024 Multi-Location Inventory Support
+ */
+export interface PhoneWithInventoryResponseDto extends PhoneResponseDto {
+  locationInventory?: PhoneLocationInventoryDto[];
+  totalStock?: number;
+}
+
+/**
+ * Phone filter with location support
+ * Feature: F-024 Multi-Location Inventory Support
+ */
+export interface PhoneFilterWithLocationDto extends PhoneFilterDto {
+  locationId?: string;
 }

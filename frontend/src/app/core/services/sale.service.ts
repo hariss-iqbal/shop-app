@@ -1,13 +1,24 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { PaymentMethod } from '../../enums/payment-method.enum';
 import {
   Sale,
   SaleListResponse,
   SaleFilter,
   SaleSummary,
-  MarkAsSoldRequest
+  MarkAsSoldRequest,
+  CompleteSaleTransactionRequest,
+  CustomerPurchaseHistory,
+  InventoryAvailabilityResult,
+  SaleWithInventoryDeductionResponse,
+  BatchSaleWithInventoryDeductionResponse
 } from '../../models/sale.model';
 
+/**
+ * Sale Service
+ * Handles sales operations with automatic inventory deduction
+ * Feature: F-008 Automatic Inventory Deduction
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -23,6 +34,11 @@ export class SaleService {
           id,
           model,
           brand:brands(id, name)
+        ),
+        location:store_locations(
+          id,
+          name,
+          code
         )
       `, { count: 'exact' });
 
@@ -32,6 +48,10 @@ export class SaleService {
 
     if (filter?.endDate) {
       query = query.lte('sale_date', filter.endDate);
+    }
+
+    if (filter?.locationId) {
+      query = query.eq('location_id', filter.locationId);
     }
 
     query = query.order('sale_date', { ascending: false });
@@ -83,29 +103,184 @@ export class SaleService {
     };
   }
 
-  async markAsSold(request: MarkAsSoldRequest): Promise<Sale> {
-    const { data: phone, error: phoneError } = await this.supabase
-      .from('phones')
-      .select('cost_price')
-      .eq('id', request.phoneId)
-      .single();
+  /**
+   * Check inventory availability for phones before completing a sale
+   * Feature: F-008 Automatic Inventory Deduction
+   */
+  async checkInventoryAvailability(phoneIds: string[]): Promise<InventoryAvailabilityResult> {
+    const { data, error } = await this.supabase.rpc('check_inventory_availability', {
+      p_phone_ids: phoneIds
+    });
 
-    if (phoneError) {
-      throw new Error(phoneError.message);
+    if (error) {
+      throw new Error(error.message);
     }
 
-    const { data: sale, error: saleError } = await this.supabase
+    return {
+      allAvailable: data.allAvailable,
+      hasWarnings: data.hasWarnings,
+      allowOversell: data.allowOversell,
+      phones: data.phones,
+      warnings: data.warnings
+    };
+  }
+
+  /**
+   * Mark a phone as sold with automatic inventory deduction
+   * Uses atomic RPC to ensure consistency
+   * Feature: F-008 Automatic Inventory Deduction
+   * Feature: F-024 Multi-Location Inventory Support
+   */
+  async markAsSold(request: MarkAsSoldRequest): Promise<SaleWithInventoryDeductionResponse> {
+    const { data, error } = await this.supabase.rpc('complete_sale_with_inventory_deduction', {
+      p_phone_id: request.phoneId,
+      p_sale_date: request.saleDate,
+      p_sale_price: request.salePrice,
+      p_buyer_name: request.buyerName?.trim() || null,
+      p_buyer_phone: request.buyerPhone?.trim() || null,
+      p_buyer_email: request.buyerEmail?.trim() || null,
+      p_notes: request.notes?.trim() || null,
+      p_location_id: request.locationId || null
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    // If the RPC succeeded, fetch the complete sale data
+    if (data.success && data.saleId) {
+      const { data: saleData, error: fetchError } = await this.supabase
+        .from('sales')
+        .select(`
+          *,
+          phone:phones(
+            id,
+            model,
+            brand:brands(id, name)
+          )
+        `)
+        .eq('id', data.saleId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching sale after creation:', fetchError);
+      }
+
+      return {
+        success: true,
+        sale: saleData ? this.mapToSale(saleData) : undefined,
+        phoneId: data.phoneId,
+        previousStatus: data.previousStatus,
+        newStatus: data.newStatus,
+        warning: data.warning,
+        inventoryDeducted: data.inventoryDeducted
+      };
+    }
+
+    return {
+      success: data.success,
+      phoneId: data.phoneId,
+      inventoryDeducted: data.inventoryDeducted,
+      error: data.error
+    };
+  }
+
+  /**
+   * Complete a sales transaction with multiple items using atomic inventory deduction
+   * All items are processed atomically - all succeed or all fail
+   * Feature: F-008 Automatic Inventory Deduction
+   * Feature: F-024 Multi-Location Inventory Support
+   */
+  async completeSaleTransaction(request: CompleteSaleTransactionRequest): Promise<BatchSaleWithInventoryDeductionResponse> {
+    const { data, error } = await this.supabase.rpc('complete_batch_sale_with_inventory_deduction', {
+      p_items: request.items.map(item => ({
+        phoneId: item.phoneId,
+        salePrice: item.salePrice
+      })),
+      p_sale_date: request.saleDate,
+      p_buyer_name: request.customerInfo.name?.trim() || null,
+      p_buyer_phone: request.customerInfo.phone?.trim() || null,
+      p_buyer_email: request.customerInfo.email?.trim() || null,
+      p_notes: request.notes?.trim() || null,
+      p_location_id: request.locationId || null
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    // If the RPC succeeded, fetch the complete sale data for all created sales
+    if (data.success && data.sales && data.sales.length > 0) {
+      const saleIds = data.sales.map((s: { saleId: string }) => s.saleId);
+
+      const { data: salesData, error: fetchError } = await this.supabase
+        .from('sales')
+        .select(`
+          *,
+          phone:phones(
+            id,
+            model,
+            brand:brands(id, name)
+          )
+        `)
+        .in('id', saleIds);
+
+      if (fetchError) {
+        console.error('Error fetching sales after creation:', fetchError);
+      }
+
+      return {
+        success: true,
+        totalItems: data.totalItems,
+        processedItems: data.processedItems,
+        sales: salesData ? salesData.map(this.mapToSale) : undefined,
+        warnings: data.warnings,
+        inventoryDeducted: data.inventoryDeducted
+      };
+    }
+
+    return {
+      success: data.success,
+      totalItems: data.totalItems,
+      processedItems: data.processedItems,
+      inventoryDeducted: data.inventoryDeducted,
+      error: data.error
+    };
+  }
+
+  /**
+   * Delete a sale and restore inventory (phone status to available)
+   * Feature: F-008 Automatic Inventory Deduction
+   */
+  async deleteSale(saleId: string): Promise<{ success: boolean; inventoryRestored: boolean; error?: string }> {
+    const { data, error } = await this.supabase.rpc('revert_sale_restore_inventory', {
+      p_sale_id: saleId
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return {
+      success: data.success,
+      inventoryRestored: data.inventoryRestored,
+      error: data.error
+    };
+  }
+
+  /**
+   * Find all sales for a customer by their phone number
+   * Returns purchase history with transactions sorted by date (most recent first)
+   */
+  async findByBuyerPhone(buyerPhone: string): Promise<CustomerPurchaseHistory> {
+    if (!buyerPhone || !buyerPhone.trim()) {
+      throw new Error('Phone number is required');
+    }
+
+    const cleanedPhone = buyerPhone.replace(/[^\d]/g, '');
+
+    const { data, error } = await this.supabase
       .from('sales')
-      .insert({
-        phone_id: request.phoneId,
-        sale_date: request.saleDate,
-        sale_price: request.salePrice,
-        cost_price: phone.cost_price,
-        buyer_name: request.buyerName?.trim() || null,
-        buyer_phone: request.buyerPhone?.trim() || null,
-        buyer_email: request.buyerEmail?.trim() || null,
-        notes: request.notes?.trim() || null
-      })
       .select(`
         *,
         phone:phones(
@@ -114,27 +289,54 @@ export class SaleService {
           brand:brands(id, name)
         )
       `)
-      .single();
+      .ilike('buyer_phone', `%${cleanedPhone}%`)
+      .order('sale_date', { ascending: false });
 
-    if (saleError) {
-      throw new Error(saleError.message);
+    if (error) {
+      throw new Error(error.message);
     }
 
-    const { error: statusError } = await this.supabase
-      .from('phones')
-      .update({ status: 'sold' })
-      .eq('id', request.phoneId);
+    const sales = (data || []).map(this.mapToSale);
+    const totalSpent = sales.reduce((sum, sale) => sum + sale.salePrice, 0);
 
-    if (statusError) {
-      throw new Error(statusError.message);
+    const firstSale = sales.length > 0 ? sales[0] : null;
+
+    return {
+      customerPhone: buyerPhone,
+      customerName: firstSale?.buyerName || null,
+      customerEmail: firstSale?.buyerEmail || null,
+      totalTransactions: sales.length,
+      totalSpent,
+      transactions: sales
+    };
+  }
+
+  /**
+   * Get inventory deduction logs for a specific phone
+   * Feature: F-008 Automatic Inventory Deduction
+   */
+  async getInventoryDeductionLogs(phoneId: string): Promise<any[]> {
+    const { data, error } = await this.supabase
+      .from('inventory_deduction_logs')
+      .select(`
+        *,
+        sale:sales(id, sale_date, sale_price),
+        phone:phones(id, model, brand:brands(id, name))
+      `)
+      .eq('phone_id', phoneId)
+      .order('deducted_at', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
     }
 
-    return this.mapToSale(sale);
+    return data || [];
   }
 
   private mapToSale(data: Record<string, unknown>): Sale {
     const phone = data['phone'] as Record<string, unknown> | null;
     const brand = phone ? (phone['brand'] as Record<string, unknown> | null) : null;
+    const location = data['location'] as Record<string, unknown> | null;
 
     const salePrice = data['sale_price'] as number;
     const costPrice = data['cost_price'] as number;
@@ -153,7 +355,19 @@ export class SaleService {
       buyerEmail: data['buyer_email'] as string | null,
       notes: data['notes'] as string | null,
       createdAt: data['created_at'] as string,
-      updatedAt: data['updated_at'] as string | null
+      updatedAt: data['updated_at'] as string | null,
+      taxRate: (data['tax_rate'] as number) ?? 0,
+      taxAmount: (data['tax_amount'] as number) ?? 0,
+      basePrice: data['base_price'] as number | null,
+      isTaxExempt: (data['is_tax_exempt'] as boolean) ?? false,
+      paymentSummary: ((data['payment_summary'] as Array<{ method: string; amount: number }>) ?? []).map(p => ({
+        ...p,
+        method: p.method as PaymentMethod
+      })),
+      isSplitPayment: (data['is_split_payment'] as boolean) ?? false,
+      primaryPaymentMethod: (data['primary_payment_method'] as string | null) as PaymentMethod | null,
+      locationId: (data['location_id'] as string) || null,
+      locationName: location ? (location['name'] as string) : null
     };
   }
 }

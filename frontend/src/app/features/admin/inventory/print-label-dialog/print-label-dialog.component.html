@@ -1,0 +1,97 @@
+<p-dialog
+  [header]="dialogHeader()"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  (onShow)="onDialogShow()"
+  (onHide)="onDialogHide()"
+  [modal]="true"
+  [closable]="true"
+  [focusOnShow]="true"
+  [focusTrap]="true"
+  [closeOnEscape]="true"
+  [style]="{ width: '600px' }"
+  [breakpoints]="{ '575px': '95vw' }"
+  role="dialog"
+  [attr.aria-label]="dialogHeader()"
+>
+  <!-- Print Controls -->
+  <div class="flex align-items-center justify-content-between mb-4 print-hide">
+    <div class="flex align-items-center gap-3">
+      <p-checkbox
+        [(ngModel)]="showQrCode"
+        [binary]="true"
+        inputId="showQr"
+        label="Include QR Code"
+      />
+    </div>
+    <p-button
+      label="Print"
+      icon="pi pi-print"
+      (onClick)="onPrint()"
+    />
+  </div>
+
+  <p-divider styleClass="print-hide" />
+
+  <!-- Label Preview / Print Content -->
+  <div #labelContent class="label-container">
+    @if (phone()) {
+      <div class="label-content">
+        <!-- Brand and Model -->
+        <div class="label-header">
+          <div class="label-brand">{{ phone()!.brandName }}</div>
+          <div class="label-model">{{ phone()!.model }}</div>
+        </div>
+
+        <!-- Specifications Row -->
+        <div class="label-specs">
+          @if (phone()!.storageGb) {
+            <span class="label-spec-item">{{ phone()!.storageGb }} GB</span>
+          }
+          <span class="label-spec-item label-condition">
+            {{ getConditionLabel(phone()!.condition) }}
+          </span>
+        </div>
+
+        <div class="label-divider"></div>
+
+        <!-- Price -->
+        <div class="label-price">
+          {{ phone()!.sellingPrice | appCurrency }}
+        </div>
+
+        <!-- QR Code Section -->
+        @if (showQrCode) {
+          <div class="label-qr">
+            <img
+              [src]="qrCodeUrl()"
+              [alt]="'QR code for ' + phone()!.brandName + ' ' + phone()!.model"
+              class="label-qr-image"
+              width="100"
+              height="100"
+            />
+            <div class="label-qr-hint">Scan for details</div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2 print-hide">
+      <p-button
+        label="Close"
+        severity="secondary"
+        [text]="true"
+        (onClick)="onClose()"
+        ariaLabel="Close print label dialog"
+      />
+      <p-button
+        label="Print Label"
+        icon="pi pi-print"
+        (onClick)="onPrint()"
+        ariaLabel="Print phone label"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,96 @@
+<div class="flex align-items-center justify-content-center min-h-screen surface-ground p-3">
+  <p-card styleClass="w-full max-w-30rem shadow-4">
+    <div class="text-center">
+      <!-- Lock Icon with Animation -->
+      <div class="access-denied-icon mb-4">
+        <i class="pi pi-lock text-6xl text-red-500"></i>
+      </div>
+
+      <h1 class="text-3xl font-bold text-900 mb-3">Access Denied</h1>
+
+      <!-- Role Badge -->
+      @if (authService.userRole()) {
+        <div class="mb-4">
+          <p-tag
+            [value]="getRoleDisplayName(authService.userRole()!)"
+            [severity]="getRoleSeverity(authService.userRole()!)"
+            styleClass="text-sm px-3 py-2"
+          />
+        </div>
+      }
+
+      <!-- Context Message -->
+      <div class="surface-100 border-round p-3 mb-4 text-left">
+        <p class="text-700 m-0 line-height-3">
+          <i class="pi pi-info-circle mr-2 text-primary"></i>
+          {{ getContextMessage() }}
+        </p>
+      </div>
+
+      <!-- Role-specific Help -->
+      @if (authService.isCashier()) {
+        <div class="surface-50 border-1 border-round border-yellow-500 p-3 mb-4 text-left">
+          <p class="font-semibold text-yellow-700 m-0 mb-2">
+            <i class="pi pi-exclamation-triangle mr-2"></i>
+            Cashier Permissions
+          </p>
+          <ul class="text-600 text-sm m-0 pl-4">
+            <li class="mb-1">You can process sales transactions</li>
+            <li class="mb-1">Refunds require manager assistance</li>
+            <li>Other features are restricted to managers and admins</li>
+          </ul>
+        </div>
+      }
+
+      <p class="text-600 mb-4">
+        Need access? Contact your administrator for permission changes.
+      </p>
+
+      <!-- Navigation Buttons -->
+      <div class="flex flex-column gap-2">
+        @if (authService.isAuthenticated()) {
+          @if (authService.canAccessDashboard()) {
+            <p-button
+              label="Go to Dashboard"
+              icon="pi pi-home"
+              styleClass="w-full"
+              (onClick)="navigateToDashboard()"
+            />
+          }
+          @if (authService.canAccessSales()) {
+            <p-button
+              label="Go to Sales"
+              icon="pi pi-dollar"
+              [severity]="authService.canAccessDashboard() ? 'secondary' : 'primary'"
+              styleClass="w-full"
+              (onClick)="navigateToSales()"
+            />
+          }
+          <p-button
+            label="Sign Out"
+            icon="pi pi-sign-out"
+            severity="danger"
+            [outlined]="true"
+            styleClass="w-full"
+            [loading]="isLoggingOut"
+            (onClick)="logout()"
+          />
+        } @else {
+          <p-button
+            label="Go to Login"
+            icon="pi pi-sign-in"
+            styleClass="w-full"
+            (onClick)="navigateToLogin()"
+          />
+          <p-button
+            label="Go to Home"
+            icon="pi pi-home"
+            severity="secondary"
+            styleClass="w-full"
+            (onClick)="navigateToHome()"
+          />
+        }
+      </div>
+    </div>
+  </p-card>
+</div>

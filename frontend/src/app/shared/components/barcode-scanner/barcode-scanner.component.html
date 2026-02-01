@@ -1,0 +1,155 @@
+<!-- Scan Button (trigger) -->
+<p-button
+  [icon]="buttonIcon"
+  [label]="showLabel ? buttonLabel : ''"
+  [severity]="buttonSeverity"
+  [outlined]="buttonOutlined"
+  [text]="buttonText"
+  [rounded]="buttonRounded"
+  [disabled]="!scannerService.isBarcodeApiSupported()"
+  [pTooltip]="!scannerService.isBarcodeApiSupported() ? 'Barcode scanning not supported in this browser' : tooltipText"
+  tooltipPosition="top"
+  (onClick)="openScanner()"
+  styleClass="mobile-scan-button"
+  [style]="buttonStyle"
+/>
+
+<!-- Scanner Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  [header]="dialogHeader"
+  [style]="{ width: viewportService.isMobile() ? '100vw' : '500px', maxWidth: '100vw' }"
+  [contentStyle]="{ padding: '0' }"
+  [position]="viewportService.isMobile() ? 'bottom' : 'center'"
+  styleClass="scanner-dialog"
+  (onHide)="onDialogHide()"
+>
+  <div class="scanner-container">
+    <!-- Camera Preview -->
+    <div class="video-container" [class.scanning]="scannerService.isScanning()">
+      <video
+        #videoElement
+        autoplay
+        playsinline
+        muted
+        class="scanner-video"
+      ></video>
+
+      <!-- Scan Overlay with targeting reticle -->
+      @if (scannerService.isScanning()) {
+        <div class="scan-overlay">
+          <div class="scan-reticle">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+            <div class="scan-line"></div>
+          </div>
+          <p class="scan-hint">Point camera at barcode</p>
+        </div>
+      }
+
+      <!-- Loading State -->
+      @if (initializing()) {
+        <div class="loading-overlay">
+          <p-progressSpinner strokeWidth="4" styleClass="w-3rem h-3rem" />
+          <p class="mt-3 text-color">Starting camera...</p>
+        </div>
+      }
+    </div>
+
+    <!-- Error Message -->
+    @if (scannerService.error()) {
+      <div class="p-3">
+        <p-message severity="error" [text]="scannerService.error()!" styleClass="w-full" />
+      </div>
+    }
+
+    <!-- Permission Denied Message -->
+    @if (scannerService.permissionDenied()) {
+      <div class="p-3">
+        <p-message
+          severity="warn"
+          text="Camera access was denied. Please enable camera permissions in your browser settings."
+          styleClass="w-full"
+        />
+      </div>
+    }
+
+    <!-- Not Supported Message -->
+    @if (!scannerService.isBarcodeApiSupported()) {
+      <div class="p-3">
+        <p-message
+          severity="info"
+          text="Barcode scanning is not supported in this browser. Please use Chrome, Edge, or another Chromium-based browser."
+          styleClass="w-full"
+        />
+      </div>
+    }
+
+    <!-- Last Scan Result -->
+    @if (scannerService.lastScan() && showLastScan) {
+      <div class="p-3 surface-ground border-top-1 surface-border">
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-check-circle text-green-500 text-xl"></i>
+          <div class="flex-1">
+            <p class="m-0 font-semibold">Scanned: {{ scannerService.lastScan()!.rawValue }}</p>
+            <p class="m-0 text-sm text-color-secondary">Format: {{ scannerService.lastScan()!.format }}</p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Controls -->
+    <div class="scanner-controls p-3 surface-section border-top-1 surface-border">
+      <div class="flex flex-wrap gap-2 justify-content-center">
+        <!-- Camera Switch (if multiple cameras) -->
+        @if (scannerService.availableCameras().length > 1) {
+          <p-select
+            [options]="cameraOptions()"
+            [(ngModel)]="selectedCamera"
+            (onChange)="onCameraChange($event.value)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select camera"
+            styleClass="w-12rem"
+          />
+        }
+
+        <!-- Torch Toggle -->
+        <p-button
+          icon="pi pi-bolt"
+          [severity]="torchEnabled() ? 'warn' : 'secondary'"
+          [outlined]="!torchEnabled()"
+          (onClick)="toggleTorch()"
+          pTooltip="Toggle flashlight"
+          tooltipPosition="top"
+          styleClass="mobile-action-button"
+        />
+
+        <!-- Start/Stop Scanning -->
+        @if (scannerService.isScanning()) {
+          <p-button
+            label="Stop"
+            icon="pi pi-stop"
+            severity="danger"
+            (onClick)="stopScanning()"
+            styleClass="mobile-action-button"
+          />
+        } @else {
+          <p-button
+            label="Start Camera"
+            icon="pi pi-camera"
+            severity="success"
+            (onClick)="startScanning()"
+            [loading]="initializing()"
+            styleClass="mobile-action-button"
+          />
+        }
+      </div>
+    </div>
+  </div>
+</p-dialog>

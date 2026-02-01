@@ -17,6 +17,7 @@ describe('StockAlertConfigDialogComponent', () => {
     id: 'config-1',
     lowStockThreshold: 5,
     enableBrandZeroAlert: true,
+    allowOversell: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: null
   };
@@ -49,10 +50,11 @@ describe('StockAlertConfigDialogComponent', () => {
     it('should have default values', () => {
       expect(component.lowStockThreshold).toBe(5);
       expect(component.enableBrandZeroAlert).toBe(true);
+      expect(component.allowOversell).toBe(true);
     });
 
     it('should populate form from config when visible', () => {
-      fixture.componentRef.setInput('config', { ...mockConfig, lowStockThreshold: 10, enableBrandZeroAlert: false });
+      fixture.componentRef.setInput('config', { ...mockConfig, lowStockThreshold: 10, enableBrandZeroAlert: false, allowOversell: false });
       fixture.componentRef.setInput('visible', true);
       fixture.detectChanges();
 
@@ -64,6 +66,7 @@ describe('StockAlertConfigDialogComponent', () => {
 
       expect(component.lowStockThreshold).toBe(10);
       expect(component.enableBrandZeroAlert).toBe(false);
+      expect(component.allowOversell).toBe(false);
     });
   });
 
@@ -103,6 +106,7 @@ describe('StockAlertConfigDialogComponent', () => {
     beforeEach(() => {
       component.lowStockThreshold = 10;
       component.enableBrandZeroAlert = false;
+      component.allowOversell = false;
     });
 
     it('should call updateConfig with correct values', fakeAsync(() => {
@@ -111,7 +115,8 @@ describe('StockAlertConfigDialogComponent', () => {
 
       expect(mockStockAlertService.updateConfig).toHaveBeenCalledWith({
         lowStockThreshold: 10,
-        enableBrandZeroAlert: false
+        enableBrandZeroAlert: false,
+        allowOversell: false
       });
     }));
 
@@ -160,7 +165,8 @@ describe('StockAlertConfigDialogComponent', () => {
 
       expect(mockStockAlertService.updateConfig).toHaveBeenCalledWith({
         lowStockThreshold: 0,
-        enableBrandZeroAlert: false
+        enableBrandZeroAlert: false,
+        allowOversell: false
       });
     }));
   });

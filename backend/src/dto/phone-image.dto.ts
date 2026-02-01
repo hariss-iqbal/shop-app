@@ -6,7 +6,8 @@
 export interface CreatePhoneImageDto {
   phoneId: string;
   imageUrl: string;
-  storagePath: string;
+  storagePath?: string;
+  publicId?: string;
   isPrimary?: boolean;
   displayOrder?: number;
 }
@@ -20,7 +21,8 @@ export interface PhoneImageResponseDto {
   id: string;
   phoneId: string;
   imageUrl: string;
-  storagePath: string;
+  storagePath: string | null;
+  publicId?: string;
   isPrimary: boolean;
   displayOrder: number;
   createdAt: string;

@@ -54,7 +54,8 @@ export class StockAlertConfigRepository {
 
     return this.create({
       low_stock_threshold: 5,
-      enable_brand_zero_alert: true
+      enable_brand_zero_alert: true,
+      allow_oversell: true
     });
   }
 }

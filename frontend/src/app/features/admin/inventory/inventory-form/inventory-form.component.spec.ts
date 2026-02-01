@@ -69,7 +69,10 @@ describe('InventoryFormComponent', () => {
     notes: 'Test notes',
     primaryImageUrl: 'https://example.com/phone.jpg',
     createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: null
+    updatedAt: null,
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false
   };
 
   const setupTestBed = (phoneId: string | null = null) => {

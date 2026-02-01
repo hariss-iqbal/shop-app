@@ -1,0 +1,157 @@
+<p-dialog
+  [(visible)]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  header="Refund Receipt"
+  [style]="{ width: '420px' }"
+>
+  @if (receiptData) {
+    <div class="receipt-preview surface-0 p-4" id="refund-receipt">
+      <!-- Store Header -->
+      <div class="text-center mb-4">
+        <h2 class="text-xl font-bold m-0 mb-1">{{ storeConfig.name }}</h2>
+        <p class="text-sm m-0 mb-1">{{ storeConfig.address }}</p>
+        <p class="text-sm m-0">Tel: {{ storeConfig.phone }}</p>
+      </div>
+
+      <p-divider styleClass="my-3" />
+
+      <!-- REFUND Banner -->
+      <div class="text-center mb-3">
+        <span class="text-2xl font-bold text-red-500">*** REFUND ***</span>
+        @if (receiptData.isPartialRefund) {
+          <div class="text-sm text-orange-500 font-medium mt-1">PARTIAL REFUND</div>
+        }
+      </div>
+
+      <!-- Refund Info -->
+      <div class="mb-3">
+        <div class="flex justify-content-between mb-1">
+          <span class="text-color-secondary">Refund #:</span>
+          <span class="font-bold">{{ receiptData.refundNumber }}</span>
+        </div>
+        @if (receiptData.originalReceiptNumber) {
+          <div class="flex justify-content-between mb-1">
+            <span class="text-color-secondary">Original Receipt:</span>
+            <span>{{ receiptData.originalReceiptNumber }}</span>
+          </div>
+        }
+        <div class="flex justify-content-between mb-1">
+          <span class="text-color-secondary">Date:</span>
+          <span>{{ receiptData.refundDate | date:'mediumDate' }}</span>
+        </div>
+        <div class="flex justify-content-between mb-1">
+          <span class="text-color-secondary">Time:</span>
+          <span>{{ receiptData.refundTime }}</span>
+        </div>
+      </div>
+
+      @if (receiptData.customerName) {
+        <div class="mb-3">
+          <div class="flex justify-content-between">
+            <span class="text-color-secondary">Customer:</span>
+            <span>{{ receiptData.customerName }}</span>
+          </div>
+          @if (receiptData.customerPhone) {
+            <div class="flex justify-content-between">
+              <span class="text-color-secondary">Phone:</span>
+              <span>{{ receiptData.customerPhone }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <p-divider styleClass="my-3" />
+
+      <!-- Items -->
+      <div class="mb-3">
+        <div class="font-bold mb-2">Refunded Items:</div>
+        @for (item of receiptData.items; track item.id) {
+          <div class="mb-2">
+            <div class="flex justify-content-between">
+              <span>{{ item.itemName }}</span>
+              @if (item.isCustomPrice) {
+                <span class="text-xs text-orange-500">*</span>
+              }
+            </div>
+            <div class="flex justify-content-between text-sm">
+              <span class="text-color-secondary pl-2">{{ item.quantity }} x {{ item.unitPrice | appCurrency:'1.2-2' }}</span>
+              <span class="font-medium">-{{ item.total | appCurrency:'1.2-2' }}</span>
+            </div>
+            @if (item.isCustomPrice && item.originalUnitPrice) {
+              <div class="text-xs text-color-secondary pl-2">
+                (Orig: {{ item.originalUnitPrice | appCurrency:'1.2-2' }})
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <p-divider styleClass="my-3" />
+
+      <!-- Totals -->
+      <div class="mb-3">
+        <div class="flex justify-content-between mb-1">
+          <span>Subtotal:</span>
+          <span>-{{ receiptData.subtotal | appCurrency:'1.2-2' }}</span>
+        </div>
+        @if (receiptData.taxAmount > 0) {
+          <div class="flex justify-content-between mb-1">
+            <span>Tax ({{ receiptData.taxRate }}%):</span>
+            <span>-{{ receiptData.taxAmount | appCurrency:'1.2-2' }}</span>
+          </div>
+        }
+        <div class="flex justify-content-between font-bold text-lg mt-2 pt-2 border-top-1 surface-border">
+          <span>REFUND TOTAL:</span>
+          <span class="text-red-500">-{{ receiptData.refundAmount | appCurrency:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      @if (receiptData.refundReason) {
+        <p-divider styleClass="my-3" />
+        <div class="mb-3">
+          <span class="text-color-secondary">Reason: </span>
+          <span>{{ receiptData.refundReason }}</span>
+        </div>
+      }
+
+      @if (receiptData.hasCustomPrices) {
+        <div class="text-xs text-color-secondary mb-2">
+          * Custom return price applied
+        </div>
+      }
+
+      @if (receiptData.managerApproved) {
+        <div class="text-xs text-green-600 font-medium mb-2">
+          Manager Approved
+        </div>
+      }
+
+      <p-divider styleClass="my-3" />
+
+      <!-- Footer -->
+      <div class="text-center">
+        <p class="text-sm m-0 mb-1">Thank you for your understanding.</p>
+        <p class="text-sm m-0 text-color-secondary">This is a refund receipt.</p>
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Download PDF"
+      icon="pi pi-file-pdf"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onDownloadPdf()"
+    />
+    <p-button
+      label="Print"
+      icon="pi pi-print"
+      (onClick)="onPrint()"
+    />
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,13 @@
+@if (viewportService.isMobile() || viewportService.isTablet()) {
+  <p-speedDial
+    [model]="quickActions()"
+    direction="up"
+    [transitionDelay]="40"
+    showIcon="pi pi-bolt"
+    hideIcon="pi pi-times"
+    buttonClassName="mobile-fab"
+    [style]="fabStyle"
+    [radius]="80"
+    [rotateAnimation]="true"
+  />
+}

@@ -23,6 +23,12 @@ export const environment: Environment = {
   production: false,
   siteUrl: 'http://localhost:4200',
   siteName: 'Phone Shop',
+  currency: {
+    code: 'PKR',        // ISO 4217 currency code: 'PKR', 'USD', 'EUR', etc.
+    locale: 'en-PK',    // Locale for formatting: 'en-PK', 'en-US', etc.
+    symbol: 'Rs.',      // Symbol for display: 'Rs.', '$', '€', etc.
+    decimals: 0         // Decimal places: 0 for whole numbers, 2 for cents
+  },
   supabase: {
     url: 'https://your-project-ref.supabase.co',
     anonKey: 'your-supabase-anon-key'
@@ -30,6 +36,10 @@ export const environment: Environment = {
   recaptcha: {
     enabled: false,
     siteKey: ''
+  },
+  cloudinary: {
+    cloudName: 'your-cloudinary-cloud-name',
+    uploadPreset: 'your-unsigned-upload-preset'
   },
   whatsapp: {
     phoneNumber: '1234567890'

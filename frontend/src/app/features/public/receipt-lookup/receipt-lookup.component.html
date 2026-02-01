@@ -1,0 +1,178 @@
+<div class="surface-ground min-h-screen py-6 px-3 md:px-6">
+  <div class="max-w-30rem mx-auto">
+    <!-- Store Header -->
+    <div class="text-center mb-5">
+      <h1 class="text-2xl font-bold text-primary m-0">{{ storeName }}</h1>
+      <p class="text-color-secondary mt-2 mb-0">Receipt Verification</p>
+    </div>
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <p-card>
+        <div class="flex flex-column gap-3">
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="60%" height="1.5rem" />
+          <p-divider />
+          <p-skeleton width="80%" height="1rem" />
+          <p-skeleton width="70%" height="1rem" />
+          <p-skeleton width="90%" height="1rem" />
+          <p-divider />
+          <p-skeleton width="100%" height="3rem" />
+        </div>
+      </p-card>
+    }
+
+    <!-- Error State -->
+    @if (!loading() && error()) {
+      <p-card>
+        <div class="text-center py-4">
+          <i class="pi pi-exclamation-triangle text-5xl text-orange-500 mb-3"></i>
+          <h2 class="text-xl font-semibold text-color mb-2">Unable to Load Receipt</h2>
+          <p class="text-color-secondary mb-4">{{ error() }}</p>
+          <p-button
+            label="Return to Home"
+            icon="pi pi-home"
+            routerLink="/"
+          />
+        </div>
+      </p-card>
+    }
+
+    <!-- Not Found State -->
+    @if (!loading() && !error() && lookupResult() && !lookupResult()!.found) {
+      <p-card>
+        <div class="text-center py-4">
+          <i class="pi pi-search text-5xl text-color-secondary mb-3"></i>
+          <h2 class="text-xl font-semibold text-color mb-2">Receipt Not Found</h2>
+          <p class="text-color-secondary mb-4">
+            @switch (lookupResult()!.notFoundReason) {
+              @case ('invalid_code') {
+                The scanned code is not valid. Please try scanning again.
+              }
+              @case ('store_mismatch') {
+                This receipt is from a different store location.
+              }
+              @case ('expired') {
+                This receipt lookup has expired.
+              }
+              @default {
+                We couldn't find a receipt with the number <strong>{{ receiptNumber() }}</strong>.
+              }
+            }
+          </p>
+          <p-button
+            label="Return to Home"
+            icon="pi pi-home"
+            routerLink="/"
+          />
+        </div>
+      </p-card>
+    }
+
+    <!-- Receipt Found -->
+    @if (!loading() && !error() && lookupResult()?.found && lookupResult()!.receipt) {
+      <p-card styleClass="receipt-card">
+        <!-- Success Badge -->
+        <div class="text-center mb-4">
+          <p-tag severity="success" value="Verified Receipt" [rounded]="true" styleClass="px-3 py-2">
+            <i class="pi pi-check-circle mr-2"></i>
+            Verified Receipt
+          </p-tag>
+        </div>
+
+        <!-- Receipt Number -->
+        <div class="text-center mb-4">
+          <span class="text-sm text-color-secondary">Receipt Number</span>
+          <h2 class="text-2xl font-bold font-mono text-primary mt-1 mb-0">
+            {{ lookupResult()!.receipt!.receiptNumber }}
+          </h2>
+        </div>
+
+        <p-divider />
+
+        <!-- Transaction Details -->
+        <div class="flex flex-column gap-3 my-4">
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-color-secondary">
+              <i class="pi pi-calendar mr-2"></i>Date
+            </span>
+            <span class="font-medium">{{ formatDate(lookupResult()!.receipt!.transactionDate) }}</span>
+          </div>
+
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-color-secondary">
+              <i class="pi pi-clock mr-2"></i>Time
+            </span>
+            <span class="font-medium">{{ formatTime(lookupResult()!.receipt!.transactionTime) }}</span>
+          </div>
+
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-color-secondary">
+              <i class="pi pi-shopping-cart mr-2"></i>Items
+            </span>
+            <span class="font-medium">{{ lookupResult()!.receipt!.itemCount }} item(s)</span>
+          </div>
+
+          @if (lookupResult()!.receipt!.customerName) {
+            <div class="flex justify-content-between align-items-center">
+              <span class="text-color-secondary">
+                <i class="pi pi-user mr-2"></i>Customer
+              </span>
+              <span class="font-medium">{{ lookupResult()!.receipt!.customerName }}</span>
+            </div>
+          }
+        </div>
+
+        <p-divider />
+
+        <!-- Grand Total -->
+        <div class="flex justify-content-between align-items-center py-3">
+          <span class="text-xl font-semibold">Total</span>
+          <span class="text-2xl font-bold text-primary">
+            {{ lookupResult()!.receipt!.grandTotal | appCurrency:'1.2-2' }}
+          </span>
+        </div>
+
+        <p-divider />
+
+        <!-- Store Info -->
+        <div class="text-center mt-4">
+          <p class="text-color-secondary text-sm mb-2">
+            <i class="pi pi-building mr-1"></i>
+            {{ storeName }}
+          </p>
+          <p class="text-color-secondary text-sm mb-3">{{ storeAddress }}</p>
+          <p class="text-xs text-color-secondary">
+            This receipt has been verified as authentic.
+          </p>
+        </div>
+      </p-card>
+
+      <!-- Actions -->
+      <div class="flex justify-content-center gap-2 mt-4">
+        <p-button
+          label="Browse Phones"
+          icon="pi pi-mobile"
+          routerLink="/catalog"
+          severity="secondary"
+          [outlined]="true"
+        />
+        <p-button
+          label="Contact Us"
+          icon="pi pi-phone"
+          routerLink="/contact"
+          severity="secondary"
+          [outlined]="true"
+        />
+      </div>
+    }
+
+    <!-- Footer -->
+    <div class="text-center mt-5">
+      <p class="text-xs text-color-secondary">
+        Questions about this receipt? Contact us at<br/>
+        <a [href]="'tel:' + storePhoneLink" class="text-primary">{{ storePhone }}</a>
+      </p>
+    </div>
+  </div>
+</div>

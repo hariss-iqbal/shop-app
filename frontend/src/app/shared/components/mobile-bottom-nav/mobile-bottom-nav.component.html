@@ -1,0 +1,22 @@
+@if (shouldShow()) {
+  <nav class="mobile-bottom-nav" role="navigation" aria-label="Quick access navigation">
+    @for (item of visibleNavItems(); track item.route) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+        class="nav-item"
+        [attr.aria-label]="item.label"
+        pRipple
+      >
+        <span class="nav-icon-wrapper">
+          <i [class]="item.icon" aria-hidden="true"></i>
+          @if (item.badge && item.badge() > 0) {
+            <span class="nav-badge">{{ item.badge() > 99 ? '99+' : item.badge() }}</span>
+          }
+        </span>
+        <span class="nav-label">{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+}

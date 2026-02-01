@@ -33,7 +33,7 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   loading = false;
   errorMessage: string | null = null;
-  private returnUrl: string = '/admin/dashboard';
+  private returnUrl: string | null = null;
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -65,9 +65,37 @@ export class LoginComponent implements OnInit {
 
     if (result.success) {
       this.toastService.success('Login Successful', 'Welcome back!');
-      this.router.navigateByUrl(this.returnUrl);
+      // Navigate to the appropriate page based on user role
+      // If there's a return URL and user can access it, use that
+      // Otherwise, redirect to a role-appropriate default page
+      const targetUrl = this.getTargetUrl();
+      this.router.navigateByUrl(targetUrl);
     } else {
       this.errorMessage = result.error || 'Invalid credentials';
     }
+  }
+
+  /**
+   * Get the appropriate target URL based on user role and return URL
+   * Feature: F-013 Role-Based Access Control
+   */
+  private getTargetUrl(): string {
+    // If there's a return URL and user can access it, use that
+    if (this.returnUrl && this.authService.canAccessRoute(this.returnUrl)) {
+      return this.returnUrl;
+    }
+
+    // Otherwise, redirect to the most appropriate page for their role
+    // Cashiers can only access sales, so redirect them there
+    if (this.authService.canAccessDashboard()) {
+      return '/admin/dashboard';
+    }
+
+    if (this.authService.canAccessSales()) {
+      return '/admin/sales';
+    }
+
+    // Fallback - this shouldn't happen if permissions are configured correctly
+    return '/admin';
   }
 }

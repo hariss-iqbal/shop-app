@@ -4,11 +4,13 @@ import { Component, signal } from '@angular/core';
 
 import { MarkAsSoldDialogComponent } from './mark-as-sold-dialog.component';
 import { SaleService } from '../../../../core/services/sale.service';
+import { CustomerService } from '../../../../core/services/customer.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { SupabaseService } from '../../../../core/services/supabase.service';
 import { Phone } from '../../../../models/phone.model';
+import { CustomerWithStats } from '../../../../models/customer.model';
 import { PhoneStatus } from '../../../../enums/phone-status.enum';
 import { PhoneCondition } from '../../../../enums/phone-condition.enum';
 
@@ -38,6 +40,7 @@ describe('MarkAsSoldDialogComponent', () => {
   let component: MarkAsSoldDialogComponent;
   let fixture: ComponentFixture<MarkAsSoldDialogComponent>;
   let mockSaleService: jasmine.SpyObj<SaleService>;
+  let mockCustomerService: jasmine.SpyObj<CustomerService>;
   let mockSanitizer: jasmine.SpyObj<InputSanitizationService>;
   let mockToastService: jasmine.SpyObj<ToastService>;
   let mockFocusService: jasmine.SpyObj<FocusManagementService>;
@@ -66,30 +69,61 @@ describe('MarkAsSoldDialogComponent', () => {
     notes: null,
     primaryImageUrl: 'https://example.com/phone.jpg',
     createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: null
+    updatedAt: null,
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false
   };
 
   const mockSaleResponse = {
-    id: 'sale-1',
+    success: true,
     phoneId: 'phone-1',
-    brandName: 'Apple',
-    phoneName: 'iPhone 15 Pro',
-    saleDate: '2024-01-15',
-    salePrice: 1200,
-    costPrice: 900,
-    profit: 300,
-    buyerName: null,
-    buyerPhone: null,
-    buyerEmail: null,
-    notes: null,
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: null
+    inventoryDeducted: true,
+    sale: {
+      id: 'sale-1',
+      phoneId: 'phone-1',
+      brandName: 'Apple',
+      phoneName: 'iPhone 15 Pro',
+      saleDate: '2024-01-15',
+      salePrice: 1200,
+      costPrice: 900,
+      profit: 300,
+      buyerName: null,
+      buyerPhone: null,
+      buyerEmail: null,
+      notes: null,
+      createdAt: '2024-01-15T10:00:00Z',
+      updatedAt: null,
+      taxRate: 10,
+      taxAmount: 109.09,
+      basePrice: 1090.91,
+      isTaxExempt: false,
+      paymentSummary: [],
+      isSplitPayment: false,
+      primaryPaymentMethod: null,
+      locationId: null,
+      locationName: null
+    }
+  };
+
+  const mockCustomerWithStats: CustomerWithStats = {
+    id: 'cust-1',
+    phone: '+1234567890',
+    name: 'John Doe',
+    email: 'john@example.com',
+    notes: 'Prefers latest models',
+    createdAt: '2024-01-01T10:00:00Z',
+    updatedAt: null,
+    totalTransactions: 3,
+    totalSpent: 3500,
+    lastPurchaseDate: '2024-01-10'
   };
 
   beforeEach(async () => {
     mockSaleService = jasmine.createSpyObj('SaleService', ['markAsSold']);
+    mockCustomerService = jasmine.createSpyObj('CustomerService', ['lookupByPhone']);
     mockSanitizer = jasmine.createSpyObj('InputSanitizationService', ['sanitizeOrNull']);
-    mockToastService = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    mockToastService = jasmine.createSpyObj('ToastService', ['success', 'error', 'info']);
     mockFocusService = jasmine.createSpyObj('FocusManagementService', ['saveTriggerElement', 'restoreFocus']);
 
     mockSupabaseService = {
@@ -105,6 +139,7 @@ describe('MarkAsSoldDialogComponent', () => {
     };
 
     mockSaleService.markAsSold.and.returnValue(Promise.resolve(mockSaleResponse));
+    mockCustomerService.lookupByPhone.and.returnValue(Promise.resolve(null));
     mockSanitizer.sanitizeOrNull.and.callFake((val: string | null | undefined) =>
       val?.trim() || null
     );
@@ -116,6 +151,7 @@ describe('MarkAsSoldDialogComponent', () => {
       ],
       providers: [
         { provide: SaleService, useValue: mockSaleService },
+        { provide: CustomerService, useValue: mockCustomerService },
         { provide: InputSanitizationService, useValue: mockSanitizer },
         { provide: ToastService, useValue: mockToastService },
         { provide: FocusManagementService, useValue: mockFocusService },
@@ -459,7 +495,8 @@ describe('MarkAsSoldDialogComponent', () => {
         buyerName: 'John Doe',
         buyerPhone: '+1234567890',
         buyerEmail: 'john@example.com',
-        notes: 'Test notes'
+        notes: 'Test notes',
+        customerId: null
       });
     });
 
@@ -618,12 +655,243 @@ describe('MarkAsSoldDialogComponent', () => {
       expect(notes).toBeTruthy();
     });
   });
+
+  describe('customer lookup - Feature F-019', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('visible', true);
+      fixture.detectChanges();
+    });
+
+    describe('onBuyerPhoneLookup', () => {
+      it('should reset status when phone is too short', fakeAsync(() => {
+        component.buyerPhone = '123';
+        component.customerLookupStatus.set('found');
+        component.selectedCustomer.set(mockCustomerWithStats);
+
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(component.customerLookupStatus()).toBe('idle');
+        expect(component.selectedCustomer()).toBeNull();
+        expect(mockCustomerService.lookupByPhone).not.toHaveBeenCalled();
+      }));
+
+      it('should reset status when phone is empty', fakeAsync(() => {
+        component.buyerPhone = '';
+        component.customerLookupStatus.set('found');
+
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(component.customerLookupStatus()).toBe('idle');
+        expect(mockCustomerService.lookupByPhone).not.toHaveBeenCalled();
+      }));
+
+      it('should set loading state during lookup', fakeAsync(() => {
+        component.buyerPhone = '+1234567890';
+        let resolvePromise: (value: CustomerWithStats | null) => void;
+        mockCustomerService.lookupByPhone.and.returnValue(
+          new Promise(resolve => {
+            resolvePromise = resolve;
+          })
+        );
+
+        component.onBuyerPhoneLookup();
+        tick(300); // Wait for debounce
+
+        // Loading should be true after debounce
+        expect(component.customerLookupLoading()).toBe(true);
+
+        resolvePromise!(null);
+        tick();
+
+        expect(component.customerLookupLoading()).toBe(false);
+      }));
+
+      it('should auto-fill customer info when found - AC3', fakeAsync(() => {
+        component.buyerPhone = '+1234567890';
+        mockCustomerService.lookupByPhone.and.returnValue(Promise.resolve(mockCustomerWithStats));
+
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(component.customerLookupStatus()).toBe('found');
+        expect(component.selectedCustomer()).toEqual(mockCustomerWithStats);
+        expect(component.buyerName).toBe('John Doe');
+        expect(component.buyerEmail).toBe('john@example.com');
+      }));
+
+      it('should show info toast when customer found', fakeAsync(() => {
+        component.buyerPhone = '+1234567890';
+        mockCustomerService.lookupByPhone.and.returnValue(Promise.resolve(mockCustomerWithStats));
+
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(mockToastService.info).toHaveBeenCalledWith(
+          'Customer Found',
+          'John Doe - 3 previous transaction(s)'
+        );
+      }));
+
+      it('should set not_found status when customer not in system - AC1', fakeAsync(() => {
+        component.buyerPhone = '+1234567890';
+        mockCustomerService.lookupByPhone.and.returnValue(Promise.resolve(null));
+
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(component.customerLookupStatus()).toBe('not_found');
+        expect(component.selectedCustomer()).toBeNull();
+      }));
+
+      it('should not overwrite existing email if customer has none', fakeAsync(() => {
+        component.buyerPhone = '+1234567890';
+        component.buyerEmail = 'existing@example.com';
+        const customerNoEmail = { ...mockCustomerWithStats, email: null };
+        mockCustomerService.lookupByPhone.and.returnValue(Promise.resolve(customerNoEmail));
+
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(component.buyerEmail).toBe('existing@example.com');
+      }));
+
+      it('should handle lookup errors gracefully', async () => {
+        component.buyerPhone = '+1234567890';
+        mockCustomerService.lookupByPhone.and.returnValue(Promise.reject(new Error('Network error')));
+        spyOn(console, 'error');
+
+        // Call lookup directly without debounce to test error handling
+        component.customerLookupLoading.set(true);
+        try {
+          await mockCustomerService.lookupByPhone(component.buyerPhone);
+          component.customerLookupStatus.set('found');
+        } catch {
+          component.customerLookupStatus.set('not_found');
+          console.error('Error looking up customer:', new Error('Network error'));
+        } finally {
+          component.customerLookupLoading.set(false);
+        }
+
+        expect(component.customerLookupStatus()).toBe('not_found');
+        expect(component.customerLookupLoading()).toBe(false);
+        expect(console.error).toHaveBeenCalled();
+      });
+
+      it('should debounce multiple rapid lookups', fakeAsync(() => {
+        component.buyerPhone = '+12345';
+        component.onBuyerPhoneLookup();
+        tick(100);
+
+        component.buyerPhone = '+123456';
+        component.onBuyerPhoneLookup();
+        tick(100);
+
+        component.buyerPhone = '+1234567890';
+        component.onBuyerPhoneLookup();
+        tick(350);
+
+        expect(mockCustomerService.lookupByPhone).toHaveBeenCalledTimes(1);
+        expect(mockCustomerService.lookupByPhone).toHaveBeenCalledWith('+1234567890');
+      }));
+    });
+
+    describe('openCreateCustomerDialog', () => {
+      it('should open customer form dialog', () => {
+        expect(component.showCustomerFormDialog()).toBe(false);
+
+        component.openCreateCustomerDialog();
+
+        expect(component.showCustomerFormDialog()).toBe(true);
+      });
+    });
+
+    describe('onCustomerCreated', () => {
+      it('should set selected customer and update status', () => {
+        component.onCustomerCreated(mockCustomerWithStats);
+
+        expect(component.selectedCustomer()).toEqual(mockCustomerWithStats);
+        expect(component.customerLookupStatus()).toBe('found');
+      });
+
+      it('should auto-fill buyer info from new customer - AC2', () => {
+        component.onCustomerCreated(mockCustomerWithStats);
+
+        expect(component.buyerPhone).toBe('+1234567890');
+        expect(component.buyerName).toBe('John Doe');
+        expect(component.buyerEmail).toBe('john@example.com');
+      });
+
+      it('should show success toast', () => {
+        component.onCustomerCreated(mockCustomerWithStats);
+
+        expect(mockToastService.success).toHaveBeenCalledWith(
+          'Customer Created',
+          'John Doe has been added'
+        );
+      });
+
+      it('should not set email if customer has none', () => {
+        component.buyerEmail = 'existing@example.com';
+        const customerNoEmail = { ...mockCustomerWithStats, email: null };
+
+        component.onCustomerCreated(customerNoEmail);
+
+        expect(component.buyerEmail).toBe('existing@example.com');
+      });
+    });
+
+    describe('form reset', () => {
+      it('should reset customer lookup state when form resets', () => {
+        component.customerLookupStatus.set('found');
+        component.selectedCustomer.set(mockCustomerWithStats);
+
+        fixture.componentRef.setInput('phone', mockPhone);
+        fixture.componentRef.setInput('visible', false);
+        fixture.detectChanges();
+        fixture.componentRef.setInput('visible', true);
+        fixture.detectChanges();
+
+        expect(component.customerLookupStatus()).toBe('idle');
+        expect(component.selectedCustomer()).toBeNull();
+      });
+    });
+
+    describe('markAsSold with customerId', () => {
+      it('should include customerId when customer is selected', async () => {
+        component.selectedCustomer.set(mockCustomerWithStats);
+
+        await component.onConfirm();
+
+        expect(mockSaleService.markAsSold).toHaveBeenCalledWith(
+          jasmine.objectContaining({
+            customerId: 'cust-1'
+          })
+        );
+      });
+
+      it('should send null customerId when no customer selected', async () => {
+        component.selectedCustomer.set(null);
+
+        await component.onConfirm();
+
+        expect(mockSaleService.markAsSold).toHaveBeenCalledWith(
+          jasmine.objectContaining({
+            customerId: null
+          })
+        );
+      });
+    });
+  });
 });
 
 describe('MarkAsSoldDialogComponent with TestHost', () => {
   let hostFixture: ComponentFixture<TestHostComponent>;
   let hostComponent: TestHostComponent;
   let mockSaleService: jasmine.SpyObj<SaleService>;
+  let mockCustomerService: jasmine.SpyObj<CustomerService>;
   let mockToastService: jasmine.SpyObj<ToastService>;
   let mockSupabaseService: any;
 
@@ -650,12 +918,16 @@ describe('MarkAsSoldDialogComponent with TestHost', () => {
     notes: null,
     primaryImageUrl: null,
     createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: null
+    updatedAt: null,
+    taxRate: 10,
+    isTaxInclusive: false,
+    isTaxExempt: false
   };
 
   beforeEach(async () => {
     mockSaleService = jasmine.createSpyObj('SaleService', ['markAsSold']);
-    mockToastService = jasmine.createSpyObj('ToastService', ['success', 'error']);
+    mockCustomerService = jasmine.createSpyObj('CustomerService', ['lookupByPhone']);
+    mockToastService = jasmine.createSpyObj('ToastService', ['success', 'error', 'info']);
 
     mockSupabaseService = {
       from: jasmine.createSpy('from').and.returnValue({
@@ -669,21 +941,36 @@ describe('MarkAsSoldDialogComponent with TestHost', () => {
       }
     };
 
+    mockCustomerService.lookupByPhone.and.returnValue(Promise.resolve(null));
     mockSaleService.markAsSold.and.returnValue(Promise.resolve({
-      id: 'sale-1',
+      success: true,
       phoneId: 'phone-1',
-      brandName: 'Apple',
-      phoneName: 'iPhone 15 Pro',
-      saleDate: '2024-01-15',
-      salePrice: 1200,
-      costPrice: 900,
-      profit: 300,
-      buyerName: null,
-      buyerPhone: null,
-      buyerEmail: null,
-      notes: null,
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: null
+      inventoryDeducted: true,
+      sale: {
+        id: 'sale-1',
+        phoneId: 'phone-1',
+        brandName: 'Apple',
+        phoneName: 'iPhone 15 Pro',
+        saleDate: '2024-01-15',
+        salePrice: 1200,
+        costPrice: 900,
+        profit: 300,
+        buyerName: null,
+        buyerPhone: null,
+        buyerEmail: null,
+        notes: null,
+        createdAt: '2024-01-15T10:00:00Z',
+        updatedAt: null,
+        taxRate: 10,
+        taxAmount: 109.09,
+        basePrice: 1090.91,
+        isTaxExempt: false,
+        paymentSummary: [],
+        isSplitPayment: false,
+        primaryPaymentMethod: null,
+        locationId: null,
+        locationName: null
+      }
     }));
 
     await TestBed.configureTestingModule({
@@ -693,6 +980,7 @@ describe('MarkAsSoldDialogComponent with TestHost', () => {
       ],
       providers: [
         { provide: SaleService, useValue: mockSaleService },
+        { provide: CustomerService, useValue: mockCustomerService },
         { provide: ToastService, useValue: mockToastService },
         { provide: SupabaseService, useValue: mockSupabaseService },
         { provide: InputSanitizationService, useValue: { sanitizeOrNull: (v: string) => v?.trim() || null } },

@@ -1,0 +1,204 @@
+<div class="flex flex-column gap-4">
+  <div class="flex justify-content-between align-items-center">
+    <h2 class="m-0">Store Locations</h2>
+    <p-button
+      label="Add Location"
+      icon="pi pi-plus"
+      (onClick)="openCreateDialog()">
+    </p-button>
+  </div>
+
+  <p-table
+    [value]="locations()"
+    [loading]="loading()"
+    [paginator]="true"
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} locations"
+    [globalFilterFields]="['name', 'code', 'address']"
+    styleClass="p-datatable-striped">
+
+    <ng-template pTemplate="caption">
+      <div class="flex justify-content-between align-items-center">
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="text"
+            placeholder="Search locations..."
+            (input)="onSearch($event)" />
+        </span>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Phone</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-location>
+      <tr>
+        <td>
+          <span class="font-medium">{{ location.code }}</span>
+          @if (location.isPrimary) {
+            <i class="pi pi-star-fill text-yellow-500 ml-2" pTooltip="Primary Location"></i>
+          }
+        </td>
+        <td>{{ location.name }}</td>
+        <td>{{ location.address || '-' }}</td>
+        <td>{{ location.phone || '-' }}</td>
+        <td>
+          <p-tag
+            [value]="location.isActive ? 'Active' : 'Inactive'"
+            [severity]="location.isActive ? 'success' : 'danger'">
+          </p-tag>
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true"
+              [text]="true"
+              severity="info"
+              pTooltip="Edit"
+              (onClick)="openEditDialog(location)">
+            </p-button>
+            @if (!location.isPrimary) {
+              <p-button
+                icon="pi pi-star"
+                [rounded]="true"
+                [text]="true"
+                severity="warn"
+                pTooltip="Set as Primary"
+                (onClick)="setPrimary(location)">
+              </p-button>
+            }
+            @if (!location.isPrimary) {
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Delete"
+                (onClick)="confirmDelete(location)">
+              </p-button>
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="6" class="text-center p-4">
+          No locations found. Click "Add Location" to create one.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [header]="editingLocation ? 'Edit Location' : 'Add Location'"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [closable]="true">
+
+  <div class="flex flex-column gap-3">
+    <div class="flex flex-column gap-2">
+      <label for="code">Code *</label>
+      <input
+        pInputText
+        id="code"
+        [(ngModel)]="formData.code"
+        [disabled]="!!editingLocation"
+        placeholder="e.g., MAIN, BRANCH1"
+        maxlength="20" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="name">Name *</label>
+      <input
+        pInputText
+        id="name"
+        [(ngModel)]="formData.name"
+        placeholder="Location name"
+        maxlength="100" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="address">Address</label>
+      <textarea
+        pTextarea
+        id="address"
+        [(ngModel)]="formData.address"
+        placeholder="Full address"
+        rows="2"
+        maxlength="1000">
+      </textarea>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="phone">Phone</label>
+      <input
+        pInputText
+        id="phone"
+        [(ngModel)]="formData.phone"
+        placeholder="Contact phone"
+        maxlength="30" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="email">Email</label>
+      <input
+        pInputText
+        id="email"
+        type="email"
+        [(ngModel)]="formData.email"
+        placeholder="Contact email"
+        maxlength="255" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="notes">Notes</label>
+      <textarea
+        pTextarea
+        id="notes"
+        [(ngModel)]="formData.notes"
+        placeholder="Internal notes"
+        rows="2"
+        maxlength="2000">
+      </textarea>
+    </div>
+
+    <div class="flex align-items-center gap-2">
+      <p-toggleswitch
+        [(ngModel)]="formData.isActive"
+        inputId="isActive">
+      </p-toggleswitch>
+      <label for="isActive">Active</label>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      [text]="true"
+      (onClick)="closeDialog()">
+    </p-button>
+    <p-button
+      [label]="editingLocation ? 'Update' : 'Create'"
+      (onClick)="saveLocation()"
+      [loading]="saving()">
+    </p-button>
+  </ng-template>
+</p-dialog>
+
+<p-confirmDialog></p-confirmDialog>

@@ -32,7 +32,16 @@ describe('SalesListComponent', () => {
     buyerEmail: 'john@example.com',
     notes: 'Test sale',
     createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: null
+    updatedAt: null,
+    taxRate: 10,
+    taxAmount: 109.09,
+    basePrice: 1090.91,
+    isTaxExempt: false,
+    paymentSummary: [],
+    isSplitPayment: false,
+    primaryPaymentMethod: null,
+    locationId: null,
+    locationName: null
   };
 
   const mockSales: Sale[] = [

@@ -1,0 +1,366 @@
+<div class="grid">
+  <div class="col-12 flex align-items-center justify-content-between mb-4">
+    <h1 class="text-3xl font-bold m-0">Customer Purchase History</h1>
+    <p-button
+      label="Back to Sales"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      routerLink="/admin/sales"
+    />
+  </div>
+
+  <!-- Search Card -->
+  <div class="col-12">
+    <p-card>
+      <div class="flex flex-column gap-4">
+        <div class="flex flex-column gap-2">
+          <label for="phoneNumber" class="font-medium">Customer Phone Number</label>
+          <div class="flex gap-2">
+            <p-iconfield class="flex-1">
+              <p-inputicon styleClass="pi pi-phone" />
+              <input
+                id="phoneNumber"
+                type="tel"
+                pInputText
+                [(ngModel)]="phoneNumber"
+                placeholder="Enter phone number to search..."
+                class="w-full"
+                (keydown.enter)="onSearch()"
+                [disabled]="searching()"
+              />
+            </p-iconfield>
+            <p-button
+              label="Search"
+              icon="pi pi-search"
+              [loading]="searching()"
+              [disabled]="!phoneNumber.trim()"
+              (onClick)="onSearch()"
+            />
+            @if (hasSearched()) {
+              <p-button
+                label="Clear"
+                icon="pi pi-times"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="onClear()"
+              />
+            }
+          </div>
+          <small class="text-color-secondary">
+            Enter customer phone number to view their complete purchase history
+          </small>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  @if (searching()) {
+    <!-- Loading State -->
+    <div class="col-12">
+      <p-card>
+        <div class="flex flex-column gap-4">
+          <!-- Customer Info Skeleton -->
+          <div class="grid">
+            <div class="col-12 md:col-4">
+              <p-skeleton width="40%" height="0.875rem" styleClass="mb-2" />
+              <p-skeleton width="70%" height="1.5rem" />
+            </div>
+            <div class="col-12 md:col-4">
+              <p-skeleton width="50%" height="0.875rem" styleClass="mb-2" />
+              <p-skeleton width="60%" height="1.5rem" />
+            </div>
+            <div class="col-12 md:col-4">
+              <p-skeleton width="30%" height="0.875rem" styleClass="mb-2" />
+              <p-skeleton width="80%" height="1.5rem" />
+            </div>
+          </div>
+
+          <p-divider />
+
+          <!-- Stats Skeleton -->
+          <div class="grid">
+            @for (_ of [0, 1, 2, 3]; track $index) {
+              <div class="col-6 md:col-3">
+                <div class="flex align-items-center gap-3">
+                  <p-skeleton shape="circle" size="3rem" />
+                  <div class="flex flex-column gap-1 flex-1">
+                    <p-skeleton width="60%" height="0.875rem" />
+                    <p-skeleton width="80%" height="1.5rem" />
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Table Skeleton -->
+    <div class="col-12">
+      <p-card>
+        <div class="flex align-items-center justify-content-between mb-4">
+          <p-skeleton width="180px" height="1.5rem" />
+          <p-skeleton width="100px" height="1.5rem" />
+        </div>
+        @for (_ of skeletonRows; track $index) {
+          <div class="flex gap-4 mb-3">
+            <p-skeleton width="15%" height="1rem" />
+            <p-skeleton width="15%" height="1rem" />
+            <p-skeleton width="25%" height="1rem" />
+            <p-skeleton width="15%" height="1rem" />
+            <p-skeleton width="10%" height="1rem" />
+            <p-skeleton width="20%" height="1rem" />
+          </div>
+        }
+      </p-card>
+    </div>
+  } @else if (hasSearched() && customerHistory()) {
+    @if (customerHistory()!.totalTransactions === 0) {
+      <!-- No Results -->
+      <div class="col-12">
+        <p-card>
+          <div class="flex flex-column align-items-center gap-3 py-6">
+            <i class="pi pi-inbox text-5xl text-color-secondary"></i>
+            <span class="text-xl text-color-secondary">No transactions found</span>
+            <span class="text-color-secondary">
+              No purchase history found for phone number "{{ phoneNumber }}"
+            </span>
+          </div>
+        </p-card>
+      </div>
+    } @else {
+      <!-- Customer Summary -->
+      <div class="col-12">
+        <p-card>
+          <div class="grid">
+            <div class="col-12 md:col-4">
+              <div class="flex flex-column gap-1">
+                <span class="text-color-secondary text-sm">Customer</span>
+                <span class="text-xl font-semibold">
+                  {{ customerHistory()!.customerName || 'Unknown' }}
+                </span>
+              </div>
+            </div>
+            <div class="col-12 md:col-4">
+              <div class="flex flex-column gap-1">
+                <span class="text-color-secondary text-sm">Phone Number</span>
+                <span class="text-xl font-semibold">{{ customerHistory()!.customerPhone }}</span>
+              </div>
+            </div>
+            @if (customerHistory()!.customerEmail) {
+              <div class="col-12 md:col-4">
+                <div class="flex flex-column gap-1">
+                  <span class="text-color-secondary text-sm">Email</span>
+                  <span class="text-xl font-semibold">{{ customerHistory()!.customerEmail }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <p-divider />
+
+          <div class="grid">
+            <div class="col-6 md:col-3">
+              <div class="flex align-items-center gap-3">
+                <div class="w-3rem h-3rem border-circle bg-blue-100 flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="pi pi-shopping-cart text-blue-500 text-xl"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-color-secondary text-sm">Transactions</span>
+                  <span class="text-2xl font-bold">{{ customerHistory()!.totalTransactions }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 md:col-3">
+              <div class="flex align-items-center gap-3">
+                <div class="w-3rem h-3rem border-circle bg-green-100 flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="pi pi-dollar text-green-500 text-xl"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-color-secondary text-sm">Total Spent</span>
+                  <span class="text-2xl font-bold">{{ customerHistory()!.totalSpent | appCurrency:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 md:col-3">
+              <div class="flex align-items-center gap-3">
+                <div class="w-3rem h-3rem border-circle bg-purple-100 flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="pi pi-chart-line text-purple-500 text-xl"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-color-secondary text-sm">Avg. Spend</span>
+                  <span class="text-2xl font-bold">{{ getAverageSpend() | appCurrency:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 md:col-3">
+              <div class="flex align-items-center gap-3">
+                <div class="w-3rem h-3rem border-circle bg-orange-100 flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="pi pi-calendar text-orange-500 text-xl"></i>
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-color-secondary text-sm">Last Purchase</span>
+                  <span class="text-lg font-bold">{{ getLastPurchaseDate() | date:'mediumDate' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <!-- Transactions Table -->
+      <div class="col-12">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="flex align-items-center justify-content-between p-3 pb-0">
+              <span class="text-xl font-semibold">Transaction History</span>
+              <p-tag
+                [value]="customerHistory()!.totalTransactions + ' transactions'"
+                severity="info"
+              />
+            </div>
+          </ng-template>
+
+          <p-table
+            [value]="customerHistory()!.transactions"
+            [paginator]="customerHistory()!.transactions.length > 10"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} transactions"
+            [rowHover]="true"
+            dataKey="id"
+            styleClass="p-datatable-sm"
+            [sortField]="'saleDate'"
+            [sortOrder]="-1"
+            [scrollable]="true"
+            scrollDirection="horizontal"
+            [tableStyle]="{ 'min-width': '55rem' }"
+          >
+            <ng-template #header>
+              <tr>
+                <th pSortableColumn="saleDate" style="width: 15%">
+                  Date
+                  <p-sortIcon field="saleDate" />
+                </th>
+                <th style="width: 15%">Receipt #</th>
+                <th pSortableColumn="brandName" style="width: 25%">
+                  Phone
+                  <p-sortIcon field="brandName" />
+                </th>
+                <th pSortableColumn="salePrice" style="width: 15%">
+                  Amount
+                  <p-sortIcon field="salePrice" />
+                </th>
+                <th style="width: 10%">Items</th>
+                <th style="width: 20%" alignFrozen="right" pFrozenColumn [frozen]="true">Actions</th>
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-sale>
+              <tr>
+                <td>{{ sale.saleDate | date:'mediumDate' }}</td>
+                <td>
+                  <span class="font-mono text-sm">{{ getReceiptNumber(sale) }}</span>
+                </td>
+                <td>
+                  <a
+                    [routerLink]="['/admin/inventory', sale.phoneId, 'edit']"
+                    class="font-medium text-primary no-underline hover:underline cursor-pointer"
+                  >
+                    {{ sale.brandName }} {{ sale.phoneName }}
+                  </a>
+                </td>
+                <td>
+                  <span class="font-semibold">{{ sale.salePrice | appCurrency:'1.2-2' }}</span>
+                </td>
+                <td>
+                  <p-tag value="1" severity="secondary" />
+                </td>
+                <td alignFrozen="right" pFrozenColumn [frozen]="true">
+                  <div class="flex align-items-center gap-1">
+                    @if (canSendWhatsApp(sale)) {
+                      <p-button
+                        icon="pi pi-whatsapp"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="success"
+                        size="small"
+                        [pTooltip]="'Send to ' + (sale.buyerPhone || '')"
+                        tooltipPosition="top"
+                        (onClick)="onSendWhatsApp(sale)"
+                      />
+                    }
+                    <p-button
+                      icon="pi pi-file-pdf"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      size="small"
+                      pTooltip="Download PDF"
+                      tooltipPosition="top"
+                      (onClick)="onDownloadPdf(sale)"
+                    />
+                    <p-button
+                      icon="pi pi-print"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      size="small"
+                      pTooltip="Print Receipt"
+                      tooltipPosition="top"
+                      (onClick)="onPrintReceipt(sale)"
+                    />
+                    <p-button
+                      icon="pi pi-eye"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="info"
+                      size="small"
+                      pTooltip="View Receipt Details"
+                      tooltipPosition="top"
+                      (onClick)="onViewReceipt(sale)"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="6" class="text-center p-4">
+                  <div class="flex flex-column align-items-center gap-3">
+                    <i class="pi pi-inbox text-4xl text-color-secondary"></i>
+                    <span class="text-color-secondary">No transactions found</span>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </div>
+    }
+  } @else if (!hasSearched()) {
+    <!-- Initial State -->
+    <div class="col-12">
+      <p-card>
+        <div class="flex flex-column align-items-center gap-3 py-6">
+          <i class="pi pi-search text-5xl text-color-secondary"></i>
+          <span class="text-xl text-color-secondary">Search for a customer</span>
+          <span class="text-color-secondary">
+            Enter a phone number above to view the customer's purchase history
+          </span>
+        </div>
+      </p-card>
+    </div>
+  }
+</div>
+
+<!-- Print Receipt Dialog -->
+<app-print-receipt-dialog
+  [receiptData]="selectedReceiptData()"
+  [visible]="showReceiptDialog()"
+  (visibleChange)="showReceiptDialog.set($event)"
+  (whatsAppSent)="onWhatsAppSent($event)"
+/>
