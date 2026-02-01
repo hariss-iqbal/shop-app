@@ -1,0 +1,634 @@
+{
+  "requirement_summary": "Retail business needs a complete POS (Point of Sale) sales management system in their admin dashboard to handle in-store customer purchases. The system must support sales creation, receipt generation (print, digital, WhatsApp), customer purchase history lookup via phone number, automatic inventory deduction, and flexible refund/return workflows including partial returns with custom refund pricing.",
+  "research_findings": {
+    "industry_standards": [
+      "POS systems must generate professional thermal printer receipts (80mm width) using ESC/POS commands",
+      "Receipts must include store details, itemized list with quantities and prices, tax breakdown, payment method, and receipt number",
+      "WhatsApp Business API using utility message templates is the industry standard for sending transactional receipts",
+      "Customer lookup by phone number is standard practice in retail POS systems",
+      "Automatic inventory deduction on sales completion is a core POS feature",
+      "Full and partial refund workflows are standard with inventory restoration for returned items",
+      "Receipt numbering must be sequential, unique, and support multiple registers/locations",
+      "Tax calculation must support multiple rates (GST, VAT, sales tax) with proper compliance reporting",
+      "Role-based access control (Admin, Manager, Cashier) is essential for fraud prevention",
+      "Comprehensive audit logging of all transactions is required for compliance and security"
+    ],
+    "best_practices": [
+      "Receipts should encode receipt number as barcode/QR code for quick lookup",
+      "Offline mode capability for business continuity during internet outages",
+      "Customer contact management linked to transactions for enhanced service",
+      "Multi-criteria search for receipts (date range, amount, phone, receipt number)",
+      "Sales dashboard with KPIs and analytics for business intelligence",
+      "Payment method flexibility (cash, card, digital wallets, split payments)",
+      "Email receipt option as alternative to WhatsApp",
+      "Loyalty points programs for customer retention",
+      "Discount and coupon management with approval workflows",
+      "Mobile-optimized interface for tablet/smartphone POS operations",
+      "Multi-location inventory support for businesses with multiple stores",
+      "Progressive Web App (PWA) capabilities for installable mobile experience"
+    ],
+    "open_source_references": [
+      {
+        "name": "Open Source Point of Sale (OSSPOS)",
+        "url": "https://github.com/opensourcepos/opensourcepos",
+        "description": "Open-source POS implementation with sales creation, refund workflows, and inventory integration"
+      },
+      {
+        "name": "Odoo POS",
+        "url": "https://www.odoo.com/page/point-of-sale",
+        "description": "Full-featured open-source POS with sales, inventory, and receipt management"
+      },
+      {
+        "name": "ERPNext",
+        "url": "https://www.omanerp.com/blog/erpnext-for-retail-seamlessly-integrating-point-of-sale-pos-and-inventory-management",
+        "description": "Open-source ERP with POS-inventory integration"
+      },
+      {
+        "name": "Loyverse",
+        "url": "https://help.loyverse.com/help/how-see-purchase-history-customers",
+        "description": "Free POS system with customer history management"
+      }
+    ],
+    "commercial_solutions": [
+      {
+        "name": "Square POS",
+        "url": "https://squareup.com/gb/en/the-bottom-line/operating-your-business/best-pos-system-returns-exchanges",
+        "relevant_features": [
+          "Sales processing",
+          "Receipt generation",
+          "Refund workflows",
+          "Inventory integration",
+          "Customer management"
+        ]
+      },
+      {
+        "name": "Lightspeed X-Series",
+        "url": "https://x-series-support.lightspeedhq.com/hc/en-us/articles/25534287781659-How-to-change-the-receipt-number-sequence",
+        "relevant_features": [
+          "Per-register receipt sequences",
+          "User roles and permissions",
+          "Multi-location support"
+        ]
+      },
+      {
+        "name": "Shopify POS",
+        "url": "https://community.shopify.com/t/collecting-customer-info-during-point-of-sale-pos-checkout/239801",
+        "relevant_features": [
+          "Customer data collection",
+          "Digital receipts",
+          "Sales tracking"
+        ]
+      },
+      {
+        "name": "Stripe",
+        "url": "https://stripe.com/resources/more/receipt-template-what-to-include-and-templates-for-different-use-cases",
+        "relevant_features": [
+          "Digital receipt templates",
+          "Payment processing",
+          "Receipt best practices"
+        ]
+      }
+    ],
+    "whatsapp_integration": {
+      "api_info": "WhatsApp Business API is required for sending receipts. Messages must use pre-approved utility templates. Utility category allows transactional messages like order confirmations and receipts. Pricing varies by region (typically $0.005-$0.01 per message).",
+      "implementation_notes": "Template approval required before sending - include store name, transaction details, receipt number. Phone number validation essential for delivery. Rate limits apply. 24-hour customer service window for conversations. Message templates must follow WhatsApp formatting guidelines."
+    }
+  },
+  "features": [
+    {
+      "id": "F-001",
+      "name": "Sales Transaction Creation",
+      "category": "must",
+      "description": "Admin interface to create new sales transactions by selecting products from inventory, specifying quantities, and capturing customer information",
+      "acceptance_criteria": [
+        "Given admin is on sales creation screen, when admin searches for a product by name or SKU, then matching products are displayed with current stock availability",
+        "Given admin has selected a product, when admin enters quantity greater than available stock, then system displays warning but allows override (configurable)",
+        "Given admin has added items to cart, when system calculates totals, then subtotal, tax (based on product tax rates), and grand total are displayed correctly",
+        "Given admin has entered valid customer phone number, when transaction is completed, then phone number is associated with the transaction for future lookup",
+        "Given admin clicks 'Complete Sale', when payment is confirmed, then transaction is saved, inventory is deducted, and receipt generation options are presented"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://www.qdos.com.au/30-essential-features-of-a-retail-pos-system/",
+        "https://github.com/opensourcepos/opensourcepos",
+        "https://www.poszeo.com/blog-channel/pos-systems-for-retail-shop-complete-guide-2026/"
+      ]
+    },
+    {
+      "id": "F-002",
+      "name": "Receipt Generation - Thermal Print Format",
+      "category": "must",
+      "description": "Generate professional thermal printer receipts with complete transaction details including store information, itemized list, taxes, and totals",
+      "acceptance_criteria": [
+        "Given a completed sale transaction, when admin selects 'Print Receipt', then receipt is sent to default thermal printer",
+        "Given receipt is generated, when viewing printed receipt, then store name, address, and phone are displayed in header",
+        "Given receipt is generated, when viewing printed receipt, then each purchased item shows: name, quantity, unit price, and line item total",
+        "Given receipt includes taxable items, when viewing receipt, then tax amount(s) are displayed with applicable tax rate",
+        "Given receipt is printed, when scanning receipt, then receipt number is encoded as barcode or QR code for easy lookup"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://www.xprintertech.com/how-to-create-receipt-for-thermal-printer",
+        "https://brightinventions.pl/blog/esc-pos-integrating-point-of-sale-printers/",
+        "https://stripe.com/resources/more/receipt-template-what-to-include-and-templates-for-different-use-cases",
+        "https://www.template.net/documents/receipt-sizes/"
+      ]
+    },
+    {
+      "id": "F-003",
+      "name": "Receipt Generation - Digital/PDF Format",
+      "category": "must",
+      "description": "Generate digital receipts in PDF format for email storage, customer records, and digital sharing",
+      "acceptance_criteria": [
+        "Given a completed sale transaction, when admin selects 'Download PDF', then browser downloads PDF receipt file",
+        "Given PDF receipt is generated, when opening file, then content matches thermal receipt format with professional typography",
+        "Given PDF receipt is opened, when viewing document properties, then file name includes receipt number and date",
+        "Given PDF receipt exists, when viewing on mobile device, then formatting remains readable without horizontal scrolling"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://stripe.com/resources/more/receipt-template-what-to-include-and-templates-for-different-use-cases",
+        "https://get.orderprinterpro.com/blogs/articles/how-to-print-invoices-with-order-printer-pro"
+      ]
+    },
+    {
+      "id": "F-004",
+      "name": "WhatsApp Receipt Integration",
+      "category": "must",
+      "description": "Send receipts directly to customers via WhatsApp using WhatsApp Business API utility message templates",
+      "acceptance_criteria": [
+        "Given customer phone number is provided during sale, when sale is completed, then option to 'Send via WhatsApp' is presented",
+        "Given admin clicks 'Send via WhatsApp', when phone number is valid WhatsApp number, then receipt message is sent within 10 seconds",
+        "Given WhatsApp receipt is sent, when customer receives message, then message includes: store name, transaction amount, item list summary, and receipt number",
+        "Given WhatsApp send fails, when error occurs, then admin is notified with error message and retry option",
+        "Given customer already has receipt, when admin selects 'Resend Receipt', then previous receipt can be resent via WhatsApp"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://business.whatsapp.com/products/conversation-categories/utility",
+        "https://developers.facebook.com/documentation/business-messaging/whatsapp/payments/payments-br/orderdetailstemplate/",
+        "https://2factor.in/v3/lp/Whatsapp-Integration/whatsapp-business-api-integration.php",
+        "https://www.spurnow.com/en/blogs/whatsapp-business-api-pricing-explained"
+      ]
+    },
+    {
+      "id": "F-005",
+      "name": "Receipt Storage and Retrieval",
+      "category": "must",
+      "description": "Permanent storage of all receipts with searchable retrieval functionality allowing admins to find and view any historical receipt",
+      "acceptance_criteria": [
+        "Given a sale transaction is completed, when transaction is saved, then complete receipt data is persisted to database",
+        "Given admin navigates to receipt management screen, when no filters are applied, then most recent receipts are displayed with pagination (20 per page)",
+        "Given admin enters receipt number in search field, when search is submitted, then matching receipt(s) are displayed",
+        "Given admin enters customer phone number in search field, when search is submitted, then all receipts for that customer are displayed in chronological order",
+        "Given admin applies date range filter, when search is submitted, then only receipts within date range are displayed",
+        "Given admin opens a stored receipt, when viewing receipt, then all original transaction details are visible and options exist to print, download PDF, or resend via WhatsApp"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://spd.tech/fintech-development/the-detailed-guide-to-pos-point-of-sale-software-development/",
+        "https://forum.manager.io/t/filter-receipts-and-payments-by-date-range/18923"
+      ]
+    },
+    {
+      "id": "F-006",
+      "name": "Customer Purchase History Lookup",
+      "category": "must",
+      "description": "Search and view complete purchase history for a customer using their phone number",
+      "acceptance_criteria": [
+        "Given admin navigates to customer lookup screen, when admin enters phone number and submits, then all transactions for that customer are displayed",
+        "Given customer has multiple transactions, when results are displayed, then transactions are sorted by date with most recent first",
+        "Given customer transaction history is displayed, when admin views results, then each entry shows: date, receipt number, total amount, and item count",
+        "Given admin clicks on a transaction in history, when link is clicked, then full receipt details are displayed",
+        "Given customer has no transaction history, when phone number is searched, then 'No transactions found' message is displayed"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://help.loyverse.com/help/how-see-purchase-history-customers",
+        "https://www.nexchar.com/help/desktop-pos-customer-purchase-history",
+        "https://support.shoplineapp.com/hc/en-us/articles/360029755572-Search-and-Edit-Customer-Information-POS-App"
+      ]
+    },
+    {
+      "id": "F-007",
+      "name": "Receipt Resend Capability",
+      "category": "must",
+      "description": "Ability to resend any previously sent receipt to the customer via WhatsApp or other channels",
+      "acceptance_criteria": [
+        "Given admin is viewing a stored receipt, when 'Resend via WhatsApp' button is clicked, then confirmation prompt is displayed",
+        "Given admin confirms resend, when send is triggered, then WhatsApp message is sent with same receipt content",
+        "Given customer phone number has changed, when admin updates number before resending, then receipt is sent to updated number",
+        "Given resend is completed, when send succeeds, then 'Receipt resent successfully' message is displayed and send log is updated"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://wapilot.io/whatsapp-business-api-message-templates-setup"
+      ]
+    },
+    {
+      "id": "F-008",
+      "name": "Automatic Inventory Deduction",
+      "category": "must",
+      "description": "Automatically deduct sold items from inventory when sales transaction is completed",
+      "acceptance_criteria": [
+        "Given a sales transaction is completed with 3 items, when transaction is committed, then inventory quantities for all 3 items are reduced by sold amounts",
+        "Given an item has 5 units in stock, when admin attempts to sell 7 units, then system displays warning message but allows sale completion (configurable)",
+        "Given transaction is completed, when inventory is updated, then updated stock levels are immediately visible in inventory module",
+        "Given inventory update fails (database error), when error occurs, then entire transaction is rolled back and admin is notified"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://www.omanerp.com/blog/erpnext-for-retail-seamlessly-integrating-point-of-sale-pos-and-inventory-management",
+        "https://www.spindl.app/blog/integrating-pos-with-inventory-management-systems",
+        "https://www.omniful.ai/point-of-sale",
+        "https://posytude.com/pos-real-time-inventory-updates/"
+      ]
+    },
+    {
+      "id": "F-009",
+      "name": "Full Refund Processing",
+      "category": "must",
+      "description": "Process complete refunds for entire transactions, restoring inventory and generating refund receipts",
+      "acceptance_criteria": [
+        "Given admin is viewing a receipt, when 'Process Refund' is clicked, then refund workflow is initiated",
+        "Given original transaction has no prior refunds, when admin selects 'Full Refund', then all line items are pre-selected for return",
+        "Given admin confirms full refund, when refund is processed, then refund transaction record is created and linked to original",
+        "Given refund is processed, when inventory is updated, then all items from original sale have quantities restored",
+        "Given refund is completed, when refund receipt is generated, then receipt clearly shows refund amount and original transaction reference"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://www.omniful.ai/blog/refund-management-workflows-full-partial-refunds",
+        "https://squareup.com/gb/en/the-bottom-line/operating-your-business/best-pos-system-returns-exchanges",
+        "https://www.onehubpos.com/blog/how-to-handle-returns-chargebacks-and-refunds-efficiently-on-your-retail-pos-system"
+      ]
+    },
+    {
+      "id": "F-010",
+      "name": "Partial Refund Processing with Custom Return Price",
+      "category": "must",
+      "description": "Process refunds for individual items from multi-item transactions with ability to set custom return prices different from original sale prices",
+      "acceptance_criteria": [
+        "Given admin is viewing a receipt with 5 items, when 'Process Partial Refund' is clicked, then all line items are displayed with selection checkboxes",
+        "Given admin selects 2 out of 5 items, when items are selected, then system prompts for return price for each selected item",
+        "Given admin enters return price different from original price, when custom price is entered, then system accepts the custom value",
+        "Given admin enters return price higher than original, when validation runs, then system displays warning but allows override with manager approval",
+        "Given partial refund is confirmed, when refund is processed, then only selected items have inventory quantities restored",
+        "Given partial refund is completed, when receipt is generated, then receipt shows original transaction, returned items, custom return prices, and total refund amount"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://www.till.tech/help/point-of-sale/processing-partial-refunds-correctly",
+        "https://www.omniful.ai/blog/refund-management-workflows-full-partial-refunds",
+        "https://erppeers.com/netsuite-pos-guide/"
+      ]
+    },
+    {
+      "id": "F-011",
+      "name": "Receipt Number Generation and Sequencing",
+      "category": "must",
+      "description": "Generate unique, sequential receipt numbers for all transactions with support for multiple registers/locations",
+      "acceptance_criteria": [
+        "Given a new sales transaction is created, when transaction is saved, then a unique receipt number is automatically assigned",
+        "Given system is configured for sequential numbering starting at 1000, when first transaction is created, then receipt number is '1000'",
+        "Given multiple registers are active, when transactions are created simultaneously, then each register generates unique receipt numbers without duplicates",
+        "Given receipt number format is configured as 'YY-MM-STORE-SEQ', when transaction is created on January 30, 2026 at Store A, then receipt number follows format like '26-01-A-0001'",
+        "Given receipt numbers are generated, when viewing sequence, then no gaps exist in numbering (except in controlled rollback scenarios)"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://x-series-support.lightspeedhq.com/hc/en-us/articles/25534287781659-How-to-change-the-receipt-number-sequence",
+        "https://www.invoicesimple.com/blog/invoice-number",
+        "https://wise.com/au/blog/what-is-invoice-number"
+      ]
+    },
+    {
+      "id": "F-012",
+      "name": "Tax Calculation and Compliance",
+      "category": "must",
+      "description": "Automatically calculate taxes based on product tax rates and generate tax-compliant receipts",
+      "acceptance_criteria": [
+        "Given a product has tax rate of 10%, when item is added to sale, then tax is calculated as 10% of unit price multiplied by quantity",
+        "Given multiple items with different tax rates are in cart, when totals are calculated, then receipt shows tax breakdown by rate",
+        "Given a tax-exempt item is added, when tax is calculated, then item shows 0% tax and is clearly marked as tax-exempt",
+        "Given tax-inclusive pricing is configured, when product price is $100 with 10% tax, then system recognizes $90.91 as base price and $9.09 as tax",
+        "Given receipt is generated, when viewing receipt, then tax amounts are clearly displayed with applicable tax rates and total tax"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://posytude.com/pos-tax-calculation-invoicing/",
+        "https://vasyerp.com/the-retail-guru/what-is-gst-compliant-pos-system",
+        "https://x-series-support.lightspeedhq.com/hc/en-us/articles/25534082592283-VAT-in-the-GCC-and-your-Retail-POS-X-Series-account",
+        "https://www.avalara.com/blog/en/north-america/2024/05/what-is-a-pos-how-does-it-collect-sales-tax.html"
+      ]
+    },
+    {
+      "id": "F-013",
+      "name": "Role-Based Access Control (RBAC)",
+      "category": "must",
+      "description": "Control user access to POS features based on roles (Admin, Manager, Cashier) to prevent fraud and ensure proper authorization",
+      "acceptance_criteria": [
+        "Given user is assigned Admin role, when user logs in, then all features are accessible including user management and system settings",
+        "Given user is assigned Manager role, when user logs in, then sales, refunds, and reports are accessible but user management is restricted",
+        "Given user is assigned Cashier role, when user logs in, then only sales processing is available and refunds are blocked",
+        "Given Cashier attempts to access admin features, when access is attempted, then 'Access Denied' message is displayed",
+        "Given Manager attempts to process refund, when refund workflow is initiated, then refund is permitted without additional approval",
+        "Given Cashier attempts to process refund, when refund workflow is attempted, then operation is blocked and Manager assistance is prompted"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://x-series-support.lightspeedhq.com/hc/en-us/articles/25534171377819-Setting-user-roles-and-permissions",
+        "https://eposly.io/blogs-insights/how-role-based-pos-permissions-reduce-fraud-and-speed-up-closing/",
+        "https://mosaic-solutions.helpscoutdocs.com/article/41-set-default-permissions-for-admin-manager-cashier-and-waitstaff-roles-and-permissions-on-back-office",
+        "https://www.zoho.com/en-sa/pos/resources/help/manage-roles.html"
+      ]
+    },
+    {
+      "id": "F-014",
+      "name": "Audit Logging and Transaction Tracking",
+      "category": "must",
+      "description": "Comprehensive audit logging of all sales, refund, and system activities for compliance, security, and operational visibility",
+      "acceptance_criteria": [
+        "Given a sales transaction is completed, when transaction is saved, then audit log records: user ID, timestamp, transaction amount, items sold, and client IP",
+        "Given a refund is processed, when refund is completed, then audit log records: original transaction reference, refund amount, refund reason, and approving user",
+        "Given user permission is changed, when change is saved, then audit log records: admin who made change, previous permissions, new permissions, and timestamp",
+        "Given admin accesses audit log viewer, when viewer is opened, then logs are displayed with filtering options (date range, user, event type)",
+        "Given audit log is accessed, when viewing logs, then logs cannot be modified or deleted by any user including admins"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://www.vela1.com/compliance-for-pos-systems-protecting-customer-data/",
+        "https://eposly.io/blogs-insights/a-practical-guide-to-compliant-government-pos-systems/",
+        "https://www.omniful.ai/blog/pos-security-encryption-emv-pci-compliance",
+        "https://washburnpos.com/blog/tech-news-2/understanding-the-importance-of-pos-system-audits-and-why-they-matter-for-retailers-25"
+      ]
+    },
+    {
+      "id": "F-015",
+      "name": "Multi-Criteria Receipt Search and Filtering",
+      "category": "need",
+      "description": "Advanced search capabilities allowing admins to filter receipts by multiple criteria including date range, amount, customer, and receipt number",
+      "acceptance_criteria": [
+        "Given admin is on receipt management screen, when admin applies date range filter, then only receipts within date range are displayed",
+        "Given admin applies date range AND phone number filters, when both filters are active, then only receipts matching BOTH criteria are displayed",
+        "Given admin enters partial receipt number 'RCP100', when search is submitted, then all receipts containing 'RCP100' are displayed",
+        "Given admin filters by amount range $50-$200, when filter is applied, then only receipts with total amounts within range are displayed",
+        "Given admin has applied multiple filters, when admin clicks 'Export to CSV', then filtered results are downloaded as CSV file",
+        "Given admin frequently uses specific filter combination, when admin saves search as 'Today's Sales', then saved search appears in quick access list"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://support.loylap.com/understanding-loylaps-transaction-filters",
+        "https://stackoverflow.com/questions/71531087/filtering-table-based-on-customerid-and-closest-transaction-date-to-unique-dates",
+        "https://support.pushpay.com/s/article/Filter-Transactions"
+      ]
+    },
+    {
+      "id": "F-016",
+      "name": "Sales Dashboard and Reporting",
+      "category": "need",
+      "description": "Visual dashboard showing sales metrics, daily summaries, and performance analytics",
+      "acceptance_criteria": [
+        "Given admin logs into dashboard, when dashboard loads, then today's total sales, transaction count, and average order value are displayed",
+        "Given admin views dashboard, when scrolling down, then charts show sales trends over time and top-selling products",
+        "Given admin clicks on 'Top Products' chart, when chart is clicked, then detailed product sales report is displayed",
+        "Given admin changes date range to 'Last 7 Days', when range is applied, then all metrics update to show 7-day data",
+        "Given admin views sales by cashier section, when viewing report, then each cashier's total sales and transaction count are displayed",
+        "Given low stock threshold is configured, when item falls below threshold, then alert appears on dashboard"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://sumcloudpos.com/reports.html",
+        "https://squareup.com/help/us/en/article/5072-summaries-and-reports-from-the-online-dashboard",
+        "https://www.livepos.com/dashboardreporting",
+        "https://www.businessnewsdaily.com/10449-time-saving-pos-reports.html"
+      ]
+    },
+    {
+      "id": "F-017",
+      "name": "Barcode/QR Code on Receipts",
+      "category": "need",
+      "description": "Include machine-readable barcode or QR code on receipts for quick lookup and verification",
+      "acceptance_criteria": [
+        "Given receipt is generated, when receipt is printed or viewed, then barcode or QR code is displayed at bottom of receipt",
+        "Given receipt contains QR code, when QR code is scanned, then receipt is retrieved and displayed (if authorized)",
+        "Given admin uses barcode scanner on printed receipt, when code is scanned, then receipt lookup screen opens with matching receipt",
+        "Given QR code format is configured, when QR code is generated, then code encodes receipt number and store identifier"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://makereceipt.com/receipt-templates/sales/pos-receipt/",
+        "https://gist.github.com/naveenrobo/a8a7475dcaab5ec3ee796b56fd5235e8"
+      ]
+    },
+    {
+      "id": "F-018",
+      "name": "Payment Method Integration",
+      "category": "need",
+      "description": "Support multiple payment methods including cash, card, digital wallets, and record payment details on receipts",
+      "acceptance_criteria": [
+        "Given admin is completing a sale, when payment method selection is displayed, then options include: Cash, Card, UPI, and Other",
+        "Given Cash is selected, when cash amount entered is greater than total, then system calculates and displays change amount",
+        "Given Card is selected, when payment is processed, then system captures last 4 digits of card for receipt",
+        "Given customer wants to pay part cash and part card, when split payment is selected, then admin can specify amount for each method",
+        "Given receipt is generated, when viewing receipt, then payment method(s) and amounts are clearly displayed"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://getquantic.com/best-pos-system-for-retail/",
+        "https://swiforce.com/pos-system-trends-2026/"
+      ]
+    },
+    {
+      "id": "F-019",
+      "name": "Customer Contact Management",
+      "category": "need",
+      "description": "Capture and manage customer contact information including phone numbers, names, and preferences for enhanced service",
+      "acceptance_criteria": [
+        "Given admin enters phone number during sale, when phone number is not in system, then prompt to create new customer profile is displayed",
+        "Given admin creates new customer profile, when profile is saved, then name and phone number are stored and associated with transaction",
+        "Given customer already exists in system, when phone number is entered, then customer name is auto-filled from profile",
+        "Given admin views customer profile, when profile is opened, then complete purchase history for that customer is displayed",
+        "Given admin opens customer profile, when viewing profile, then notes field is available for recording customer preferences"
+      ],
+      "industry_standard": true,
+      "references": [
+        "https://community.shopify.com/t/collecting-customer-info-during-point-of-sale-pos-checkout/239801",
+        "https://theretailexec.com/tools/best-simple-pos-system/"
+      ]
+    },
+    {
+      "id": "F-020",
+      "name": "Offline Mode and Sync",
+      "category": "nice_to_have",
+      "description": "Allow POS to function during internet outages with automatic data synchronization when connection is restored",
+      "acceptance_criteria": [
+        "Given internet connection is lost, when admin attempts to process sale, then system continues to function with 'Offline Mode' indicator",
+        "Given sale is processed in offline mode, when transaction is saved, then transaction is stored locally and marked as 'Pending Sync'",
+        "Given internet connection is restored, when system detects online status, then pending transactions are automatically synced to server",
+        "Given WhatsApp send is attempted in offline mode, when send is triggered, then message is queued and sent when connection restored",
+        "Given sync conflict occurs (same receipt number), when conflict is detected, then admin is prompted to resolve manually"
+      ],
+      "industry_standard": false,
+      "references": [
+        "https://www.poszeo.com/blog-channel/pos-systems-for-retail-shop-complete-guide-2026/",
+        "https://getquantic.com/best-pos-system-for-retail/"
+      ]
+    },
+    {
+      "id": "F-021",
+      "name": "Email Receipt Option",
+      "category": "nice_to_have",
+      "description": "Send receipts to customers via email in addition to WhatsApp and print options",
+      "acceptance_criteria": [
+        "Given customer email is provided during sale, when sale is completed, then 'Send via Email' option is available",
+        "Given admin clicks 'Send via Email', when email is sent, then professionally formatted HTML email is delivered to customer",
+        "Given email send fails, when error occurs, then admin is notified with error message and retry option",
+        "Given customer is in system with email on file, when admin views customer profile, then option to email recent receipts is available",
+        "Given email receipt is sent, when customer receives email, then email includes: receipt details, store branding, and contact information"
+      ],
+      "industry_standard": false,
+      "references": [
+        "https://retailcloud.com/modern-retail-pos-features/",
+        "https://www.krispsystems.com/2026-retail-tech-planning-unified-pos-oms-guide"
+      ]
+    },
+    {
+      "id": "F-022",
+      "name": "Loyalty Points Integration",
+      "category": "nice_to_have",
+      "description": "Award and redeem loyalty points on sales transactions to encourage customer retention",
+      "acceptance_criteria": [
+        "Given loyalty program is enabled, when sale is completed, then customer earns points equal to purchase amount multiplied by points rate",
+        "Given customer has 500 points and redemption rate is 100 points = $1, when customer redeems points during $50 purchase, then $5 discount is applied",
+        "Given customer reaches Gold tier status, when points are earned, then 1.5x multiplier is applied to points earned",
+        "Given receipt is generated for loyalty customer, when receipt is viewed, then current loyalty balance and points earned are displayed",
+        "Given customer profile is viewed, when loyalty section is opened, then complete transaction history with points earned/redeemed is displayed"
+      ],
+      "industry_standard": false,
+      "references": [
+        "https://www.qdos.com.au/30-essential-features-of-a-retail-pos-system/",
+        "https://swiforce.com/pos-system-trends-2026/"
+      ]
+    },
+    {
+      "id": "F-023",
+      "name": "Discount and Coupon Management",
+      "category": "nice_to_have",
+      "description": "Apply discounts and coupons to sales transactions with validation and tracking",
+      "acceptance_criteria": [
+        "Given admin is processing sale, when 'Apply Discount' button is clicked, then options for percentage or fixed amount are displayed",
+        "Given discount amount exceeds 10%, when admin applies discount, then manager approval is prompted",
+        "Given customer enters coupon code 'SAVE20', when code is applied, then system validates code is active and applies 20% discount",
+        "Given coupon code has usage limit of 100, when code has been used 100 times, then subsequent attempts are rejected with 'Coupon expired' message",
+        "Given discount is applied, when receipt is generated, then original price, discount amount, and final price are clearly shown"
+      ],
+      "industry_standard": false,
+      "references": [
+        "https://www.poszeo.com/blog-channel/pos-systems-for-retail-shop-complete-guide-2026/",
+        "https://github.com/opensourcepos/opensourcepos"
+      ]
+    },
+    {
+      "id": "F-024",
+      "name": "Multi-Location Inventory Support",
+      "category": "nice_to_have",
+      "description": "Manage inventory across multiple store locations with location-specific stock tracking",
+      "acceptance_criteria": [
+        "Given system has 3 store locations configured, when inventory is viewed, then stock levels are displayed for each location separately",
+        "Given sale is processed at Location A, when transaction is completed, then stock is deducted only from Location A inventory",
+        "Given admin wants to transfer stock, when transfer is initiated, then admin selects source location, destination location, and quantity",
+        "Given stock transfer is completed, when transfer is saved, then source location quantity decreases and destination increases",
+        "Given cashier is logged into Location A, when inventory is viewed, then only Location A stock levels are visible"
+      ],
+      "industry_standard": false,
+      "references": [
+        "https://www.poszeo.com/blog-channel/pos-systems-for-retail-shop-complete-guide-2026/",
+        "https://www.krispsystems.com/2026-retail-tech-planning-unified-pos-oms-guide"
+      ]
+    },
+    {
+      "id": "F-025",
+      "name": "Mobile-Optimized Interface",
+      "category": "nice_to_have",
+      "description": "Responsive design allowing POS functionality on tablets and mobile devices for flexibility",
+      "acceptance_criteria": [
+        "Given admin opens POS on tablet, when interface loads, then layout is optimized for tablet screen size with touch-friendly controls",
+        "Given admin uses smartphone, when interface loads, then critical features (sales, receipts, refunds) are accessible without horizontal scrolling",
+        "Given admin is on mobile device, when camera icon is clicked, then device camera opens for barcode scanning",
+        "Given mobile interface is used, when transaction is processed, then full sales workflow completes without desktop dependency",
+        "Given PWA is installed, when app is launched, then it functions like native app with offline capability"
+      ],
+      "industry_standard": false,
+      "references": [
+        "https://getquantic.com/best-pos-system-for-retail/",
+        "https://swiforce.com/pos-system-trends-2026/"
+      ]
+    }
+  ],
+  "data_model_implications": {
+    "entities": [
+      "Sale/SalesTransaction (receipt_number, date, customer_phone, subtotal, tax, total, payment_method, status)",
+      "SalesLineItem (sale_id, product_id, quantity, unit_price, line_total, tax_amount)",
+      "Refund (refund_number, original_sale_id, refund_date, refund_amount, refund_reason, status)",
+      "RefundLineItem (refund_id, product_id, quantity_returned, return_price, original_line_item_id)",
+      "Customer (phone_number, name, email, preferences, notes, loyalty_points)",
+      "Product (product_id, name, sku, barcode, price, tax_rate, stock_quantity)",
+      "Receipt (receipt_number, sale_id, pdf_url, sent_via_whatsapp, sent_via_email, whatsapp_status)",
+      "AuditLog (log_id, user_id, timestamp, action, entity_type, entity_id, details)",
+      "PaymentTransaction (transaction_id, sale_id, payment_method, amount, last_4_digits, transaction_reference)",
+      "InventoryLocation (location_id, name, address, is_active)"
+    ],
+    "relationships": [
+      "Sale has many SalesLineItems",
+      "Sale belongs to Customer (via phone_number)",
+      "Sale has one Receipt",
+      "Refund belongs to original Sale",
+      "Refund has many RefundLineItems",
+      "SalesLineItem belongs to Product",
+      "RefundLineItem belongs to Product",
+      "Customer has many Sales",
+      "Product belongs to InventoryLocation(s) with stock per location",
+      "AuditLog is created by User and references any entity",
+      "PaymentTransaction belongs to Sale"
+    ]
+  },
+  "integration_points": [
+    {
+      "system": "WhatsApp Business API",
+      "description": "Send receipts to customers using utility message templates. Requires template approval and phone number validation. Message includes store name, transaction details, receipt number, and item summary."
+    },
+    {
+      "system": "Inventory Management System",
+      "description": "Real-time stock deduction on sales completion. Inventory restoration on refunds. Stock availability validation during sales. Low stock alerts."
+    },
+    {
+      "system": "Payment Gateway",
+      "description": "Process card and digital wallet payments. Capture transaction IDs and last 4 card digits. Handle split payments across multiple methods."
+    },
+    {
+      "system": "Thermal Printer (ESC/POS)",
+      "description": "Generate and print thermal receipts on 80mm printers. ESC/POS command formatting for professional receipt layout with store details, line items, taxes, and barcodes."
+    },
+    {
+      "system": "Email Service (SMTP/SendGrid/Mailgun)",
+      "description": "Send PDF receipts via email. HTML email template formatting. Delivery tracking and bounce handling."
+    },
+    {
+      "system": "Tax Service",
+      "description": "Calculate applicable taxes based on product tax rates and jurisdiction. Support for GST, VAT, sales tax. Tax reporting for compliance."
+    },
+    {
+      "system": "Barcode Scanner Hardware",
+      "description": "Scan product barcodes for quick item addition. Scan receipt barcodes/QR codes for quick lookup."
+    },
+    {
+      "system": "Customer Database/CRM",
+      "description": "Store and retrieve customer profiles. Link transactions to customers. Purchase history tracking."
+    },
+    {
+      "system": "Audit/Compliance System",
+      "description": "Immutable audit log storage. Transaction tracking for regulatory compliance. Security event logging."
+    }
+  ]
+}
