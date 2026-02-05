@@ -83,7 +83,7 @@ export interface ReceivingPhoneRecord {
   imei?: string | null;
   /** Phone condition */
   condition: PhoneCondition;
-  /** Battery health percentage (0-100), applicable for used/refurbished */
+  /** Battery health percentage (0-100), applicable for used/open box */
   batteryHealth?: number | null;
   /** Storage capacity in GB */
   storageGb?: number | null;

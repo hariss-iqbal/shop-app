@@ -37,7 +37,7 @@
       ],
       "cacheConfig": {
         "maxSize": 100,
-        "maxAge": "1h",
+        "maxAge": "2m",
         "strategy": "freshness",
         "timeout": "5s"
       }
@@ -51,7 +51,7 @@
       ],
       "cacheConfig": {
         "maxSize": 200,
-        "maxAge": "30m",
+        "maxAge": "2m",
         "strategy": "freshness",
         "timeout": "5s"
       }
@@ -67,7 +67,7 @@
       ],
       "cacheConfig": {
         "maxSize": 100,
-        "maxAge": "15m",
+        "maxAge": "2m",
         "strategy": "freshness",
         "timeout": "5s"
       }

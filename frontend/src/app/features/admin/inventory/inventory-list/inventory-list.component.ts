@@ -126,7 +126,7 @@ export class InventoryListComponent implements OnInit {
   getConditionSeverity(condition: string): 'success' | 'info' | 'warn' | 'secondary' | undefined {
     const severityMap: Record<string, 'success' | 'info' | 'warn'> = {
       new: 'success',
-      refurbished: 'info',
+      open_box: 'info',
       used: 'warn'
     };
     return severityMap[condition] || 'secondary';

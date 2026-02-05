@@ -1,12 +1,3 @@
-.catalog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-}
-.catalog-container {
-  width: 100%;
-  padding: 0 1rem;
-}
 .sale-badge {
   position: absolute;
   top: 10px;
@@ -20,6 +11,7 @@
   z-index: 10;
   box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
 }
+
 .new-arrival-badge {
   position: absolute;
   top: 10px;
@@ -33,6 +25,7 @@
   z-index: 10;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
+
 .top-seller-badge {
   position: absolute;
   top: 10px;
@@ -46,25 +39,55 @@
   z-index: 10;
   box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
 }
+
 .original-price {
   text-decoration: line-through;
   opacity: 0.7;
 }
+
 .discount-price {
   color: var(--p-red-500);
   font-weight: 700;
 }
-.section-header {
-  border-bottom: 2px solid var(--p-primary-500);
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
+
+.quick-action-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+  padding: 2rem 1rem 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
-.section-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
+
+:host(:hover) .quick-action-overlay {
+  opacity: 1;
+}
+
+@media (max-width: 575px) {
+  .quick-action-overlay {
+    opacity: 1;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+  }
+}
+
+// PTA Status badges
+.pta-badge-approved {
+  background: var(--green-100);
+  color: var(--green-700);
+}
+
+.pta-badge-non-pta {
+  background: var(--orange-100);
+  color: var(--orange-700);
+}
+
+// Dark mode hover fix
+:host-context(.dark-theme) {
+  .surface-card {
+    &:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
+  }
 }

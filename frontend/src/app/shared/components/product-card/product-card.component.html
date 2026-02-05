@@ -1,0 +1,150 @@
+<div class="surface-card border-round-xl h-full cursor-pointer p-3 hover:surface-ground transition-all"
+     (click)="navigateToDetail()">
+  <div class="relative mb-3 overflow-hidden border-round-lg" style="height: 200px; background: var(--p-surface-100);">
+    <!-- Badges -->
+    @if (showBadges()) {
+      @if (phoneExtras().hasDiscount && phoneExtras().discountPercent >= 15) {
+        <span class="sale-badge">
+          <i class="pi pi-tag mr-1"></i>{{ phoneExtras().discountPercent }}% OFF
+        </span>
+      } @else if (phoneExtras().isNewArrival) {
+        <span class="new-arrival-badge">
+          <i class="pi pi-sparkles mr-1"></i>NEW
+        </span>
+      } @else if (phoneExtras().isTopSeller) {
+        <span class="top-seller-badge">
+          <i class="pi pi-star-fill mr-1"></i>TOP
+        </span>
+      }
+    }
+
+    @if (phone().primaryImageUrl) {
+      <img
+        [src]="cardImageUrl()"
+        [srcset]="cardSrcSet()"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        [alt]="phone().brandName + ' ' + phone().model"
+        width="300"
+        height="200"
+        [loading]="eagerLoad() ? 'eager' : 'lazy'"
+        [appBlurUpImage]="phone().primaryImageUrl!"
+        [blurUpDisabled]="eagerLoad()"
+        class="w-full h-full"
+        style="object-fit: contain;"
+        (error)="onImageError($event)"
+      />
+    } @else {
+      <div class="w-full h-full flex flex-column align-items-center justify-content-center surface-100">
+        <i class="pi pi-image text-4xl text-400 mb-2" aria-hidden="true"></i>
+        <span class="text-400 text-xs">No image available</span>
+      </div>
+    }
+
+    <!-- Condition Tag -->
+    @if (!(showBadges() && phoneExtras().isNewArrival)) {
+      <p-tag
+        [value]="getConditionLabel(phone().condition)"
+        [severity]="getConditionSeverity(phone().condition)"
+        styleClass="absolute"
+        [style]="{ bottom: '10px', right: '10px' }"
+      />
+    }
+
+    <!-- Quick Action Overlay -->
+    <div class="quick-action-overlay flex justify-content-center gap-2">
+      <p-button
+        icon="pi pi-eye"
+        [rounded]="true"
+        severity="contrast"
+        pTooltip="Quick View"
+        tooltipPosition="top"
+        (onClick)="navigateToDetail(); $event.stopPropagation()"
+        tabindex="-1"
+      />
+      @if (showCompareButton()) {
+        <p-button
+          [icon]="isCompareSelected() ? 'pi pi-check' : 'pi pi-clone'"
+          [rounded]="true"
+          [severity]="isCompareSelected() ? 'success' : 'contrast'"
+          [pTooltip]="isCompareSelected() ? 'In comparison' : 'Add to compare'"
+          tooltipPosition="top"
+          (onClick)="toggleCompare($event)"
+          tabindex="-1"
+        />
+      }
+    </div>
+  </div>
+
+  <!-- Brand & Model -->
+  <div class="flex align-items-center gap-2 mb-2">
+    @if (phone().brandLogoUrl) {
+      <img [src]="phone().brandLogoUrl" [alt]="phone().brandName" style="width: 20px; height: 20px; object-fit: contain;" (error)="onImageError($event)" />
+    }
+    <span class="text-500 text-sm font-medium">{{ phone().brandName }}</span>
+  </div>
+
+  <h3 class="text-lg font-bold m-0 mb-2 white-space-nowrap overflow-hidden text-overflow-ellipsis text-900">
+    {{ phone().model }}
+  </h3>
+
+  <!-- Rating Stars -->
+  @if (showRating()) {
+    <div class="flex align-items-center gap-2 mb-2 rating-stars">
+      <p-rating
+        [ngModel]="phoneExtras().rating"
+        [readonly]="true"
+        [stars]="5"
+      />
+      <span class="text-500 text-xs">({{ phoneExtras().rating }}.0)</span>
+    </div>
+  }
+
+  <!-- Specs -->
+  @if (showSpecs()) {
+    <div class="flex align-items-center gap-2 text-500 text-sm mb-3">
+      @if (phone().storageGb) {
+        <span class="surface-100 px-2 py-1 border-round text-xs font-medium">{{ phone().storageGb }}GB</span>
+      }
+      @if (phone().color) {
+        <span class="surface-100 px-2 py-1 border-round text-xs font-medium">{{ phone().color }}</span>
+      }
+    </div>
+  }
+
+  <!-- PTA Status Badge -->
+  @if (phone().ptaStatus) {
+    <div class="mb-2">
+      <span class="px-2 py-1 border-round text-xs font-bold"
+            [class.bg-green-100]="phone().ptaStatus === 'pta_approved'"
+            [class.text-green-700]="phone().ptaStatus === 'pta_approved'"
+            [class.bg-orange-100]="phone().ptaStatus === 'non_pta'"
+            [class.text-orange-700]="phone().ptaStatus === 'non_pta'">
+        @if (phone().ptaStatus === 'pta_approved') {
+          <i class="pi pi-verified mr-1"></i>PTA Approved
+        } @else {
+          <i class="pi pi-exclamation-triangle mr-1"></i>Non PTA
+        }
+      </span>
+    </div>
+  }
+
+  <!-- Price with Discount -->
+  <div class="flex align-items-center justify-content-between mt-auto">
+    <div class="flex flex-column">
+      @if (showDiscount() && phoneExtras().hasDiscount && phoneExtras().originalPrice) {
+        <span class="original-price">{{ phoneExtras().originalPrice | appCurrency }}</span>
+      }
+      <span class="text-xl font-bold" [class.discount-price]="showDiscount() && phoneExtras().hasDiscount" [class.text-primary]="!(showDiscount() && phoneExtras().hasDiscount)">
+        {{ phone().sellingPrice | appCurrency }}
+      </span>
+    </div>
+    <p-button
+      icon="pi pi-arrow-right"
+      [rounded]="true"
+      [text]="true"
+      severity="primary"
+      ariaLabel="View details"
+      tabindex="-1"
+    />
+  </div>
+</div>

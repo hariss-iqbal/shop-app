@@ -312,6 +312,14 @@ export class SaleService {
   }
 
   /**
+   * Get customer purchase history by phone number
+   * Alias for findByBuyerPhone for convenience
+   */
+  async getCustomerHistory(phone: string): Promise<CustomerPurchaseHistory> {
+    return this.findByBuyerPhone(phone);
+  }
+
+  /**
    * Get inventory deduction logs for a specific phone
    * Feature: F-008 Automatic Inventory Deduction
    */

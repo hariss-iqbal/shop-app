@@ -34,12 +34,15 @@ export class ReceiptService {
 
   /**
    * @deprecated Use generateReceiptNumberAsync() instead for sequential numbering.
-   * This method is kept for backwards compatibility but generates non-sequential numbers.
+   * This method is kept as a fallback when the async method fails.
    */
   generateReceiptNumber(): string {
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `RCP-${timestamp}-${random}`;
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const random = Math.random().toString(36).substring(2, 4).toUpperCase();
+    return `${dd}${mm}${yyyy}-${random}`;
   }
 
   /**

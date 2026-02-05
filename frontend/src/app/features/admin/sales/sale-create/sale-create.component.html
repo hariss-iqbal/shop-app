@@ -171,7 +171,7 @@
                 <p-inputNumber
                   [(ngModel)]="item.salePrice"
                   mode="currency"
-                  currency="USD"
+                  currency="PKR"
                   [minFractionDigits]="2"
                   [maxFractionDigits]="2"
                   [min]="0"
@@ -233,7 +233,6 @@
           <div class="flex align-items-center gap-2">
             <i class="pi pi-user text-primary text-xl"></i>
             <span class="text-xl font-semibold">Customer Information</span>
-            <p-tag value="Optional" severity="secondary" styleClass="text-xs" />
           </div>
           @if (selectedCustomer) {
             <p-tag [value]="'Existing Customer'" severity="success" />
@@ -255,7 +254,7 @@
                   class="w-full"
                   [class.p-invalid]="customerLookupStatus === 'not_found'"
                 />
-                <label for="customerPhone">Phone Number</label>
+                <label for="customerPhone">Phone Number<span class="text-red-500 ml-1">*</span></label>
               </p-floatlabel>
               @if (customerLookupLoading) {
                 <small class="text-color-secondary flex align-items-center gap-2">
@@ -267,6 +266,15 @@
                   <i class="pi pi-check-circle"></i>
                   Customer found - info auto-filled
                 </small>
+                  @if (selectedCustomer && selectedCustomer.totalTransactions > 0) {
+                    <p-button
+                      label="View Previous Sales"
+                      icon="pi pi-history"
+                      size="small"
+                      [text]="true"
+                      (onClick)="loadPreviousSales()"
+                    />
+                  }
               } @else if (customerLookupStatus === 'not_found' && customerInfo.phone.length >= 5) {
                 <div class="flex align-items-center gap-2">
                   <small class="text-orange-500">New customer</small>
@@ -290,7 +298,7 @@
                 [maxlength]="200"
                 class="w-full"
               />
-              <label for="customerName">Customer Name</label>
+              <label for="customerName">Customer Name<span class="text-red-500 ml-1">*</span></label>
             </p-floatlabel>
           </div>
           <div class="col-12 md:col-4">
@@ -509,3 +517,36 @@
   (visibleChange)="showCustomerFormDialog = $event"
   (saved)="onCustomerCreated($event)"
 />
+
+<!-- Previous Sales Dialog -->
+<p-dialog
+  header="Previous Sales"
+  [(visible)]="showPreviousSalesDialog"
+  [modal]="true"
+  [style]="{ width: '700px', 'max-width': '95vw' }"
+>
+  @if (loadingPreviousSales) {
+    <div class="flex justify-content-center p-4">
+      <p-progressSpinner strokeWidth="4" />
+    </div>
+  } @else if (customerPreviousSales.length === 0) {
+    <p-message severity="info" text="No previous sales found for this customer" styleClass="w-full" />
+  } @else {
+    <p-table [value]="customerPreviousSales" styleClass="p-datatable-sm" [scrollable]="true">
+      <ng-template #header>
+        <tr>
+          <th>Date</th>
+          <th>Phone Model</th>
+          <th>Amount</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-sale>
+        <tr>
+          <td>{{ sale.saleDate }}</td>
+          <td>{{ sale.brandName }} {{ sale.phoneName }}</td>
+          <td class="font-semibold">{{ sale.salePrice | currency }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</p-dialog>

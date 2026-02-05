@@ -5,8 +5,7 @@
 export enum PaymentMethod {
   CASH = 'cash',
   CARD = 'card',
-  UPI = 'upi',
-  OTHER = 'other'
+  BANK_TRANSFER = 'bank_transfer'
 }
 
 /**
@@ -15,8 +14,7 @@ export enum PaymentMethod {
 export const PaymentMethodLabels: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'Cash',
   [PaymentMethod.CARD]: 'Card',
-  [PaymentMethod.UPI]: 'UPI',
-  [PaymentMethod.OTHER]: 'Other'
+  [PaymentMethod.BANK_TRANSFER]: 'Bank Transfer'
 };
 
 /**
@@ -25,8 +23,7 @@ export const PaymentMethodLabels: Record<PaymentMethod, string> = {
 export const PaymentMethodIcons: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'pi pi-money-bill',
   [PaymentMethod.CARD]: 'pi pi-credit-card',
-  [PaymentMethod.UPI]: 'pi pi-mobile',
-  [PaymentMethod.OTHER]: 'pi pi-wallet'
+  [PaymentMethod.BANK_TRANSFER]: 'pi pi-building'
 };
 
 /**
@@ -35,8 +32,7 @@ export const PaymentMethodIcons: Record<PaymentMethod, string> = {
 export const PaymentMethodOptions = [
   { label: 'Cash', value: PaymentMethod.CASH, icon: 'pi pi-money-bill' },
   { label: 'Card', value: PaymentMethod.CARD, icon: 'pi pi-credit-card' },
-  { label: 'UPI', value: PaymentMethod.UPI, icon: 'pi pi-mobile' },
-  { label: 'Other', value: PaymentMethod.OTHER, icon: 'pi pi-wallet' }
+  { label: 'Bank Transfer', value: PaymentMethod.BANK_TRANSFER, icon: 'pi pi-building' }
 ];
 
 /**

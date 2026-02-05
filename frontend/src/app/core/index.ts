@@ -51,3 +51,4 @@ export * from './services/user-location-assignment.service';
 // Feature: F-025 Mobile-Optimized Interface
 export * from './services/viewport.service';
 export * from './services/barcode-scanner.service';
+export * from './services/shop-details.service';

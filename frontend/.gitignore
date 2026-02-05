@@ -53,3 +53,5 @@ Thumbs.db
 # Uncomment these lines if you've added real credentials to these files:
 # /src/environments/environment.ts
 # /src/environments/environment.prod.ts
+.vercel
+.env*.local

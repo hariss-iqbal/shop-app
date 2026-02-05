@@ -3,7 +3,7 @@
   <section class="about-hero" aria-labelledby="hero-heading">
     <div class="hero-content">
       <span class="hero-badge">Our Story</span>
-      <h1 id="hero-heading" class="hero-title">About Phone Shop</h1>
+      <h1 id="hero-heading" class="hero-title">About Spring Mobiles</h1>
       <p class="hero-subtitle">
         Your trusted destination for quality mobile phones since 2015. We believe everyone deserves access to premium technology at fair prices.
       </p>
@@ -18,12 +18,12 @@
           <span class="section-badge">Our Journey</span>
           <h2 id="story-heading" class="section-title">From Passion to Purpose</h2>
           <p class="story-text">
-            Phone Shop was founded with a simple yet powerful mission: to make quality mobile devices accessible to everyone.
+            Spring Mobiles was founded with a simple yet powerful mission: to make quality mobile devices accessible to everyone.
             What started as a small family business has grown into a trusted destination for thousands of customers seeking
             reliable smartphones at fair prices.
           </p>
           <p class="story-text">
-            We carefully curate our selection of new, used, and refurbished phones from trusted suppliers. Every device
+            We carefully curate our selection of new, used, and open box phones from trusted suppliers. Every device
             undergoes rigorous testing and inspection before being listed for sale. Our commitment to transparency means
             you'll always know exactly what you're getting – from battery health to cosmetic condition.
           </p>
@@ -34,7 +34,7 @@
         </div>
       </div>
       <div class="col-12 lg:col-6">
-        <div class="story-image-container" role="img" aria-label="Phone Shop store front illustration">
+        <div class="story-image-container" role="img" aria-label="Spring Mobiles store front illustration">
           <div class="story-visual">
             <div class="visual-icon-container">
               <i class="pi pi-mobile text-6xl text-primary" aria-hidden="true"></i>
@@ -80,10 +80,10 @@
     </div>
   </section>
 
-  <!-- Team Section -->
+  <!-- Team section commented out
   <section class="team-section" aria-labelledby="team-heading">
     <div class="section-header">
-      <span class="section-badge">The People Behind Phone Shop</span>
+      <span class="section-badge">The People Behind Spring Mobiles</span>
       <h2 id="team-heading" class="section-title">Meet Our Team</h2>
       <p class="section-subtitle">A dedicated group of phone enthusiasts ready to help you find your perfect device</p>
     </div>
@@ -101,6 +101,7 @@
       }
     </div>
   </section>
+  -->
 
   <!-- Opening Hours & Contact Info Section -->
   <section class="info-section" aria-labelledby="info-heading">
@@ -120,7 +121,7 @@
           </div>
 
           <div class="hours-list" role="list" aria-label="Store opening hours">
-            @for (day of openingHours; track day.day) {
+            @for (day of displayOpeningHours(); track day.day) {
               <div class="hours-row" role="listitem">
                 <span class="hours-day">{{ day.day }}</span>
                 <span class="hours-time" [ngClass]="{'hours-closed': day.closed}">
@@ -157,38 +158,38 @@
               </div>
               <div class="contact-details">
                 <span class="contact-label">Address</span>
-                <span class="contact-value">123 Mobile Street, Tech City, TC 12345</span>
+                <span class="contact-value">{{ address() }}</span>
               </div>
             </a>
 
             <!-- Phone -->
-            <a href="tel:+1234567890"
+            <a [href]="'tel:' + phoneLink()"
                class="contact-item contact-item-link"
-               aria-label="Call us at +1 234 567 890">
+               [attr.aria-label]="'Call us at ' + phoneDisplay()">
               <div class="contact-icon-wrapper">
                 <i class="pi pi-phone" aria-hidden="true"></i>
               </div>
               <div class="contact-details">
                 <span class="contact-label">Phone</span>
-                <span class="contact-value">+1 234 567 890</span>
+                <span class="contact-value">{{ phoneDisplay() }}</span>
               </div>
             </a>
 
             <!-- Email -->
-            <a href="mailto:info&#64;phoneshop.com"
+            <a [href]="'mailto:' + emailAddress()"
                class="contact-item contact-item-link"
-               aria-label="Email us at info at phoneshop.com">
+               [attr.aria-label]="'Email us at ' + emailAddress()">
               <div class="contact-icon-wrapper">
                 <i class="pi pi-envelope" aria-hidden="true"></i>
               </div>
               <div class="contact-details">
                 <span class="contact-label">Email</span>
-                <span class="contact-value">info&#64;phoneshop.com</span>
+                <span class="contact-value">{{ emailAddress() }}</span>
               </div>
             </a>
 
             <!-- WhatsApp -->
-            <a href="https://wa.me/1234567890"
+            <a [href]="'https://wa.me/' + whatsappNumber()"
                target="_blank"
                rel="noopener noreferrer"
                class="contact-item contact-item-link"
@@ -198,7 +199,7 @@
               </div>
               <div class="contact-details">
                 <span class="contact-label">WhatsApp</span>
-                <span class="contact-value">+1 234 567 890</span>
+                <span class="contact-value">{{ phoneDisplay() }}</span>
               </div>
             </a>
           </address>

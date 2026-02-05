@@ -1,12 +1,12 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { RatingModule } from 'primeng/rating';
-import { FormsModule } from '@angular/forms';
-import { CarouselModule } from 'primeng/carousel';
 import { SeoService } from '../../../shared/services/seo.service';
+import { PhoneService } from '../../../core/services/phone.service';
+import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
+import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { environment } from '../../../../environments/environment';
 
 interface FeatureItem {
   icon: string;
@@ -14,31 +14,36 @@ interface FeatureItem {
   description: string;
 }
 
-interface Testimonial {
-  id: number;
-  name: string;
-  avatar: string;
-  rating: number;
-  text: string;
-  date: string;
-}
+// interface Testimonial {
+//   id: number;
+//   name: string;
+//   avatar: string;
+//   rating: number;
+//   text: string;
+//   date: string;
+// }
 
 @Component({
   selector: 'app-home',
   imports: [
     CommonModule,
     RouterLink,
-    CardModule,
     ButtonModule,
-    RatingModule,
-    FormsModule,
-    CarouselModule
+    ProductCardComponent
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit {
   private seoService = inject(SeoService);
+  private phoneService = inject(PhoneService);
+  private shopDetailsService = inject(ShopDetailsService);
+
+  featuredPhones = signal<any[]>([]);
+  featuredLoading = signal(true);
+
+  whatsappNumber = computed(() => this.shopDetailsService.cachedDetails()?.whatsappNumber ?? environment.whatsapp.phoneNumber);
+  shopName = computed(() => this.shopDetailsService.cachedDetails()?.shopName ?? environment.businessInfo.name);
 
   features: FeatureItem[] = [
     {
@@ -63,72 +68,41 @@ export class HomeComponent implements OnInit {
     }
   ];
 
-  testimonials: Testimonial[] = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      avatar: 'SJ',
-      rating: 5,
-      text: 'Excellent service! I purchased a refurbished iPhone and it works like new. The team was very helpful in answering all my questions.',
-      date: '2 weeks ago'
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      avatar: 'MC',
-      rating: 5,
-      text: 'Great prices and fast delivery. I was hesitant to buy a used phone, but the quality exceeded my expectations. Highly recommend!',
-      date: '1 month ago'
-    },
-    {
-      id: 3,
-      name: 'Emily Davis',
-      avatar: 'ED',
-      rating: 4,
-      text: 'Good selection of phones at competitive prices. The website is easy to navigate and the checkout process was smooth.',
-      date: '3 weeks ago'
-    },
-    {
-      id: 4,
-      name: 'James Wilson',
-      avatar: 'JW',
-      rating: 5,
-      text: 'I bought a Samsung Galaxy for my daughter. The battery health was exactly as described. Very trustworthy seller!',
-      date: '1 week ago'
-    },
-    {
-      id: 5,
-      name: 'Amanda Garcia',
-      avatar: 'AG',
-      rating: 5,
-      text: 'Phone Shop has become my go-to place for mobile devices. Their after-sales support is exceptional.',
-      date: '2 months ago'
-    }
-  ];
+  // testimonials: Testimonial[] = [
+  //   { id: 1, name: 'Sarah Johnson', avatar: 'SJ', rating: 5, text: 'Excellent service!', date: '2 weeks ago' },
+  //   { id: 2, name: 'Michael Chen', avatar: 'MC', rating: 5, text: 'Great prices and fast delivery.', date: '1 month ago' },
+  //   { id: 3, name: 'Emily Davis', avatar: 'ED', rating: 4, text: 'Good selection of phones.', date: '3 weeks ago' },
+  //   { id: 4, name: 'James Wilson', avatar: 'JW', rating: 5, text: 'Very trustworthy seller!', date: '1 week ago' },
+  //   { id: 5, name: 'Amanda Garcia', avatar: 'AG', rating: 5, text: 'Exceptional after-sales support.', date: '2 months ago' }
+  // ];
 
-  responsiveOptions = [
-    {
-      breakpoint: '1199px',
-      numVisible: 3,
-      numScroll: 1
-    },
-    {
-      breakpoint: '991px',
-      numVisible: 2,
-      numScroll: 1
-    },
-    {
-      breakpoint: '767px',
-      numVisible: 1,
-      numScroll: 1
-    }
-  ];
+  // responsiveOptions = [
+  //   { breakpoint: '1199px', numVisible: 3, numScroll: 1 },
+  //   { breakpoint: '991px', numVisible: 2, numScroll: 1 },
+  //   { breakpoint: '767px', numVisible: 1, numScroll: 1 }
+  // ];
 
   ngOnInit(): void {
     this.seoService.updateMetaTags({
-      title: 'Phone Shop - Quality Mobile Phones at Great Prices',
-      description: 'Discover quality new, used, and refurbished mobile phones at competitive prices. Fast delivery, quality assured, and excellent customer support.',
+      title: 'Spring Mobiles - Quality Mobile Phones at Great Prices',
+      description: 'Discover quality new, used, and open box mobile phones at competitive prices. Fast delivery, quality assured, and excellent customer support.',
       url: '/'
     });
+    this.loadFeaturedPhones();
   }
+
+  async loadFeaturedPhones(): Promise<void> {
+    try {
+      const result = await this.phoneService.getCatalogPhones(
+        { first: 0, rows: 8, sortField: 'created_at', sortOrder: -1 },
+        { status: 'available' as any }
+      );
+      this.featuredPhones.set(result.data);
+    } catch {
+      // Silently fail - featured section just won't show
+    } finally {
+      this.featuredLoading.set(false);
+    }
+  }
+
 }

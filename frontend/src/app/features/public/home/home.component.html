@@ -27,10 +27,11 @@
             size="large"
             [outlined]="true"
             severity="secondary"
-            aria-label="Learn more about Phone Shop"
+            aria-label="Learn more about Spring Mobiles"
           />
         </a>
       </div>
+      <!-- Hero stats commented out
       <div class="hero-stats">
         <div class="stat-item">
           <span class="stat-number">1000+</span>
@@ -47,6 +48,7 @@
           <span class="stat-label">Day Warranty</span>
         </div>
       </div>
+      -->
     </div>
     <div class="hero-image" aria-hidden="true">
       <div class="phone-device">
@@ -61,7 +63,7 @@
           </div>
           <div class="screen-content">
             <i class="pi pi-mobile text-6xl text-primary mb-2"></i>
-            <span class="screen-brand">Phone Shop</span>
+            <span class="screen-brand">{{ shopName() }}</span>
           </div>
         </div>
         <div class="phone-button"></div>
@@ -70,6 +72,32 @@
     </div>
   </div>
 </section>
+
+<!-- Featured Phones Grid -->
+@if (featuredPhones().length > 0) {
+  <section class="featured-section" aria-labelledby="featured-heading">
+    <div class="section-header">
+      <h2 id="featured-heading" class="section-title">Latest Arrivals</h2>
+      <p class="section-subtitle">Check out our newest additions to the collection</p>
+    </div>
+    <div class="featured-grid">
+      @for (phone of featuredPhones(); track phone.id) {
+        <app-product-card [phone]="phone" [showCompareButton]="false" />
+      }
+    </div>
+    <div class="featured-actions">
+      <a routerLink="/catalog" class="no-underline">
+        <p-button
+          label="View All Phones"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          [outlined]="true"
+          aria-label="View all phones in catalog"
+        />
+      </a>
+    </div>
+  </section>
+}
 
 <!-- AC_REDESIGN_002: Feature Icons Section -->
 <section class="features-section" aria-labelledby="features-heading">
@@ -87,7 +115,7 @@
   </div>
 </section>
 
-<!-- Featured Phones Preview Section -->
+<!-- CTA Banner Section -->
 <section class="cta-banner" aria-labelledby="cta-heading">
   <div class="cta-content">
     <div class="cta-text">
@@ -111,7 +139,7 @@
   </div>
 </section>
 
-<!-- AC_REDESIGN_003: Customer Testimonials Section -->
+<!-- Testimonials section commented out
 <section class="testimonials-section" aria-labelledby="testimonials-heading">
   <div class="section-header">
     <h2 id="testimonials-heading" class="section-title">What Our Customers Say</h2>
@@ -159,6 +187,7 @@
     </ng-template>
   </p-carousel>
 </section>
+-->
 
 <!-- Newsletter / Contact CTA -->
 <section class="contact-cta" aria-labelledby="contact-heading">
@@ -178,7 +207,7 @@
           aria-label="Contact our team"
         />
       </a>
-      <a href="https://wa.me/1234567890"
+      <a [href]="'https://wa.me/' + whatsappNumber()"
          target="_blank"
          rel="noopener noreferrer"
          class="no-underline"

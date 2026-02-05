@@ -60,6 +60,29 @@
     </div>
   </div>
 
+  <!-- Shop Details Setup Prompt -->
+  @if (shopDetailsService.loaded() && !shopDetailsConfigured()) {
+    <div class="col-12">
+      <div class="flex align-items-center gap-3 p-3 border-round surface-warning border-1 border-yellow-500">
+        <i class="pi pi-exclamation-triangle text-yellow-500 text-2xl" aria-hidden="true"></i>
+        <div class="flex-1">
+          <span class="font-semibold text-color">Shop Details Not Configured</span>
+          <span class="text-color-secondary text-sm block mt-1">
+            Configure your business name, contact info, hours, and more to display on the public website.
+          </span>
+        </div>
+        <p-button
+          label="Configure Now"
+          icon="pi pi-cog"
+          size="small"
+          severity="warn"
+          (onClick)="navigateToShopDetails()"
+          ariaLabel="Configure shop details"
+        />
+      </div>
+    </div>
+  }
+
   <!-- Stock Alerts (above KPI cards) -->
   <div class="col-12">
     <app-stock-alerts-panel

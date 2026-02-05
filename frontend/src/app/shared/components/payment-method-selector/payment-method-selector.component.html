@@ -62,7 +62,7 @@
                 [id]="'paymentAmount' + idx"
                 [(ngModel)]="payment.amount"
                 mode="currency"
-                currency="USD"
+                currency="PKR"
                 [minFractionDigits]="2"
                 [maxFractionDigits]="2"
                 [min]="0"
@@ -96,7 +96,7 @@
                   [id]="'cashTendered' + idx"
                   [(ngModel)]="payment.cashTendered"
                   mode="currency"
-                  currency="USD"
+                  currency="PKR"
                   [minFractionDigits]="2"
                   [maxFractionDigits]="2"
                   [min]="0"
@@ -203,8 +203,8 @@
             </div>
           }
 
-          <!-- UPI-specific fields -->
-          @if (payment.method === PaymentMethod.UPI) {
+          <!-- Bank Transfer fields -->
+          @if (payment.method === PaymentMethod.BANK_TRANSFER) {
             <div class="col-12">
               <p-floatlabel variant="on">
                 <input
@@ -216,23 +216,6 @@
                   (input)="onPaymentChange()"
                 />
                 <label [for]="'transactionRef' + idx">Transaction Reference</label>
-              </p-floatlabel>
-            </div>
-          }
-
-          <!-- Other payment method fields -->
-          @if (payment.method === PaymentMethod.OTHER) {
-            <div class="col-12">
-              <p-floatlabel variant="on">
-                <input
-                  pInputText
-                  [id]="'paymentDesc' + idx"
-                  [(ngModel)]="payment.paymentDescription"
-                  maxlength="200"
-                  class="w-full"
-                  (input)="onPaymentChange()"
-                />
-                <label [for]="'paymentDesc' + idx">Payment Description</label>
               </p-floatlabel>
             </div>
           }

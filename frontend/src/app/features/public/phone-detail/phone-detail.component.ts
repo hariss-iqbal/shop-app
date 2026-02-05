@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { GalleriaModule } from 'primeng/galleria';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DividerModule } from 'primeng/divider';
@@ -19,7 +18,6 @@ import { SeoService } from '../../../shared/services/seo.service';
 import { JsonLdService } from '../../../shared/services/json-ld.service';
 import { PhoneDetail } from '../../../models/phone.model';
 import { PhoneCondition, PhoneConditionLabels, PhoneStatus, PhoneStatusLabels } from '../../../enums';
-import { BlurUpImageDirective } from '../../../shared/directives/blur-up-image.directive';
 import { environment } from '../../../../environments/environment';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
 import { CurrencyService } from '../../../core/services/currency.service';
@@ -51,14 +49,12 @@ interface GalleriaImage {
     CardModule,
     ButtonModule,
     TagModule,
-    GalleriaModule,
     ProgressBarModule,
     SkeletonModule,
     DividerModule,
     TooltipModule,
     AvatarModule,
     RatingModule,
-    BlurUpImageDirective,
     AppCurrencyPipe
   ],
   templateUrl: './phone-detail.component.html',
@@ -74,19 +70,127 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
   private seoService = inject(SeoService);
   private jsonLdService = inject(JsonLdService);
   private currencyService = inject(CurrencyService);
-
   phone = signal<PhoneDetail | null>(null);
   loading = signal(true);
   notFound = signal(false);
   scrollPosition = signal(0);
 
-  galleriaImages = signal<GalleriaImage[]>([]);
+  galleriaImages: GalleriaImage[] = [];
+  activeIndex = 0;
+  thumbnailStart = 0;
+  fullscreen = false;
+  readonly THUMBS_VISIBLE = 4;
   customerReviews = signal<CustomerReview[]>([]);
+
+  // Swipe tracking
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private readonly SWIPE_THRESHOLD = 50;
+
+  get currentImage(): GalleriaImage | null {
+    return this.galleriaImages[this.activeIndex] ?? null;
+  }
+
+  get imageCounter(): string {
+    return `${this.activeIndex + 1} / ${this.galleriaImages.length}`;
+  }
+
+  get visibleThumbnails(): GalleriaImage[] {
+    return this.galleriaImages.slice(this.thumbnailStart, this.thumbnailStart + this.THUMBS_VISIBLE);
+  }
+
+  get canScrollThumbsLeft(): boolean {
+    return this.thumbnailStart > 0;
+  }
+
+  get canScrollThumbsRight(): boolean {
+    return this.thumbnailStart + this.THUMBS_VISIBLE < this.galleriaImages.length;
+  }
+
+  selectImage(index: number): void {
+    this.activeIndex = index;
+  }
+
+  prevImage(): void {
+    this.activeIndex = this.activeIndex > 0
+      ? this.activeIndex - 1
+      : this.galleriaImages.length - 1;
+    this.ensureThumbnailVisible();
+  }
+
+  nextImage(): void {
+    this.activeIndex = this.activeIndex < this.galleriaImages.length - 1
+      ? this.activeIndex + 1
+      : 0;
+    this.ensureThumbnailVisible();
+  }
+
+  scrollThumbsLeft(): void {
+    this.thumbnailStart = Math.max(0, this.thumbnailStart - this.THUMBS_VISIBLE);
+  }
+
+  scrollThumbsRight(): void {
+    this.thumbnailStart = Math.min(
+      this.galleriaImages.length - this.THUMBS_VISIBLE,
+      this.thumbnailStart + this.THUMBS_VISIBLE
+    );
+  }
+
+  // Fullscreen
+  openFullscreen(): void {
+    this.fullscreen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeFullscreen(): void {
+    this.fullscreen = false;
+    document.body.style.overflow = '';
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (!this.fullscreen && this.galleriaImages.length <= 1) return;
+    if (event.key === 'Escape' && this.fullscreen) {
+      this.closeFullscreen();
+    } else if (event.key === 'ArrowLeft') {
+      this.prevImage();
+    } else if (event.key === 'ArrowRight') {
+      this.nextImage();
+    }
+  }
+
+  // Swipe gestures
+  onTouchStart(event: TouchEvent): void {
+    this.touchStartX = event.touches[0].clientX;
+    this.touchStartY = event.touches[0].clientY;
+  }
+
+  onTouchEnd(event: TouchEvent): void {
+    if (this.galleriaImages.length <= 1) return;
+    const deltaX = event.changedTouches[0].clientX - this.touchStartX;
+    const deltaY = event.changedTouches[0].clientY - this.touchStartY;
+    // Only trigger if horizontal swipe is dominant
+    if (Math.abs(deltaX) > this.SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        this.nextImage();
+      } else {
+        this.prevImage();
+      }
+    }
+  }
+
+  private ensureThumbnailVisible(): void {
+    if (this.activeIndex < this.thumbnailStart) {
+      this.thumbnailStart = this.activeIndex;
+    } else if (this.activeIndex >= this.thumbnailStart + this.THUMBS_VISIBLE) {
+      this.thumbnailStart = this.activeIndex - this.THUMBS_VISIBLE + 1;
+    }
+  }
 
   // Computed properties for AC_REDESIGN_002
   averageRating = computed(() => {
     const reviews = this.customerReviews();
-    if (reviews.length === 0) return 4.5; // Default rating when no reviews
+    if (reviews.length === 0) return 4.5;
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
     return Math.round((sum / reviews.length) * 10) / 10;
   });
@@ -95,25 +199,6 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
   showStickyBar = computed(() => {
     return this.scrollPosition() > 400;
   });
-
-  galleriaResponsiveOptions = [
-    {
-      breakpoint: '1200px',
-      numVisible: 4
-    },
-    {
-      breakpoint: '1024px',
-      numVisible: 4
-    },
-    {
-      breakpoint: '768px',
-      numVisible: 3
-    },
-    {
-      breakpoint: '560px',
-      numVisible: 2
-    }
-  ];
 
   private readonly whatsappNumber = environment.whatsapp.phoneNumber;
   private readonly shopPhoneNumber = environment.businessInfo?.phoneLink || '+1234567890';
@@ -135,6 +220,7 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.jsonLdService.removeStructuredData();
+    document.body.style.overflow = '';
   }
 
   private async loadPhoneDetail(id: string): Promise<void> {
@@ -164,7 +250,7 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
   }
 
   private buildGalleriaImages(phoneDetail: PhoneDetail): void {
-    const images: GalleriaImage[] = phoneDetail.images.map(img => ({
+    this.galleriaImages = phoneDetail.images.map(img => ({
       itemImageSrc: this.imageOptimization.getDetailImageUrl(img.imageUrl),
       itemSrcSet: this.imageOptimization.getDetailSrcSet(img.imageUrl),
       thumbnailImageSrc: this.imageOptimization.getThumbnailUrl(img.imageUrl),
@@ -172,8 +258,6 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
       alt: `${phoneDetail.brandName} ${phoneDetail.model}`,
       isPrimary: img.isPrimary
     }));
-
-    this.galleriaImages.set(images);
   }
 
   private updateSeoTags(phone: PhoneDetail): void {
@@ -199,7 +283,7 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
 
     const isUsedOrRefurbished =
       currentPhone.condition === PhoneCondition.USED ||
-      currentPhone.condition === PhoneCondition.REFURBISHED;
+      currentPhone.condition === PhoneCondition.OPEN_BOX;
 
     return isUsedOrRefurbished && currentPhone.batteryHealth !== null;
   }
@@ -230,7 +314,7 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
     switch (condition) {
       case PhoneCondition.NEW:
         return 'success';
-      case PhoneCondition.REFURBISHED:
+      case PhoneCondition.OPEN_BOX:
         return 'info';
       case PhoneCondition.USED:
         return 'warn';
@@ -321,8 +405,8 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
     switch (condition) {
       case PhoneCondition.NEW:
         return 'condition-new';
-      case PhoneCondition.REFURBISHED:
-        return 'condition-refurbished';
+      case PhoneCondition.OPEN_BOX:
+        return 'condition-open-box';
       case PhoneCondition.USED:
         return 'condition-used';
       default:
@@ -379,7 +463,7 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
     ];
 
     // Generate 3-5 reviews based on phone
-    const numReviews = phone.condition === PhoneCondition.NEW ? 5 : (phone.condition === PhoneCondition.REFURBISHED ? 4 : 3);
+    const numReviews = phone.condition === PhoneCondition.NEW ? 5 : (phone.condition === PhoneCondition.OPEN_BOX ? 4 : 3);
     const selectedReviews = reviewTemplates.slice(0, numReviews);
 
     return selectedReviews.map((template, index) => ({

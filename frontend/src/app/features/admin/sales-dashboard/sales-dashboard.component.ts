@@ -345,7 +345,7 @@ export class SalesDashboardComponent implements OnInit {
     switch (condition) {
       case 'new': return 'success';
       case 'used': return 'warn';
-      case 'refurbished': return 'info';
+      case 'open_box': return 'info';
       default: return 'secondary';
     }
   }

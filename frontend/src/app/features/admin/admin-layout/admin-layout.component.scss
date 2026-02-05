@@ -28,6 +28,22 @@
   position: relative;
 }
 
+/* Admin sidebar nav link hover */
+.admin-nav-link:hover {
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+:host-context(.dark-theme) .admin-nav-link:hover {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+/* Don't override active link styling on hover */
+.admin-nav-link.bg-primary:hover {
+  color: var(--primary-color-text, #ffffff);
+  background: var(--primary-color);
+}
+
 /* =====================================================
    F-025: Mobile-Optimized Interface Styles
    ===================================================== */

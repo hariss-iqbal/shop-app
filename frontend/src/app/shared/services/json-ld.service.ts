@@ -144,7 +144,7 @@ export class JsonLdService {
         return 'https://schema.org/NewCondition';
       case PhoneCondition.USED:
         return 'https://schema.org/UsedCondition';
-      case PhoneCondition.REFURBISHED:
+      case PhoneCondition.OPEN_BOX:
         return 'https://schema.org/RefurbishedCondition';
       default:
         return 'https://schema.org/UsedCondition';

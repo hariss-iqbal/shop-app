@@ -101,6 +101,33 @@ export class ImageOptimizationService {
     });
   }
 
+  getCardContainUrl(originalUrl: string): string {
+    if (!originalUrl) {
+      return originalUrl;
+    }
+
+    if (this.isCloudinaryUrl(originalUrl)) {
+      const publicId = this.cloudinary.getPublicIdFromUrl(originalUrl);
+      if (publicId) {
+        return this.cloudinary.getTransformedUrl(publicId, {
+          width: 300,
+          height: 200,
+          crop: 'fit',
+          quality: 80,
+          format: 'webp'
+        });
+      }
+    }
+
+    return this.getTransformedUrl(originalUrl, {
+      width: CARD_IMAGE_WIDTH,
+      height: CARD_IMAGE_HEIGHT,
+      resize: 'contain',
+      format: 'webp',
+      quality: 80
+    });
+  }
+
   getCardSrcSet(originalUrl: string): string {
     if (!originalUrl) {
       return '';

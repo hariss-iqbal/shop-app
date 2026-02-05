@@ -1,4 +1,4 @@
-import { ApplicationConfig, ErrorHandler, provideZoneChangeDetection, isDevMode } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, provideZoneChangeDetection, isDevMode, APP_INITIALIZER, inject } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
@@ -9,6 +9,7 @@ import Aura from '@primeuix/themes/aura';
 import { routes } from './app.routes';
 import { provideSupabase } from './core/providers/supabase.provider';
 import { GlobalErrorHandler } from './core/services/global-error-handler.service';
+import { ShopDetailsService } from './core/services/shop-details.service';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -29,6 +30,14 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([errorInterceptor])),
     provideSupabase(),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: () => {
+        const shopDetailsService = inject(ShopDetailsService);
+        return () => shopDetailsService.getShopDetails().catch(() => null);
+      },
+      multi: true
+    },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'

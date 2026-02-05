@@ -32,9 +32,10 @@ import { SeoService } from '../../../shared/services/seo.service';
 import { PhoneComparisonService } from '../../../shared/services/phone-comparison.service';
 import { PhoneCardKeyboardDirective } from '../../../shared/directives/phone-card-keyboard.directive';
 import { BlurUpImageDirective } from '../../../shared/directives/blur-up-image.directive';
+import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { Phone } from '../../../models/phone.model';
 import { Brand } from '../../../models/brand.model';
-import { PhoneStatus, PhoneCondition, PhoneConditionLabels } from '../../../enums';
+import { PhoneStatus, PhoneCondition, PhoneConditionLabels, PtaStatus, PtaStatusLabels } from '../../../enums';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
 
 type ViewMode = 'grid' | 'list';
@@ -71,7 +72,7 @@ interface StorageOption {
 }
 
 interface ActiveFilter {
-  type: 'brand' | 'condition' | 'storage' | 'price' | 'search';
+  type: 'brand' | 'condition' | 'storage' | 'price' | 'search' | 'pta';
   label: string;
   value: string | number | PhoneCondition;
 }
@@ -119,7 +120,8 @@ interface SectionOption {
     RatingModule,
     PhoneCardKeyboardDirective,
     BlurUpImageDirective,
-    AppCurrencyPipe
+    AppCurrencyPipe,
+    ProductCardComponent
   ],
   templateUrl: './catalog.component.html',
   styleUrls: ['./catalog.component.scss']
@@ -151,6 +153,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   selectedBrandId: string | null = null;
   selectedConditions: PhoneCondition[] = [];
   selectedStorageValues: number[] = [];
+  selectedPtaStatus: PtaStatus | null = null;
   priceRange: [number, number] = [0, 1000];
   selectedSort: SortOption;
   first = 0;
@@ -187,7 +190,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return this.sectionOptions.find(s => s.value === this.currentSection) || null;
   });
 
-  // Computed property to add extra display fields to phones - AC_REDESIGN_001
+  // Computed extras for list view (grid view uses ProductCardComponent)
   phonesWithExtras = computed((): PhoneWithExtras[] => {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -195,38 +198,24 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return this.phones().map((phone, index) => {
       const createdAt = new Date(phone.createdAt);
       const isNewArrival = createdAt >= sevenDaysAgo;
-
-      // Simulate discount based on profit margin (phones with high margin are "discounts")
       const hasDiscount = phone.profitMargin >= 20;
       const discountPercent = hasDiscount ? Math.round(phone.profitMargin) : 0;
-
-      // Calculate original price from selling price and profit margin if there's a "discount"
       const originalPrice = hasDiscount
         ? Math.round(phone.sellingPrice * (1 + discountPercent / 100))
         : null;
 
-      // Simulate rating based on condition (new = 5, refurbished = 4, used = 3-4)
       let rating = 4;
       if (phone.condition === PhoneCondition.NEW) {
         rating = 5;
-      } else if (phone.condition === PhoneCondition.REFURBISHED) {
+      } else if (phone.condition === PhoneCondition.OPEN_BOX) {
         rating = 4;
       } else {
         rating = phone.batteryHealth ? Math.min(5, Math.max(3, Math.round(phone.batteryHealth / 25))) : 3;
       }
 
-      // Top sellers: index-based simulation (every 3rd item in first 12)
       const isTopSeller = !isNewArrival && !hasDiscount && index < 12 && index % 3 === 0;
 
-      return {
-        ...phone,
-        isNewArrival,
-        isTopSeller,
-        hasDiscount,
-        discountPercent,
-        originalPrice,
-        rating
-      };
+      return { ...phone, isNewArrival, isTopSeller, hasDiscount, discountPercent, originalPrice, rating };
     });
   });
 
@@ -247,7 +236,13 @@ export class CatalogComponent implements OnInit, OnDestroy {
   conditionOptions: ConditionOption[] = [
     { label: PhoneConditionLabels[PhoneCondition.NEW], value: PhoneCondition.NEW },
     { label: PhoneConditionLabels[PhoneCondition.USED], value: PhoneCondition.USED },
-    { label: PhoneConditionLabels[PhoneCondition.REFURBISHED], value: PhoneCondition.REFURBISHED }
+    { label: PhoneConditionLabels[PhoneCondition.OPEN_BOX], value: PhoneCondition.OPEN_BOX }
+  ];
+
+  ptaStatusOptions = [
+    { label: 'All', value: null },
+    { label: PtaStatusLabels[PtaStatus.PTA_APPROVED], value: PtaStatus.PTA_APPROVED },
+    { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
   ];
 
   brandOptions = computed(() => {
@@ -305,6 +300,14 @@ export class CatalogComponent implements OnInit, OnDestroy {
       });
     }
 
+    if (this.selectedPtaStatus) {
+      filters.push({
+        type: 'pta',
+        label: `PTA: ${PtaStatusLabels[this.selectedPtaStatus]}`,
+        value: this.selectedPtaStatus
+      });
+    }
+
     const min = this.priceMin();
     const max = this.priceMax();
     if (this.priceRange[0] > min || this.priceRange[1] < max) {
@@ -325,7 +328,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.seoService.updateMetaTags({
       title: 'Phone Catalog',
-      description: 'Browse our wide selection of new, used, and refurbished phones at competitive prices. Filter by brand, condition, storage, and price range.',
+      description: 'Browse our wide selection of new, used, and open box phones at competitive prices. Filter by brand, condition, storage, and price range.',
       url: '/catalog'
     });
     this.setupSearchDebounce();
@@ -413,6 +416,15 @@ export class CatalogComponent implements OnInit, OnDestroy {
       this.selectedStorageValues = [];
     }
 
+    if (params['pta']) {
+      const pta = params['pta'] as PtaStatus;
+      if (Object.values(PtaStatus).includes(pta)) {
+        this.selectedPtaStatus = pta;
+      }
+    } else {
+      this.selectedPtaStatus = null;
+    }
+
     const min = this.priceMin();
     const max = this.priceMax();
 
@@ -470,6 +482,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     params['storage'] = this.selectedStorageValues.length > 0
       ? this.selectedStorageValues.join(',')
       : null;
+    params['pta'] = this.selectedPtaStatus || null;
 
     const min = this.priceMin();
     const max = this.priceMax();
@@ -562,7 +575,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
           storageGbOptions: this.selectedStorageValues.length > 0 ? this.selectedStorageValues : undefined,
           minPrice: hasPriceFilter ? this.priceRange[0] : undefined,
           maxPrice: hasPriceFilter ? this.priceRange[1] : undefined,
-          search: this.searchQuery || undefined
+          search: this.searchQuery || undefined,
+          ptaStatus: this.selectedPtaStatus || undefined
         }
       );
 
@@ -608,6 +622,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
       this.selectedBrandId ||
       this.selectedConditions.length > 0 ||
       this.selectedStorageValues.length > 0 ||
+      this.selectedPtaStatus ||
       this.priceRange[0] > min ||
       this.priceRange[1] < max
     );
@@ -618,6 +633,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.selectedBrandId = null;
     this.selectedConditions = [];
     this.selectedStorageValues = [];
+    this.selectedPtaStatus = null;
     this.priceRange = [this.priceMin(), this.priceMax()];
     this.first = 0;
     this.updateUrlParams();
@@ -640,6 +656,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
         break;
       case 'price':
         this.priceRange = [this.priceMin(), this.priceMax()];
+        break;
+      case 'pta':
+        this.selectedPtaStatus = null;
         break;
     }
 
@@ -698,6 +717,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
     }
   }
 
+  onCompareToggled(event: { phone: Phone; result: 'added' | 'removed' | 'full' }): void {
+    if (event.result === 'full') {
+      this.toastService.warn('Comparison Limit', 'You can compare up to 3 phones at a time. Remove a phone to add another.');
+    }
+  }
+
   removeFromCompare(phoneId: string): void {
     this.comparisonService.remove(phoneId);
   }
@@ -713,10 +738,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   getCardOptimizedUrl(url: string): string {
     return this.imageOptimization.getCardImageUrl(url);
-  }
-
-  getCardSrcSet(url: string): string {
-    return this.imageOptimization.getCardSrcSet(url);
   }
 
   getListOptimizedUrl(url: string): string {
@@ -735,7 +756,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     switch (condition) {
       case PhoneCondition.NEW:
         return 'success';
-      case PhoneCondition.REFURBISHED:
+      case PhoneCondition.OPEN_BOX:
         return 'info';
       case PhoneCondition.USED:
         return 'warn';

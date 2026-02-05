@@ -276,6 +276,12 @@ export const routes: Routes = [
         path: 'sync-status',
         loadComponent: () => import('./features/admin/sync-status/sync-status-page.component')
           .then(m => m.SyncStatusPageComponent)
+      },
+      {
+        path: 'shop-details',
+        loadComponent: () => import('./features/admin/shop-details/shop-details-form.component')
+          .then(m => m.ShopDetailsFormComponent),
+        canActivate: [dashboardGuard]
       }
     ]
   },

@@ -107,7 +107,7 @@ export class LocationInventoryComponent implements OnInit {
   getConditionSeverity(condition: string | undefined): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     switch (condition) {
       case 'new': return 'success';
-      case 'refurbished': return 'info';
+      case 'open_box': return 'info';
       case 'used': return 'warn';
       default: return 'secondary';
     }

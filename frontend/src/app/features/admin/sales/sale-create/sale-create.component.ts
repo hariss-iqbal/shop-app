@@ -17,6 +17,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { DialogModule } from 'primeng/dialog';
 
 import { PhoneService } from '../../../../core/services/phone.service';
 import { SaleService } from '../../../../core/services/sale.service';
@@ -76,6 +77,7 @@ import { CustomerFormDialogComponent } from '../../customers/customer-form-dialo
     SkeletonModule,
     MessageModule,
     ProgressSpinnerModule,
+    DialogModule,
     CurrencyPipe,
     PrintReceiptDialogComponent,
     PaymentMethodSelectorComponent,
@@ -141,6 +143,11 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
   // Receipt dialog
   showReceiptDialog = false;
   completedReceiptData: ReceiptData | null = null;
+
+  // Previous sales dialog state
+  showPreviousSalesDialog = false;
+  customerPreviousSales: any[] = [];
+  loadingPreviousSales = false;
 
   // Customer lookup state (F-019)
   customerLookupLoading = false;
@@ -354,6 +361,8 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         supplierName: null,
         notes: null,
         primaryImageUrl: null,
+        conditionRating: phone.conditionRating ?? phone.condition_rating ?? null,
+        ptaStatus: phone.ptaStatus ?? phone.pta_status ?? null,
         createdAt: phone.createdAt ?? phone.created_at ?? new Date().toISOString(),
         updatedAt: null
       };
@@ -651,28 +660,36 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Build receipt data with payment and discount information (F-023)
+      // Build receipt data with sequential receipt number (F-011)
       const paymentSummary = this.paymentService.toPaymentSummary(this.payments);
-      const receiptDiscountInfo = this.appliedDiscount ? {
-        discountType: this.appliedDiscount.discountType,
-        discountValue: this.appliedDiscount.discountValue,
-        discountAmount: this.appliedDiscount.discountAmount,
-        couponCode: this.appliedDiscount.couponCode
-      } : null;
 
-      // Build loyalty info for receipt (F-022)
-      const loyaltyPointsInfo = await this.getLoyaltyInfoForReceipt(this.loyaltyRedemption);
-
-      const receiptData = this.receiptService.buildReceiptDataFromCart(
+      const { receiptData } = await this.receiptService.buildReceiptDataFromCartAsync(
         this.cartItems,
         summary,
         sanitizedCustomerInfo,
         this.saleDate,
         sanitizedNotes,
-        paymentSummary,
-        receiptDiscountInfo,
-        loyaltyPointsInfo
+        'DEFAULT',
+        paymentSummary
       );
+
+      // Apply discount info to receipt data (F-023)
+      if (this.appliedDiscount) {
+        receiptData.discount = {
+          discountType: this.appliedDiscount.discountType,
+          discountValue: this.appliedDiscount.discountValue,
+          discountAmount: this.appliedDiscount.discountAmount,
+          couponCode: this.appliedDiscount.couponCode
+        };
+        receiptData.originalTotal = summary.grandTotal;
+        receiptData.finalTotal = summary.finalTotal;
+      }
+
+      // Apply loyalty info to receipt data (F-022)
+      const loyaltyPointsInfo = await this.getLoyaltyInfoForReceipt(this.loyaltyRedemption);
+      if (loyaltyPointsInfo) {
+        receiptData.loyalty = loyaltyPointsInfo;
+      }
 
       const saleIds = result.sales?.map(sale => sale.id) || [];
       try {
@@ -836,6 +853,26 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     }
 
     this.toastService.success('Customer Created', `${customer.name} has been added`);
+  }
+
+  /**
+   * Load previous sales for the current customer
+   */
+  async loadPreviousSales(): Promise<void> {
+    if (!this.customerInfo.phone || this.customerInfo.phone.length < 5) return;
+
+    this.loadingPreviousSales = true;
+    this.showPreviousSalesDialog = true;
+
+    try {
+      const history = await this.saleService.getCustomerHistory(this.customerInfo.phone);
+      this.customerPreviousSales = history?.transactions || [];
+    } catch (error) {
+      console.error('Failed to load previous sales:', error);
+      this.customerPreviousSales = [];
+    } finally {
+      this.loadingPreviousSales = false;
+    }
   }
 
   /**

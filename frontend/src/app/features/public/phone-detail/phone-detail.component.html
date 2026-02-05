@@ -54,53 +54,108 @@
   } @else if (phone()) {
     <!-- Phone Detail Content - AC_REDESIGN_001: Redesigned layout -->
     <div class="grid">
-      <!-- Image Gallery Section - Larger images -->
+      <!-- Image Gallery Section -->
       <article class="col-12 lg:col-7 xl:col-7" aria-label="Phone images">
-        @if (galleriaImages().length > 0) {
+        @if (galleriaImages.length > 0) {
           <div class="gallery-container surface-card border-round-xl p-3 shadow-1">
-            <p-galleria
-              [value]="galleriaImages()"
-              [showThumbnails]="galleriaImages().length > 1"
-              [showIndicators]="galleriaImages().length > 1"
-              [showItemNavigators]="galleriaImages().length > 1"
-              [numVisible]="4"
-              [circular]="true"
-              [responsiveOptions]="galleriaResponsiveOptions"
-              [containerStyle]="{ 'max-width': '100%' }"
-              thumbnailsPosition="bottom"
+            <!-- Main Image -->
+            <div
+              class="gallery-main-image-wrapper border-round-lg overflow-hidden"
+              style="height: 500px; background: linear-gradient(135deg, var(--surface-50) 0%, var(--surface-100) 100%);"
+              (touchstart)="onTouchStart($event)"
+              (touchend)="onTouchEnd($event)"
             >
-              <ng-template pTemplate="item" let-item>
-                <div class="gallery-main-image w-full border-round-lg overflow-hidden" style="height: 500px; background: linear-gradient(135deg, var(--surface-50) 0%, var(--surface-100) 100%);">
-                  <img
-                    [src]="item.itemImageSrc"
-                    [srcset]="item.itemSrcSet"
-                    sizes="(max-width: 1024px) 100vw, 60vw"
-                    [alt]="item.alt"
-                    width="800"
-                    height="500"
-                    [loading]="item.isPrimary ? 'eager' : 'lazy'"
-                    [appBlurUpImage]="item.originalUrl"
-                    [blurUpDisabled]="item.isPrimary"
-                    class="w-full h-full border-round-lg"
-                    style="object-fit: contain;"
-                  />
+              @if (currentImage) {
+                <img
+                  [src]="currentImage.itemImageSrc"
+                  [srcset]="currentImage.itemSrcSet"
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  [alt]="currentImage.alt"
+                  width="800"
+                  height="500"
+                  class="w-full h-full border-round-lg"
+                  style="object-fit: contain; user-select: none;"
+                  draggable="false"
+                />
+              }
+              <!-- Navigation Arrows -->
+              @if (galleriaImages.length > 1) {
+                <button class="gallery-nav gallery-nav-prev" (click)="prevImage()" aria-label="Previous image">
+                  <i class="pi pi-chevron-left"></i>
+                </button>
+                <button class="gallery-nav gallery-nav-next" (click)="nextImage()" aria-label="Next image">
+                  <i class="pi pi-chevron-right"></i>
+                </button>
+              }
+              <!-- Image Counter -->
+              @if (galleriaImages.length > 1) {
+                <span class="gallery-counter">{{ imageCounter }}</span>
+              }
+              <!-- Fullscreen Button -->
+              <button class="gallery-fullscreen-btn" (click)="openFullscreen()" aria-label="View fullscreen">
+                <i class="pi pi-expand"></i>
+              </button>
+            </div>
+
+            <!-- Indicators -->
+            @if (galleriaImages.length > 1) {
+              <div class="flex justify-content-center gap-2 mt-3">
+                @for (img of galleriaImages; track img.originalUrl; let i = $index) {
+                  <button
+                    class="gallery-indicator"
+                    [class.gallery-indicator-active]="i === activeIndex"
+                    (click)="selectImage(i)"
+                    [attr.aria-label]="'Go to image ' + (i + 1)"
+                  ></button>
+                }
+              </div>
+            }
+
+            <!-- Thumbnails -->
+            @if (galleriaImages.length > 1) {
+              <div class="flex align-items-center gap-2 mt-3">
+                @if (galleriaImages.length > THUMBS_VISIBLE) {
+                  <button
+                    class="gallery-thumb-nav"
+                    [disabled]="!canScrollThumbsLeft"
+                    (click)="scrollThumbsLeft()"
+                    aria-label="Scroll thumbnails left"
+                  >
+                    <i class="pi pi-chevron-left"></i>
+                  </button>
+                }
+                <div class="flex gap-2 flex-grow-1 justify-content-center">
+                  @for (thumb of visibleThumbnails; track thumb.originalUrl; let i = $index) {
+                    <div
+                      class="gallery-thumbnail border-round overflow-hidden cursor-pointer"
+                      [class.gallery-thumbnail-active]="(thumbnailStart + i) === activeIndex"
+                      (click)="selectImage(thumbnailStart + i)"
+                      style="width: 100px; height: 75px; background: var(--surface-100);"
+                    >
+                      <img
+                        [src]="thumb.thumbnailImageSrc"
+                        [alt]="thumb.alt"
+                        width="100"
+                        height="75"
+                        loading="lazy"
+                        class="w-full h-full border-round"
+                        style="object-fit: cover;"
+                      />
+                    </div>
+                  }
                 </div>
-              </ng-template>
-              <ng-template pTemplate="thumbnail" let-item>
-                <div class="gallery-thumbnail border-round overflow-hidden cursor-pointer" style="width: 100px; height: 75px; background: var(--surface-100);">
-                  <img
-                    [src]="item.thumbnailImageSrc"
-                    [alt]="item.alt"
-                    width="100"
-                    height="75"
-                    loading="lazy"
-                    [appBlurUpImage]="item.originalUrl"
-                    class="w-full h-full border-round"
-                    style="object-fit: cover;"
-                  />
-                </div>
-              </ng-template>
-            </p-galleria>
+                @if (galleriaImages.length > THUMBS_VISIBLE) {
+                  <button
+                    class="gallery-thumb-nav"
+                    [disabled]="!canScrollThumbsRight"
+                    (click)="scrollThumbsRight()"
+                    aria-label="Scroll thumbnails right"
+                  >
+                    <i class="pi pi-chevron-right"></i>
+                  </button>
+                }
+              </div>
+            }
           </div>
         } @else {
           <div
@@ -198,9 +253,20 @@
               <i class="pi pi-check-circle" aria-hidden="true"></i>
               {{ getConditionLabel(phone()!.condition) }}
             </span>
+            @if (phone()!.ptaStatus) {
+              <span class="surface-100 px-3 py-2 border-round-lg text-sm font-medium flex align-items-center gap-2">
+                @if (phone()!.ptaStatus === 'pta_approved') {
+                  <i class="pi pi-verified text-primary" aria-hidden="true"></i>
+                  PTA Approved
+                } @else {
+                  <i class="pi pi-mobile text-primary" aria-hidden="true"></i>
+                  Non PTA
+                }
+              </span>
+            }
           </div>
 
-          <!-- Battery Health (only for used/refurbished) -->
+          <!-- Battery Health (only for used/open box) -->
           @if (showBatteryHealth()) {
             <div class="battery-section surface-50 border-round-lg p-4 mb-4" role="group" aria-label="Battery health information">
               <div class="flex align-items-center justify-content-between mb-3">
@@ -311,6 +377,23 @@
                 <p-tag [value]="getConditionLabel(phone()!.condition)" [severity]="getConditionSeverity(phone()!.condition)" />
               </dd>
             </div>
+            @if (phone()!.conditionRating) {
+              <div class="col-12 md:col-6 flex justify-content-between py-3 border-bottom-1 surface-border">
+                <dt class="text-600">Condition Rating</dt>
+                <dd class="text-900 font-bold m-0">{{ phone()!.conditionRating }}/10</dd>
+              </div>
+            }
+            @if (phone()!.ptaStatus) {
+              <div class="col-12 md:col-6 flex justify-content-between py-3 border-bottom-1 surface-border">
+                <dt class="text-600">PTA Status</dt>
+                <dd class="m-0">
+                  <p-tag
+                    [value]="phone()!.ptaStatus === 'pta_approved' ? 'PTA Approved' : 'Non PTA'"
+                    [severity]="phone()!.ptaStatus === 'pta_approved' ? 'success' : 'warn'"
+                  />
+                </dd>
+              </div>
+            }
             @if (showBatteryHealth()) {
               <div class="col-12 md:col-6 flex justify-content-between py-3 border-bottom-1 surface-border">
                 <dt class="text-600">Battery Health</dt>
@@ -452,6 +535,61 @@
           (onClick)="openWhatsAppInquiry()"
           ariaLabel="Inquire via WhatsApp"
         />
+      </div>
+    </div>
+  }
+
+  <!-- Fullscreen Overlay -->
+  @if (fullscreen && currentImage) {
+    <div class="gallery-fullscreen-overlay" (click)="closeFullscreen()">
+      <div class="gallery-fullscreen-content" (click)="$event.stopPropagation()">
+        <!-- Close button -->
+        <button class="gallery-fs-close" (click)="closeFullscreen()" aria-label="Close fullscreen">
+          <i class="pi pi-times"></i>
+        </button>
+        <!-- Counter -->
+        <span class="gallery-fs-counter">{{ imageCounter }}</span>
+        <!-- Image -->
+        <div
+          class="gallery-fs-image-wrapper"
+          (touchstart)="onTouchStart($event)"
+          (touchend)="onTouchEnd($event)"
+        >
+          <img
+            [src]="currentImage.itemImageSrc"
+            [srcset]="currentImage.itemSrcSet"
+            [alt]="currentImage.alt"
+            class="gallery-fs-image"
+            draggable="false"
+          />
+        </div>
+        <!-- Navigation -->
+        @if (galleriaImages.length > 1) {
+          <button class="gallery-fs-nav gallery-fs-nav-prev" (click)="prevImage()" aria-label="Previous image">
+            <i class="pi pi-chevron-left"></i>
+          </button>
+          <button class="gallery-fs-nav gallery-fs-nav-next" (click)="nextImage()" aria-label="Next image">
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        }
+        <!-- Thumbnails -->
+        @if (galleriaImages.length > 1) {
+          <div class="gallery-fs-thumbs">
+            @for (img of galleriaImages; track img.originalUrl; let i = $index) {
+              <div
+                class="gallery-fs-thumb"
+                [class.gallery-fs-thumb-active]="i === activeIndex"
+                (click)="selectImage(i)"
+              >
+                <img
+                  [src]="img.thumbnailImageSrc"
+                  [alt]="img.alt"
+                  draggable="false"
+                />
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
   }

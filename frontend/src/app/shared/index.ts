@@ -29,3 +29,4 @@ export * from './components/location-selector/location-selector.component';
 export * from './components/barcode-scanner/barcode-scanner.component';
 export * from './components/mobile-bottom-nav/mobile-bottom-nav.component';
 export * from './components/mobile-quick-actions/mobile-quick-actions.component';
+export * from './components/product-card/product-card.component';

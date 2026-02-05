@@ -10,3 +10,4 @@ export * from './loyalty-transaction-type.enum';
 export * from './discount-type.enum';
 export * from './coupon-status.enum';
 export * from './inventory-transfer-status.enum';
+export * from './pta-status.enum';

@@ -132,6 +132,7 @@ export interface FormatPatternPlaceholdersResponse {
  * Default date format options
  */
 export const DATE_FORMAT_OPTIONS: DateFormatOption[] = [
+  { value: 'DDMMYYYY', label: 'DDMMYYYY', example: '05022026' },
   { value: 'YY-MM', label: 'YY-MM', example: '26-01' },
   { value: 'YYYY-MM', label: 'YYYY-MM', example: '2026-01' },
   { value: 'YY-MM-DD', label: 'YY-MM-DD', example: '26-01-30' },
@@ -155,6 +156,7 @@ export const FORMAT_PATTERN_PLACEHOLDERS: FormatPatternPlaceholder[] = [
  * Predefined format pattern templates
  */
 export const FORMAT_PATTERN_TEMPLATES = [
+  { name: 'Daily (Default)', pattern: '{DATE}{SEP}{SEQ}', example: '05022026-03' },
   { name: 'Standard', pattern: '{PREFIX}{SEP}{DATE}{SEP}{SEQ}', example: 'RCP-26-01-0001' },
   { name: 'Simple', pattern: '{PREFIX}{SEQ}', example: 'RCP0001' },
   { name: 'With Register', pattern: '{DATE}{SEP}{REGISTER}{SEP}{SEQ}', example: '26-01-A-0001' },

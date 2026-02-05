@@ -4,11 +4,11 @@
 export enum PhoneCondition {
   NEW = 'new',
   USED = 'used',
-  REFURBISHED = 'refurbished'
+  OPEN_BOX = 'open_box'
 }
 
 export const PhoneConditionLabels: Record<PhoneCondition, string> = {
   [PhoneCondition.NEW]: 'New',
   [PhoneCondition.USED]: 'Used',
-  [PhoneCondition.REFURBISHED]: 'Refurbished'
+  [PhoneCondition.OPEN_BOX]: 'Open Box'
 };

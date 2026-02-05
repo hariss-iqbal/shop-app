@@ -15,35 +15,37 @@
     <div class="grid">
       <!-- Phone Card -->
       <div class="col-12 md:col-6 lg:col-3">
-        <a [href]="'tel:' + businessInfo.phoneLink"
+        <a [href]="'tel:' + phoneLink()"
            class="quick-contact-card"
-           [attr.aria-label]="'Call us at ' + businessInfo.phoneDisplay">
+           [attr.aria-label]="'Call us at ' + phoneDisplay()">
           <div class="quick-contact-icon phone-icon">
             <i class="pi pi-phone" aria-hidden="true"></i>
           </div>
           <h3 class="quick-contact-title">Call Us</h3>
-          <span class="quick-contact-value">{{ businessInfo.phoneDisplay }}</span>
+          <span class="quick-contact-value">{{ phoneDisplay() }}</span>
           <span class="quick-contact-action">Tap to call</span>
         </a>
       </div>
 
       <!-- Email Card -->
-      <div class="col-12 md:col-6 lg:col-3">
-        <a [href]="'mailto:' + businessInfo.email"
-           class="quick-contact-card"
-           [attr.aria-label]="'Email us at ' + businessInfo.email">
-          <div class="quick-contact-icon email-icon">
-            <i class="pi pi-envelope" aria-hidden="true"></i>
-          </div>
-          <h3 class="quick-contact-title">Email Us</h3>
-          <span class="quick-contact-value">{{ businessInfo.email }}</span>
-          <span class="quick-contact-action">Send an email</span>
-        </a>
-      </div>
+      @if (hasEmail()) {
+        <div class="col-12 md:col-6 lg:col-3">
+          <a [href]="'mailto:' + emailAddress()"
+             class="quick-contact-card"
+             [attr.aria-label]="'Email us at ' + emailAddress()">
+            <div class="quick-contact-icon email-icon">
+              <i class="pi pi-envelope" aria-hidden="true"></i>
+            </div>
+            <h3 class="quick-contact-title">Email Us</h3>
+            <span class="quick-contact-value">{{ emailAddress() }}</span>
+            <span class="quick-contact-action">Send an email</span>
+          </a>
+        </div>
+      }
 
       <!-- WhatsApp Card -->
       <div class="col-12 md:col-6 lg:col-3">
-        <a [href]="whatsappUrl"
+        <a [href]="whatsappUrl()"
            target="_blank"
            rel="noopener noreferrer"
            class="quick-contact-card"
@@ -64,8 +66,8 @@
             <i class="pi pi-clock" aria-hidden="true"></i>
           </div>
           <h3 class="quick-contact-title">Business Hours</h3>
-          <span class="quick-contact-value">{{ businessInfo.hours.weekdays }}</span>
-          <span class="quick-contact-action">{{ businessInfo.hours.weekend }}</span>
+          <span class="quick-contact-value">{{ businessHoursWeekday() }}</span>
+          <span class="quick-contact-action">{{ businessHoursWeekend() }}</span>
         </div>
       </div>
     </div>
@@ -312,7 +314,7 @@
             <i class="pi pi-building" aria-hidden="true"></i>
             <div>
               <span class="address-label">Store Address</span>
-              <address class="address-text">{{ businessInfo.address }}</address>
+              <address class="address-text">{{ businessAddress() }}</address>
             </div>
           </div>
 
@@ -324,8 +326,8 @@
                     <i class="pi pi-map" aria-hidden="true"></i>
                   </div>
                   <span class="map-fallback-text">Map unavailable</span>
-                  <address class="map-fallback-address">{{ businessInfo.address }}</address>
-                  <a [href]="businessInfo.mapSearchUrl"
+                  <address class="map-fallback-address">{{ businessAddress() }}</address>
+                  <a [href]="mapSearchUrlComputed()"
                      target="_blank"
                      rel="noopener noreferrer"
                      class="map-fallback-link"
@@ -349,13 +351,13 @@
                 @if (mapVisible()) {
                   <iframe
                     #mapIframe
-                    [src]="mapEmbedUrl"
+                    [src]="mapEmbedUrl()"
                     class="map-iframe"
                     [class.map-iframe-hidden]="mapLoading()"
                     allowfullscreen=""
                     loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade"
-                    title="Phone Shop location on Google Maps"
+                    title="Spring Mobiles location on Google Maps"
                     (load)="onMapLoad()"
                     (error)="onMapLoadError()"
                   ></iframe>
@@ -364,7 +366,7 @@
             }
           </div>
 
-          <a [href]="businessInfo.mapSearchUrl"
+          <a [href]="mapSearchUrlComputed()"
              target="_blank"
              rel="noopener noreferrer"
              class="directions-button"

@@ -1,4 +1,4 @@
-import { Component, inject, signal, HostListener, PLATFORM_ID } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,8 @@ import { SkipLinkComponent } from '../../../shared/components/skip-link.componen
 import { BackToTopComponent } from '../../../shared/components/back-to-top.component';
 import { ThemeService } from '../../../shared';
 import { PhoneComparisonService } from '../../../shared/services/phone-comparison.service';
+import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-public-layout',
@@ -41,10 +43,25 @@ export class PublicLayoutComponent {
 
   themeService = inject(ThemeService);
   comparisonService = inject(PhoneComparisonService);
+  shopDetailsService = inject(ShopDetailsService);
+
   currentYear = new Date().getFullYear();
   mobileMenuOpen = signal(false);
   mobileSearchOpen = signal(false);
   searchQuery = '';
+
+  shopName = computed(() => this.shopDetailsService.cachedDetails()?.shopName ?? environment.businessInfo.name);
+  phoneDisplay = computed(() => this.shopDetailsService.cachedDetails()?.phoneDisplay ?? environment.businessInfo.phoneDisplay);
+  phoneLink = computed(() => this.shopDetailsService.cachedDetails()?.phoneLink ?? environment.businessInfo.phoneLink);
+  email = computed(() => this.shopDetailsService.cachedDetails()?.email ?? environment.businessInfo.email);
+  whatsappNumber = computed(() => this.shopDetailsService.cachedDetails()?.whatsappNumber ?? environment.whatsapp.phoneNumber);
+  address = computed(() => this.shopDetailsService.cachedDetails()?.address ?? environment.businessInfo.address);
+  weekdayHours = computed(() => this.shopDetailsService.cachedDetails()?.weekdayHours ?? environment.businessInfo.hours.weekdays);
+  facebookUrl = computed(() => this.shopDetailsService.cachedDetails()?.facebookUrl ?? '#');
+  instagramUrl = computed(() => this.shopDetailsService.cachedDetails()?.instagramUrl ?? '#');
+  twitterUrl = computed(() => this.shopDetailsService.cachedDetails()?.twitterUrl ?? '#');
+
+  hasEmail = computed(() => !!this.shopDetailsService.cachedDetails()?.email);
 
   get mobileMenuVisible(): boolean {
     return this.mobileMenuOpen();

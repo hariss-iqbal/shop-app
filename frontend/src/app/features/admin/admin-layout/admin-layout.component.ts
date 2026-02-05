@@ -88,7 +88,8 @@ export class AdminLayoutComponent implements OnInit, OnDestroy {
     { label: 'User Management', icon: 'pi pi-users', route: '/admin/users', permission: 'canManageUsers' },
     { label: 'Audit Logs', icon: 'pi pi-history', route: '/admin/audit-logs', permission: 'canAccessAuditLogs' },
     { label: 'Loyalty Program', icon: 'pi pi-gift', route: '/admin/loyalty', permission: 'canAccessSales' },
-    { label: 'Coupons', icon: 'pi pi-ticket', route: '/admin/coupons', permission: 'canAccessSales' }
+    { label: 'Coupons', icon: 'pi pi-ticket', route: '/admin/coupons', permission: 'canAccessSales' },
+    { label: 'Shop Details', icon: 'pi pi-cog', route: '/admin/shop-details', permission: 'canAccessDashboard' }
   ];
 
   readonly navItems = computed(() => {

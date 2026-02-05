@@ -141,7 +141,7 @@
                       <p-inputNumber
                         [formControl]="getFormControl(formIdx, 'sellingPrice')"
                         mode="currency"
-                        currency="USD"
+                        currency="PKR"
                         locale="en-US"
                         [inputId]="'sellingPrice-' + formIdx"
                         styleClass="w-full"
@@ -205,7 +205,7 @@
                         <i
                           class="pi pi-info-circle ml-1"
                           [ngClass]="shouldShowBatteryHealth(formIdx) ? 'text-primary' : 'text-400'"
-                          pTooltip="Applicable for used/refurbished phones"
+                          pTooltip="Applicable for used/open box phones"
                         ></i>
                       </label>
                       <p-inputNumber

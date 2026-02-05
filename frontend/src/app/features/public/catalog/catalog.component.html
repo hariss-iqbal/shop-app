@@ -165,6 +165,23 @@
           />
         </div>
 
+        <!-- PTA Status Filter -->
+        <div class="col-12 md:col-6 lg:col-3">
+          <label for="ptaStatus" class="block font-medium mb-2">PTA Status</label>
+          <p-select
+            id="ptaStatus"
+            [(ngModel)]="selectedPtaStatus"
+            [options]="ptaStatusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All PTA Status"
+            styleClass="w-full"
+            [showClear]="true"
+            (onChange)="onFilterChange()"
+            ariaLabel="Filter by PTA status"
+          />
+        </div>
+
         <!-- Sort -->
         <div class="col-12 md:col-6 lg:col-3">
           <label for="sort" class="block font-medium mb-2">Sort By</label>
@@ -315,139 +332,22 @@
         {{ totalRecords() }} phones found
       </div>
 
-      <!-- Grid View - AC_REDESIGN_001 & AC_REDESIGN_003 -->
+      <!-- Grid View -->
       @if (viewMode === 'grid') {
         <div class="catalog-grid fadein animation-duration-300" role="list" aria-label="Phone catalog grid">
-          @for (phone of phonesWithExtras(); track phone.id) {
+          @for (phone of phones(); track phone.id) {
             <div role="listitem"
                  tabindex="0"
                  class="phone-card-focusable"
                  [attr.aria-label]="phone.brandName + ' ' + phone.model + ', ' + getConditionLabel(phone.condition) + ', ' + (phone.sellingPrice | appCurrency) + '. Press Enter to view details.'"
                  appPhoneCardKeyboard
-                 (cardActivated)="viewPhone(phone)"
-                 (click)="viewPhone(phone)">
-              <div class="surface-card border-round-xl h-full cursor-pointer p-3 hover:surface-ground transition-all">
-                <div class="relative mb-3 overflow-hidden border-round-lg" style="height: 200px; background: var(--p-surface-100);">
-                  <!-- Sale/New Arrival/Top Seller Badge - AC_REDESIGN_001 -->
-                  @if (phone.hasDiscount && phone.discountPercent >= 15) {
-                    <span class="sale-badge">
-                      <i class="pi pi-tag mr-1"></i>{{ phone.discountPercent }}% OFF
-                    </span>
-                  } @else if (phone.isNewArrival) {
-                    <span class="new-arrival-badge">
-                      <i class="pi pi-sparkles mr-1"></i>NEW
-                    </span>
-                  } @else if (phone.isTopSeller) {
-                    <span class="top-seller-badge">
-                      <i class="pi pi-star-fill mr-1"></i>TOP
-                    </span>
-                  }
-
-                  @if (phone.primaryImageUrl) {
-                    <img
-                      [src]="getCardOptimizedUrl(phone.primaryImageUrl)"
-                      [srcset]="getCardSrcSet(phone.primaryImageUrl)"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      [alt]="phone.brandName + ' ' + phone.model"
-                      width="300"
-                      height="200"
-                      [loading]="$index < 4 ? 'eager' : 'lazy'"
-                      [appBlurUpImage]="phone.primaryImageUrl"
-                      [blurUpDisabled]="$index < 4"
-                      class="w-full h-full"
-                      style="object-fit: cover;"
-                      (error)="onImageError($event)"
-                    />
-                  } @else {
-                    <div class="w-full h-full flex flex-column align-items-center justify-content-center surface-100">
-                      <i class="pi pi-image text-4xl text-400 mb-2" aria-hidden="true"></i>
-                      <span class="text-400 text-xs">No image available</span>
-                    </div>
-                  }
-
-                  <!-- Condition Tag -->
-                  <p-tag
-                    [value]="getConditionLabel(phone.condition)"
-                    [severity]="getConditionSeverity(phone.condition)"
-                    styleClass="absolute"
-                    [style]="{ bottom: '10px', right: '10px' }"
-                  />
-
-                  <!-- Quick Action Overlay -->
-                  <div class="quick-action-overlay flex justify-content-center gap-2">
-                    <p-button
-                      icon="pi pi-eye"
-                      [rounded]="true"
-                      severity="contrast"
-                      pTooltip="Quick View"
-                      tooltipPosition="top"
-                      (onClick)="viewPhone(phone); $event.stopPropagation()"
-                      tabindex="-1"
-                    />
-                    <p-button
-                      [icon]="isPhoneSelected(phone.id) ? 'pi pi-check' : 'pi pi-clone'"
-                      [rounded]="true"
-                      [severity]="isPhoneSelected(phone.id) ? 'success' : 'contrast'"
-                      [pTooltip]="isPhoneSelected(phone.id) ? 'In comparison' : 'Add to compare'"
-                      tooltipPosition="top"
-                      (onClick)="toggleCompare($event, phone)"
-                      tabindex="-1"
-                    />
-                  </div>
-                </div>
-
-                <!-- Brand & Model -->
-                <div class="flex align-items-center gap-2 mb-2">
-                  @if (phone.brandLogoUrl) {
-                    <img [src]="phone.brandLogoUrl" [alt]="phone.brandName" style="width: 20px; height: 20px; object-fit: contain;" (error)="onImageError($event)" />
-                  }
-                  <span class="text-500 text-sm font-medium">{{ phone.brandName }}</span>
-                </div>
-
-                <h3 class="text-lg font-bold m-0 mb-2 white-space-nowrap overflow-hidden text-overflow-ellipsis text-900">
-                  {{ phone.model }}
-                </h3>
-
-                <!-- Rating Stars - AC_REDESIGN_001 -->
-                <div class="flex align-items-center gap-2 mb-2 rating-stars">
-                  <p-rating
-                    [ngModel]="phone.rating"
-                    [readonly]="true"
-                    [stars]="5"
-                  />
-                  <span class="text-500 text-xs">({{ phone.rating }}.0)</span>
-                </div>
-
-                <!-- Specs -->
-                <div class="flex align-items-center gap-2 text-500 text-sm mb-3">
-                  @if (phone.storageGb) {
-                    <span class="surface-100 px-2 py-1 border-round text-xs font-medium">{{ phone.storageGb }}GB</span>
-                  }
-                  @if (phone.color) {
-                    <span class="surface-100 px-2 py-1 border-round text-xs font-medium">{{ phone.color }}</span>
-                  }
-                </div>
-
-                <!-- Price with Discount Strikethrough - AC_REDESIGN_001 -->
-                <div class="flex align-items-center justify-content-between mt-auto">
-                  <div class="flex flex-column">
-                    @if (phone.hasDiscount && phone.originalPrice) {
-                      <span class="original-price">{{ phone.originalPrice | appCurrency }}</span>
-                    }
-                    <span class="text-xl font-bold" [class.discount-price]="phone.hasDiscount" [class.text-primary]="!phone.hasDiscount">
-                      {{ phone.sellingPrice | appCurrency }}
-                    </span>
-                  </div>
-                  <p-button
-                    icon="pi pi-arrow-right"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="primary"
-                    ariaLabel="View details"
-                    tabindex="-1"
-                  />
-                </div>
-              </div>
+                 (cardActivated)="viewPhone(phone)">
+              <app-product-card
+                [phone]="phone"
+                [index]="$index"
+                [eagerLoad]="$index < 4"
+                (compareToggled)="onCompareToggled($event)"
+              />
             </div>
           }
         </div>

@@ -3,49 +3,16 @@
   <app-skip-link targetId="main-content" />
 
   <!-- AC_REDESIGN_004: Modern E-commerce Header -->
-  <header class="surface-section shadow-1 sticky top-0 z-5">
-    <!-- Top Bar (Desktop) -->
-    <div class="hidden lg:block surface-ground border-bottom-1 surface-border">
-      <div class="flex align-items-center justify-content-between px-6 py-2">
-        <div class="flex align-items-center gap-4 text-sm text-color-secondary">
-          <span class="flex align-items-center gap-1">
-            <i class="pi pi-phone text-xs" aria-hidden="true"></i>
-            <a href="tel:+1234567890" class="no-underline text-color-secondary hover:text-primary">+1 234 567 890</a>
-          </span>
-          <span class="flex align-items-center gap-1">
-            <i class="pi pi-envelope text-xs" aria-hidden="true"></i>
-            <a href="mailto:info&#64;phoneshop.com" class="no-underline text-color-secondary hover:text-primary">info&#64;phoneshop.com</a>
-          </span>
-        </div>
-        <div class="flex align-items-center gap-3 text-sm">
-          <a href="https://wa.me/1234567890"
-             target="_blank"
-             rel="noopener noreferrer"
-             class="no-underline text-color-secondary hover:text-primary flex align-items-center gap-1"
-             aria-label="Chat with us on WhatsApp (opens in new tab)">
-            <i class="pi pi-whatsapp" aria-hidden="true"></i>
-            <span>WhatsApp</span>
-          </a>
-          <span class="text-surface-border">|</span>
-          <a routerLink="/auth/login"
-             class="no-underline text-color-secondary hover:text-primary flex align-items-center gap-1"
-             aria-label="Admin login">
-            <i class="pi pi-user" aria-hidden="true"></i>
-            <span>Admin</span>
-          </a>
-        </div>
-      </div>
-    </div>
-
+  <header class="navbar-header sticky top-0 z-5">
     <!-- Main Navigation -->
     <nav class="flex align-items-center justify-content-between px-3 py-3 sm:px-4 lg:px-6 gap-3"
          aria-label="Main navigation">
       <!-- Logo/Brand -->
       <a routerLink="/"
          class="flex align-items-center gap-2 text-xl font-bold text-primary no-underline flex-shrink-0"
-         aria-label="Phone Shop - Home">
+         [attr.aria-label]="shopName() + ' - Home'">
         <i class="pi pi-mobile text-2xl" aria-hidden="true"></i>
-        <span class="hidden sm:inline">Phone Shop</span>
+        <span class="hidden sm:inline">{{ shopName() }}</span>
       </a>
 
       <!-- Search Bar (Desktop) -->
@@ -70,28 +37,28 @@
         <a routerLink="/"
            routerLinkActive="text-primary font-semibold"
            [routerLinkActiveOptions]="{ exact: true }"
-           class="px-3 py-2 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200 font-medium"
+           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
            role="menuitem"
            aria-label="Home page">
           Home
         </a>
         <a routerLink="/catalog"
            routerLinkActive="text-primary font-semibold"
-           class="px-3 py-2 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200 font-medium"
+           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
            role="menuitem"
            aria-label="Browse phone catalog">
           Catalog
         </a>
         <a routerLink="/about"
            routerLinkActive="text-primary font-semibold"
-           class="px-3 py-2 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200 font-medium"
+           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
            role="menuitem"
            aria-label="Learn about our shop">
           About
         </a>
         <a routerLink="/contact"
            routerLinkActive="text-primary font-semibold"
-           class="px-3 py-2 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200 font-medium"
+           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
            role="menuitem"
            aria-label="Contact us">
           Contact
@@ -202,7 +169,7 @@
     <ng-template pTemplate="header">
       <div class="flex align-items-center gap-2">
         <i class="pi pi-mobile text-primary text-xl" aria-hidden="true"></i>
-        <span class="font-bold text-lg">Phone Shop</span>
+        <span class="font-bold text-lg">{{ shopName() }}</span>
       </div>
     </ng-template>
 
@@ -210,7 +177,7 @@
       <a routerLink="/"
          routerLinkActive="bg-primary-100 text-primary"
          [routerLinkActiveOptions]="{ exact: true }"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200"
+         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
          (click)="closeMobileMenu()"
          role="menuitem"
          aria-label="Home page">
@@ -219,7 +186,7 @@
       </a>
       <a routerLink="/catalog"
          routerLinkActive="bg-primary-100 text-primary"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200"
+         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
          (click)="closeMobileMenu()"
          role="menuitem"
          aria-label="Browse phone catalog">
@@ -228,7 +195,7 @@
       </a>
       <a routerLink="/about"
          routerLinkActive="bg-primary-100 text-primary"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200"
+         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
          (click)="closeMobileMenu()"
          role="menuitem"
          aria-label="Learn about our shop">
@@ -237,7 +204,7 @@
       </a>
       <a routerLink="/contact"
          routerLinkActive="bg-primary-100 text-primary"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200"
+         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
          (click)="closeMobileMenu()"
          role="menuitem"
          aria-label="Contact us">
@@ -247,24 +214,26 @@
 
       <div class="border-top-1 surface-border my-3"></div>
 
-      <a href="https://wa.me/1234567890"
+      <a [href]="'https://wa.me/' + whatsappNumber()"
          target="_blank"
          rel="noopener noreferrer"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200"
+         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
          (click)="closeMobileMenu()"
          role="menuitem"
          aria-label="Chat with us on WhatsApp (opens in new tab)">
         <i class="pi pi-whatsapp text-xl" aria-hidden="true"></i>
         <span class="font-medium">WhatsApp</span>
       </a>
+      <!-- Admin login hidden from public view
       <a routerLink="/auth/login"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline hover:surface-hover transition-colors transition-duration-200"
+         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
          (click)="closeMobileMenu()"
          role="menuitem"
          aria-label="Admin login">
         <i class="pi pi-sign-in text-xl" aria-hidden="true"></i>
         <span class="font-medium">Admin Login</span>
       </a>
+      -->
     </nav>
   </p-drawer>
 
@@ -284,33 +253,33 @@
             <div class="footer-logo">
               <i class="pi pi-mobile text-2xl text-white" aria-hidden="true"></i>
             </div>
-            <span class="font-bold text-xl text-color">Phone Shop</span>
+            <span class="font-bold text-xl text-color">{{ shopName() }}</span>
           </div>
           <p class="text-color-secondary line-height-3 mt-0 mb-4">
-            Your trusted destination for quality mobile phones. We offer new, used, and refurbished
+            Your trusted destination for quality mobile phones. We offer new, used, and open box
             devices at competitive prices with a 30-day quality guarantee.
           </p>
           <!-- Social Media Icons -->
           <div class="flex align-items-center gap-2">
-            <a href="#"
+            <a [href]="facebookUrl()"
                class="social-icon"
                aria-label="Visit our Facebook page"
                rel="noopener noreferrer">
               <i class="pi pi-facebook" aria-hidden="true"></i>
             </a>
-            <a href="#"
+            <a [href]="instagramUrl()"
                class="social-icon"
                aria-label="Visit our Instagram page"
                rel="noopener noreferrer">
               <i class="pi pi-instagram" aria-hidden="true"></i>
             </a>
-            <a href="#"
+            <a [href]="twitterUrl()"
                class="social-icon"
                aria-label="Visit our Twitter page"
                rel="noopener noreferrer">
               <i class="pi pi-twitter" aria-hidden="true"></i>
             </a>
-            <a href="https://wa.me/1234567890"
+            <a [href]="'https://wa.me/' + whatsappNumber()"
                class="social-icon"
                target="_blank"
                rel="noopener noreferrer"
@@ -401,27 +370,29 @@
             <ul class="list-none p-0 m-0">
               <li class="flex align-items-start gap-3 mb-3">
                 <i class="pi pi-map-marker text-primary mt-1" aria-hidden="true"></i>
-                <span class="text-color-secondary">123 Mobile Street, Tech City, TC 12345</span>
+                <span class="text-color-secondary">{{ address() }}</span>
               </li>
               <li class="flex align-items-center gap-3 mb-3">
                 <i class="pi pi-phone text-primary" aria-hidden="true"></i>
-                <a href="tel:+1234567890"
+                <a [href]="'tel:' + phoneLink()"
                    class="footer-link"
-                   aria-label="Call us at +1 234 567 890">
-                  +1 234 567 890
+                   [attr.aria-label]="'Call us at ' + phoneDisplay()">
+                  {{ phoneDisplay() }}
                 </a>
               </li>
-              <li class="flex align-items-center gap-3 mb-3">
-                <i class="pi pi-envelope text-primary" aria-hidden="true"></i>
-                <a href="mailto:info&#64;phoneshop.com"
-                   class="footer-link"
-                   aria-label="Email us at info at phoneshop.com">
-                  info&#64;phoneshop.com
-                </a>
-              </li>
+              @if (hasEmail()) {
+                <li class="flex align-items-center gap-3 mb-3">
+                  <i class="pi pi-envelope text-primary" aria-hidden="true"></i>
+                  <a [href]="'mailto:' + email()"
+                     class="footer-link"
+                     [attr.aria-label]="'Email us at ' + email()">
+                    {{ email() }}
+                  </a>
+                </li>
+              }
               <li class="flex align-items-center gap-3">
                 <i class="pi pi-clock text-primary" aria-hidden="true"></i>
-                <span class="text-color-secondary">Mon - Sat: 9:00 AM - 6:00 PM</span>
+                <span class="text-color-secondary">{{ weekdayHours() }}</span>
               </li>
             </ul>
           </address>
@@ -433,7 +404,7 @@
     <div class="footer-bottom">
       <div class="flex flex-column md:flex-row align-items-center justify-content-between gap-2 px-3 py-3 sm:px-4 lg:px-6">
         <p class="m-0 text-color-secondary text-sm">
-          &copy; {{ currentYear }} Phone Shop. All rights reserved.
+          &copy; {{ currentYear }} {{ shopName() }}. All rights reserved.
         </p>
         <div class="flex align-items-center gap-4 text-sm">
           <a routerLink="/about" class="footer-link text-sm" aria-label="Privacy Policy">

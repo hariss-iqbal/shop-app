@@ -84,7 +84,7 @@ export class PurchaseOrderReceivingComponent implements OnInit {
   conditionOptions = [
     { label: PhoneConditionLabels[PhoneCondition.NEW], value: PhoneCondition.NEW },
     { label: PhoneConditionLabels[PhoneCondition.USED], value: PhoneCondition.USED },
-    { label: PhoneConditionLabels[PhoneCondition.REFURBISHED], value: PhoneCondition.REFURBISHED }
+    { label: PhoneConditionLabels[PhoneCondition.OPEN_BOX], value: PhoneCondition.OPEN_BOX }
   ];
 
   quickFillMenuItems: MenuItem[] = [
@@ -99,9 +99,9 @@ export class PurchaseOrderReceivingComponent implements OnInit {
       command: () => this.applyToAll('condition', PhoneCondition.USED)
     },
     {
-      label: 'Set All Condition to Refurbished',
+      label: 'Set All Condition to Open Box',
       icon: 'pi pi-sync',
-      command: () => this.applyToAll('condition', PhoneCondition.REFURBISHED)
+      command: () => this.applyToAll('condition', PhoneCondition.OPEN_BOX)
     },
     { separator: true },
     {
@@ -312,7 +312,7 @@ export class PurchaseOrderReceivingComponent implements OnInit {
 
   shouldShowBatteryHealth(formIdx: number): boolean {
     const condition = this.getFormControl(formIdx, 'condition').value;
-    return condition === PhoneCondition.USED || condition === PhoneCondition.REFURBISHED;
+    return condition === PhoneCondition.USED || condition === PhoneCondition.OPEN_BOX;
   }
 
   isFormValid(): boolean {

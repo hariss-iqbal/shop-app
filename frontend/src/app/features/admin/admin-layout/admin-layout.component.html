@@ -12,7 +12,7 @@
         (onClick)="sidebarVisible.set(true)"
         ariaLabel="Open menu"
       />
-      <span class="text-xl font-bold text-primary">Phone Shop</span>
+      <span class="text-xl font-bold text-primary">Spring Mobiles</span>
     </div>
     <div class="flex align-items-center gap-2">
       <!-- F-020: Offline Mode Indicator -->
@@ -52,8 +52,8 @@
         @if (!sidebarCollapsed()) {
           <div>
             <a routerLink="/admin" class="text-xl font-bold text-primary no-underline"
-               aria-label="Phone Shop Admin - Dashboard">
-              Phone Shop
+               aria-label="Spring Mobiles Admin - Dashboard">
+              Spring Mobiles
             </a>
             <span class="text-sm text-color-secondary block mt-1">Admin Panel</span>
           </div>
@@ -76,7 +76,7 @@
               <a [routerLink]="item.route"
                  routerLinkActive="bg-primary text-primary-contrast"
                  [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
-                 [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer transition-colors transition-duration-150 ' + (sidebarCollapsed() ? 'justify-content-center' : 'justify-content-between')"
+                 [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline cursor-pointer transition-colors transition-duration-150 admin-nav-link ' + (sidebarCollapsed() ? 'justify-content-center' : 'justify-content-between')"
                  role="menuitem"
                  [pTooltip]="sidebarCollapsed() ? item.label + (item.showBadge && messageCountService.unreadCount() > 0 ? ' (' + messageCountService.unreadCount() + ')' : '') : undefined"
                  tooltipPosition="right"
@@ -104,7 +104,7 @@
 
       <div class="p-2 border-top-1 surface-border mt-auto">
         <a routerLink="/"
-           [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer ' + (sidebarCollapsed() ? 'justify-content-center' : '')"
+           [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline cursor-pointer admin-nav-link ' + (sidebarCollapsed() ? 'justify-content-center' : '')"
            [pTooltip]="sidebarCollapsed() ? 'View Shop' : undefined"
            tooltipPosition="right"
            aria-label="View public shop"
@@ -126,7 +126,7 @@
       <ng-template #header>
         <div class="flex align-items-center justify-content-between w-full">
           <div>
-            <span class="text-xl font-bold text-primary">Phone Shop</span>
+            <span class="text-xl font-bold text-primary">Spring Mobiles</span>
             <span class="text-sm text-color-secondary block mt-1">Admin Panel</span>
           </div>
           <p-button
@@ -146,7 +146,7 @@
               <a [routerLink]="item.route"
                  routerLinkActive="bg-primary text-primary-contrast"
                  [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
-                 class="flex align-items-center justify-content-between gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer transition-colors transition-duration-150"
+                 class="flex align-items-center justify-content-between gap-2 p-3 border-round text-color no-underline cursor-pointer transition-colors transition-duration-150 admin-nav-link"
                  role="menuitem"
                  [attr.aria-label]="item.showBadge && messageCountService.unreadCount() > 0
                    ? item.label + ' (' + messageCountService.unreadCount() + ' unread)'
@@ -168,7 +168,7 @@
 
       <div class="mt-auto pt-3 border-top-1 surface-border">
         <a routerLink="/"
-           class="flex align-items-center gap-2 p-3 border-round text-color no-underline hover:surface-hover cursor-pointer"
+           class="flex align-items-center gap-2 p-3 border-round text-color no-underline cursor-pointer admin-nav-link"
            (click)="sidebarVisible.set(false)"
            pRipple>
           <i class="pi pi-external-link"></i>
@@ -249,7 +249,7 @@
       <main
         id="admin-main-content"
         class="flex-grow-1 px-2 py-3 sm:px-3 lg:p-4 surface-ground overflow-y-auto"
-        [class.pb-7]="viewportService.isMobile() || viewportService.isTablet()"
+        [style.padding-bottom]="(viewportService.isMobile() || viewportService.isTablet()) ? 'calc(72px + env(safe-area-inset-bottom, 0))' : null"
         role="main"
       >
         <router-outlet />

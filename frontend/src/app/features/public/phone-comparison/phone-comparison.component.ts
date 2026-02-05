@@ -225,7 +225,7 @@ export class PhoneComparisonComponent implements OnInit {
     switch (condition) {
       case PhoneCondition.NEW:
         return 'success';
-      case PhoneCondition.REFURBISHED:
+      case PhoneCondition.OPEN_BOX:
         return 'info';
       case PhoneCondition.USED:
         return 'warn';

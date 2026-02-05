@@ -14,6 +14,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { StockAlertService } from '../../../core/services/stock-alert.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { ThemeService } from '../../../shared/services/theme.service';
+import { ShopDetailsService } from '../../../core/services/shop-details.service';
 import { DashboardKPIs, DateRangeFilter, DateRangeOption, MonthlySalesData, RecentPhone, StockByBrand } from '../../../models/dashboard.model';
 import { StockAlert, StockAlertConfig } from '../../../models/stock-alert-config.model';
 import { DashboardDateRange, DashboardDateRangeLabels } from '../../../enums';
@@ -51,6 +52,7 @@ export class DashboardComponent implements OnInit {
   private toastService = inject(ToastService);
   private themeService = inject(ThemeService);
   private router = inject(Router);
+  shopDetailsService = inject(ShopDetailsService);
 
   loading = signal(false);
   chartsLoading = signal(false);
@@ -105,6 +107,10 @@ export class DashboardComponent implements OnInit {
 
   hasStockData = computed(() =>
     this.stockByBrand().length > 0
+  );
+
+  shopDetailsConfigured = computed(() =>
+    this.shopDetailsService.loaded() && this.shopDetailsService.cachedDetails() !== null
   );
 
   salesChartData = computed(() => {
@@ -284,6 +290,10 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/admin/inventory/new']);
   }
 
+  navigateToShopDetails(): void {
+    this.router.navigate(['/admin/shop-details']);
+  }
+
   async onAlertConfigSaved(): Promise<void> {
     this.alertsLoading.set(true);
     try {
@@ -302,7 +312,7 @@ export class DashboardComponent implements OnInit {
     switch (condition) {
       case 'new': return 'success';
       case 'used': return 'warn';
-      case 'refurbished': return 'info';
+      case 'open_box': return 'info';
       default: return 'secondary';
     }
   }

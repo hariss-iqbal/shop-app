@@ -1,0 +1,156 @@
+<div class="grid">
+  <div class="col-12">
+    <div class="flex align-items-center justify-content-between mb-4">
+      <h1 class="text-2xl font-bold m-0">Shop Details</h1>
+      <p-button
+        label="Save"
+        icon="pi pi-check"
+        [loading]="saving()"
+        (onClick)="onSave()"
+        [disabled]="saving() || loading()"
+      />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="col-12 flex justify-content-center py-6">
+      <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+    </div>
+  } @else {
+    <form [formGroup]="form" class="col-12">
+      <div class="grid">
+        <!-- Basic Info -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Basic Information" styleClass="h-full">
+            <div class="flex flex-column gap-3">
+              <div class="flex flex-column gap-1">
+                <label for="shopName" class="font-medium">Shop Name *</label>
+                <input id="shopName" pInputText formControlName="shopName" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="tagline" class="font-medium">Tagline</label>
+                <input id="tagline" pInputText formControlName="tagline" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="description" class="font-medium">Description</label>
+                <textarea id="description" pInputTextarea formControlName="description" [rows]="3" [autoResize]="true"></textarea>
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="logoUrl" class="font-medium">Logo URL</label>
+                <input id="logoUrl" pInputText formControlName="logoUrl" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Contact Information" styleClass="h-full">
+            <div class="flex flex-column gap-3">
+              <div class="flex flex-column gap-1">
+                <label for="address" class="font-medium">Address</label>
+                <input id="address" pInputText formControlName="address" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="phoneDisplay" class="font-medium">Phone (Display)</label>
+                <input id="phoneDisplay" pInputText formControlName="phoneDisplay" placeholder="+1 234 567 890" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="phoneLink" class="font-medium">Phone (Link)</label>
+                <input id="phoneLink" pInputText formControlName="phoneLink" placeholder="+1234567890" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="email" class="font-medium">Email</label>
+                <input id="email" pInputText formControlName="email" type="email" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="whatsappNumber" class="font-medium">WhatsApp Number</label>
+                <input id="whatsappNumber" pInputText formControlName="whatsappNumber" placeholder="1234567890" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Hours -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Business Hours" styleClass="h-full">
+            <div class="flex flex-column gap-3">
+              <div class="flex flex-column gap-1">
+                <label for="weekdayHours" class="font-medium">Weekday Hours</label>
+                <input id="weekdayHours" pInputText formControlName="weekdayHours" placeholder="Mon - Sat: 9:00 AM - 6:00 PM" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="weekendHours" class="font-medium">Weekend Hours</label>
+                <input id="weekendHours" pInputText formControlName="weekendHours" placeholder="Sun: Closed" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Map -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Map Settings" styleClass="h-full">
+            <div class="flex flex-column gap-3">
+              <div class="flex flex-column gap-1">
+                <label for="mapEmbedUrl" class="font-medium">Map Embed URL</label>
+                <input id="mapEmbedUrl" pInputText formControlName="mapEmbedUrl" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="mapSearchUrl" class="font-medium">Map Search URL</label>
+                <input id="mapSearchUrl" pInputText formControlName="mapSearchUrl" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Social Media -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Social Media" styleClass="h-full">
+            <div class="flex flex-column gap-3">
+              <div class="flex flex-column gap-1">
+                <label for="facebookUrl" class="font-medium">Facebook URL</label>
+                <input id="facebookUrl" pInputText formControlName="facebookUrl" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="instagramUrl" class="font-medium">Instagram URL</label>
+                <input id="instagramUrl" pInputText formControlName="instagramUrl" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="twitterUrl" class="font-medium">Twitter URL</label>
+                <input id="twitterUrl" pInputText formControlName="twitterUrl" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="websiteUrl" class="font-medium">Website URL</label>
+                <input id="websiteUrl" pInputText formControlName="websiteUrl" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Currency -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Currency Settings" styleClass="h-full">
+            <div class="flex flex-column gap-3">
+              <div class="flex flex-column gap-1">
+                <label for="currencyCode" class="font-medium">Currency Code</label>
+                <input id="currencyCode" pInputText formControlName="currencyCode" placeholder="PKR" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="currencyLocale" class="font-medium">Currency Locale</label>
+                <input id="currencyLocale" pInputText formControlName="currencyLocale" placeholder="en-PK" />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="currencySymbol" class="font-medium">Currency Symbol</label>
+                <input id="currencySymbol" pInputText formControlName="currencySymbol" placeholder="Rs." />
+              </div>
+              <div class="flex flex-column gap-1">
+                <label for="currencyDecimals" class="font-medium">Decimal Places</label>
+                <p-inputNumber id="currencyDecimals" formControlName="currencyDecimals" [min]="0" [max]="4" [showButtons]="true" />
+              </div>
+            </div>
+          </p-card>
+        </div>
+      </div>
+    </form>
+  }
+</div>
