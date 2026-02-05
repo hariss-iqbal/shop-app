@@ -77,15 +77,21 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
 
   galleriaImages: GalleriaImage[] = [];
   activeIndex = 0;
-  thumbnailStart = 0;
   fullscreen = false;
-  readonly THUMBS_VISIBLE = 4;
+  slideDirection: 'left' | 'right' | '' = '';
+  imageLoading = false;
   customerReviews = signal<CustomerReview[]>([]);
+
+  // Track which images have been loaded
+  private loadedImages = new Set<number>();
 
   // Swipe tracking
   private touchStartX = 0;
   private touchStartY = 0;
-  private readonly SWIPE_THRESHOLD = 50;
+  private touchStartTime = 0;
+  swiping = false;
+  private swipeOffset = 0;
+  private readonly SWIPE_THRESHOLD = 40;
 
   get currentImage(): GalleriaImage | null {
     return this.galleriaImages[this.activeIndex] ?? null;
@@ -95,45 +101,39 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
     return `${this.activeIndex + 1} / ${this.galleriaImages.length}`;
   }
 
-  get visibleThumbnails(): GalleriaImage[] {
-    return this.galleriaImages.slice(this.thumbnailStart, this.thumbnailStart + this.THUMBS_VISIBLE);
-  }
-
-  get canScrollThumbsLeft(): boolean {
-    return this.thumbnailStart > 0;
-  }
-
-  get canScrollThumbsRight(): boolean {
-    return this.thumbnailStart + this.THUMBS_VISIBLE < this.galleriaImages.length;
-  }
-
   selectImage(index: number): void {
-    this.activeIndex = index;
+    if (index === this.activeIndex) return;
+    this.slideDirection = index > this.activeIndex ? 'left' : 'right';
+    this.navigateTo(index);
   }
 
   prevImage(): void {
-    this.activeIndex = this.activeIndex > 0
+    this.slideDirection = 'right';
+    const index = this.activeIndex > 0
       ? this.activeIndex - 1
       : this.galleriaImages.length - 1;
-    this.ensureThumbnailVisible();
+    this.navigateTo(index);
   }
 
   nextImage(): void {
-    this.activeIndex = this.activeIndex < this.galleriaImages.length - 1
+    this.slideDirection = 'left';
+    const index = this.activeIndex < this.galleriaImages.length - 1
       ? this.activeIndex + 1
       : 0;
-    this.ensureThumbnailVisible();
+    this.navigateTo(index);
   }
 
-  scrollThumbsLeft(): void {
-    this.thumbnailStart = Math.max(0, this.thumbnailStart - this.THUMBS_VISIBLE);
+  onImageLoad(): void {
+    this.loadedImages.add(this.activeIndex);
+    this.imageLoading = false;
   }
 
-  scrollThumbsRight(): void {
-    this.thumbnailStart = Math.min(
-      this.galleriaImages.length - this.THUMBS_VISIBLE,
-      this.thumbnailStart + this.THUMBS_VISIBLE
-    );
+  private navigateTo(index: number): void {
+    this.activeIndex = index;
+    // Show loader only if this image hasn't been loaded before
+    this.imageLoading = !this.loadedImages.has(index);
+    this.scrollThumbnailIntoView();
+    this.clearSlideDirection();
   }
 
   // Fullscreen
@@ -163,28 +163,64 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
   onTouchStart(event: TouchEvent): void {
     this.touchStartX = event.touches[0].clientX;
     this.touchStartY = event.touches[0].clientY;
+    this.touchStartTime = Date.now();
+    this.swiping = false;
+    this.swipeOffset = 0;
   }
 
-  onTouchEnd(event: TouchEvent): void {
+  onTouchMove(event: TouchEvent): void {
     if (this.galleriaImages.length <= 1) return;
-    const deltaX = event.changedTouches[0].clientX - this.touchStartX;
-    const deltaY = event.changedTouches[0].clientY - this.touchStartY;
-    // Only trigger if horizontal swipe is dominant
-    if (Math.abs(deltaX) > this.SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX < 0) {
+    const deltaX = event.touches[0].clientX - this.touchStartX;
+    const deltaY = event.touches[0].clientY - this.touchStartY;
+    // Lock into horizontal swipe once threshold is met
+    if (!this.swiping && Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      this.swiping = true;
+    }
+    if (this.swiping) {
+      event.preventDefault();
+      this.swipeOffset = deltaX;
+    }
+  }
+
+  onTouchEnd(_event: TouchEvent): void {
+    if (this.galleriaImages.length <= 1 || !this.swiping) {
+      this.swipeOffset = 0;
+      this.swiping = false;
+      return;
+    }
+    const velocity = Math.abs(this.swipeOffset) / (Date.now() - this.touchStartTime);
+    // Trigger navigation if swiped far enough or fast enough
+    if (Math.abs(this.swipeOffset) > this.SWIPE_THRESHOLD || velocity > 0.5) {
+      if (this.swipeOffset < 0) {
         this.nextImage();
       } else {
         this.prevImage();
       }
     }
+    this.swipeOffset = 0;
+    this.swiping = false;
   }
 
-  private ensureThumbnailVisible(): void {
-    if (this.activeIndex < this.thumbnailStart) {
-      this.thumbnailStart = this.activeIndex;
-    } else if (this.activeIndex >= this.thumbnailStart + this.THUMBS_VISIBLE) {
-      this.thumbnailStart = this.activeIndex - this.THUMBS_VISIBLE + 1;
+  getSwipeTransform(): string {
+    if (this.swiping && this.swipeOffset !== 0) {
+      return `translateX(${this.swipeOffset}px)`;
     }
+    return '';
+  }
+
+  private clearSlideDirection(): void {
+    setTimeout(() => { this.slideDirection = ''; }, 300);
+  }
+
+  private scrollThumbnailIntoView(): void {
+    // Use requestAnimationFrame to ensure DOM is updated
+    requestAnimationFrame(() => {
+      const container = document.querySelector('.gallery-thumbs-scroll');
+      const activeThumb = container?.querySelector('.gallery-thumbnail-active');
+      if (activeThumb && container) {
+        activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    });
   }
 
   // Computed properties for AC_REDESIGN_002
@@ -250,6 +286,7 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
   }
 
   private buildGalleriaImages(phoneDetail: PhoneDetail): void {
+    this.loadedImages.clear();
     this.galleriaImages = phoneDetail.images.map(img => ({
       itemImageSrc: this.imageOptimization.getDetailImageUrl(img.imageUrl),
       itemSrcSet: this.imageOptimization.getDetailSrcSet(img.imageUrl),
@@ -258,6 +295,8 @@ export class PhoneDetailComponent implements OnInit, OnDestroy {
       alt: `${phoneDetail.brandName} ${phoneDetail.model}`,
       isPrimary: img.isPrimary
     }));
+    // The first image will be loaded by the browser directly
+    this.loadedImages.add(0);
   }
 
   private updateSeoTags(phone: PhoneDetail): void {

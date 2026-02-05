@@ -63,9 +63,16 @@
               class="gallery-main-image-wrapper border-round-lg overflow-hidden"
               style="height: 500px; background: linear-gradient(135deg, var(--surface-50) 0%, var(--surface-100) 100%);"
               (touchstart)="onTouchStart($event)"
+              (touchmove)="onTouchMove($event)"
               (touchend)="onTouchEnd($event)"
             >
               @if (currentImage) {
+                <!-- Loading spinner -->
+                @if (imageLoading) {
+                  <div class="gallery-loader">
+                    <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+                  </div>
+                }
                 <img
                   [src]="currentImage.itemImageSrc"
                   [srcset]="currentImage.itemSrcSet"
@@ -73,9 +80,15 @@
                   [alt]="currentImage.alt"
                   width="800"
                   height="500"
-                  class="w-full h-full border-round-lg"
+                  class="w-full h-full border-round-lg gallery-main-img"
+                  [class.slide-from-left]="slideDirection === 'left'"
+                  [class.slide-from-right]="slideDirection === 'right'"
+                  [class.gallery-img-hidden]="imageLoading"
+                  [style.transform]="getSwipeTransform()"
+                  [style.transition]="swiping ? 'none' : ''"
                   style="object-fit: contain; user-select: none;"
                   draggable="false"
+                  (load)="onImageLoad()"
                 />
               }
               <!-- Navigation Arrows -->
@@ -111,48 +124,25 @@
               </div>
             }
 
-            <!-- Thumbnails -->
+            <!-- Thumbnails - horizontal scroll -->
             @if (galleriaImages.length > 1) {
-              <div class="flex align-items-center gap-2 mt-3">
-                @if (galleriaImages.length > THUMBS_VISIBLE) {
-                  <button
-                    class="gallery-thumb-nav"
-                    [disabled]="!canScrollThumbsLeft"
-                    (click)="scrollThumbsLeft()"
-                    aria-label="Scroll thumbnails left"
+              <div class="gallery-thumbs-scroll mt-3">
+                @for (img of galleriaImages; track img.originalUrl; let i = $index) {
+                  <div
+                    class="gallery-thumbnail border-round overflow-hidden cursor-pointer"
+                    [class.gallery-thumbnail-active]="i === activeIndex"
+                    (click)="selectImage(i)"
                   >
-                    <i class="pi pi-chevron-left"></i>
-                  </button>
-                }
-                <div class="flex gap-2 flex-grow-1 justify-content-center">
-                  @for (thumb of visibleThumbnails; track thumb.originalUrl; let i = $index) {
-                    <div
-                      class="gallery-thumbnail border-round overflow-hidden cursor-pointer"
-                      [class.gallery-thumbnail-active]="(thumbnailStart + i) === activeIndex"
-                      (click)="selectImage(thumbnailStart + i)"
-                      style="width: 100px; height: 75px; background: var(--surface-100);"
-                    >
-                      <img
-                        [src]="thumb.thumbnailImageSrc"
-                        [alt]="thumb.alt"
-                        width="100"
-                        height="75"
-                        loading="lazy"
-                        class="w-full h-full border-round"
-                        style="object-fit: cover;"
-                      />
-                    </div>
-                  }
-                </div>
-                @if (galleriaImages.length > THUMBS_VISIBLE) {
-                  <button
-                    class="gallery-thumb-nav"
-                    [disabled]="!canScrollThumbsRight"
-                    (click)="scrollThumbsRight()"
-                    aria-label="Scroll thumbnails right"
-                  >
-                    <i class="pi pi-chevron-right"></i>
-                  </button>
+                    <img
+                      [src]="img.thumbnailImageSrc"
+                      [alt]="img.alt"
+                      width="80"
+                      height="60"
+                      loading="lazy"
+                      class="w-full h-full border-round"
+                      style="object-fit: cover;"
+                    />
+                  </div>
                 }
               </div>
             }
