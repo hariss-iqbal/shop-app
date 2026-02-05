@@ -85,6 +85,12 @@ CREATE POLICY "user_roles_admin_delete" ON user_roles
   FOR DELETE TO authenticated
   USING (is_admin());
 
+-- Allow service role to bypass RLS (for triggers and system operations)
+CREATE POLICY "user_roles_service_role_all" ON user_roles
+  FOR ALL TO service_role
+  USING (true)
+  WITH CHECK (true);
+
 -- ============================================================
 -- 5. HELPER FUNCTIONS FOR ROLE CHECKING
 -- ============================================================
@@ -146,21 +152,25 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger function to auto-assign default role to new users
 CREATE OR REPLACE FUNCTION handle_new_user_role()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   -- Check if this is the first user (make them admin)
-  IF NOT EXISTS (SELECT 1 FROM user_roles) THEN
-    INSERT INTO user_roles (user_id, role)
+  IF NOT EXISTS (SELECT 1 FROM public.user_roles) THEN
+    INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'admin');
   ELSE
     -- Otherwise, assign default role (cashier)
-    INSERT INTO user_roles (user_id, role)
+    INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'cashier');
   END IF;
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Create trigger on auth.users to auto-assign role
 CREATE TRIGGER on_auth_user_created

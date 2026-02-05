@@ -2,17 +2,26 @@
   "name": "phone-shop-backend",
   "version": "1.0.0",
   "scripts": {
+    "api-server": "ts-node src/api-server.ts",
     "migrate:cloudinary": "ts-node src/scripts/migrate-to-cloudinary.ts",
-    "migrate:cloudinary:cleanup": "ts-node src/scripts/migrate-to-cloudinary.ts cleanup"
+    "migrate:cloudinary:cleanup": "ts-node src/scripts/migrate-to-cloudinary.ts cleanup",
+    "test:scraper": "ts-node src/scripts/test-phone-specs-scraper.ts"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^20.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "form-data": "^4.0.0",
+    "node-cache": "^5.1.2",
     "node-fetch": "^2.7.0"
   }
 }

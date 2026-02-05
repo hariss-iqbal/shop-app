@@ -62,6 +62,15 @@ export interface Environment {
   };
 
   /**
+   * API Server configuration for backend services.
+   * Used for services like phone specs scraping that require server-side processing.
+   */
+  apiServer: {
+    /** Backend API server URL (e.g., 'http://192.168.100.111:3001' for local). */
+    url: string;
+  };
+
+  /**
    * WhatsApp configuration for customer inquiries.
    * Phone number should be in international format without + or spaces.
    * Example: '1234567890' for a US number.

@@ -86,7 +86,9 @@ export class PhoneService {
       notes: dto.notes?.trim() || null,
       tax_rate: dto.taxRate ?? 0,
       is_tax_inclusive: dto.isTaxInclusive ?? false,
-      is_tax_exempt: dto.isTaxExempt ?? false
+      is_tax_exempt: dto.isTaxExempt ?? false,
+      condition_rating: dto.conditionRating || null,
+      pta_status: dto.ptaStatus || null
     };
 
     const phone = await this.phoneRepository.create(phoneInsert);
@@ -129,7 +131,9 @@ export class PhoneService {
       ...(dto.notes !== undefined && { notes: dto.notes?.trim() || null }),
       ...(dto.taxRate !== undefined && { tax_rate: dto.taxRate }),
       ...(dto.isTaxInclusive !== undefined && { is_tax_inclusive: dto.isTaxInclusive }),
-      ...(dto.isTaxExempt !== undefined && { is_tax_exempt: dto.isTaxExempt })
+      ...(dto.isTaxExempt !== undefined && { is_tax_exempt: dto.isTaxExempt }),
+      ...(dto.conditionRating !== undefined && { condition_rating: dto.conditionRating }),
+      ...(dto.ptaStatus !== undefined && { pta_status: dto.ptaStatus })
     };
 
     await this.phoneRepository.update(id, phoneUpdate);
@@ -203,7 +207,7 @@ export class PhoneService {
   }
 
   private validateBatteryHealth(condition: PhoneCondition, batteryHealth: number | null | undefined): void {
-    if (condition !== PhoneCondition.NEW && batteryHealth !== null && batteryHealth !== undefined) {
+    if ((condition === PhoneCondition.USED || condition === PhoneCondition.OPEN_BOX) && batteryHealth !== null && batteryHealth !== undefined) {
       if (batteryHealth < 0 || batteryHealth > 100) {
         throw new Error('Battery health must be between 0 and 100');
       }
@@ -242,7 +246,9 @@ export class PhoneService {
       updatedAt: phone.updated_at,
       taxRate: phone.tax_rate ?? 0,
       isTaxInclusive: phone.is_tax_inclusive ?? false,
-      isTaxExempt: phone.is_tax_exempt ?? false
+      isTaxExempt: phone.is_tax_exempt ?? false,
+      conditionRating: phone.condition_rating ?? null,
+      ptaStatus: phone.pta_status ?? null
     };
   }
 }

@@ -76,7 +76,7 @@
                 [suggestions]="brandSuggestions()"
                 (completeMethod)="searchBrands($event)"
                 (onSelect)="onBrandSelect($event)"
-                field="name"
+                optionLabel="name"
                 [dropdown]="true"
                 [forceSelection]="false"
                 placeholder="Type to search or create new brand..."
@@ -110,20 +110,39 @@
             <!-- Model -->
             <div class="col-12 md:col-6">
               <label for="model" class="block font-medium mb-2">Model <span class="text-red-500">*</span></label>
-              <input
-                id="model"
-                type="text"
-                pInputText
-                formControlName="model"
-                class="w-full"
-                placeholder="e.g., iPhone 15 Pro Max"
-                [maxlength]="constraints.MODEL_MAX"
-                aria-describedby="model-help"
-              />
+              <div class="flex gap-2">
+                <input
+                  id="model"
+                  type="text"
+                  pInputText
+                  formControlName="model"
+                  class="flex-1"
+                  placeholder="e.g., iPhone 15 Pro Max"
+                  [maxlength]="constraints.MODEL_MAX"
+                  aria-describedby="model-help"
+                />
+                <p-button
+                  label="Fetch Info"
+                  icon="pi pi-search"
+                  [outlined]="true"
+                  size="small"
+                  (onClick)="fetchPhoneSpecs()"
+                  [loading]="fetchingSpecs()"
+                  [disabled]="!form.get('brand')?.value || !form.get('model')?.value || fetchingSpecs()"
+                  pTooltip="Auto-fill specs from GSMArena"
+                  tooltipPosition="top"
+                />
+              </div>
               @if (form.controls['model'].invalid && form.controls['model'].touched) {
                 <small id="model-help" class="p-error block mt-1">Model name is required</small>
               } @else {
                 <small id="model-help" class="text-500 block mt-1">{{ form.get('model')?.value?.length || 0 }}/{{ constraints.MODEL_MAX }} characters</small>
+              }
+              @if (specsFetched()) {
+                <p-message severity="success" text="Specifications loaded! Select options below" styleClass="mt-2 w-full" />
+              }
+              @if (specsError()) {
+                <p-message severity="warn" [text]="specsError()!" styleClass="mt-2 w-full" />
               }
             </div>
 
@@ -138,7 +157,12 @@
 
             <!-- Storage GB -->
             <div class="col-12 md:col-6 lg:col-3">
-              <label for="storageGb" class="block font-medium mb-2">Storage (GB)</label>
+              <label for="storageGb" class="block font-medium mb-2">
+                Storage (GB)
+                @if (specsFetched()) {
+                  <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+                }
+              </label>
               <p-inputNumber
                 id="storageGb"
                 formControlName="storageGb"
@@ -150,11 +174,29 @@
                 placeholder="e.g., 128"
                 ariaLabel="Storage capacity in gigabytes"
               />
+              @if (storageQuickOptions().length > 0) {
+                <div class="flex flex-wrap gap-1 mt-2">
+                  @for (opt of storageQuickOptions(); track opt) {
+                    <p-button
+                      [label]="opt + 'GB'"
+                      [severity]="form.get('storageGb')?.value === opt ? 'primary' : 'secondary'"
+                      [outlined]="form.get('storageGb')?.value !== opt"
+                      size="small"
+                      (onClick)="setStorage(opt)"
+                    />
+                  }
+                </div>
+              }
             </div>
 
             <!-- RAM GB -->
             <div class="col-12 md:col-6 lg:col-3">
-              <label for="ramGb" class="block font-medium mb-2">RAM (GB)</label>
+              <label for="ramGb" class="block font-medium mb-2">
+                RAM (GB)
+                @if (specsFetched()) {
+                  <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+                }
+              </label>
               <p-inputNumber
                 id="ramGb"
                 formControlName="ramGb"
@@ -166,11 +208,29 @@
                 placeholder="e.g., 8"
                 ariaLabel="RAM in gigabytes"
               />
+              @if (ramQuickOptions().length > 0) {
+                <div class="flex flex-wrap gap-1 mt-2">
+                  @for (opt of ramQuickOptions(); track opt) {
+                    <p-button
+                      [label]="opt + 'GB'"
+                      [severity]="form.get('ramGb')?.value === opt ? 'primary' : 'secondary'"
+                      [outlined]="form.get('ramGb')?.value !== opt"
+                      size="small"
+                      (onClick)="setRam(opt)"
+                    />
+                  }
+                </div>
+              }
             </div>
 
             <!-- Color -->
             <div class="col-12 md:col-6 lg:col-3">
-              <label for="color" class="block font-medium mb-2">Color</label>
+              <label for="color" class="block font-medium mb-2">
+                Color
+                @if (specsFetched() && colorSuggestions().length > 0) {
+                  <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+                }
+              </label>
               <input
                 id="color"
                 type="text"
@@ -180,6 +240,19 @@
                 placeholder="e.g., Space Black"
                 [maxlength]="constraints.COLOR_MAX"
               />
+              @if (colorSuggestions().length > 0) {
+                <div class="flex flex-wrap gap-1 mt-2">
+                  @for (color of colorSuggestions(); track color) {
+                    <p-button
+                      [label]="color"
+                      [severity]="form.get('color')?.value === color ? 'primary' : 'secondary'"
+                      [outlined]="form.get('color')?.value !== color"
+                      size="small"
+                      (onClick)="setColor(color)"
+                    />
+                  }
+                </div>
+              }
             </div>
 
             <!-- IMEI -->
@@ -224,6 +297,47 @@
               @if (form.controls['condition'].invalid && form.controls['condition'].touched) {
                 <small class="p-error block mt-1">Please select a condition</small>
               }
+            </div>
+
+            <!-- Condition Rating -->
+            <div class="col-12 md:col-6 lg:col-4">
+              <label for="conditionRating" class="block font-medium mb-2">
+                Condition Rating (1-10)
+                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Rate the physical condition of the device from 1 (poor) to 10 (excellent)" tooltipPosition="top"></i>
+              </label>
+              <p-inputNumber
+                id="conditionRating"
+                formControlName="conditionRating"
+                [min]="1"
+                [max]="10"
+                [showButtons]="true"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+                placeholder="1-10"
+                ariaLabel="Condition rating from 1 to 10"
+              />
+              @if (form.controls['conditionRating'].invalid && form.controls['conditionRating'].touched) {
+                <small class="p-error block mt-1">Condition rating must be between 1 and 10</small>
+              }
+            </div>
+
+            <!-- PTA Status -->
+            <div class="col-12 md:col-6 lg:col-4">
+              <label for="ptaStatus" class="block font-medium mb-2">
+                PTA Status
+                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Pakistan Telecommunication Authority approval status" tooltipPosition="top"></i>
+              </label>
+              <p-select
+                id="ptaStatus"
+                formControlName="ptaStatus"
+                [options]="ptaStatusOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select PTA status"
+                styleClass="w-full"
+                ariaLabel="PTA approval status"
+                [showClear]="true"
+              />
             </div>
 
             <!-- Battery Health (conditionally shown) -->
@@ -288,12 +402,12 @@
                 id="costPrice"
                 formControlName="costPrice"
                 mode="currency"
-                currency="USD"
+                currency="PKR"
                 [min]="0"
                 styleClass="w-full"
                 inputStyleClass="w-full"
                 placeholder="0.00"
-                ariaLabel="Cost price in USD"
+                ariaLabel="Cost price in PKR"
               />
               @if (form.controls['costPrice'].invalid && form.controls['costPrice'].touched) {
                 <small class="p-error block mt-1">Cost price is required</small>
@@ -310,12 +424,12 @@
                 id="sellingPrice"
                 formControlName="sellingPrice"
                 mode="currency"
-                currency="USD"
+                currency="PKR"
                 [min]="0"
                 styleClass="w-full"
                 inputStyleClass="w-full"
                 placeholder="0.00"
-                ariaLabel="Selling price in USD"
+                ariaLabel="Selling price in PKR"
               />
               @if (form.controls['sellingPrice'].invalid && form.controls['sellingPrice'].touched) {
                 <small class="p-error block mt-1">Selling price is required</small>
@@ -479,6 +593,20 @@
             <!-- Supplier -->
             <div class="col-12 md:col-6">
               <label for="supplierId" class="block font-medium mb-2">Supplier</label>
+              @if (recentSuppliers().length > 0) {
+                <div class="flex flex-wrap gap-1 mb-2">
+                  <span class="text-500 text-xs mr-1 flex align-items-center">Recent:</span>
+                  @for (supplier of recentSuppliers(); track supplier.id) {
+                    <p-button
+                      [label]="supplier.name"
+                      [severity]="form.get('supplierId')?.value === supplier.id ? 'primary' : 'secondary'"
+                      [outlined]="form.get('supplierId')?.value !== supplier.id"
+                      size="small"
+                      (onClick)="setSupplier(supplier.id)"
+                    />
+                  }
+                </div>
+              }
               <p-select
                 id="supplierId"
                 formControlName="supplierId"
@@ -561,9 +689,44 @@
                   <i class="pi pi-images text-primary"></i>
                   Phone Images
                 </h3>
-                <div class="surface-100 border-round p-4 text-center">
-                  <i class="pi pi-info-circle text-2xl text-500 mb-2 block"></i>
-                  <p class="text-500 m-0">Save the phone record first to upload images</p>
+                <div class="surface-100 border-round p-4">
+                  <div class="flex flex-column align-items-center gap-3">
+                    <i class="pi pi-cloud-upload text-4xl text-500"></i>
+                    <p class="text-500 m-0 text-center">Select images to upload when you save the phone</p>
+                    <input
+                      type="file"
+                      #imageInput
+                      [accept]="'.jpg,.jpeg,.png,.webp'"
+                      multiple
+                      (change)="onPendingImagesSelected($event)"
+                      class="hidden"
+                    />
+                    <p-button
+                      label="Select Images"
+                      icon="pi pi-plus"
+                      [outlined]="true"
+                      (onClick)="imageInput.click()"
+                    />
+                  </div>
+                  @if (pendingImagePreviews().length > 0) {
+                    <div class="flex flex-wrap gap-3 mt-4">
+                      @for (preview of pendingImagePreviews(); track $index) {
+                        <div class="relative">
+                          <img [src]="preview" alt="Preview" class="border-round" style="width: 100px; height: 100px; object-fit: cover;" />
+                          <p-button
+                            icon="pi pi-times"
+                            [rounded]="true"
+                            severity="danger"
+                            size="small"
+                            styleClass="absolute"
+                            [style]="{ top: '-8px', right: '-8px' }"
+                            (onClick)="removePendingImage($index)"
+                          />
+                        </div>
+                      }
+                    </div>
+                    <p class="text-500 text-sm mt-2 mb-0">{{ pendingImages().length }} image(s) selected - will be uploaded on save</p>
+                  }
                 </div>
               </div>
             }

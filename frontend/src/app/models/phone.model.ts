@@ -1,4 +1,4 @@
-import { PhoneCondition, PhoneStatus } from '../enums';
+import { PhoneCondition, PhoneStatus, PtaStatus } from '../enums';
 
 /**
  * Phone Model
@@ -34,6 +34,8 @@ export interface Phone {
   isTaxInclusive: boolean;
   /** When true, item is tax exempt (0% tax) and clearly marked on receipts */
   isTaxExempt: boolean;
+  conditionRating: number | null;
+  ptaStatus: PtaStatus | null;
 }
 
 export interface CreatePhoneRequest {
@@ -55,6 +57,8 @@ export interface CreatePhoneRequest {
   taxRate?: number;
   isTaxInclusive?: boolean;
   isTaxExempt?: boolean;
+  conditionRating?: number | null;
+  ptaStatus?: PtaStatus | null;
 }
 
 export interface UpdatePhoneRequest {
@@ -76,6 +80,8 @@ export interface UpdatePhoneRequest {
   taxRate?: number;
   isTaxInclusive?: boolean;
   isTaxExempt?: boolean;
+  conditionRating?: number | null;
+  ptaStatus?: PtaStatus | null;
 }
 
 export interface PhoneListResponse {
@@ -93,6 +99,7 @@ export interface PhoneFilter {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+  ptaStatus?: PtaStatus;
 }
 
 export interface PhoneSort {

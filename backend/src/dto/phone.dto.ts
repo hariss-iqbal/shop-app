@@ -1,4 +1,4 @@
-import { PhoneCondition, PhoneStatus } from '../enums';
+import { PhoneCondition, PhoneStatus, PtaStatus } from '../enums';
 
 /**
  * Phone DTOs
@@ -13,6 +13,8 @@ export interface CreatePhoneDto {
   ramGb?: number | null;
   color?: string | null;
   condition: PhoneCondition;
+  conditionRating?: number | null;
+  ptaStatus?: PtaStatus | null;
   batteryHealth?: number | null;
   imei?: string | null;
   costPrice: number;
@@ -37,6 +39,8 @@ export interface UpdatePhoneDto {
   ramGb?: number | null;
   color?: string | null;
   condition?: PhoneCondition;
+  conditionRating?: number | null;
+  ptaStatus?: PtaStatus | null;
   batteryHealth?: number | null;
   imei?: string | null;
   costPrice?: number;
@@ -61,6 +65,8 @@ export interface PhoneResponseDto {
   ramGb: number | null;
   color: string | null;
   condition: PhoneCondition;
+  conditionRating: number | null;
+  ptaStatus: PtaStatus | null;
   batteryHealth: number | null;
   imei: string | null;
   costPrice: number;
@@ -144,4 +150,27 @@ export interface PhoneWithInventoryResponseDto extends PhoneResponseDto {
  */
 export interface PhoneFilterWithLocationDto extends PhoneFilterDto {
   locationId?: string;
+}
+
+/**
+ * Phone Specs Fetch DTOs
+ * For fetching phone specifications from GSMArena
+ */
+export interface FetchPhoneSpecsRequestDto {
+  brand: string;
+  model: string;
+}
+
+export interface PhoneSpecSuggestion {
+  ram: number[];           // RAM options in GB (e.g., [4, 6, 8])
+  storage: number[];       // Storage options in GB (e.g., [64, 128, 256])
+  colors: string[];        // Available color options
+}
+
+export interface FetchPhoneSpecsResponseDto {
+  success: boolean;
+  data?: PhoneSpecSuggestion;
+  error?: string;
+  source?: string;         // e.g., 'gsmarena'
+  phoneUrl?: string;       // Source URL for reference
 }

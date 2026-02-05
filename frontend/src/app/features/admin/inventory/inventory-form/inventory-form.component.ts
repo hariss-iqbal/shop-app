@@ -17,8 +17,11 @@ import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
 import { CheckboxModule } from 'primeng/checkbox';
+import { RadioButtonModule } from 'primeng/radiobutton';
 import { MessageModule } from 'primeng/message';
+import { ChipModule } from 'primeng/chip';
 import { PhoneService } from '../../../../core/services/phone.service';
+import { PhoneImageService } from '../../../../core/services/phone-image.service';
 import { BrandService } from '../../../../core/services/brand.service';
 import { SupplierService } from '../../../../core/services/supplier.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
@@ -29,7 +32,7 @@ import { Brand } from '../../../../models/brand.model';
 import { Supplier } from '../../../../models/supplier.model';
 import { CreatePhoneRequest, UpdatePhoneRequest } from '../../../../models/phone.model';
 import { PhoneImage } from '../../../../models/phone-image.model';
-import { PhoneCondition, PhoneConditionLabels, PhoneStatus, PhoneStatusLabels } from '../../../../enums';
+import { PhoneCondition, PhoneConditionLabels, PhoneStatus, PhoneStatusLabels, PtaStatus, PtaStatusLabels } from '../../../../enums';
 import { PhoneImageUploadComponent } from '../phone-image-upload/phone-image-upload.component';
 import { PHONE_CONSTRAINTS } from '../../../../constants/validation.constants';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
@@ -67,7 +70,9 @@ interface BrandSuggestion {
     TooltipModule,
     TagModule,
     CheckboxModule,
+    RadioButtonModule,
     MessageModule,
+    ChipModule,
     PhoneImageUploadComponent,
     AppCurrencyPipe
   ],
@@ -84,6 +89,7 @@ export class InventoryFormComponent implements OnInit {
   private toastService = inject(ToastService);
   private focusService = inject(FocusManagementService);
   private taxCalcService = inject(TaxCalculationService);
+  private phoneImageService = inject(PhoneImageService);
 
   isEdit = false;
   phoneId: string | null = null;
@@ -170,6 +176,11 @@ export class InventoryFormComponent implements OnInit {
     value
   }));
 
+  ptaStatusOptions = [
+    { label: PtaStatusLabels[PtaStatus.PTA_APPROVED], value: PtaStatus.PTA_APPROVED },
+    { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
+  ];
+
   statusOptions: DropdownOption<PhoneStatus>[] = Object.values(PhoneStatus).map(value => ({
     label: PhoneStatusLabels[value],
     value
@@ -178,6 +189,25 @@ export class InventoryFormComponent implements OnInit {
   /** Validation constraints for phone form fields (F-058: Input Sanitization) */
   readonly constraints = PHONE_CONSTRAINTS;
 
+  // Dynamic quick options from GSMArena (start empty, populate on fetch)
+  ramQuickOptions = signal<number[]>([]);
+  storageQuickOptions = signal<number[]>([]);
+  colorSuggestions = signal<string[]>([]);
+
+  fetchingSpecs = signal(false);
+  specsFetched = signal(false);
+  specsError = signal<string | null>(null);
+
+  // Fallback options (only used if API returns empty or fails)
+  private readonly FALLBACK_RAM = [6, 8, 12, 16];
+  private readonly FALLBACK_STORAGE = [128, 256, 512];
+
+  recentSuppliers = signal<Supplier[]>([]);
+
+  pendingImages = signal<File[]>([]);
+  isUploadingImages = signal(false);
+  pendingImagePreviews = signal<string[]>([]);
+
   form: FormGroup = this.fb.group({
     brand: [null as Brand | null, Validators.required],
     model: ['', [Validators.required, Validators.maxLength(this.constraints.MODEL_MAX)]],
@@ -185,6 +215,8 @@ export class InventoryFormComponent implements OnInit {
     ramGb: [null as number | null],
     color: ['', Validators.maxLength(this.constraints.COLOR_MAX)],
     condition: [PhoneCondition.NEW, Validators.required],
+    conditionRating: [null as number | null, [Validators.min(1), Validators.max(10)]],
+    ptaStatus: [null as PtaStatus | null],
     batteryHealth: [null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]],
     imei: ['', Validators.maxLength(this.constraints.IMEI_MAX)],
     costPrice: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -205,7 +237,7 @@ export class InventoryFormComponent implements OnInit {
     this.isEdit = !!this.phoneId;
 
     this.form.get('condition')?.valueChanges.subscribe((condition: PhoneCondition) => {
-      const shouldShow = condition === PhoneCondition.USED || condition === PhoneCondition.REFURBISHED;
+      const shouldShow = condition === PhoneCondition.USED || condition === PhoneCondition.OPEN_BOX;
       this.showBatteryHealth.set(shouldShow);
       if (!shouldShow) {
         this.form.get('batteryHealth')?.setValue(null);
@@ -231,6 +263,11 @@ export class InventoryFormComponent implements OnInit {
       })));
       this.suppliers.set(suppliers.data);
 
+      // Get last 2 distinct suppliers from recent phones
+      if (suppliers.data.length > 0) {
+        this.recentSuppliers.set(suppliers.data.slice(0, 2));
+      }
+
       if (this.isEdit && this.phoneId) {
         await this.loadPhone(this.phoneId);
       }
@@ -252,7 +289,7 @@ export class InventoryFormComponent implements OnInit {
 
     const brand = this.brands().find(b => b.id === phone.brandId);
 
-    const shouldShowBatteryHealth = phone.condition === PhoneCondition.USED || phone.condition === PhoneCondition.REFURBISHED;
+    const shouldShowBatteryHealth = phone.condition === PhoneCondition.USED || phone.condition === PhoneCondition.OPEN_BOX;
     this.showBatteryHealth.set(shouldShowBatteryHealth);
 
     this.form.patchValue({
@@ -262,6 +299,8 @@ export class InventoryFormComponent implements OnInit {
       ramGb: phone.ramGb,
       color: phone.color || '',
       condition: phone.condition,
+      conditionRating: phone.conditionRating,
+      ptaStatus: phone.ptaStatus,
       batteryHealth: phone.batteryHealth,
       imei: phone.imei || '',
       costPrice: phone.costPrice,
@@ -359,6 +398,122 @@ export class InventoryFormComponent implements OnInit {
     this.pendingBrandName = '';
   }
 
+  setRam(value: number): void {
+    this.form.get('ramGb')?.setValue(value);
+  }
+
+  setStorage(value: number): void {
+    this.form.get('storageGb')?.setValue(value);
+  }
+
+  setColor(value: string): void {
+    this.form.get('color')?.setValue(value);
+  }
+
+  setSupplier(id: string): void {
+    this.form.get('supplierId')?.setValue(id);
+  }
+
+  /**
+   * Fetch phone specifications from GSMArena
+   * Triggered when user clicks "Fetch Information" button
+   */
+  async fetchPhoneSpecs(): Promise<void> {
+    const brand = this.form.get('brand')?.value;
+    const model = this.form.get('model')?.value;
+
+    // Validation
+    if (!brand || !brand.name) {
+      this.toastService.warn('Brand Required', 'Please select a brand first');
+      return;
+    }
+
+    if (!model || model.trim().length === 0) {
+      this.toastService.warn('Model Required', 'Please enter a phone model');
+      return;
+    }
+
+    this.fetchingSpecs.set(true);
+    this.specsError.set(null);
+    this.specsFetched.set(false);
+
+    try {
+      const result = await this.phoneService.fetchPhoneSpecs(brand.name, model.trim());
+
+      if (result.success && result.data) {
+        // Update quick options with fetched data OR fallback if empty
+        const ramOptions = result.data.ram.length > 0 ? result.data.ram : this.FALLBACK_RAM;
+        const storageOptions = result.data.storage.length > 0 ? result.data.storage : this.FALLBACK_STORAGE;
+        const colorOptions = result.data.colors.length > 0 ? result.data.colors : [];
+
+        this.ramQuickOptions.set(ramOptions);
+        this.storageQuickOptions.set(storageOptions);
+        this.colorSuggestions.set(colorOptions);
+
+        this.specsFetched.set(true);
+
+        const specsCount = result.data.ram.length + result.data.storage.length + result.data.colors.length;
+        if (specsCount > 0) {
+          this.toastService.success(
+            'Specs Loaded!',
+            `Found ${specsCount} specifications from ${result.source || 'GSMArena'}`
+          );
+        } else {
+          this.toastService.info(
+            'Partial Data',
+            'Some specifications not found. Using fallback options.'
+          );
+        }
+      } else {
+        // API failed - use fallback options
+        this.ramQuickOptions.set(this.FALLBACK_RAM);
+        this.storageQuickOptions.set(this.FALLBACK_STORAGE);
+        this.colorSuggestions.set([]);
+
+        this.specsError.set(result.error || 'No specifications found');
+        this.toastService.warn('Not Found', result.error || 'Could not find phone specifications. Using fallback options.');
+      }
+    } catch (error) {
+      // Exception - use fallback options
+      this.ramQuickOptions.set(this.FALLBACK_RAM);
+      this.storageQuickOptions.set(this.FALLBACK_STORAGE);
+      this.colorSuggestions.set([]);
+
+      const errorMsg = error instanceof Error ? error.message : 'An error occurred';
+      this.specsError.set(errorMsg);
+      this.toastService.error('Error', 'Failed to fetch specifications. Using fallback options.');
+    } finally {
+      this.fetchingSpecs.set(false);
+    }
+  }
+
+  onPendingImagesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+
+    const files = Array.from(input.files).filter(f =>
+      ['image/jpeg', 'image/png', 'image/webp'].includes(f.type)
+    );
+
+    this.pendingImages.update(existing => [...existing, ...files]);
+
+    // Generate previews
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.pendingImagePreviews.update(previews => [...previews, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    input.value = ''; // Reset input
+  }
+
+  removePendingImage(index: number): void {
+    this.pendingImages.update(files => files.filter((_, i) => i !== index));
+    this.pendingImagePreviews.update(previews => previews.filter((_, i) => i !== index));
+  }
+
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -378,6 +533,8 @@ export class InventoryFormComponent implements OnInit {
           ramGb: formValue.ramGb,
           color: this.sanitizer.sanitizeOrNull(formValue.color),
           condition: formValue.condition,
+          conditionRating: formValue.conditionRating,
+          ptaStatus: formValue.ptaStatus,
           batteryHealth: this.showBatteryHealth() ? formValue.batteryHealth : null,
           imei: this.sanitizer.sanitizeOrNull(formValue.imei),
           costPrice: formValue.costPrice,
@@ -403,6 +560,8 @@ export class InventoryFormComponent implements OnInit {
           ramGb: formValue.ramGb,
           color: this.sanitizer.sanitizeOrNull(formValue.color),
           condition: formValue.condition,
+          conditionRating: formValue.conditionRating,
+          ptaStatus: formValue.ptaStatus,
           batteryHealth: this.showBatteryHealth() ? formValue.batteryHealth : null,
           imei: this.sanitizer.sanitizeOrNull(formValue.imei),
           costPrice: formValue.costPrice,
@@ -418,8 +577,24 @@ export class InventoryFormComponent implements OnInit {
           isTaxExempt: formValue.isTaxExempt ?? false
         };
 
-        await this.phoneService.createPhone(createRequest);
+        const createdPhone = await this.phoneService.createPhone(createRequest);
         this.toastService.success('Success', 'Phone added successfully');
+
+        // Upload pending images if any
+        if (this.pendingImages().length > 0 && createdPhone?.id) {
+          this.isUploadingImages.set(true);
+          try {
+            for (const file of this.pendingImages()) {
+              await this.phoneImageService.uploadImage(createdPhone.id, file);
+            }
+            this.toastService.success('Images Uploaded', `${this.pendingImages().length} image(s) uploaded successfully`);
+          } catch (imgError) {
+            console.error('Failed to upload images:', imgError);
+            this.toastService.warn('Image Upload Issue', 'Phone was saved but some images failed to upload. You can add them by editing the phone.');
+          } finally {
+            this.isUploadingImages.set(false);
+          }
+        }
       }
 
       this.router.navigate(['/admin/inventory']);

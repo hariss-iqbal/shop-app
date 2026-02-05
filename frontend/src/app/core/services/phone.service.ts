@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Phone, PhoneDetail, PhoneDetailImage, PhoneListResponse, PhoneFilter, CreatePhoneRequest, UpdatePhoneRequest } from '../../models/phone.model';
 import { PhoneStatus } from '../../enums';
+import { PhoneSpecsScraperService, FetchPhoneSpecsResponse } from './phone-specs-scraper.service';
 
 export interface LazyLoadParams {
   first: number;
@@ -23,6 +24,17 @@ export interface CatalogPaginationParams {
 })
 export class PhoneService {
   private supabase = inject(SupabaseService);
+  private specsScraper = inject(PhoneSpecsScraperService);
+
+  /**
+   * Fetch phone specifications from GSMArena
+   * @param brand Phone brand (e.g., "Apple", "Samsung")
+   * @param model Phone model (e.g., "iPhone 15 Pro", "Galaxy S24")
+   * @returns Phone specifications including RAM, storage, and color options
+   */
+  async fetchPhoneSpecs(brand: string, model: string): Promise<FetchPhoneSpecsResponse> {
+    return this.specsScraper.fetchSpecs(brand, model);
+  }
 
   async getPhones(params: LazyLoadParams, filter?: PhoneFilter): Promise<PhoneListResponse> {
     const { first, rows, sortField, sortOrder, globalFilter } = params;
@@ -80,6 +92,11 @@ export class PhoneService {
 
     if (filter?.maxPrice !== undefined && filter?.maxPrice !== null) {
       query = query.lte('selling_price', filter.maxPrice);
+    }
+
+    // Apply PTA status filter
+    if (filter?.ptaStatus) {
+      query = query.eq('pta_status', filter.ptaStatus);
     }
 
     // Apply server-side search filter (search on model OR brand name)
@@ -196,6 +213,11 @@ export class PhoneService {
 
     if (filter?.maxPrice !== undefined && filter?.maxPrice !== null) {
       query = query.lte('selling_price', filter.maxPrice);
+    }
+
+    // Apply PTA status filter
+    if (filter?.ptaStatus) {
+      query = query.eq('pta_status', filter.ptaStatus);
     }
 
     if (searchTerm) {
@@ -319,7 +341,9 @@ export class PhoneService {
         notes: request.notes,
         tax_rate: request.taxRate ?? 0,
         is_tax_inclusive: request.isTaxInclusive ?? false,
-        is_tax_exempt: request.isTaxExempt ?? false
+        is_tax_exempt: request.isTaxExempt ?? false,
+        condition_rating: request.conditionRating,
+        pta_status: request.ptaStatus
       })
       .select()
       .single();
@@ -353,6 +377,8 @@ export class PhoneService {
     if (request.taxRate !== undefined) updateData['tax_rate'] = request.taxRate;
     if (request.isTaxInclusive !== undefined) updateData['is_tax_inclusive'] = request.isTaxInclusive;
     if (request.isTaxExempt !== undefined) updateData['is_tax_exempt'] = request.isTaxExempt;
+    if (request.conditionRating !== undefined) updateData['condition_rating'] = request.conditionRating;
+    if (request.ptaStatus !== undefined) updateData['pta_status'] = request.ptaStatus;
 
     const { error } = await this.supabase
       .from('phones')
@@ -521,7 +547,9 @@ export class PhoneService {
       updatedAt: data['updated_at'] as string | null,
       taxRate: (data['tax_rate'] as number) ?? 0,
       isTaxInclusive: (data['is_tax_inclusive'] as boolean) ?? false,
-      isTaxExempt: (data['is_tax_exempt'] as boolean) ?? false
+      isTaxExempt: (data['is_tax_exempt'] as boolean) ?? false,
+      conditionRating: (data['condition_rating'] as number) ?? null,
+      ptaStatus: (data['pta_status'] as Phone['ptaStatus']) ?? null
     };
   }
 }
