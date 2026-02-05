@@ -32,7 +32,7 @@ export const environment: Environment = {
     uploadPreset: 'phone-shop-unsigned'
   },
   apiServer: {
-    url: 'https://shop-app-api.vercel.app'  // Will be updated after backend deployment
+    url: 'https://shop-app-api-omega.vercel.app'
   },
   whatsapp: {
     phoneNumber: '1234567890'
