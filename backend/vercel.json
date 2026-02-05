@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "shop-app-api",
+  "builds": [
+    {
+      "src": "src/api-server.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/api-server.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
