@@ -3,14 +3,14 @@
   "name": "shop-app-api",
   "builds": [
     {
-      "src": "src/api-server.ts",
+      "src": "api/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/api-server.ts"
+      "dest": "api/index.ts"
     }
   ],
   "env": {
