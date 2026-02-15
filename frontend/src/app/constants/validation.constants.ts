@@ -10,7 +10,7 @@ export const BRAND_CONSTRAINTS = {
   NAME_MAX: 100
 } as const;
 
-export const PHONE_CONSTRAINTS = {
+export const PRODUCT_CONSTRAINTS = {
   MODEL_MAX: 150,
   DESCRIPTION_MAX: 5000,
   COLOR_MAX: 50,

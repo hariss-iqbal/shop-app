@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
@@ -83,14 +83,16 @@ interface SortOption {
   templateUrl: './receipts-list.component.html'
 })
 export class ReceiptsListComponent implements OnInit {
-  private receiptStorageService = inject(ReceiptStorageService);
-  private refundService = inject(RefundService);
-  private receiptService = inject(ReceiptService);
-  private whatsAppService = inject(WhatsAppService);
-  private toastService = inject(ToastService);
-  private savedSearchService = inject(SavedReceiptSearchService);
-  private confirmationService = inject(ConfirmationService);
-  authService = inject(SupabaseAuthService);
+  constructor(
+    private receiptStorageService: ReceiptStorageService,
+    private refundService: RefundService,
+    private receiptService: ReceiptService,
+    private whatsAppService: WhatsAppService,
+    private toastService: ToastService,
+    private savedSearchService: SavedReceiptSearchService,
+    private confirmationService: ConfirmationService,
+    public authService: SupabaseAuthService
+  ) { }
 
   receipts = signal<StoredReceipt[]>([]);
   totalRecords = signal(0);

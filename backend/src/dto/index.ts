@@ -1,6 +1,6 @@
 export * from './brand.dto';
-export * from './phone.dto';
-export * from './phone-image.dto';
+export * from './product.dto';
+export * from './product-image.dto';
 export * from './supplier.dto';
 export * from './purchase-order.dto';
 export * from './purchase-order-item.dto';
@@ -11,7 +11,7 @@ export * from './dashboard.dto';
 export * from './notification.dto';
 export * from './confirmation-dialog.dto';
 export * from './error-handling.dto';
-export * from './phone-label.dto';
+export * from './product-label.dto';
 export * from './receipt.dto';
 export * from './receipt-send-log.dto';
 export * from './refund.dto';

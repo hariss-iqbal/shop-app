@@ -21,11 +21,6 @@ describe('Environment Configuration', () => {
     expect(environment.siteUrl.length).toBeGreaterThan(0);
   });
 
-  it('should have siteName defined', () => {
-    expect(typeof environment.siteName).toBe('string');
-    expect(environment.siteName.length).toBeGreaterThan(0);
-  });
-
   it('should have supabase configuration', () => {
     expect(environment.supabase).toBeDefined();
     expect(typeof environment.supabase.url).toBe('string');
@@ -36,25 +31,6 @@ describe('Environment Configuration', () => {
     expect(environment.recaptcha).toBeDefined();
     expect(typeof environment.recaptcha.enabled).toBe('boolean');
     expect(typeof environment.recaptcha.siteKey).toBe('string');
-  });
-
-  it('should have whatsapp configuration', () => {
-    expect(environment.whatsapp).toBeDefined();
-    expect(typeof environment.whatsapp.phoneNumber).toBe('string');
-  });
-
-  it('should have businessInfo configuration', () => {
-    expect(environment.businessInfo).toBeDefined();
-    expect(typeof environment.businessInfo.name).toBe('string');
-    expect(typeof environment.businessInfo.address).toBe('string');
-    expect(typeof environment.businessInfo.phoneDisplay).toBe('string');
-    expect(typeof environment.businessInfo.phoneLink).toBe('string');
-    expect(typeof environment.businessInfo.email).toBe('string');
-    expect(environment.businessInfo.hours).toBeDefined();
-    expect(typeof environment.businessInfo.hours.weekdays).toBe('string');
-    expect(typeof environment.businessInfo.hours.weekend).toBe('string');
-    expect(typeof environment.businessInfo.mapEmbedUrl).toBe('string');
-    expect(typeof environment.businessInfo.mapSearchUrl).toBe('string');
   });
 
   it('should NOT contain service_role key pattern', () => {

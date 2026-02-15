@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   Customer,
@@ -22,7 +22,7 @@ import {
   providedIn: 'root'
 })
 export class CustomerService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getCustomers(filter?: CustomerFilter): Promise<CustomerListResponse> {
     const limit = filter?.limit || 25;
@@ -181,15 +181,15 @@ export class CustomerService {
       throw new Error('Customer not found');
     }
 
-    // Get sales with phone details
+    // Get sales with product details
     const { data: salesData, error: salesError } = await this.supabase
       .from('sales')
       .select(`
         id,
-        phone_id,
+        product_id,
         sale_date,
         sale_price,
-        phone:phones(
+        product:products(
           id,
           model,
           brand:brands(id, name)
@@ -203,14 +203,14 @@ export class CustomerService {
     }
 
     const sales = (salesData || []).map(sale => {
-      const phoneData = sale.phone as unknown;
-      let phoneName = '';
+      const productData = sale.product as unknown;
+      let productName = '';
       let brandName = '';
 
-      if (phoneData && typeof phoneData === 'object') {
-        const phoneObj = phoneData as Record<string, unknown>;
-        phoneName = (phoneObj['model'] as string) || '';
-        const brandData = phoneObj['brand'];
+      if (productData && typeof productData === 'object') {
+        const productObj = productData as Record<string, unknown>;
+        productName = (productObj['model'] as string) || '';
+        const brandData = productObj['brand'];
         if (brandData && typeof brandData === 'object') {
           const brandObj = brandData as Record<string, unknown>;
           brandName = (brandObj['name'] as string) || '';
@@ -219,10 +219,10 @@ export class CustomerService {
 
       return {
         id: sale.id,
-        phoneId: sale.phone_id,
+        productId: sale.product_id,
         saleDate: sale.sale_date,
         salePrice: sale.sale_price,
-        phoneName,
+        productName,
         brandName
       };
     });

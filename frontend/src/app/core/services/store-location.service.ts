@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   StoreLocation,
@@ -17,7 +17,7 @@ import {
   providedIn: 'root'
 })
 export class StoreLocationService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getLocations(filter?: StoreLocationFilter): Promise<StoreLocationListResponse> {
     let query = this.supabase.from('store_locations').select('*', { count: 'exact' });

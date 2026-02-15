@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -48,9 +48,11 @@ export class MobileQuickActionsComponent {
 
   @Output() actionTriggered = new EventEmitter<QuickActionEvent>();
 
-  viewportService = inject(ViewportService);
-  private authService = inject(SupabaseAuthService);
-  private router = inject(Router);
+  constructor(
+    public viewportService: ViewportService,
+    private authService: SupabaseAuthService,
+    private router: Router
+  ) { }
 
   fabStyle = {
     position: 'fixed',

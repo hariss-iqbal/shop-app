@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { SupabaseAuthService } from './supabase-auth.service';
 import {
@@ -26,8 +26,10 @@ import {
   providedIn: 'root'
 })
 export class UserRoleService {
-  private supabaseService = inject(SupabaseService);
-  private authService = inject(SupabaseAuthService);
+  constructor(
+    private supabaseService: SupabaseService,
+    private authService: SupabaseAuthService
+  ) { }
 
   private readonly _currentRole = signal<UserRole | null>(null);
   private readonly _permissions = signal<Record<Permission, boolean> | null>(null);
@@ -432,5 +434,25 @@ export class UserRoleService {
     } finally {
       this._loading.set(false);
     }
+  }
+
+  /**
+   * Create a new user with a temporary password (admin only).
+   * Calls the create-user Edge Function which uses the service_role key.
+   */
+  async createUser(email: string, password: string, role: UserRole): Promise<{ success: boolean; userId?: string; error?: string; warning?: string }> {
+    const { data, error } = await this.supabaseService.client.functions.invoke('create-user', {
+      body: { email, password, role }
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to create user');
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to create user');
+    }
+
+    return data;
   }
 }

@@ -1,13 +1,13 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
-import { DashboardKPIs, DateRangeFilter, MonthlySalesData, RecentPhone, StockByBrand } from '../../models/dashboard.model';
-import { PhoneStatus } from '../../enums';
+import { DashboardKPIs, DateRangeFilter, MonthlySalesData, RecentProduct, StockByBrand } from '../../models/dashboard.model';
+import { ProductStatus } from '../../enums';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getKpis(dateRange?: DateRangeFilter): Promise<DashboardKPIs> {
     const [stockCount, stockValue, potentialProfit, totalSales, totalRevenue, totalProfit] =
@@ -72,9 +72,9 @@ export class DashboardService {
 
   async getStockByBrand(): Promise<StockByBrand[]> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('brand_id, brand:brands(id, name)')
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) {
       throw new Error(error.message);
@@ -82,9 +82,9 @@ export class DashboardService {
 
     const brandMap = new Map<string, { brandName: string; count: number }>();
 
-    (data || []).forEach(phone => {
-      const brand = phone.brand as unknown as { id: string; name: string } | null;
-      const brandId = phone.brand_id as string;
+    (data || []).forEach(product => {
+      const brand = product.brand as unknown as { id: string; name: string } | null;
+      const brandId = product.brand_id as string;
       const brandName = brand?.name || 'Unknown';
 
       if (brandMap.has(brandId)) {
@@ -99,9 +99,9 @@ export class DashboardService {
       .sort((a, b) => b.count - a.count);
   }
 
-  async getRecentlyAddedPhones(): Promise<RecentPhone[]> {
+  async getRecentlyAddedProducts(): Promise<RecentProduct[]> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('id, model, condition, selling_price, created_at, brand:brands(name)')
       .order('created_at', { ascending: false })
       .limit(5);
@@ -110,24 +110,24 @@ export class DashboardService {
       throw new Error(error.message);
     }
 
-    return (data || []).map(phone => {
-      const brand = phone.brand as unknown as { name: string } | null;
+    return (data || []).map(product => {
+      const brand = product.brand as unknown as { name: string } | null;
       return {
-        id: phone.id as string,
+        id: product.id as string,
         brandName: brand?.name || 'Unknown',
-        model: phone.model as string,
-        condition: phone.condition as string,
-        sellingPrice: phone.selling_price as number,
-        createdAt: phone.created_at as string,
+        model: product.model as string,
+        condition: product.condition as string,
+        sellingPrice: product.selling_price as number,
+        createdAt: product.created_at as string,
       };
     });
   }
 
   private async getAvailableStockCount(): Promise<number> {
     const { count, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('*', { count: 'exact', head: true })
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) {
       throw new Error(error.message);
@@ -137,9 +137,9 @@ export class DashboardService {
 
   private async getStockValue(): Promise<number> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('cost_price')
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) {
       throw new Error(error.message);
@@ -149,9 +149,9 @@ export class DashboardService {
 
   private async getPotentialProfit(): Promise<number> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('selling_price, cost_price')
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) {
       throw new Error(error.message);

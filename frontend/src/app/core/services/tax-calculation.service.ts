@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { TaxBreakdownEntry, CartItem, CartSummary, ReceiptItem } from '../../models/sale.model';
-import { Phone } from '../../models/phone.model';
+import { Product } from '../../models/product.model';
+import { CurrencyService } from './currency.service';
 
 /**
  * Tax calculation result for a single item
@@ -35,13 +36,15 @@ export interface CartTaxSummary {
 
 /**
  * Tax Calculation Service
- * Handles all tax calculations for the phone shop frontend
+ * Handles all tax calculations for the shop frontend
  * Feature: F-012 Tax Calculation and Compliance
  */
 @Injectable({
   providedIn: 'root'
 })
 export class TaxCalculationService {
+  constructor(private currencyService: CurrencyService) { }
+
   /**
    * Calculate tax for a tax-inclusive price
    * When a product price includes tax, this extracts the base price and tax amount
@@ -153,47 +156,47 @@ export class TaxCalculationService {
   }
 
   /**
-   * Calculate tax for a phone using its tax configuration
+   * Calculate tax for a product using its tax configuration
    */
-  calculatePhoneTax(phone: Phone, quantity: number = 1, overridePrice?: number): ItemTaxCalculation {
-    const unitPrice = overridePrice ?? phone.sellingPrice;
+  calculateProductTax(product: Product, quantity: number = 1, overridePrice?: number): ItemTaxCalculation {
+    const unitPrice = overridePrice ?? product.sellingPrice;
     return this.calculateItemTax(
       unitPrice,
-      phone.taxRate,
-      phone.isTaxInclusive,
-      phone.isTaxExempt,
+      product.taxRate,
+      product.isTaxInclusive,
+      product.isTaxExempt,
       quantity
     );
   }
 
   /**
-   * Convert a Phone to a CartItem with calculated tax
+   * Convert a Product to a CartItem with calculated tax
    */
-  phoneToCartItem(phone: Phone, salePrice?: number): CartItem {
-    const price = salePrice ?? phone.sellingPrice;
+  productToCartItem(product: Product, salePrice?: number): CartItem {
+    const price = salePrice ?? product.sellingPrice;
     const taxCalc = this.calculateItemTax(
       price,
-      phone.taxRate,
-      phone.isTaxInclusive,
-      phone.isTaxExempt,
+      product.taxRate,
+      product.isTaxInclusive,
+      product.isTaxExempt,
       1
     );
 
     return {
-      phoneId: phone.id,
-      brandName: phone.brandName,
-      model: phone.model,
-      storageGb: phone.storageGb,
-      color: phone.color,
-      condition: phone.condition,
-      imei: phone.imei,
-      costPrice: phone.costPrice,
-      sellingPrice: phone.sellingPrice,
+      productId: product.id,
+      brandName: product.brandName,
+      model: product.model,
+      storageGb: product.storageGb,
+      color: product.color,
+      condition: product.condition,
+      imei: product.imei,
+      costPrice: product.costPrice,
+      sellingPrice: product.sellingPrice,
       salePrice: price,
-      taxRate: phone.taxRate,
-      primaryImageUrl: phone.primaryImageUrl,
-      isTaxInclusive: phone.isTaxInclusive,
-      isTaxExempt: phone.isTaxExempt,
+      taxRate: product.taxRate,
+      primaryImageUrl: product.primaryImageUrl,
+      isTaxInclusive: product.isTaxInclusive,
+      isTaxExempt: product.isTaxExempt,
       basePrice: taxCalc.basePrice,
       taxAmount: taxCalc.taxAmount
     };
@@ -332,8 +335,9 @@ export class TaxCalculationService {
   /**
    * Format currency amount for display
    */
-  formatCurrency(amount: number, currencySymbol: string = '$'): string {
-    return `${currencySymbol}${amount.toFixed(2)}`;
+  formatCurrency(amount: number, currencySymbol?: string): string {
+    const symbol = currencySymbol ?? this.currencyService.symbol;
+    return `${symbol}${amount.toFixed(2)}`;
   }
 
   /**
@@ -342,31 +346,31 @@ export class TaxCalculationService {
   generateTaxBreakdownText(taxBreakdown: TaxBreakdownEntry[]): string[] {
     return taxBreakdown.map(entry => {
       if (entry.taxRate === 0) {
-        return `Tax Exempt (${entry.itemCount} item${entry.itemCount !== 1 ? 's' : ''}): $${entry.taxableAmount.toFixed(2)}`;
+        return `Tax Exempt (${entry.itemCount} item${entry.itemCount !== 1 ? 's' : ''}): ${this.formatCurrency(entry.taxableAmount)}`;
       }
-      return `${entry.taxRate}% Tax on $${entry.taxableAmount.toFixed(2)}: $${entry.taxAmount.toFixed(2)}`;
+      return `${entry.taxRate}% Tax on ${this.formatCurrency(entry.taxableAmount)}: ${this.formatCurrency(entry.taxAmount)}`;
     });
   }
 
   /**
-   * Check if a phone has tax configured
+   * Check if a product has tax configured
    */
-  hasTaxConfigured(phone: Phone): boolean {
-    return phone.taxRate > 0 || phone.isTaxExempt;
+  hasTaxConfigured(product: Product): boolean {
+    return product.taxRate > 0 || product.isTaxExempt;
   }
 
   /**
    * Get display label for tax status
    */
-  getTaxStatusLabel(phone: Phone): string {
-    if (phone.isTaxExempt) {
+  getTaxStatusLabel(product: Product): string {
+    if (product.isTaxExempt) {
       return 'Tax Exempt';
     }
-    if (phone.taxRate === 0) {
+    if (product.taxRate === 0) {
       return 'No Tax';
     }
-    const inclusiveLabel = phone.isTaxInclusive ? ' (incl.)' : '';
-    return `${phone.taxRate}% Tax${inclusiveLabel}`;
+    const inclusiveLabel = product.isTaxInclusive ? ' (incl.)' : '';
+    return `${product.taxRate}% Tax${inclusiveLabel}`;
   }
 
   /**

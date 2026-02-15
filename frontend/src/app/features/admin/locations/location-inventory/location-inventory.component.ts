@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -41,10 +41,12 @@ import { StoreLocation } from '../../../../models/store-location.model';
   templateUrl: './location-inventory.component.html'
 })
 export class LocationInventoryComponent implements OnInit {
-  private locationInventoryService = inject(LocationInventoryService);
-  private storeLocationService = inject(StoreLocationService);
-  private userLocationAssignmentService = inject(UserLocationAssignmentService);
-  private messageService = inject(MessageService);
+  constructor(
+    private locationInventoryService: LocationInventoryService,
+    private storeLocationService: StoreLocationService,
+    private userLocationAssignmentService: UserLocationAssignmentService,
+    private messageService: MessageService
+  ) { }
 
   locations = signal<StoreLocation[]>([]);
   inventory = signal<LocationInventory[]>([]);

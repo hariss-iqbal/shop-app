@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SyncQueueService } from './sync-queue.service';
 import { NetworkStatusService } from './network-status.service';
 import { WhatsAppService } from '../../shared/services/whatsapp.service';
@@ -18,11 +18,13 @@ import { CurrencyService } from './currency.service';
   providedIn: 'root'
 })
 export class OfflineWhatsAppService {
-  private readonly syncQueue = inject(SyncQueueService);
-  private readonly networkStatus = inject(NetworkStatusService);
-  private readonly whatsAppService = inject(WhatsAppService);
-  private readonly toastService = inject(ToastService);
-  private readonly currencyService = inject(CurrencyService);
+  constructor(
+    private readonly syncQueue: SyncQueueService,
+    private readonly networkStatus: NetworkStatusService,
+    private readonly whatsAppService: WhatsAppService,
+    private readonly toastService: ToastService,
+    private readonly currencyService: CurrencyService
+  ) { }
 
   /**
    * Send receipt via WhatsApp - online or queued for offline

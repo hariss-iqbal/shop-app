@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,23 +23,25 @@ import { SliderModule } from 'primeng/slider';
 import { ChipModule } from 'primeng/chip';
 import { BadgeModule } from 'primeng/badge';
 import { CheckboxModule } from 'primeng/checkbox';
-import { RatingModule } from 'primeng/rating';
-import { PhoneService, CatalogPaginationParams } from '../../../core/services/phone.service';
+import { DrawerModule } from 'primeng/drawer';
+import { ProductService, CatalogPaginationParams } from '../../../core/services/product.service';
 import { BrandService } from '../../../core/services/brand.service';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
-import { PhoneComparisonService } from '../../../shared/services/phone-comparison.service';
-import { PhoneCardKeyboardDirective } from '../../../shared/directives/phone-card-keyboard.directive';
+import { ProductComparisonService } from '../../../shared/services/product-comparison.service';
+import { ProductCardKeyboardDirective } from '../../../shared/directives/product-card-keyboard.directive';
 import { BlurUpImageDirective } from '../../../shared/directives/blur-up-image.directive';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
-import { Phone } from '../../../models/phone.model';
+import { Product } from '../../../models/product.model';
 import { Brand } from '../../../models/brand.model';
-import { PhoneStatus, PhoneCondition, PhoneConditionLabels, PtaStatus, PtaStatusLabels } from '../../../enums';
+import { ProductStatus, ProductCondition, ProductConditionLabels, PtaStatus, PtaStatusLabels } from '../../../enums';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
+import { CurrencyService } from '../../../core/services/currency.service';
+import { ShopDetailsService } from '../../../core/services/shop-details.service';
 
 type ViewMode = 'grid' | 'list';
-type CatalogSection = 'all' | 'new-arrivals' | 'top-sellers';
+type CatalogSection = 'all' | 'new-arrivals';
 
 interface BrandOption {
   id: string | null;
@@ -63,7 +65,7 @@ interface ViewOption {
 
 interface ConditionOption {
   label: string;
-  value: PhoneCondition;
+  value: ProductCondition;
 }
 
 interface StorageOption {
@@ -74,16 +76,15 @@ interface StorageOption {
 interface ActiveFilter {
   type: 'brand' | 'condition' | 'storage' | 'price' | 'search' | 'pta';
   label: string;
-  value: string | number | PhoneCondition;
+  value: string | number | ProductCondition;
 }
 
-interface PhoneWithExtras extends Phone {
+interface ProductWithExtras extends Product {
   isNewArrival: boolean;
-  isTopSeller: boolean;
   hasDiscount: boolean;
   discountPercent: number;
   originalPrice: number | null;
-  rating: number;
+  isFeatured: boolean;
 }
 
 interface SectionOption {
@@ -117,8 +118,8 @@ interface SectionOption {
     ChipModule,
     BadgeModule,
     CheckboxModule,
-    RatingModule,
-    PhoneCardKeyboardDirective,
+    DrawerModule,
+    ProductCardKeyboardDirective,
     BlurUpImageDirective,
     AppCurrencyPipe,
     ProductCardComponent
@@ -127,21 +128,13 @@ interface SectionOption {
   styleUrls: ['./catalog.component.scss']
 })
 export class CatalogComponent implements OnInit, OnDestroy {
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private phoneService = inject(PhoneService);
-  private brandService = inject(BrandService);
-  private imageOptimization = inject(ImageOptimizationService);
-  private toastService = inject(ToastService);
-  private seoService = inject(SeoService);
-  comparisonService = inject(PhoneComparisonService);
 
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
   private isInitializing = true;
   private isNavigatingFromUrl = false;
 
-  phones = signal<Phone[]>([]);
+  products = signal<Product[]>([]);
   brands = signal<Brand[]>([]);
   loading = signal(true);
   totalRecords = signal(0);
@@ -151,7 +144,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   searchQuery = '';
   selectedBrandId: string | null = null;
-  selectedConditions: PhoneCondition[] = [];
+  selectedConditions: ProductCondition[] = [];
   selectedStorageValues: number[] = [];
   selectedPtaStatus: PtaStatus | null = null;
   priceRange: [number, number] = [0, 1000];
@@ -166,22 +159,16 @@ export class CatalogComponent implements OnInit, OnDestroy {
   // Section options for AC_REDESIGN_002 & AC_REDESIGN_004
   sectionOptions: SectionOption[] = [
     {
-      label: 'All Phones',
+      label: 'All Products',
       value: 'all',
       icon: 'pi pi-th-large',
-      description: 'Browse our complete collection of smartphones'
+      description: 'Browse our complete collection of products'
     },
     {
       label: 'New Arrivals',
       value: 'new-arrivals',
       icon: 'pi pi-sparkles',
-      description: 'Discover our latest additions - freshly stocked phones just for you'
-    },
-    {
-      label: 'Top Sellers',
-      value: 'top-sellers',
-      icon: 'pi pi-star',
-      description: 'Our most loved picks by customers - best value phones in stock'
+      description: 'Discover our latest additions - freshly stocked products just for you'
     }
   ];
 
@@ -190,32 +177,33 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return this.sectionOptions.find(s => s.value === this.currentSection) || null;
   });
 
+  // Filter drawer for mobile
+  filterDrawerVisible = false;
+  activeFilterCount = computed(() => this.activeFilters().length);
+
+  openFilterDrawer(): void {
+    this.filterDrawerVisible = true;
+  }
+
+  closeFilterDrawer(): void {
+    this.filterDrawerVisible = false;
+  }
+
   // Computed extras for list view (grid view uses ProductCardComponent)
-  phonesWithExtras = computed((): PhoneWithExtras[] => {
+  productsWithExtras = computed((): ProductWithExtras[] => {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    return this.phones().map((phone, index) => {
-      const createdAt = new Date(phone.createdAt);
+    return this.products().map((product) => {
+      const createdAt = new Date(product.createdAt);
       const isNewArrival = createdAt >= sevenDaysAgo;
-      const hasDiscount = phone.profitMargin >= 20;
-      const discountPercent = hasDiscount ? Math.round(phone.profitMargin) : 0;
+      const hasDiscount = product.profitMargin >= 20;
+      const discountPercent = hasDiscount ? Math.round(product.profitMargin) : 0;
       const originalPrice = hasDiscount
-        ? Math.round(phone.sellingPrice * (1 + discountPercent / 100))
+        ? Math.round(product.sellingPrice * (1 + discountPercent / 100))
         : null;
 
-      let rating = 4;
-      if (phone.condition === PhoneCondition.NEW) {
-        rating = 5;
-      } else if (phone.condition === PhoneCondition.OPEN_BOX) {
-        rating = 4;
-      } else {
-        rating = phone.batteryHealth ? Math.min(5, Math.max(3, Math.round(phone.batteryHealth / 25))) : 3;
-      }
-
-      const isTopSeller = !isNewArrival && !hasDiscount && index < 12 && index % 3 === 0;
-
-      return { ...phone, isNewArrival, isTopSeller, hasDiscount, discountPercent, originalPrice, rating };
+      return { ...product, isNewArrival, hasDiscount, discountPercent, originalPrice, isFeatured: product.isFeatured };
     });
   });
 
@@ -234,9 +222,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
   ];
 
   conditionOptions: ConditionOption[] = [
-    { label: PhoneConditionLabels[PhoneCondition.NEW], value: PhoneCondition.NEW },
-    { label: PhoneConditionLabels[PhoneCondition.USED], value: PhoneCondition.USED },
-    { label: PhoneConditionLabels[PhoneCondition.OPEN_BOX], value: PhoneCondition.OPEN_BOX }
+    { label: ProductConditionLabels[ProductCondition.NEW], value: ProductCondition.NEW },
+    { label: ProductConditionLabels[ProductCondition.USED], value: ProductCondition.USED },
+    { label: ProductConditionLabels[ProductCondition.OPEN_BOX], value: ProductCondition.OPEN_BOX }
   ];
 
   ptaStatusOptions = [
@@ -287,7 +275,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     for (const condition of this.selectedConditions) {
       filters.push({
         type: 'condition',
-        label: `Condition: ${PhoneConditionLabels[condition]}`,
+        label: `Condition: ${ProductConditionLabels[condition]}`,
         value: condition
       });
     }
@@ -313,7 +301,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     if (this.priceRange[0] > min || this.priceRange[1] < max) {
       filters.push({
         type: 'price',
-        label: `Price: $${this.priceRange[0]} - $${this.priceRange[1]}`,
+        label: `Price: ${this.currencyService.symbol}${this.priceRange[0]} - ${this.currencyService.symbol}${this.priceRange[1]}`,
         value: `${this.priceRange[0]}-${this.priceRange[1]}`
       });
     }
@@ -321,15 +309,27 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return filters;
   });
 
-  constructor() {
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private productService: ProductService,
+    private brandService: BrandService,
+    private imageOptimization: ImageOptimizationService,
+    private toastService: ToastService,
+    private seoService: SeoService,
+    public comparisonService: ProductComparisonService,
+    private currencyService: CurrencyService,
+    private shopDetailsService: ShopDetailsService
+  ) {
     this.selectedSort = this.sortOptions[0];
   }
 
   ngOnInit(): void {
+    const shopName = this.shopDetailsService.shopName() || 'Phone Shop';
     this.seoService.updateMetaTags({
-      title: 'Phone Catalog',
-      description: 'Browse our wide selection of new, used, and open box phones at competitive prices. Filter by brand, condition, storage, and price range.',
-      url: '/catalog'
+      title: `${shopName} - Quality Mobile Products`,
+      description: 'Browse our wide selection of new, used, and open box products at competitive prices. Filter by brand, condition, storage, and price range.',
+      url: '/'
     });
     this.setupSearchDebounce();
     this.subscribeToQueryParams();
@@ -351,7 +351,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.first = 0;
         this.updateUrlParams();
-        this.loadPhones();
+        this.loadProducts();
       });
   }
 
@@ -372,7 +372,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
         }
 
         this.applyParams(params);
-        this.loadPhones();
+        this.loadProducts();
       });
   }
 
@@ -384,13 +384,13 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
     this.applyParams(this.route.snapshot.queryParams);
     this.isInitializing = false;
-    await this.loadPhones();
+    await this.loadProducts();
   }
 
   private applyParams(params: Params): void {
     // Apply section filter
     const section = params['section'] as CatalogSection;
-    if (section && ['all', 'new-arrivals', 'top-sellers'].includes(section)) {
+    if (section && ['all', 'new-arrivals'].includes(section)) {
       this.currentSection = section;
     } else {
       this.currentSection = 'all';
@@ -401,9 +401,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.selectedBrandId = params['brand'] || null;
 
     if (params['condition']) {
-      const conditions = params['condition'].split(',') as PhoneCondition[];
+      const conditions = params['condition'].split(',') as ProductCondition[];
       this.selectedConditions = conditions.filter(c =>
-        Object.values(PhoneCondition).includes(c)
+        Object.values(ProductCondition).includes(c)
       );
     } else {
       this.selectedConditions = [];
@@ -529,8 +529,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   async loadFilterOptions(): Promise<void> {
     try {
       const [storageOptions, priceRange] = await Promise.all([
-        this.phoneService.getDistinctStorageOptions(),
-        this.phoneService.getPriceRange()
+        this.productService.getDistinctStorageOptions(),
+        this.productService.getPriceRange()
       ]);
 
       this.availableStorageOptions.set(storageOptions);
@@ -545,7 +545,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadPhones(): Promise<void> {
+  async loadProducts(): Promise<void> {
     this.loading.set(true);
     try {
       const min = this.priceMin();
@@ -566,10 +566,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
         paginationParams.sortOrder = -1;
       }
 
-      const result = await this.phoneService.getCatalogPhones(
+      const result = await this.productService.getCatalogProducts(
         paginationParams,
         {
-          status: PhoneStatus.AVAILABLE,
+          status: ProductStatus.AVAILABLE,
           brandId: this.selectedBrandId || undefined,
           conditions: this.selectedConditions.length > 0 ? this.selectedConditions : undefined,
           storageGbOptions: this.selectedStorageValues.length > 0 ? this.selectedStorageValues : undefined,
@@ -580,24 +580,20 @@ export class CatalogComponent implements OnInit, OnDestroy {
         }
       );
 
-      let phones = result.data;
+      let products = result.data;
       let total = result.total;
 
-      // Filter phones based on section (client-side for now)
+      // Filter products based on section (client-side for now)
       if (this.currentSection === 'new-arrivals') {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        phones = phones.filter(phone => new Date(phone.createdAt) >= sevenDaysAgo);
-        total = phones.length;
-      } else if (this.currentSection === 'top-sellers') {
-        // Top sellers: phones with high profit margin (good deals)
-        phones = phones.filter(phone => phone.profitMargin >= 15);
-        total = phones.length;
+        products = products.filter(product => new Date(product.createdAt) >= sevenDaysAgo);
+        total = products.length;
       }
 
-      this.phones.set(phones);
+      this.products.set(products);
       this.totalRecords.set(total);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load phones';
+      const message = error instanceof Error ? error.message : 'Failed to load products';
       this.toastService.error('Error', message);
     } finally {
       this.loading.set(false);
@@ -637,7 +633,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.priceRange = [this.priceMin(), this.priceMax()];
     this.first = 0;
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
   }
 
   removeFilter(filter: ActiveFilter): void {
@@ -664,35 +660,35 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
     this.first = 0;
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
   }
 
   onFilterChange(): void {
     if (this.isInitializing) return;
     this.first = 0;
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
   }
 
   onPriceRangeChange(): void {
     if (this.isInitializing) return;
     this.first = 0;
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
   }
 
   onSortChange(): void {
     if (this.isInitializing) return;
     this.first = 0;
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
   }
 
   onPageChange(event: PaginatorState): void {
     this.first = event.first ?? 0;
     this.pageSize = event.rows ?? 12;
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
     // Scroll to top of catalog for better UX when navigating pages
     this.scrollToTop();
   }
@@ -701,30 +697,30 @@ export class CatalogComponent implements OnInit, OnDestroy {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  viewPhone(phone: Phone): void {
-    this.router.navigate(['/phone', phone.id]);
+  viewProduct(product: Product): void {
+    this.router.navigate(['/product', product.id]);
   }
 
-  isPhoneSelected(phoneId: string): boolean {
-    return this.comparisonService.isSelected(phoneId);
+  isProductSelected(productId: string): boolean {
+    return this.comparisonService.isSelected(productId);
   }
 
-  toggleCompare(event: Event, phone: Phone): void {
+  toggleCompare(event: Event, product: Product): void {
     event.stopPropagation();
-    const result = this.comparisonService.toggle(phone);
+    const result = this.comparisonService.toggle(product);
     if (result === 'full') {
-      this.toastService.warn('Comparison Limit', 'You can compare up to 3 phones at a time. Remove a phone to add another.');
+      this.toastService.warn('Comparison Limit', 'You can compare up to 3 products at a time. Remove a product to add another.');
     }
   }
 
-  onCompareToggled(event: { phone: Phone; result: 'added' | 'removed' | 'full' }): void {
+  onCompareToggled(event: { product: Product; result: 'added' | 'removed' | 'full' }): void {
     if (event.result === 'full') {
-      this.toastService.warn('Comparison Limit', 'You can compare up to 3 phones at a time. Remove a phone to add another.');
+      this.toastService.warn('Comparison Limit', 'You can compare up to 3 products at a time. Remove a product to add another.');
     }
   }
 
-  removeFromCompare(phoneId: string): void {
-    this.comparisonService.remove(phoneId);
+  removeFromCompare(productId: string): void {
+    this.comparisonService.remove(productId);
   }
 
   clearComparison(): void {
@@ -732,7 +728,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   goToComparison(): void {
-    const ids = this.comparisonService.getPhoneIds();
+    const ids = this.comparisonService.getProductIds();
     this.router.navigate(['/compare'], { queryParams: { ids: ids.join(',') } });
   }
 
@@ -748,17 +744,17 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return this.imageOptimization.getListSrcSet(url);
   }
 
-  getConditionLabel(condition: PhoneCondition): string {
-    return PhoneConditionLabels[condition];
+  getConditionLabel(condition: ProductCondition): string {
+    return ProductConditionLabels[condition];
   }
 
-  getConditionSeverity(condition: PhoneCondition): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
+  getConditionSeverity(condition: ProductCondition): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     switch (condition) {
-      case PhoneCondition.NEW:
+      case ProductCondition.NEW:
         return 'success';
-      case PhoneCondition.OPEN_BOX:
+      case ProductCondition.OPEN_BOX:
         return 'info';
-      case PhoneCondition.USED:
+      case ProductCondition.USED:
         return 'warn';
       default:
         return 'secondary';
@@ -784,12 +780,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
     // Update sort based on section
     if (section === 'new-arrivals') {
       this.selectedSort = this.sortOptions[0]; // Newest First
-    } else if (section === 'top-sellers') {
-      this.selectedSort = this.sortOptions[2]; // Price: Low to High (best value)
     }
 
     this.updateUrlParams();
-    this.loadPhones();
+    this.loadProducts();
   }
 
   // Get section icon background color
@@ -797,8 +791,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
     switch (this.currentSection) {
       case 'new-arrivals':
         return 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-      case 'top-sellers':
-        return 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
       default:
         return 'linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%)';
     }

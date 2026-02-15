@@ -1,6 +1,6 @@
 export { BrandController } from './brand.controller';
-export { PhoneController } from './phone.controller';
-export { PhoneImageController } from './phone-image.controller';
+export { ProductController } from './product.controller';
+export { ProductImageController } from './product-image.controller';
 export { SupplierController } from './supplier.controller';
 export { PurchaseOrderController } from './purchase-order.controller';
 export { PurchaseOrderItemController } from './purchase-order-item.controller';
@@ -10,7 +10,7 @@ export { StockAlertConfigController } from './stock-alert-config.controller';
 export { DashboardController } from './dashboard.controller';
 export { NotificationController } from './notification.controller';
 export { ErrorHandlingController } from './error-handling.controller';
-export { PhoneLabelController } from './phone-label.controller';
+export { ProductLabelController } from './product-label.controller';
 export { ReceiptController } from './receipt.controller';
 export { ReceiptSendLogController } from './receipt-send-log.controller';
 export { RefundController } from './refund.controller';

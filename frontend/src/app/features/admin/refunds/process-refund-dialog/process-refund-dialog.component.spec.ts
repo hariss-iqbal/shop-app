@@ -30,13 +30,13 @@ describe('ProcessRefundDialogComponent', () => {
       {
         id: 'item-1',
         saleId: 'sale-1',
-        phoneId: 'phone-1',
+        productId: 'phone-1',
         itemName: 'iPhone 15 Pro',
         quantity: 1,
         unitPrice: 100,
         total: 100,
-        phoneStatus: 'sold',
-        phoneModel: 'iPhone 15 Pro',
+        productStatus: 'sold',
+        productModel: 'iPhone 15 Pro',
         brandName: 'Apple',
         canRestoreInventory: true
       }

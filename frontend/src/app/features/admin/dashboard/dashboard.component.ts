@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,12 +15,13 @@ import { StockAlertService } from '../../../core/services/stock-alert.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { ThemeService } from '../../../shared/services/theme.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
-import { DashboardKPIs, DateRangeFilter, DateRangeOption, MonthlySalesData, RecentPhone, StockByBrand } from '../../../models/dashboard.model';
+import { DashboardKPIs, DateRangeFilter, DateRangeOption, MonthlySalesData, RecentProduct, StockByBrand } from '../../../models/dashboard.model';
 import { StockAlert, StockAlertConfig } from '../../../models/stock-alert-config.model';
 import { DashboardDateRange, DashboardDateRangeLabels } from '../../../enums';
 import { StockAlertsPanelComponent } from './stock-alerts-panel/stock-alerts-panel.component';
 import { StockAlertConfigDialogComponent } from './stock-alert-config-dialog/stock-alert-config-dialog.component';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
+import { CurrencyService } from '../../../core/services/currency.service';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -47,12 +48,15 @@ const DOUGHNUT_COLORS = [
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
-  private dashboardService = inject(DashboardService);
-  private stockAlertService = inject(StockAlertService);
-  private toastService = inject(ToastService);
-  private themeService = inject(ThemeService);
-  private router = inject(Router);
-  shopDetailsService = inject(ShopDetailsService);
+  constructor(
+    private dashboardService: DashboardService,
+    private stockAlertService: StockAlertService,
+    private toastService: ToastService,
+    private themeService: ThemeService,
+    private router: Router,
+    private currencyService: CurrencyService,
+    public shopDetailsService: ShopDetailsService
+  ) { }
 
   loading = signal(false);
   chartsLoading = signal(false);
@@ -73,7 +77,7 @@ export class DashboardComponent implements OnInit {
 
   monthlySales = signal<MonthlySalesData[]>([]);
   stockByBrand = signal<StockByBrand[]>([]);
-  recentPhones = signal<RecentPhone[]>([]);
+  recentProducts = signal<RecentProduct[]>([]);
 
   skeletonRows = Array(5);
   today = new Date();
@@ -119,7 +123,7 @@ export class DashboardComponent implements OnInit {
       labels: data.map(m => this.formatMonthLabel(m.month)),
       datasets: [
         {
-          label: 'Revenue ($)',
+          label: `Revenue (${this.currencyService.symbol})`,
           data: data.map(m => m.revenue),
           backgroundColor: '#3B82F6',
           borderColor: '#2563EB',
@@ -147,7 +151,7 @@ export class DashboardComponent implements OnInit {
           callbacks: {
             label: (context: { parsed: { y: number } }) => {
               const value = context.parsed.y;
-              return `Revenue: $${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+              return `Revenue: ${this.currencyService.format(value, { minDecimals: 0, maxDecimals: 0 })}`;
             }
           }
         }
@@ -157,7 +161,7 @@ export class DashboardComponent implements OnInit {
           beginAtZero: true,
           ticks: {
             color: textColor,
-            callback: (value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+            callback: (value: number) => this.currencyService.format(value, { minDecimals: 0, maxDecimals: 0 }),
           },
           grid: {
             color: gridColor,
@@ -258,14 +262,14 @@ export class DashboardComponent implements OnInit {
         this.dashboardService.getKpis(dateRange),
         this.dashboardService.getSalesByDateRange(dateRange),
         this.dashboardService.getStockByBrand(),
-        this.dashboardService.getRecentlyAddedPhones(),
+        this.dashboardService.getRecentlyAddedProducts(),
         this.stockAlertService.getAlerts(),
       ]);
 
       this.kpis.set(kpis);
       this.monthlySales.set(salesData);
       this.stockByBrand.set(stockData);
-      this.recentPhones.set(recentData);
+      this.recentProducts.set(recentData);
       this.stockAlerts.set(alertsData.alerts);
       this.stockAlertConfig.set(alertsData.config);
     } catch (error) {
@@ -278,16 +282,20 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  onRecentPhoneClick(phone: RecentPhone): void {
-    this.router.navigate(['/admin/inventory', phone.id, 'edit']);
+  onRecentProductClick(product: RecentProduct): void {
+    this.router.navigate(['/admin/inventory', product.id, 'edit']);
   }
 
   navigateToInventory(): void {
     this.router.navigate(['/admin/inventory']);
   }
 
-  navigateToAddPhone(): void {
+  navigateToAddProduct(): void {
     this.router.navigate(['/admin/inventory/new']);
+  }
+
+  navigateToNewSale(): void {
+    this.router.navigate(['/admin/sales/new']);
   }
 
   navigateToShopDetails(): void {

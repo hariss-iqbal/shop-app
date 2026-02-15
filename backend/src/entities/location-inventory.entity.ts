@@ -1,12 +1,12 @@
 /**
  * Location Inventory Entity
- * Tracks phone inventory quantities per location
+ * Tracks product inventory quantities per location
  * Database table: location_inventory
  * Feature: F-024 Multi-Location Inventory Support
  */
 export interface LocationInventory {
   id: string;
-  phone_id: string;
+  product_id: string;
   location_id: string;
   quantity: number;
   min_stock_level: number | null;
@@ -17,7 +17,7 @@ export interface LocationInventory {
 
 export interface LocationInventoryInsert {
   id?: string;
-  phone_id: string;
+  product_id: string;
   location_id: string;
   quantity?: number;
   min_stock_level?: number | null;
@@ -28,7 +28,7 @@ export interface LocationInventoryInsert {
 
 export interface LocationInventoryUpdate {
   id?: string;
-  phone_id?: string;
+  product_id?: string;
   location_id?: string;
   quantity?: number;
   min_stock_level?: number | null;
@@ -37,7 +37,7 @@ export interface LocationInventoryUpdate {
 }
 
 export interface LocationInventoryWithRelations extends LocationInventory {
-  phone?: {
+  product?: {
     id: string;
     model: string;
     status: string;

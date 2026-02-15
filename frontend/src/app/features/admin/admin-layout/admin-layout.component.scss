@@ -1,3 +1,18 @@
+/* Admin Layout - Sticky Sidebar + Scroll-to-Top (F-005) */
+
+:host {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
 /* Admin Layout - Collapsible Sidebar Styles (F-008) */
 
 .sidebar-transition {
@@ -88,13 +103,15 @@
   }
 }
 
+/* Ensure content doesn't get hidden behind bottom nav (mobile + tablet) */
+@media screen and (max-width: 991px) {
+  #admin-main-content {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0)) !important;
+  }
+}
+
 /* Mobile-specific adjustments */
 @media screen and (max-width: 767px) {
-  /* Ensure content doesn't get hidden behind bottom nav */
-  :host {
-    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
-  }
-
   /* Mobile header adjustments */
   header {
     position: sticky;

@@ -3,14 +3,14 @@ import { PaymentSummaryJson } from './sale-payment.entity';
 
 /**
  * Sale Entity
- * Records a completed phone sale
+ * Records a completed product sale
  * Database table: sales
  * Owner Module: M-07 Sales
  * Feature: F-018 Payment Method Integration
  */
 export interface Sale {
   id: string;
-  phone_id: string;
+  product_id: string;
   sale_date: string;
   sale_price: number;
   cost_price: number;
@@ -40,7 +40,7 @@ export interface Sale {
 
 export interface SaleInsert {
   id?: string;
-  phone_id: string;
+  product_id: string;
   sale_date: string;
   sale_price: number;
   cost_price: number;
@@ -66,7 +66,7 @@ export interface SaleInsert {
 
 export interface SaleUpdate {
   id?: string;
-  phone_id?: string;
+  product_id?: string;
   sale_date?: string;
   sale_price?: number;
   cost_price?: number;
@@ -90,7 +90,7 @@ export interface SaleUpdate {
 }
 
 export interface SaleWithRelations extends Sale {
-  phone?: {
+  product?: {
     id: string;
     model: string;
     brand: {

@@ -1,4 +1,4 @@
-import { PhoneStatus, PaymentMethod } from '../enums';
+import { ProductStatus, PaymentMethod } from '../enums';
 import { PaymentDetailDto, PaymentSummaryDto } from './payment.dto';
 
 /**
@@ -8,7 +8,7 @@ import { PaymentDetailDto, PaymentSummaryDto } from './payment.dto';
  */
 
 export interface CreateSaleDto {
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
   buyerName?: string | null;
@@ -32,9 +32,9 @@ export interface UpdateSaleDto {
 
 export interface SaleResponseDto {
   id: string;
-  phoneId: string;
+  productId: string;
   brandName: string;
-  phoneName: string;
+  productName: string;
   saleDate: string;
   salePrice: number;
   costPrice: number;
@@ -86,7 +86,7 @@ export interface SaleSummaryDto {
 }
 
 export interface MarkAsSoldDto {
-  phoneId: string;
+  productId: string;
   salePrice: number;
   saleDate: string;
   buyerName?: string | null;
@@ -111,7 +111,7 @@ export interface CustomerPurchaseHistoryFilterDto {
  * Feature: F-008 Automatic Inventory Deduction
  */
 export interface BatchSaleItemDto {
-  phoneId: string;
+  productId: string;
   salePrice: number;
 }
 
@@ -140,9 +140,9 @@ export interface CompleteBatchSaleDto {
 export interface SaleWithInventoryDeductionResponseDto {
   success: boolean;
   sale?: SaleResponseDto;
-  phoneId: string;
-  previousStatus?: PhoneStatus;
-  newStatus?: PhoneStatus;
+  productId: string;
+  previousStatus?: ProductStatus;
+  newStatus?: ProductStatus;
   warning?: string | null;
   inventoryDeducted: boolean;
   error?: string;
@@ -158,7 +158,7 @@ export interface BatchSaleWithInventoryDeductionResponseDto {
   processedItems: number;
   sales?: SaleResponseDto[];
   warnings?: Array<{
-    phoneId: string;
+    productId: string;
     warning: string;
   }>;
   inventoryDeducted: boolean;
@@ -173,17 +173,17 @@ export interface InventoryAvailabilityResponseDto {
   allAvailable: boolean;
   hasWarnings: boolean;
   allowOversell: boolean;
-  phones: Array<{
-    phoneId: string;
+  products: Array<{
+    productId: string;
     model: string;
     brandName: string;
-    status: PhoneStatus;
+    status: ProductStatus;
     available: boolean;
     warning?: string;
     error?: string;
   }>;
   warnings: Array<{
-    phoneId: string;
+    productId: string;
     message: string;
   }>;
 }
@@ -193,5 +193,5 @@ export interface InventoryAvailabilityResponseDto {
  * Feature: F-008 Automatic Inventory Deduction
  */
 export interface CheckInventoryAvailabilityDto {
-  phoneIds: string[];
+  productIds: string[];
 }

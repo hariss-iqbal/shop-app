@@ -10,7 +10,7 @@ import {
 
 interface SaleRecord {
   id: string;
-  phone_id: string;
+  product_id: string;
   sale_date: string;
   sale_price: number;
   cost_price: number;
@@ -18,15 +18,15 @@ interface SaleRecord {
   created_by: string | null;
 }
 
-interface SaleWithPhone {
+interface SaleWithProduct {
   id: string;
-  phone_id: string;
+  product_id: string;
   sale_date: string;
   sale_price: number;
   cost_price: number;
   buyer_name: string | null;
   created_by: string | null;
-  phone: {
+  product: {
     id: string;
     model: string;
     condition: string;
@@ -61,7 +61,7 @@ export class SalesDashboardRepository {
   }): Promise<SaleRecord[]> {
     let query = this.supabase
       .from(this.tableName)
-      .select('id, phone_id, sale_date, sale_price, cost_price, buyer_name, created_by');
+      .select('id, product_id, sale_date, sale_price, cost_price, buyer_name, created_by');
 
     if (options?.startDate) {
       query = query.gte('sale_date', options.startDate);
@@ -76,21 +76,21 @@ export class SalesDashboardRepository {
     return data || [];
   }
 
-  async getSalesWithPhoneData(options?: {
+  async getSalesWithProductData(options?: {
     startDate?: string;
     endDate?: string;
-  }): Promise<SaleWithPhone[]> {
+  }): Promise<SaleWithProduct[]> {
     let query = this.supabase
       .from(this.tableName)
       .select(`
         id,
-        phone_id,
+        product_id,
         sale_date,
         sale_price,
         cost_price,
         buyer_name,
         created_by,
-        phone:phones(
+        product:products(
           id,
           model,
           condition,
@@ -108,7 +108,7 @@ export class SalesDashboardRepository {
     const { data, error } = await query.order('sale_date', { ascending: false });
 
     if (error) throw error;
-    return (data || []) as SaleWithPhone[];
+    return (data || []) as SaleWithProduct[];
   }
 
   async getTotalRevenue(options?: { startDate?: string; endDate?: string }): Promise<number> {
@@ -212,10 +212,10 @@ export class SalesDashboardRepository {
     endDate?: string;
     limit?: number;
   }): Promise<TopSellingProductDto[]> {
-    const sales = await this.getSalesWithPhoneData(options);
+    const sales = await this.getSalesWithProductData(options);
 
     const productMap = new Map<string, {
-      phoneId: string;
+      productId: string;
       brandName: string;
       model: string;
       unitsSold: number;
@@ -224,10 +224,10 @@ export class SalesDashboardRepository {
     }>();
 
     sales.forEach(sale => {
-      const phoneId = sale.phone_id;
-      const phone = sale.phone;
-      const brandName = phone?.brand?.name || 'Unknown';
-      const model = phone?.model || 'Unknown';
+      const productId = sale.product_id;
+      const product = sale.product;
+      const brandName = product?.brand?.name || 'Unknown';
+      const model = product?.model || 'Unknown';
       const profit = (sale.sale_price || 0) - (sale.cost_price || 0);
 
       const key = `${brandName}-${model}`;
@@ -239,7 +239,7 @@ export class SalesDashboardRepository {
         entry.totalProfit += profit;
       } else {
         productMap.set(key, {
-          phoneId,
+          productId,
           brandName,
           model,
           unitsSold: 1,
@@ -262,7 +262,7 @@ export class SalesDashboardRepository {
     startDate?: string;
     endDate?: string;
   }): Promise<SalesByBrandDto[]> {
-    const sales = await this.getSalesWithPhoneData(options);
+    const sales = await this.getSalesWithProductData(options);
 
     const totalRevenue = sales.reduce((sum, s) => sum + (s.sale_price || 0), 0);
 
@@ -275,9 +275,9 @@ export class SalesDashboardRepository {
     }>();
 
     sales.forEach(sale => {
-      const phone = sale.phone;
-      const brandId = phone?.brand?.id || 'unknown';
-      const brandName = phone?.brand?.name || 'Unknown';
+      const product = sale.product;
+      const brandId = product?.brand?.id || 'unknown';
+      const brandName = product?.brand?.name || 'Unknown';
       const profit = (sale.sale_price || 0) - (sale.cost_price || 0);
 
       if (brandMap.has(brandId)) {
@@ -416,12 +416,12 @@ export class SalesDashboardRepository {
       .from(this.tableName)
       .select(`
         id,
-        phone_id,
+        product_id,
         sale_date,
         sale_price,
         cost_price,
         buyer_name,
-        phone:phones(
+        product:products(
           id,
           model,
           condition,
@@ -441,17 +441,17 @@ export class SalesDashboardRepository {
 
     if (error) throw error;
 
-    let sales = (data || []) as SaleWithPhone[];
+    let sales = (data || []) as SaleWithProduct[];
 
     if (options?.brandId) {
-      sales = sales.filter(s => s.phone?.brand?.id === options.brandId);
+      sales = sales.filter(s => s.product?.brand?.id === options.brandId);
     }
 
     return sales.map(sale => ({
-      phoneId: sale.phone_id,
-      brandName: sale.phone?.brand?.name || 'Unknown',
-      model: sale.phone?.model || 'Unknown',
-      condition: sale.phone?.condition || 'Unknown',
+      productId: sale.product_id,
+      brandName: sale.product?.brand?.name || 'Unknown',
+      model: sale.product?.model || 'Unknown',
+      condition: sale.product?.condition || 'Unknown',
       saleDate: sale.sale_date,
       salePrice: sale.sale_price,
       costPrice: sale.cost_price,

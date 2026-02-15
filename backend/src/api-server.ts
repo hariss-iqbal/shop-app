@@ -1,8 +1,8 @@
 /**
- * Simple Express API Server for Phone Specs Scraper
+ * Simple Express API Server for Product Specs Scraper
  *
  * This server provides a CORS-enabled proxy for the GSMArena scraper
- * so the frontend can fetch phone specifications without CORS errors.
+ * so the frontend can fetch product specifications without CORS errors.
  *
  * Usage:
  *   npm run api-server
@@ -28,12 +28,12 @@ const scraperService = new PhoneSpecsScraperService();
  * Health check endpoint
  */
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'phone-specs-api' });
+  res.json({ status: 'ok', service: 'product-specs-api' });
 });
 
 /**
- * POST /api/phones/fetch-specs
- * Fetch phone specifications from GSMArena
+ * POST /api/products/fetch-specs
+ * Fetch product specifications from GSMArena
  *
  * Request body:
  * {
@@ -50,10 +50,10 @@ app.get('/health', (req: Request, res: Response) => {
  *     "colors": ["Black", "White", "Blue"]
  *   },
  *   "source": "gsmarena",
- *   "phoneUrl": "https://www.gsmarena.com/..."
+ *   "productUrl": "https://www.gsmarena.com/..."
  * }
  */
-app.post('/api/phones/fetch-specs', async (req: Request, res: Response) => {
+app.post('/api/products/fetch-specs', async (req: Request, res: Response) => {
   try {
     const { brand, model } = req.body;
 
@@ -78,7 +78,7 @@ app.post('/api/phones/fetch-specs', async (req: Request, res: Response) => {
     // Return result
     res.json(result);
   } catch (error) {
-    console.error('[API] Error fetching phone specs:', error);
+    console.error('[API] Error fetching product specs:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error'
@@ -87,10 +87,10 @@ app.post('/api/phones/fetch-specs', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/phones/cache-stats
+ * GET /api/products/cache-stats
  * Get cache statistics
  */
-app.get('/api/phones/cache-stats', (req: Request, res: Response) => {
+app.get('/api/products/cache-stats', (req: Request, res: Response) => {
   const stats = scraperService.getCacheStats();
   res.json({
     success: true,
@@ -99,10 +99,10 @@ app.get('/api/phones/cache-stats', (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/phones/clear-cache
+ * POST /api/products/clear-cache
  * Clear the cache
  */
-app.post('/api/phones/clear-cache', (req: Request, res: Response) => {
+app.post('/api/products/clear-cache', (req: Request, res: Response) => {
   scraperService.clearCache();
   res.json({
     success: true,
@@ -116,18 +116,18 @@ const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║       Phone Specs API Server - Running                  ║
+║       Product Specs API Server - Running                 ║
 ╚═══════════════════════════════════════════════════════════╝
 
 🚀 Server listening on all interfaces (0.0.0.0:${PORT})
 📡 Local:   http://localhost:${PORT}
 📱 Network: http://192.168.100.111:${PORT}
 
-API Endpoint: POST /api/phones/fetch-specs
+API Endpoint: POST /api/products/fetch-specs
 Health Check: GET /health
 
 Example curl command:
-curl -X POST http://192.168.100.111:${PORT}/api/phones/fetch-specs \\
+curl -X POST http://192.168.100.111:${PORT}/api/products/fetch-specs \\
   -H "Content-Type: application/json" \\
   -d '{"brand": "Apple", "model": "iPhone 15 Pro"}'
   `);

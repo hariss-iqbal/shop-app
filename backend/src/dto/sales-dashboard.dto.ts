@@ -28,7 +28,7 @@ export interface MonthlySalesMetricDto {
 }
 
 export interface TopSellingProductDto {
-  phoneId: string;
+  productId: string;
   brandName: string;
   model: string;
   unitsSold: number;
@@ -83,7 +83,7 @@ export interface SalesDashboardResponseDto {
 }
 
 export interface ProductSalesReportDto {
-  phoneId: string;
+  productId: string;
   brandName: string;
   model: string;
   condition: string;

@@ -1,4 +1,4 @@
-import { Component, inject, signal, HostListener, PLATFORM_ID } from '@angular/core';
+import { Component, HostListener, Inject, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -11,7 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
   styleUrls: ['./back-to-top.component.scss']
 })
 export class BackToTopComponent {
-  private platformId = inject(PLATFORM_ID);
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
   private isBrowser = isPlatformBrowser(this.platformId);
 
   isVisible = signal(false);

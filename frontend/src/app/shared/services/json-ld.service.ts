@@ -1,9 +1,10 @@
-import { Injectable, inject } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { PhoneDetail } from '../../models/phone.model';
-import { PhoneCondition } from '../../enums/phone-condition.enum';
-import { PhoneStatus } from '../../enums/phone-status.enum';
+import { ProductDetail } from '../../models/product.model';
+import { ProductCondition } from '../../enums/product-condition.enum';
+import { ProductStatus } from '../../enums/product-status.enum';
 import { environment } from '../../../environments/environment';
+import { ShopDetailsService } from '../../core/services/shop-details.service';
 
 interface JsonLdOrganization {
   '@type': 'Organization';
@@ -40,13 +41,16 @@ interface JsonLdProduct {
 
 @Injectable({ providedIn: 'root' })
 export class JsonLdService {
-  private document = inject(DOCUMENT);
+  constructor(
+    @Inject(DOCUMENT) private document: Document,
+    private shopDetailsService: ShopDetailsService
+  ) { }
 
   private readonly siteUrl = environment.siteUrl;
   private readonly scriptId = 'json-ld-product';
 
-  setProductStructuredData(phone: PhoneDetail): void {
-    const jsonLd = this.buildProductJsonLd(phone);
+  setProductStructuredData(product: ProductDetail): void {
+    const jsonLd = this.buildProductJsonLd(product);
     this.injectJsonLd(jsonLd);
   }
 
@@ -57,29 +61,30 @@ export class JsonLdService {
     }
   }
 
-  private buildProductJsonLd(phone: PhoneDetail): JsonLdProduct {
-    const productName = `${phone.brandName} ${phone.model}`;
-    const imageUrls = this.getImageUrls(phone);
-    const productUrl = `${this.siteUrl}/phone/${phone.id}`;
+  private buildProductJsonLd(product: ProductDetail): JsonLdProduct {
+    const productName = `${product.brandName} ${product.model}`;
+    const imageUrls = this.getImageUrls(product);
+    const productUrl = `${this.siteUrl}/product/${product.id}`;
 
     // Build offer with seller information
     const offer: JsonLdOffer = {
       '@type': 'Offer',
-      price: phone.sellingPrice,
-      priceCurrency: environment.currency.code,
-      availability: this.mapAvailability(phone.status),
-      itemCondition: this.mapCondition(phone.condition),
+      price: product.sellingPrice,
+      priceCurrency: this.shopDetailsService.currencyCode(),
+      availability: this.mapAvailability(product.status),
+      itemCondition: this.mapCondition(product.condition),
       url: productUrl
     };
 
     // Add priceValidUntil (30 days from now for dynamic pricing)
     offer.priceValidUntil = this.getPriceValidUntilDate();
 
-    // Add seller organization if business info is available
-    if (environment.businessInfo?.name) {
+    // Add seller organization if shop name is available
+    const shopName = this.shopDetailsService.shopName();
+    if (shopName) {
       offer.seller = {
         '@type': 'Organization',
-        name: environment.businessInfo.name,
+        name: shopName,
         url: this.siteUrl
       };
     }
@@ -90,26 +95,26 @@ export class JsonLdService {
       name: productName,
       brand: {
         '@type': 'Brand',
-        name: phone.brandName
+        name: product.brandName
       },
       offers: offer,
       category: 'Mobile Phones'
     };
 
-    if (phone.description) {
-      jsonLd.description = phone.description;
+    if (product.description) {
+      jsonLd.description = product.description;
     }
 
     if (imageUrls.length > 0) {
       jsonLd.image = imageUrls;
     }
 
-    if (phone.imei) {
-      jsonLd.sku = phone.imei;
+    if (product.imei) {
+      jsonLd.sku = product.imei;
     }
 
-    if (phone.color) {
-      jsonLd.color = phone.color;
+    if (product.color) {
+      jsonLd.color = product.color;
     }
 
     return jsonLd;
@@ -121,9 +126,9 @@ export class JsonLdService {
     return date.toISOString().split('T')[0];
   }
 
-  private getImageUrls(phone: PhoneDetail): string[] {
-    if (phone.images && phone.images.length > 0) {
-      const sorted = [...phone.images].sort((a, b) => {
+  private getImageUrls(product: ProductDetail): string[] {
+    if (product.images && product.images.length > 0) {
+      const sorted = [...product.images].sort((a, b) => {
         if (a.isPrimary && !b.isPrimary) return -1;
         if (!a.isPrimary && b.isPrimary) return 1;
         return a.displayOrder - b.displayOrder;
@@ -131,33 +136,33 @@ export class JsonLdService {
       return sorted.map(img => img.imageUrl);
     }
 
-    if (phone.primaryImageUrl) {
-      return [phone.primaryImageUrl];
+    if (product.primaryImageUrl) {
+      return [product.primaryImageUrl];
     }
 
     return [];
   }
 
-  private mapCondition(condition: PhoneCondition): string {
+  private mapCondition(condition: ProductCondition): string {
     switch (condition) {
-      case PhoneCondition.NEW:
+      case ProductCondition.NEW:
         return 'https://schema.org/NewCondition';
-      case PhoneCondition.USED:
+      case ProductCondition.USED:
         return 'https://schema.org/UsedCondition';
-      case PhoneCondition.OPEN_BOX:
+      case ProductCondition.OPEN_BOX:
         return 'https://schema.org/RefurbishedCondition';
       default:
         return 'https://schema.org/UsedCondition';
     }
   }
 
-  private mapAvailability(status: PhoneStatus): string {
+  private mapAvailability(status: ProductStatus): string {
     switch (status) {
-      case PhoneStatus.AVAILABLE:
+      case ProductStatus.AVAILABLE:
         return 'https://schema.org/InStock';
-      case PhoneStatus.SOLD:
+      case ProductStatus.SOLD:
         return 'https://schema.org/SoldOut';
-      case PhoneStatus.RESERVED:
+      case ProductStatus.RESERVED:
         return 'https://schema.org/LimitedAvailability';
       default:
         return 'https://schema.org/OutOfStock';

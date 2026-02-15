@@ -1,4 +1,4 @@
-import { Component, inject, input, output, computed } from '@angular/core';
+import { Component, input, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,11 +7,11 @@ import { RatingModule } from 'primeng/rating';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
-import { PhoneComparisonService } from '../../services/phone-comparison.service';
+import { ProductComparisonService } from '../../services/product-comparison.service';
 import { BlurUpImageDirective } from '../../directives/blur-up-image.directive';
 import { AppCurrencyPipe } from '../../pipes/app-currency.pipe';
-import { Phone } from '../../../models/phone.model';
-import { PhoneCondition, PhoneConditionLabels } from '../../../enums';
+import { Product } from '../../../models/product.model';
+import { ProductCondition, ProductConditionLabels } from '../../../enums';
 
 @Component({
   selector: 'app-product-card',
@@ -29,26 +29,28 @@ import { PhoneCondition, PhoneConditionLabels } from '../../../enums';
   styleUrls: ['./product-card.component.scss']
 })
 export class ProductCardComponent {
-  private imageOptimization = inject(ImageOptimizationService);
-  private comparisonService = inject(PhoneComparisonService);
-  private router = inject(Router);
+  constructor(
+    private imageOptimization: ImageOptimizationService,
+    private comparisonService: ProductComparisonService,
+    private router: Router
+  ) { }
 
   // Inputs
-  phone = input.required<Phone>();
+  product = input.required<Product>();
   index = input<number | undefined>(undefined);
   eagerLoad = input(false);
   showCompareButton = input(true);
   showBadges = input(true);
-  showRating = input(true);
+  showRating = input(false);
   showSpecs = input(true);
   showDiscount = input(true);
 
   // Outputs
-  compareToggled = output<{ phone: Phone; result: 'added' | 'removed' | 'full' }>();
+  compareToggled = output<{ product: Product; result: 'added' | 'removed' | 'full' }>();
 
   // Computed signals
-  phoneExtras = computed(() => {
-    const p = this.phone();
+  productExtras = computed(() => {
+    const p = this.product();
     const idx = this.index();
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -62,9 +64,9 @@ export class ProductCardComponent {
       : null;
 
     let rating = 4;
-    if (p.condition === PhoneCondition.NEW) {
+    if (p.condition === ProductCondition.NEW) {
       rating = 5;
-    } else if (p.condition === PhoneCondition.OPEN_BOX) {
+    } else if (p.condition === ProductCondition.OPEN_BOX) {
       rating = 4;
     } else {
       rating = p.batteryHealth ? Math.min(5, Math.max(3, Math.round(p.batteryHealth / 25))) : 3;
@@ -72,31 +74,31 @@ export class ProductCardComponent {
 
     const isTopSeller = idx !== undefined && !isNewArrival && !hasDiscount && idx < 12 && idx % 3 === 0;
 
-    return { isNewArrival, hasDiscount, discountPercent, originalPrice, rating, isTopSeller };
+    return { isNewArrival, hasDiscount, discountPercent, originalPrice, rating, isTopSeller, isFeatured: p.isFeatured };
   });
 
   cardImageUrl = computed(() => {
-    const url = this.phone().primaryImageUrl;
-    return url ? this.imageOptimization.getCardContainUrl(url) : null;
+    const url = this.product().primaryImageUrl;
+    return url ? this.imageOptimization.getCardImageUrl(url) : null;
   });
 
   cardSrcSet = computed(() => {
-    const url = this.phone().primaryImageUrl;
+    const url = this.product().primaryImageUrl;
     return url ? this.imageOptimization.getCardSrcSet(url) : '';
   });
 
   isCompareSelected = computed(() => {
-    return this.comparisonService.isSelected(this.phone().id);
+    return this.comparisonService.isSelected(this.product().id);
   });
 
   navigateToDetail(): void {
-    this.router.navigate(['/phone', this.phone().id]);
+    this.router.navigate(['/product', this.product().id]);
   }
 
   toggleCompare(event: Event): void {
     event.stopPropagation();
-    const result = this.comparisonService.toggle(this.phone());
-    this.compareToggled.emit({ phone: this.phone(), result });
+    const result = this.comparisonService.toggle(this.product());
+    this.compareToggled.emit({ product: this.product(), result });
   }
 
   onImageError(event: Event): void {
@@ -106,17 +108,17 @@ export class ProductCardComponent {
     }
   }
 
-  getConditionLabel(condition: PhoneCondition): string {
-    return PhoneConditionLabels[condition];
+  getConditionLabel(condition: ProductCondition): string {
+    return ProductConditionLabels[condition];
   }
 
-  getConditionSeverity(condition: PhoneCondition): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
+  getConditionSeverity(condition: ProductCondition): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
     switch (condition) {
-      case PhoneCondition.NEW:
+      case ProductCondition.NEW:
         return 'success';
-      case PhoneCondition.OPEN_BOX:
+      case ProductCondition.OPEN_BOX:
         return 'info';
-      case PhoneCondition.USED:
+      case ProductCondition.USED:
         return 'warn';
       default:
         return 'secondary';

@@ -46,20 +46,20 @@ export interface CartTaxSummaryDto {
 }
 
 /**
- * Request to calculate tax for a single phone item
+ * Request to calculate tax for a single product item
  */
-export interface CalculatePhoneTaxRequestDto {
-  phoneId: string;
+export interface CalculateProductTaxRequestDto {
+  productId: string;
   overridePrice?: number;
   quantity?: number;
 }
 
 /**
- * Response for phone tax calculation
+ * Response for product tax calculation
  */
-export interface CalculatePhoneTaxResponseDto {
-  phoneId: string;
-  phoneName: string;
+export interface CalculateProductTaxResponseDto {
+  productId: string;
+  productName: string;
   brandName: string;
   unitPrice: number;
   unitBasePrice: number;
@@ -78,7 +78,7 @@ export interface CalculatePhoneTaxResponseDto {
  */
 export interface CalculateCartTaxRequestDto {
   items: Array<{
-    phoneId: string;
+    productId: string;
     overridePrice?: number;
     quantity?: number;
   }>;
@@ -88,8 +88,8 @@ export interface CalculateCartTaxRequestDto {
  * Cart item with tax calculation details
  */
 export interface CartItemWithTaxDto {
-  phoneId: string;
-  phoneName: string;
+  productId: string;
+  productName: string;
   brandName: string;
   unitPrice: number;
   unitBasePrice: number;
@@ -115,18 +115,18 @@ export interface CalculateCartTaxResponseDto {
 }
 
 /**
- * Tax configuration for a phone product
+ * Tax configuration for a product
  */
-export interface PhoneTaxConfigDto {
+export interface ProductTaxConfigDto {
   taxRate: number;
   isTaxInclusive: boolean;
   isTaxExempt: boolean;
 }
 
 /**
- * Request to update phone tax configuration
+ * Request to update product tax configuration
  */
-export interface UpdatePhoneTaxConfigDto {
+export interface UpdateProductTaxConfigDto {
   taxRate?: number;
   isTaxInclusive?: boolean;
   isTaxExempt?: boolean;

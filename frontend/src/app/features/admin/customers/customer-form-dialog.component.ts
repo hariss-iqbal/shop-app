@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -25,9 +25,11 @@ import { CustomerWithStats, CUSTOMER_VALIDATION } from '../../../models/customer
   templateUrl: './customer-form-dialog.component.html'
 })
 export class CustomerFormDialogComponent implements OnChanges {
-  private fb = inject(FormBuilder);
-  private customerService = inject(CustomerService);
-  private toastService = inject(ToastService);
+  constructor(
+    private fb: FormBuilder,
+    private customerService: CustomerService,
+    private toastService: ToastService
+  ) { }
 
   @Input() visible = false;
   @Input() customer: CustomerWithStats | null = null;

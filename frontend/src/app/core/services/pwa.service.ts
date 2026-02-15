@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, ApplicationRef, DestroyRef, NgZone } from '@angular/core';
+import { Injectable, signal, ApplicationRef, DestroyRef, NgZone } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter, first, switchMap, interval } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,17 +8,18 @@ import { fromEvent } from 'rxjs';
   providedIn: 'root'
 })
 export class PwaService {
-  private readonly swUpdate = inject(SwUpdate);
-  private readonly appRef = inject(ApplicationRef);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly ngZone = inject(NgZone);
 
   readonly updateAvailable = signal(false);
   readonly installPromptAvailable = signal(false);
 
   private deferredPrompt: BeforeInstallPromptEvent | null = null;
 
-  constructor() {
+  constructor(
+    private readonly swUpdate: SwUpdate,
+    private readonly appRef: ApplicationRef,
+    private readonly destroyRef: DestroyRef,
+    private readonly ngZone: NgZone
+  ) {
     this.listenForUpdates();
     this.listenForInstallPrompt();
     this.checkForUpdatesPeriodically();

@@ -1,4 +1,4 @@
-import { Directive, Input, TemplateRef, ViewContainerRef, inject, effect } from '@angular/core';
+import { Directive, Input, TemplateRef, ViewContainerRef, effect } from '@angular/core';
 import { SupabaseAuthService } from '../../core';
 import { Permission, UserRole } from '../../enums/user-role.enum';
 
@@ -12,9 +12,6 @@ import { Permission, UserRole } from '../../enums/user-role.enum';
   standalone: true
 })
 export class HasPermissionDirective {
-  private authService = inject(SupabaseAuthService);
-  private templateRef = inject(TemplateRef<unknown>);
-  private viewContainer = inject(ViewContainerRef);
 
   private hasView = false;
   private requiredPermission: Permission | null = null;
@@ -24,7 +21,11 @@ export class HasPermissionDirective {
     this.updateView();
   }
 
-  constructor() {
+  constructor(
+    private authService: SupabaseAuthService,
+    private templateRef: TemplateRef<unknown>,
+    private viewContainer: ViewContainerRef
+  ) {
     effect(() => {
       this.authService.permissions();
       this.updateView();
@@ -56,9 +57,6 @@ export class HasPermissionDirective {
   standalone: true
 })
 export class HasRoleDirective {
-  private authService = inject(SupabaseAuthService);
-  private templateRef = inject(TemplateRef<unknown>);
-  private viewContainer = inject(ViewContainerRef);
 
   private hasView = false;
   private allowedRoles: UserRole[] = [];
@@ -68,7 +66,11 @@ export class HasRoleDirective {
     this.updateView();
   }
 
-  constructor() {
+  constructor(
+    private authService: SupabaseAuthService,
+    private templateRef: TemplateRef<unknown>,
+    private viewContainer: ViewContainerRef
+  ) {
     effect(() => {
       this.authService.userRole();
       this.updateView();
@@ -99,13 +101,14 @@ export class HasRoleDirective {
   standalone: true
 })
 export class IsAdminDirective {
-  private authService = inject(SupabaseAuthService);
-  private templateRef = inject(TemplateRef<unknown>);
-  private viewContainer = inject(ViewContainerRef);
 
   private hasView = false;
 
-  constructor() {
+  constructor(
+    private authService: SupabaseAuthService,
+    private templateRef: TemplateRef<unknown>,
+    private viewContainer: ViewContainerRef
+  ) {
     effect(() => {
       const isAdmin = this.authService.isAdmin();
       this.updateView(isAdmin);
@@ -133,13 +136,14 @@ export class IsAdminDirective {
   standalone: true
 })
 export class IsManagerOrAdminDirective {
-  private authService = inject(SupabaseAuthService);
-  private templateRef = inject(TemplateRef<unknown>);
-  private viewContainer = inject(ViewContainerRef);
 
   private hasView = false;
 
-  constructor() {
+  constructor(
+    private authService: SupabaseAuthService,
+    private templateRef: TemplateRef<unknown>,
+    private viewContainer: ViewContainerRef
+  ) {
     effect(() => {
       const isManagerOrAdmin = this.authService.isManagerOrAdmin();
       this.updateView(isManagerOrAdmin);

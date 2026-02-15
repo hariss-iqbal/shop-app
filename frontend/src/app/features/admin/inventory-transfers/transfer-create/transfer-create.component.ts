@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,7 +18,7 @@ import { LocationInventory } from '../../../../models/location-inventory.model';
 import { TransferItemRequest } from '../../../../models/inventory-transfer.model';
 
 interface TransferItemForm extends TransferItemRequest {
-  phone?: LocationInventory['phone'];
+  product?: LocationInventory['product'];
   maxQuantity: number;
 }
 
@@ -44,11 +44,13 @@ interface TransferItemForm extends TransferItemRequest {
   templateUrl: './transfer-create.component.html'
 })
 export class TransferCreateComponent implements OnInit {
-  private router = inject(Router);
-  private inventoryTransferService = inject(InventoryTransferService);
-  private storeLocationService = inject(StoreLocationService);
-  private locationInventoryService = inject(LocationInventoryService);
-  private messageService = inject(MessageService);
+  constructor(
+    private router: Router,
+    private inventoryTransferService: InventoryTransferService,
+    private storeLocationService: StoreLocationService,
+    private locationInventoryService: LocationInventoryService,
+    private messageService: MessageService
+  ) { }
 
   locations = signal<StoreLocation[]>([]);
   availableInventory = signal<LocationInventory[]>([]);
@@ -119,17 +121,17 @@ export class TransferCreateComponent implements OnInit {
   }
 
   isItemAdded(item: LocationInventory): boolean {
-    return this.transferItems().some(t => t.phoneId === item.phoneId);
+    return this.transferItems().some(t => t.productId === item.productId);
   }
 
   addItem(item: LocationInventory): void {
     if (this.isItemAdded(item)) return;
 
     const newItem: TransferItemForm = {
-      phoneId: item.phoneId,
+      productId: item.productId,
       quantity: 1,
       notes: null,
-      phone: item.phone,
+      product: item.product,
       maxQuantity: item.quantity
     };
 
@@ -149,7 +151,7 @@ export class TransferCreateComponent implements OnInit {
         sourceLocationId: this.sourceLocationId!,
         destinationLocationId: this.destinationLocationId!,
         items: this.transferItems().map(item => ({
-          phoneId: item.phoneId,
+          productId: item.productId,
           quantity: item.quantity,
           notes: item.notes
         })),

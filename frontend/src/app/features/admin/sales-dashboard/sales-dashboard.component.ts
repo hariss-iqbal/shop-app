@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -31,6 +31,7 @@ import { DateRangeOption } from '../../../models/dashboard.model';
 import { DashboardDateRange, DashboardDateRangeLabels } from '../../../enums';
 import { StockAlertsPanelComponent } from '../dashboard/stock-alerts-panel/stock-alerts-panel.component';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
+import { CurrencyService } from '../../../core/services/currency.service';
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -63,11 +64,14 @@ const CHART_COLORS = [
   styleUrls: ['./sales-dashboard.component.scss']
 })
 export class SalesDashboardComponent implements OnInit {
-  private salesDashboardService = inject(SalesDashboardService);
-  private stockAlertService = inject(StockAlertService);
-  private toastService = inject(ToastService);
-  private themeService = inject(ThemeService);
-  private router = inject(Router);
+  constructor(
+    private salesDashboardService: SalesDashboardService,
+    private stockAlertService: StockAlertService,
+    private toastService: ToastService,
+    private themeService: ThemeService,
+    private router: Router,
+    private currencyService: CurrencyService
+  ) { }
 
   loading = signal(false);
   chartsLoading = signal(false);
@@ -140,7 +144,7 @@ export class SalesDashboardComponent implements OnInit {
       labels: data.map(m => this.formatMonthLabel(m.month)),
       datasets: [
         {
-          label: 'Revenue ($)',
+          label: `Revenue (${this.currencyService.symbol})`,
           data: data.map(m => m.revenue),
           borderColor: '#3B82F6',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -148,7 +152,7 @@ export class SalesDashboardComponent implements OnInit {
           tension: 0.4,
         },
         {
-          label: 'Profit ($)',
+          label: `Profit (${this.currencyService.symbol})`,
           data: data.map(m => m.profit),
           borderColor: '#10B981',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -180,7 +184,7 @@ export class SalesDashboardComponent implements OnInit {
           callbacks: {
             label: (context: { dataset: { label: string }; parsed: { y: number } }) => {
               const value = context.parsed.y;
-              return `${context.dataset.label}: $${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+              return `${context.dataset.label}: ${this.currencyService.format(value, { minDecimals: 0, maxDecimals: 0 })}`;
             }
           }
         }
@@ -190,7 +194,7 @@ export class SalesDashboardComponent implements OnInit {
           beginAtZero: true,
           ticks: {
             color: textColor,
-            callback: (value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
+            callback: (value: number) => this.currencyService.format(value, { minDecimals: 0, maxDecimals: 0 }),
           },
           grid: {
             color: gridColor,
@@ -246,7 +250,7 @@ export class SalesDashboardComponent implements OnInit {
         tooltip: {
           callbacks: {
             label: (context: { label: string; parsed: number }) => {
-              return `${context.label}: $${context.parsed.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+              return `${context.label}: ${this.currencyService.format(context.parsed, { minDecimals: 0, maxDecimals: 0 })}`;
             }
           }
         }

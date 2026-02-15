@@ -4,6 +4,7 @@ import { Router, CanActivateFn, ActivatedRouteSnapshot, RouterStateSnapshot } fr
 import { filter, first, map, timeout, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { SupabaseAuthService } from '../services/supabase-auth.service';
+import { ShopDetailsService } from '../services/shop-details.service';
 
 /**
  * Maximum time to wait for auth and role initialization (in milliseconds).
@@ -91,4 +92,26 @@ export const guestGuard: CanActivateFn = () => {
       return of(true);
     })
   );
+};
+
+/**
+ * Default route guard for the admin empty-path route.
+ * Reads the configured default landing route from shop_details and redirects.
+ * Falls back to /admin/dashboard if not configured.
+ */
+export const defaultRouteGuard: CanActivateFn = async () => {
+  const shopDetailsService = inject(ShopDetailsService);
+  const router = inject(Router);
+
+  try {
+    await shopDetailsService.getShopDetails();
+  } catch {
+    // Ignore errors — fall through to default
+  }
+
+  const defaultRoute = shopDetailsService.defaultLandingRoute() || '/admin/dashboard';
+  // Extract the child path from the full route (e.g., '/admin/dashboard' → 'dashboard')
+  const childPath = defaultRoute.replace(/^\/admin\//, '');
+  router.navigate(['/admin', childPath]);
+  return false;
 };

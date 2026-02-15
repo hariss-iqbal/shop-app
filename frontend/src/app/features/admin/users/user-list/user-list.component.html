@@ -5,13 +5,20 @@
       <h1 class="text-2xl font-bold text-900 m-0">User Management</h1>
       <p class="text-color-secondary mt-1 mb-0">Manage user roles and permissions</p>
     </div>
-    <p-button
-      label="Manage Permissions"
-      icon="pi pi-lock"
-      severity="secondary"
-      [outlined]="true"
-      routerLink="/admin/permissions"
-    />
+    <div class="flex gap-2">
+      <p-button
+        label="Manage Permissions"
+        icon="pi pi-lock"
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/admin/permissions"
+      />
+      <p-button
+        label="Create User"
+        icon="pi pi-user-plus"
+        (onClick)="openCreateDialog()"
+      />
+    </div>
   </div>
 
   <!-- Role Statistics -->
@@ -190,6 +197,72 @@
         [loading]="saving()"
         [disabled]="!newRole || newRole === selectedUser()?.role"
         (onClick)="saveRoleChange()"
+      />
+    </ng-template>
+  </p-dialog>
+
+  <!-- Create User Dialog -->
+  <p-dialog
+    header="Create New User"
+    [(visible)]="createDialogVisible"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+    [closable]="true"
+    [draggable]="false">
+    <div class="flex flex-column gap-4">
+      <div>
+        <label class="block text-color-secondary text-sm mb-2" for="newEmail">Email Address</label>
+        <input
+          id="newEmail"
+          pInputText
+          [(ngModel)]="newUserEmail"
+          type="email"
+          placeholder="user@example.com"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block text-color-secondary text-sm mb-2" for="newPassword">Temporary Password</label>
+        <p-password
+          id="newPassword"
+          [(ngModel)]="newUserPassword"
+          [toggleMask]="true"
+          [feedback]="false"
+          placeholder="Min. 6 characters"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+        />
+        <small class="text-color-secondary">The user should change this password after first login.</small>
+      </div>
+
+      <div>
+        <label class="block text-color-secondary text-sm mb-2" for="newUserRoleSelect">Role</label>
+        <p-select
+          id="newUserRoleSelect"
+          [(ngModel)]="newUserRole"
+          [options]="roleOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select a role"
+          styleClass="w-full"
+        />
+      </div>
+    </div>
+
+    <ng-template #footer>
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [text]="true"
+        (onClick)="createDialogVisible = false"
+      />
+      <p-button
+        label="Create User"
+        icon="pi pi-user-plus"
+        [loading]="creating()"
+        [disabled]="!newUserEmail || !newUserPassword || newUserPassword.length < 6"
+        (onClick)="createUser()"
       />
     </ng-template>
   </p-dialog>

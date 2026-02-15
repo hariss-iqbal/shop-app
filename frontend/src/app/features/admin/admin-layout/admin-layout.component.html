@@ -1,4 +1,4 @@
-<div class="min-h-screen flex flex-column">
+<div class="flex flex-column h-full">
   <!-- F-042: Skip Link for keyboard users -->
   <app-skip-link targetId="admin-main-content" />
 
@@ -12,7 +12,7 @@
         (onClick)="sidebarVisible.set(true)"
         ariaLabel="Open menu"
       />
-      <span class="text-xl font-bold text-primary">Spring Mobiles</span>
+      <span class="text-xl font-bold text-primary">{{ shopName() || 'Admin' }}</span>
     </div>
     <div class="flex align-items-center gap-2">
       <!-- F-020: Offline Mode Indicator -->
@@ -43,7 +43,7 @@
     </div>
   </header>
 
-  <div class="flex flex-grow-1">
+  <div class="flex flex-grow-1 overflow-hidden">
     <!-- Desktop Sidebar (Collapsible) -->
     <aside [class]="'hidden lg:flex flex-column surface-section border-right-1 surface-border flex-shrink-0 sidebar-transition ' + (sidebarCollapsed() ? 'sidebar-collapsed' : 'sidebar-expanded')"
            role="navigation"
@@ -52,8 +52,8 @@
         @if (!sidebarCollapsed()) {
           <div>
             <a routerLink="/admin" class="text-xl font-bold text-primary no-underline"
-               aria-label="Spring Mobiles Admin - Dashboard">
-              Spring Mobiles
+               [attr.aria-label]="(shopName() || 'Admin') + ' - Dashboard'">
+              {{ shopName() || 'Admin' }}
             </a>
             <span class="text-sm text-color-secondary block mt-1">Admin Panel</span>
           </div>
@@ -75,7 +75,7 @@
             <li class="mb-1" role="none">
               <a [routerLink]="item.route"
                  routerLinkActive="bg-primary text-primary-contrast"
-                 [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                 [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' || item.route === '/admin/sales' }"
                  [class]="'flex align-items-center gap-2 p-3 border-round text-color no-underline cursor-pointer transition-colors transition-duration-150 admin-nav-link ' + (sidebarCollapsed() ? 'justify-content-center' : 'justify-content-between')"
                  role="menuitem"
                  [pTooltip]="sidebarCollapsed() ? item.label + (item.showBadge && messageCountService.unreadCount() > 0 ? ' (' + messageCountService.unreadCount() + ')' : '') : undefined"
@@ -126,7 +126,7 @@
       <ng-template #header>
         <div class="flex align-items-center justify-content-between w-full">
           <div>
-            <span class="text-xl font-bold text-primary">Spring Mobiles</span>
+            <span class="text-xl font-bold text-primary">{{ shopName() || 'Admin' }}</span>
             <span class="text-sm text-color-secondary block mt-1">Admin Panel</span>
           </div>
           <p-button
@@ -145,7 +145,7 @@
             <li class="mb-2" role="none">
               <a [routerLink]="item.route"
                  routerLinkActive="bg-primary text-primary-contrast"
-                 [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                 [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' || item.route === '/admin/sales' }"
                  class="flex align-items-center justify-content-between gap-2 p-3 border-round text-color no-underline cursor-pointer transition-colors transition-duration-150 admin-nav-link"
                  role="menuitem"
                  [attr.aria-label]="item.showBadge && messageCountService.unreadCount() > 0
@@ -207,7 +207,7 @@
     </p-drawer>
 
     <!-- Main Content Area -->
-    <div class="flex-grow-1 flex flex-column min-w-0">
+    <div class="flex-grow-1 flex flex-column min-w-0 overflow-hidden">
       <!-- Desktop Top Bar -->
       <header class="hidden lg:flex surface-section border-bottom-1 surface-border p-3 align-items-center justify-content-between">
         <!-- F-020: Offline Mode Indicator -->
@@ -247,9 +247,9 @@
       <!-- Content Area -->
       <!-- F-025: Add bottom padding on mobile to account for bottom navigation -->
       <main
+        #mainContent
         id="admin-main-content"
         class="flex-grow-1 px-2 py-3 sm:px-3 lg:p-4 surface-ground overflow-y-auto"
-        [style.padding-bottom]="(viewportService.isMobile() || viewportService.isTablet()) ? 'calc(72px + env(safe-area-inset-bottom, 0))' : null"
         role="main"
       >
         <router-outlet />

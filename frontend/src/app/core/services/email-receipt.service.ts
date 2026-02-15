@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { ToastService } from '../../shared/services/toast.service';
 import {
@@ -28,8 +28,10 @@ export interface EmailSendOptions {
   providedIn: 'root'
 })
 export class EmailReceiptService {
-  private supabase = inject(SupabaseService);
-  private toastService = inject(ToastService);
+  constructor(
+    private supabase: SupabaseService,
+    private toastService: ToastService
+  ) { }
 
   /**
    * Send a receipt via email using stored receipt ID

@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal, computed, effect, OnInit, HostListener } from '@angular/core';
+import { Component, input, output, signal, computed, effect, OnInit, HostListener } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
@@ -47,8 +47,6 @@ import { PaymentDetail, SplitPaymentValidation } from '../../../models/payment.m
   styleUrls: ['./payment-method-selector.component.scss']
 })
 export class PaymentMethodSelectorComponent implements OnInit {
-  private paymentService = inject(PaymentService);
-  private currencyService = inject(CurrencyService);
 
   // Inputs
   totalDue = input.required<number>();
@@ -87,7 +85,10 @@ export class PaymentMethodSelectorComponent implements OnInit {
 
   private lastTotalDue: number = 0;
 
-  constructor() {
+  constructor(
+    private paymentService: PaymentService,
+    private currencyService: CurrencyService
+  ) {
     // React to total due changes - use untracked to prevent infinite loops
     effect(() => {
       const total = this.totalDue();

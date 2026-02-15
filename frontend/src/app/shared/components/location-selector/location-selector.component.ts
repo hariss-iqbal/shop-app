@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, output, computed } from '@angular/core';
+import { Component, OnInit, input, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
@@ -18,7 +18,7 @@ import { UserLocationDetail } from '../../../models/user-location-assignment.mod
   styleUrls: ['./location-selector.component.scss']
 })
 export class LocationSelectorComponent implements OnInit {
-  private userLocationAssignmentService = inject(UserLocationAssignmentService);
+  constructor(private userLocationAssignmentService: UserLocationAssignmentService) { }
 
   placeholder = input<string>('Select Location');
   showClear = input<boolean>(false);

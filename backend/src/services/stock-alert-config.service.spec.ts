@@ -1,8 +1,8 @@
 import { StockAlertConfigService } from './stock-alert-config.service';
 import { StockAlertConfigRepository } from '../repositories/stock-alert-config.repository';
-import { PhoneRepository } from '../repositories/phone.repository';
+import { ProductRepository } from '../repositories/product.repository';
 import { BrandRepository } from '../repositories/brand.repository';
-import { PhoneStatus } from '../enums';
+import { ProductStatus } from '../enums';
 
 /**
  * StockAlertConfig Service Tests
@@ -37,12 +37,12 @@ function createMockStockAlertConfigRepo(overrides: Partial<StockAlertConfigRepos
   } as StockAlertConfigRepository;
 }
 
-function createMockPhoneRepo(overrides: Partial<PhoneRepository> = {}): PhoneRepository {
+function createMockProductRepo(overrides: Partial<ProductRepository> = {}): ProductRepository {
   return {
     count: async () => 10,
     countByBrand: async () => 3,
     ...overrides
-  } as PhoneRepository;
+  } as ProductRepository;
 }
 
 function createMockBrandRepo(overrides: Partial<BrandRepository> = {}): BrandRepository {
@@ -76,7 +76,7 @@ async function runTests(): Promise<void> {
   console.log('get():');
   {
     const configRepo = createMockStockAlertConfigRepo();
-    const service = new StockAlertConfigService(configRepo, createMockPhoneRepo(), createMockBrandRepo());
+    const service = new StockAlertConfigService(configRepo, createMockProductRepo(), createMockBrandRepo());
 
     const result = await service.get();
     assert(result.id === 'config-1', 'returns config id');
@@ -97,7 +97,7 @@ async function runTests(): Promise<void> {
         updated_at: new Date().toISOString()
       })
     });
-    const service = new StockAlertConfigService(configRepo, createMockPhoneRepo(), createMockBrandRepo());
+    const service = new StockAlertConfigService(configRepo, createMockProductRepo(), createMockBrandRepo());
 
     const result = await service.update({ lowStockThreshold: 10 });
     assert(result.lowStockThreshold === 10, 'updates threshold to 10');
@@ -109,13 +109,13 @@ async function runTests(): Promise<void> {
   // getAlerts() Tests - No alerts when stock is above threshold
   console.log('\ngetAlerts() - No alerts:');
   {
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async () => 10,
       countByBrand: async () => 5,
     });
     const service = new StockAlertConfigService(
       createMockStockAlertConfigRepo(),
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 
@@ -127,16 +127,16 @@ async function runTests(): Promise<void> {
   // getAlerts() Tests - Low stock alert triggered
   console.log('\ngetAlerts() - Low stock alert:');
   {
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async (status?: string) => {
-        if (status === PhoneStatus.AVAILABLE) return 3;
+        if (status === ProductStatus.AVAILABLE) return 3;
         return 10;
       },
       countByBrand: async () => 2,
     });
     const service = new StockAlertConfigService(
       createMockStockAlertConfigRepo(),
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 
@@ -152,7 +152,7 @@ async function runTests(): Promise<void> {
   // getAlerts() Tests - Brand zero stock alert
   console.log('\ngetAlerts() - Brand zero stock alert:');
   {
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async () => 10,
       countByBrand: async (brandId: string) => {
         if (brandId === 'brand-1') return 0;
@@ -161,7 +161,7 @@ async function runTests(): Promise<void> {
     });
     const service = new StockAlertConfigService(
       createMockStockAlertConfigRepo(),
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 
@@ -186,13 +186,13 @@ async function runTests(): Promise<void> {
         updated_at: null
       })
     });
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async () => 10,
       countByBrand: async () => 0,
     });
     const service = new StockAlertConfigService(
       configRepo,
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 
@@ -204,7 +204,7 @@ async function runTests(): Promise<void> {
   // getAlerts() Tests - Both low stock and brand zero alerts
   console.log('\ngetAlerts() - Multiple alerts:');
   {
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async () => 2,
       countByBrand: async (brandId: string) => {
         if (brandId === 'brand-1') return 0;
@@ -214,7 +214,7 @@ async function runTests(): Promise<void> {
     });
     const service = new StockAlertConfigService(
       createMockStockAlertConfigRepo(),
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 
@@ -236,13 +236,13 @@ async function runTests(): Promise<void> {
         updated_at: null
       })
     });
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async () => 0,
       countByBrand: async () => 0,
     });
     const service = new StockAlertConfigService(
       configRepo,
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 
@@ -254,13 +254,13 @@ async function runTests(): Promise<void> {
   // getAlerts() Tests - Exactly at threshold means no alert
   console.log('\ngetAlerts() - Stock equals threshold:');
   {
-    const phoneRepo = createMockPhoneRepo({
+    const productRepo = createMockProductRepo({
       count: async () => 5,
       countByBrand: async () => 3,
     });
     const service = new StockAlertConfigService(
       createMockStockAlertConfigRepo(),
-      phoneRepo,
+      productRepo,
       createMockBrandRepo()
     );
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -27,10 +27,12 @@ import { ContactMessage } from '../../../../models/contact-message.model';
   templateUrl: './message-list.component.html'
 })
 export class MessageListComponent implements OnInit {
-  private contactMessageService = inject(ContactMessageService);
-  private toastService = inject(ToastService);
-  private confirmDialogService = inject(ConfirmDialogService);
-  private messageCountService = inject(MessageCountService);
+  constructor(
+    private contactMessageService: ContactMessageService,
+    private toastService: ToastService,
+    private confirmDialogService: ConfirmDialogService,
+    private messageCountService: MessageCountService
+  ) { }
 
   messages = signal<ContactMessage[]>([]);
   loading = signal(false);

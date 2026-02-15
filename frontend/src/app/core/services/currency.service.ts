@@ -1,35 +1,35 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment';
+import { ShopDetailsService } from './shop-details.service';
 
 /**
  * Currency Service
- * Provides centralized currency formatting based on environment configuration.
- * Allows easy switching between currencies (PKR, USD, EUR, etc.) via environment config.
+ * Provides centralized currency formatting based on ShopDetails configuration.
+ * Allows easy switching between currencies (PKR, USD, EUR, etc.) via Admin > Shop Details.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class CurrencyService {
-  private readonly config = environment.currency;
+  constructor(private shopDetailsService: ShopDetailsService) { }
 
   /** ISO 4217 currency code (e.g., 'PKR', 'USD') */
   get code(): string {
-    return this.config.code;
+    return this.shopDetailsService.currencyCode();
   }
 
   /** Currency symbol (e.g., 'Rs.', '$') */
   get symbol(): string {
-    return this.config.symbol;
+    return this.shopDetailsService.currencySymbol();
   }
 
   /** Locale for formatting (e.g., 'en-PK', 'en-US') */
   get locale(): string {
-    return this.config.locale;
+    return this.shopDetailsService.currencyLocale();
   }
 
   /** Number of decimal places */
   get decimals(): number {
-    return this.config.decimals;
+    return this.shopDetailsService.currencyDecimals();
   }
 
   /**
@@ -39,12 +39,12 @@ export class CurrencyService {
    * @returns Formatted currency string
    */
   format(value: number, options?: { minDecimals?: number; maxDecimals?: number }): string {
-    const minDecimals = options?.minDecimals ?? this.config.decimals;
-    const maxDecimals = options?.maxDecimals ?? this.config.decimals;
+    const minDecimals = options?.minDecimals ?? this.decimals;
+    const maxDecimals = options?.maxDecimals ?? this.decimals;
 
-    return new Intl.NumberFormat(this.config.locale, {
+    return new Intl.NumberFormat(this.locale, {
       style: 'currency',
-      currency: this.config.code,
+      currency: this.code,
       minimumFractionDigits: minDecimals,
       maximumFractionDigits: maxDecimals
     }).format(value);
@@ -56,12 +56,12 @@ export class CurrencyService {
    * @returns Formatted string with symbol
    */
   formatSimple(value: number): string {
-    const formatted = new Intl.NumberFormat(this.config.locale, {
-      minimumFractionDigits: this.config.decimals,
-      maximumFractionDigits: this.config.decimals
+    const formatted = new Intl.NumberFormat(this.locale, {
+      minimumFractionDigits: this.decimals,
+      maximumFractionDigits: this.decimals
     }).format(value);
 
-    return `${this.config.symbol} ${formatted}`;
+    return `${this.symbol} ${formatted}`;
   }
 
   /**
@@ -69,7 +69,7 @@ export class CurrencyService {
    * @returns Format string like '1.0-0' or '1.2-2'
    */
   getPipeFormat(): string {
-    return `1.${this.config.decimals}-${this.config.decimals}`;
+    return `1.${this.decimals}-${this.decimals}`;
   }
 
   /**

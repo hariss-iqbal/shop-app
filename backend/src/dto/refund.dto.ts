@@ -28,7 +28,7 @@ export interface CheckReceiptRefundableDto {
 export interface RefundItemResponseDto {
   id: string;
   originalSaleId: string | null;
-  phoneId: string | null;
+  productId: string | null;
   itemName: string;
   quantity: number;
   unitPrice: number;
@@ -37,7 +37,7 @@ export interface RefundItemResponseDto {
   originalUnitPrice?: number | null;
   isCustomPrice?: boolean;
   priceDifference?: number;
-  phoneModel?: string | null;
+  productModel?: string | null;
   brandName?: string | null;
 }
 
@@ -111,7 +111,7 @@ export interface ProcessRefundResponseDto {
     quantity: number;
     unitPrice: number;
     total: number;
-    phoneId: string | null;
+    productId: string | null;
     inventoryRestored: boolean;
   }>;
   error?: string;
@@ -139,13 +139,13 @@ export interface CheckReceiptRefundableResponseDto {
   items?: Array<{
     id: string;
     saleId: string | null;
-    phoneId: string | null;
+    productId: string | null;
     itemName: string;
     quantity: number;
     unitPrice: number;
     total: number;
-    phoneStatus: string | null;
-    phoneModel: string | null;
+    productStatus: string | null;
+    productModel: string | null;
     brandName: string | null;
     canRestoreInventory: boolean;
   }>;
@@ -208,7 +208,7 @@ export interface CheckPartialRefundableDto {
 export interface PartialRefundItemResponseDto {
   id?: string;
   originalSaleId: string | null;
-  phoneId: string | null;
+  productId: string | null;
   itemName: string;
   quantity: number;
   originalUnitPrice: number;
@@ -217,7 +217,7 @@ export interface PartialRefundItemResponseDto {
   inventoryRestored: boolean;
   isCustomPrice: boolean;
   priceDifference: number;
-  phoneModel?: string | null;
+  productModel?: string | null;
   brandName?: string | null;
 }
 
@@ -249,13 +249,13 @@ export interface ProcessPartialRefundResponseDto {
 export interface PartialRefundableItemDto {
   id: string;
   saleId: string | null;
-  phoneId: string | null;
+  productId: string | null;
   itemName: string;
   quantity: number;
   unitPrice: number;
   total: number;
-  phoneStatus: string | null;
-  phoneModel: string | null;
+  productStatus: string | null;
+  productModel: string | null;
   brandName: string | null;
   canRestoreInventory: boolean;
   alreadyRefunded: boolean;

@@ -1,17 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
 import { JsonLdService } from './json-ld.service';
-import { PhoneDetail } from '../../models/phone.model';
-import { PhoneCondition } from '../../enums/phone-condition.enum';
-import { PhoneStatus } from '../../enums/phone-status.enum';
-import { environment } from '../../../environments/environment';
+import { ProductDetail } from '../../models/product.model';
+import { ProductCondition } from '../../enums/product-condition.enum';
+import { ProductStatus } from '../../enums/product-status.enum';
+
 
 describe('JsonLdService', () => {
   let service: JsonLdService;
   let mockDocument: Document;
 
-  const mockPhoneDetail: PhoneDetail = {
-    id: 'phone-123',
+  const mockProductDetail: ProductDetail = {
+    id: 'product-123',
     brandId: 'brand-1',
     brandName: 'Apple',
     brandLogoUrl: 'https://example.com/apple.png',
@@ -20,13 +20,13 @@ describe('JsonLdService', () => {
     storageGb: 256,
     ramGb: 8,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: '123456789012345',
     costPrice: 900,
     sellingPrice: 1200,
     profitMargin: 25,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: '2024-01-15',
     supplierId: 'supplier-1',
     supplierName: 'Test Supplier',
@@ -67,7 +67,7 @@ describe('JsonLdService', () => {
 
   describe('setProductStructuredData', () => {
     it('should inject JSON-LD script into document head', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       expect(script).toBeTruthy();
@@ -75,7 +75,7 @@ describe('JsonLdService', () => {
     });
 
     it('should create valid JSON-LD structure', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -85,7 +85,7 @@ describe('JsonLdService', () => {
     });
 
     it('should set product name as brand + model', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -94,7 +94,7 @@ describe('JsonLdService', () => {
     });
 
     it('should set product description when available', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -103,8 +103,8 @@ describe('JsonLdService', () => {
     });
 
     it('should not include description when not available', () => {
-      const phoneWithoutDescription = { ...mockPhoneDetail, description: null };
-      service.setProductStructuredData(phoneWithoutDescription);
+      const productWithoutDescription = { ...mockProductDetail, description: null };
+      service.setProductStructuredData(productWithoutDescription);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -113,7 +113,7 @@ describe('JsonLdService', () => {
     });
 
     it('should set brand information correctly', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -125,7 +125,7 @@ describe('JsonLdService', () => {
     });
 
     it('should set SKU to IMEI when available', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -134,8 +134,8 @@ describe('JsonLdService', () => {
     });
 
     it('should not include SKU when IMEI not available', () => {
-      const phoneWithoutImei = { ...mockPhoneDetail, imei: null };
-      service.setProductStructuredData(phoneWithoutImei);
+      const productWithoutImei = { ...mockProductDetail, imei: null };
+      service.setProductStructuredData(productWithoutImei);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -145,7 +145,7 @@ describe('JsonLdService', () => {
 
     describe('Images', () => {
       it('should include all images sorted with primary first', () => {
-        service.setProductStructuredData(mockPhoneDetail);
+        service.setProductStructuredData(mockProductDetail);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -158,8 +158,8 @@ describe('JsonLdService', () => {
       });
 
       it('should use primaryImageUrl as fallback when no images array', () => {
-        const phoneWithPrimaryOnly = { ...mockPhoneDetail, images: [] };
-        service.setProductStructuredData(phoneWithPrimaryOnly);
+        const productWithPrimaryOnly = { ...mockProductDetail, images: [] };
+        service.setProductStructuredData(productWithPrimaryOnly);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -168,8 +168,8 @@ describe('JsonLdService', () => {
       });
 
       it('should not include image array when no images available', () => {
-        const phoneWithoutImages = { ...mockPhoneDetail, images: [], primaryImageUrl: null };
-        service.setProductStructuredData(phoneWithoutImages);
+        const productWithoutImages = { ...mockProductDetail, images: [], primaryImageUrl: null };
+        service.setProductStructuredData(productWithoutImages);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -178,8 +178,8 @@ describe('JsonLdService', () => {
       });
 
       it('should sort images by primary flag and then display order', () => {
-        const phoneWithMixedImages: PhoneDetail = {
-          ...mockPhoneDetail,
+        const productWithMixedImages: ProductDetail = {
+          ...mockProductDetail,
           images: [
             { id: 'img-3', imageUrl: 'https://example.com/third.jpg', isPrimary: false, displayOrder: 2 },
             { id: 'img-1', imageUrl: 'https://example.com/primary.jpg', isPrimary: true, displayOrder: 5 },
@@ -187,7 +187,7 @@ describe('JsonLdService', () => {
           ]
         };
 
-        service.setProductStructuredData(phoneWithMixedImages);
+        service.setProductStructuredData(productWithMixedImages);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -200,30 +200,30 @@ describe('JsonLdService', () => {
 
     describe('Offers', () => {
       it('should set correct offer structure', () => {
-        service.setProductStructuredData(mockPhoneDetail);
+        service.setProductStructuredData(mockProductDetail);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
 
         expect(jsonLd.offers['@type']).toBe('Offer');
         expect(jsonLd.offers.price).toBe(1200);
-        expect(jsonLd.offers.priceCurrency).toBe(environment.currency.code);
+        expect(jsonLd.offers.priceCurrency).toBe('PKR');
       });
 
       it('should set product URL in offer', () => {
-        service.setProductStructuredData(mockPhoneDetail);
+        service.setProductStructuredData(mockProductDetail);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
 
-        expect(jsonLd.offers.url).toBe('http://localhost:4200/phone/phone-123');
+        expect(jsonLd.offers.url).toBe('http://localhost:4200/product/product-123');
       });
     });
 
     describe('Availability Mapping', () => {
       it('should map AVAILABLE status to InStock', () => {
-        const availablePhone = { ...mockPhoneDetail, status: PhoneStatus.AVAILABLE };
-        service.setProductStructuredData(availablePhone);
+        const availableProduct = { ...mockProductDetail, status: ProductStatus.AVAILABLE };
+        service.setProductStructuredData(availableProduct);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -232,8 +232,8 @@ describe('JsonLdService', () => {
       });
 
       it('should map SOLD status to SoldOut', () => {
-        const soldPhone = { ...mockPhoneDetail, status: PhoneStatus.SOLD };
-        service.setProductStructuredData(soldPhone);
+        const soldProduct = { ...mockProductDetail, status: ProductStatus.SOLD };
+        service.setProductStructuredData(soldProduct);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -242,8 +242,8 @@ describe('JsonLdService', () => {
       });
 
       it('should map RESERVED status to LimitedAvailability', () => {
-        const reservedPhone = { ...mockPhoneDetail, status: PhoneStatus.RESERVED };
-        service.setProductStructuredData(reservedPhone);
+        const reservedProduct = { ...mockProductDetail, status: ProductStatus.RESERVED };
+        service.setProductStructuredData(reservedProduct);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -254,8 +254,8 @@ describe('JsonLdService', () => {
 
     describe('Condition Mapping', () => {
       it('should map NEW condition to NewCondition', () => {
-        const newPhone = { ...mockPhoneDetail, condition: PhoneCondition.NEW };
-        service.setProductStructuredData(newPhone);
+        const newProduct = { ...mockProductDetail, condition: ProductCondition.NEW };
+        service.setProductStructuredData(newProduct);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -264,8 +264,8 @@ describe('JsonLdService', () => {
       });
 
       it('should map USED condition to UsedCondition', () => {
-        const usedPhone = { ...mockPhoneDetail, condition: PhoneCondition.USED };
-        service.setProductStructuredData(usedPhone);
+        const usedProduct = { ...mockProductDetail, condition: ProductCondition.USED };
+        service.setProductStructuredData(usedProduct);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -274,8 +274,8 @@ describe('JsonLdService', () => {
       });
 
       it('should map REFURBISHED condition to RefurbishedCondition', () => {
-        const refurbishedPhone = { ...mockPhoneDetail, condition: PhoneCondition.REFURBISHED };
-        service.setProductStructuredData(refurbishedPhone);
+        const refurbishedProduct = { ...mockProductDetail, condition: ProductCondition.REFURBISHED };
+        service.setProductStructuredData(refurbishedProduct);
 
         const script = mockDocument.getElementById('json-ld-product');
         const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -287,7 +287,7 @@ describe('JsonLdService', () => {
 
   describe('removeStructuredData', () => {
     it('should remove JSON-LD script from document', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
       expect(mockDocument.getElementById('json-ld-product')).toBeTruthy();
 
       service.removeStructuredData();
@@ -301,16 +301,16 @@ describe('JsonLdService', () => {
 
   describe('Multiple updates', () => {
     it('should replace existing JSON-LD when setting new data', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
-      const anotherPhone: PhoneDetail = {
-        ...mockPhoneDetail,
-        id: 'phone-456',
+      const anotherProduct: ProductDetail = {
+        ...mockProductDetail,
+        id: 'product-456',
         model: 'Galaxy S24',
         brandName: 'Samsung'
       };
 
-      service.setProductStructuredData(anotherPhone);
+      service.setProductStructuredData(anotherProduct);
 
       const scripts = mockDocument.querySelectorAll('#json-ld-product');
       expect(scripts.length).toBe(1);
@@ -322,7 +322,7 @@ describe('JsonLdService', () => {
 
   describe('Complete JSON-LD validation', () => {
     it('should produce valid schema.org Product structured data', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -348,16 +348,16 @@ describe('JsonLdService', () => {
       // Verify offer structure
       expect(jsonLd.offers['@type']).toBe('Offer');
       expect(jsonLd.offers.price).toBe(1200);
-      expect(jsonLd.offers.priceCurrency).toBe(environment.currency.code);
+      expect(jsonLd.offers.priceCurrency).toBe('PKR');
       expect(jsonLd.offers.availability).toBe('https://schema.org/InStock');
       expect(jsonLd.offers.itemCondition).toBe('https://schema.org/NewCondition');
-      expect(jsonLd.offers.url).toBe('http://localhost:4200/phone/phone-123');
+      expect(jsonLd.offers.url).toBe('http://localhost:4200/product/product-123');
     });
   });
 
   describe('Enhanced schema.org fields', () => {
     it('should include priceValidUntil date in offers', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -368,7 +368,7 @@ describe('JsonLdService', () => {
     });
 
     it('should set priceValidUntil to 30 days from now', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -381,7 +381,7 @@ describe('JsonLdService', () => {
     });
 
     it('should include seller organization when business info is available', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -393,7 +393,7 @@ describe('JsonLdService', () => {
     });
 
     it('should include product category', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -402,7 +402,7 @@ describe('JsonLdService', () => {
     });
 
     it('should include color when available', () => {
-      service.setProductStructuredData(mockPhoneDetail);
+      service.setProductStructuredData(mockProductDetail);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');
@@ -411,8 +411,8 @@ describe('JsonLdService', () => {
     });
 
     it('should not include color when not available', () => {
-      const phoneWithoutColor = { ...mockPhoneDetail, color: null };
-      service.setProductStructuredData(phoneWithoutColor);
+      const productWithoutColor = { ...mockProductDetail, color: null };
+      service.setProductStructuredData(productWithoutColor);
 
       const script = mockDocument.getElementById('json-ld-product');
       const jsonLd = JSON.parse(script?.textContent || '{}');

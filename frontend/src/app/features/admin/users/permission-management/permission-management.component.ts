@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -52,8 +52,10 @@ interface PermissionRow {
   templateUrl: './permission-management.component.html'
 })
 export class PermissionManagementComponent implements OnInit {
-  private userRoleService = inject(UserRoleService);
-  private toastService = inject(ToastService);
+  constructor(
+    private userRoleService: UserRoleService,
+    private toastService: ToastService
+  ) { }
 
   loading = signal(true);
   permissionRows = signal<PermissionRow[]>([]);
@@ -66,8 +68,8 @@ export class PermissionManagementComponent implements OnInit {
     { key: 'canAccessAuditLogs', label: 'Access Audit Logs', description: 'View system audit logs', category: 'Dashboard & Reports' },
 
     // Inventory Management
-    { key: 'canAccessInventory', label: 'Access Inventory', description: 'View and manage phone inventory', category: 'Inventory Management' },
-    { key: 'canAccessBrands', label: 'Access Brands', description: 'View and manage phone brands', category: 'Inventory Management' },
+    { key: 'canAccessInventory', label: 'Access Inventory', description: 'View and manage product inventory', category: 'Inventory Management' },
+    { key: 'canAccessBrands', label: 'Access Brands', description: 'View and manage product brands', category: 'Inventory Management' },
     { key: 'canAccessPurchaseOrders', label: 'Access Purchase Orders', description: 'View and manage purchase orders', category: 'Inventory Management' },
     { key: 'canAccessSuppliers', label: 'Access Suppliers', description: 'View and manage suppliers', category: 'Inventory Management' },
     { key: 'canAccessStorage', label: 'Access Storage', description: 'Manage file storage and uploads', category: 'Inventory Management' },
@@ -99,7 +101,8 @@ export class PermissionManagementComponent implements OnInit {
       this.buildPermissionRows(permissions);
     } catch (error) {
       console.error('Failed to load permissions:', error);
-      this.toastService.error('Error', 'Failed to load permissions');
+      const message = error instanceof Error ? error.message : 'Failed to load permissions';
+      this.toastService.error('Error', message);
     } finally {
       this.loading.set(false);
     }

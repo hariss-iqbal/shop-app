@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   Refund,
@@ -23,7 +23,7 @@ import {
   providedIn: 'root'
 })
 export class RefundService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   /**
    * Get all refunds with optional filtering
@@ -36,7 +36,7 @@ export class RefundService {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -110,7 +110,7 @@ export class RefundService {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -149,7 +149,7 @@ export class RefundService {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -285,13 +285,13 @@ export class RefundService {
         items: refundData.items.map((item: Record<string, unknown>) => ({
           id: item['id'] as string,
           originalSaleId: item['originalSaleId'] as string | null,
-          phoneId: item['phoneId'] as string | null,
+          productId: item['phoneId'] as string | null,
           itemName: item['itemName'] as string,
           quantity: item['quantity'] as number,
           unitPrice: item['unitPrice'] as number,
           total: item['total'] as number,
           inventoryRestored: item['inventoryRestored'] as boolean,
-          phoneModel: item['phoneModel'] as string | null,
+          productModel: item['phoneModel'] as string | null,
           brandName: item['brandName'] as string | null
         })),
         itemCount: refundData.items.length,
@@ -368,7 +368,7 @@ export class RefundService {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -486,7 +486,7 @@ export class RefundService {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -523,7 +523,7 @@ export class RefundService {
     const items = (data['items'] as Array<Record<string, unknown>> || []).map(item => ({
       id: item['id'] as string,
       originalSaleId: item['original_sale_id'] as string | null,
-      phoneId: item['phone_id'] as string | null,
+      productId: item['product_id'] as string | null,
       itemName: item['item_name'] as string,
       quantity: item['quantity'] as number,
       unitPrice: item['unit_price'] as number,

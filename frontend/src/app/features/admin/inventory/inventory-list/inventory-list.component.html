@@ -3,7 +3,7 @@
     <div>
       <h1 class="text-3xl font-bold m-0 mb-2">Inventory</h1>
       <p class="text-color-secondary m-0">
-        Manage your phone inventory, track stock, and update product details
+        Manage your product inventory, track stock, and update product details
       </p>
     </div>
     <div class="flex flex-column sm:flex-row gap-2">
@@ -17,34 +17,14 @@
         (onClick)="onExportCsv()"
         styleClass="w-full sm:w-auto"
       />
-      <p-button label="Add Phone" icon="pi pi-plus" routerLink="/admin/inventory/new" styleClass="w-full sm:w-auto" />
+      <p-button label="Add Product" icon="pi pi-plus" routerLink="/admin/inventory/new" styleClass="w-full sm:w-auto" />
     </div>
   </div>
 
   <div class="col-12">
     <p-card>
-      <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 mb-4">
-        <div class="flex align-items-center gap-2 flex-wrap">
-          @if (selectedPhones().length > 0) {
-            <p-button
-              label="Mark as Sold"
-              icon="pi pi-check"
-              severity="success"
-              size="small"
-              [loading]="bulkActionLoading()"
-              (onClick)="onBulkMarkAsSold()"
-            />
-            <p-button
-              label="Delete Selected"
-              icon="pi pi-trash"
-              severity="danger"
-              size="small"
-              [loading]="bulkActionLoading()"
-              (onClick)="onBulkDelete()"
-            />
-            <p-tag severity="info" [value]="selectedPhones().length + ' selected'" styleClass="ml-2" />
-          }
-        </div>
+      <!-- Search Row -->
+      <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-3 mb-3">
         <div class="flex align-items-center gap-2">
           <p-iconfield>
             <p-inputicon styleClass="pi pi-search" />
@@ -55,8 +35,8 @@
               [(ngModel)]="globalFilter"
               (input)="onSearch()"
               (keydown.escape)="clearSearch()"
-              class="w-full md:w-20rem"
-              aria-label="Search phones"
+              class="w-full sm:w-20rem"
+              aria-label="Search products"
             />
           </p-iconfield>
           @if (globalFilter) {
@@ -73,11 +53,90 @@
             />
           }
         </div>
+        @if (selectedProducts().length > 0) {
+          <div class="flex align-items-center gap-2">
+            <p-button
+              label="Mark as Sold"
+              icon="pi pi-check"
+              severity="success"
+              size="small"
+              [loading]="bulkActionLoading()"
+              (onClick)="onBulkMarkAsSold()"
+            />
+            <p-button
+              label="Delete Selected"
+              icon="pi pi-trash"
+              severity="danger"
+              size="small"
+              [loading]="bulkActionLoading()"
+              (onClick)="onBulkDelete()"
+            />
+            <p-tag severity="info" [value]="selectedProducts().length + ' selected'" />
+          </div>
+        }
+      </div>
+
+      <!-- Filter Dropdowns Row -->
+      <div class="flex align-items-center gap-2 flex-wrap mb-3">
+        <p-select
+          [options]="productTypeFilterOptions"
+          [(ngModel)]="productTypeFilter"
+          (onChange)="onProductTypeFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Types"
+          [showClear]="true"
+          styleClass="w-10rem"
+        />
+        <p-select
+          [options]="brandOptions()"
+          [(ngModel)]="brandFilter"
+          (onChange)="onBrandFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Brands"
+          [showClear]="true"
+          styleClass="w-12rem"
+        />
+        @if (brandFilter() && modelOptions().length > 1) {
+          <p-select
+            [options]="modelOptions()"
+            [(ngModel)]="modelFilter"
+            (onChange)="onModelFilterChange()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All Products"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Search model..."
+            styleClass="w-14rem"
+          />
+        }
+        <p-select
+          [options]="conditionOptions"
+          [(ngModel)]="conditionFilter"
+          (onChange)="onConditionFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Conditions"
+          [showClear]="true"
+          styleClass="w-11rem"
+        />
+        <p-select
+          [options]="statusOptions"
+          [(ngModel)]="statusFilter"
+          (onChange)="onStatusFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Statuses"
+          [showClear]="true"
+          styleClass="w-11rem"
+        />
       </div>
 
       <p-table
         #dt
-        [value]="phones()"
+        [value]="products()"
         [lazy]="true"
         [paginator]="true"
         [rows]="10"
@@ -85,23 +144,23 @@
         [loading]="loading()"
         [rowsPerPageOptions]="[10, 25, 50]"
         [showCurrentPageReport]="true"
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} phones"
-        [(selection)]="selectedPhones"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+        [(selection)]="selectedProducts"
         [rowHover]="true"
         dataKey="id"
-        (onLazyLoad)="loadPhones($event)"
+        (onLazyLoad)="loadProducts($event)"
         [globalFilterFields]="['brandName', 'model']"
         styleClass="p-datatable-sm"
         [scrollable]="true"
         scrollDirection="horizontal"
-        [tableStyle]="{ 'min-width': '60rem' }"
+        [tableStyle]="{ 'min-width': '50rem' }"
       >
         <ng-template #header>
           <tr>
             <th style="width: 3rem">
               <p-tableHeaderCheckbox />
             </th>
-            <th style="width: 5rem">Image</th>
+            <th style="width: 6rem">Type</th>
             <th pSortableColumn="brandName">
               Brand
               <p-sortIcon field="brandName" />
@@ -118,6 +177,10 @@
               Condition
               <p-sortIcon field="condition" />
             </th>
+            <th pSortableColumn="ptaStatus">
+              PTA
+              <p-sortIcon field="ptaStatus" />
+            </th>
             <th pSortableColumn="costPrice">
               Cost Price
               <p-sortIcon field="costPrice" />
@@ -125,15 +188,6 @@
             <th pSortableColumn="sellingPrice">
               Selling Price
               <p-sortIcon field="sellingPrice" />
-            </th>
-            <th pSortableColumn="profitMargin">
-              Margin
-              <i
-                class="pi pi-info-circle text-xs text-color-secondary ml-1 cursor-help"
-                pTooltip="Profit margin: Red (<10%), Yellow (10-25%), Green (>25%)"
-                tooltipPosition="top"
-              ></i>
-              <p-sortIcon field="profitMargin" />
             </th>
             <th pSortableColumn="status">
               Status
@@ -143,99 +197,168 @@
           </tr>
         </ng-template>
 
-        <ng-template #body let-phone>
+        <ng-template #body let-product>
           <tr>
             <td>
-              <p-tableCheckbox [value]="phone" />
+              <p-tableCheckbox [value]="product" />
             </td>
             <td>
-              @if (phone.primaryImageUrl) {
-                <p-image
-                  [src]="phone.primaryImageUrl"
-                  [alt]="phone.model"
-                  width="50"
-                  [preview]="true"
-                  imageClass="border-round"
-                />
-              } @else {
-                <div class="flex align-items-center justify-content-center bg-surface-100 border-round" style="width: 50px; height: 50px;">
-                  <i class="pi pi-image text-color-secondary"></i>
-                </div>
-              }
+              <p-tag
+                [value]="getProductTypeLabel(product.productType)"
+                [severity]="getProductTypeSeverity(product.productType)"
+              />
             </td>
             <td>
               <div class="flex align-items-center gap-2">
-                @if (phone.brandLogoUrl) {
-                  <img [src]="phone.brandLogoUrl" [alt]="phone.brandName" width="20" height="20" class="border-round" />
+                @if (product.brandLogoUrl) {
+                  <img [src]="product.brandLogoUrl" [alt]="product.brandName" width="20" height="20" class="border-round" />
                 }
-                <span class="font-medium">{{ phone.brandName }}</span>
+                <span class="font-medium">{{ product.brandName }}</span>
               </div>
             </td>
-            <td>{{ phone.model }}</td>
+            <td>{{ product.model }}</td>
             <td>
-              @if (phone.storageGb) {
-                {{ phone.storageGb }} GB
+              @if (product.storageGb) {
+                {{ product.storageGb }} GB
               } @else {
                 <span class="text-color-secondary">-</span>
               }
             </td>
             <td>
               <p-tag
-                [value]="getConditionLabel(phone.condition)"
-                [severity]="getConditionSeverity(phone.condition)"
+                [value]="getConditionLabel(product.condition)"
+                [severity]="getConditionSeverity(product.condition)"
               />
             </td>
-            <td>{{ phone.costPrice | currency }}</td>
-            <td>{{ phone.sellingPrice | currency }}</td>
             <td>
-              <p-tag
-                [value]="(phone.profitMargin | number:'1.1-1') + '%'"
-                [severity]="getMarginSeverity(phone.profitMargin)"
-                [pTooltip]="getMarginTooltip(phone.profitMargin)"
-                tooltipPosition="top"
-              />
+              @if (product.ptaStatus) {
+                <p-tag
+                  [value]="getPtaLabel(product.ptaStatus)"
+                  [severity]="getPtaSeverity(product.ptaStatus)"
+                />
+              } @else {
+                <span class="text-color-secondary">-</span>
+              }
+            </td>
+            <td>
+              @if (editingProductId() === product.id) {
+                <p-inputNumber
+                  [(ngModel)]="editCostPrice"
+                  mode="decimal"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="2"
+                  [min]="0"
+                  [inputStyleClass]="'w-6rem p-inputtext-sm'"
+                  (keydown.enter)="savePriceEdit(product)"
+                  (keydown.escape)="cancelPriceEdit()"
+                />
+              } @else {
+                {{ product.costPrice | appCurrency }}
+              }
+            </td>
+            <td>
+              @if (editingProductId() === product.id) {
+                <p-inputNumber
+                  [(ngModel)]="editSellingPrice"
+                  mode="decimal"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="2"
+                  [min]="0"
+                  [inputStyleClass]="'w-6rem p-inputtext-sm'"
+                  (keydown.enter)="savePriceEdit(product)"
+                  (keydown.escape)="cancelPriceEdit()"
+                />
+              } @else {
+                {{ product.sellingPrice | appCurrency }}
+              }
             </td>
             <td>
               <app-inventory-status-actions
-                [phone]="phone"
+                [product]="product"
                 (statusChanged)="onStatusChanged()"
                 (markAsSoldRequested)="onMarkAsSold($event)"
                 (printLabelRequested)="onPrintLabel($event)"
               />
             </td>
             <td alignFrozen="right" pFrozenColumn [frozen]="true">
-              <div class="flex align-items-center gap-1">
-                <p-button
-                  icon="pi pi-print"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="secondary"
-                  size="small"
-                  pTooltip="Print Label"
-                  tooltipPosition="top"
-                  (onClick)="onPrintLabel(phone)"
-                />
-                <p-button
-                  icon="pi pi-pencil"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="info"
-                  size="small"
-                  pTooltip="Edit"
-                  tooltipPosition="top"
-                  (onClick)="onEdit(phone)"
-                />
-                <p-button
-                  icon="pi pi-trash"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="danger"
-                  size="small"
-                  pTooltip="Delete"
-                  tooltipPosition="top"
-                  (onClick)="onDelete(phone)"
-                />
-              </div>
+              @if (editingProductId() === product.id) {
+                <div class="flex align-items-center gap-1">
+                  <p-button
+                    icon="pi pi-check"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    size="small"
+                    pTooltip="Save"
+                    tooltipPosition="top"
+                    [loading]="savingPriceId() === product.id"
+                    (onClick)="savePriceEdit(product)"
+                  />
+                  <p-button
+                    icon="pi pi-times"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    size="small"
+                    pTooltip="Cancel"
+                    tooltipPosition="top"
+                    (onClick)="cancelPriceEdit()"
+                  />
+                </div>
+              } @else {
+                <div class="flex align-items-center gap-1">
+                  <p-button
+                    icon="pi pi-images"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="warn"
+                    size="small"
+                    pTooltip="Manage Images"
+                    tooltipPosition="top"
+                    (onClick)="onManageImages(product)"
+                  />
+                  <p-button
+                    icon="pi pi-pencil"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="info"
+                    size="small"
+                    pTooltip="Edit Prices"
+                    tooltipPosition="top"
+                    (onClick)="startPriceEdit(product)"
+                  />
+                  <p-button
+                    icon="pi pi-window-maximize"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="help"
+                    size="small"
+                    pTooltip="Edit in Dialog"
+                    tooltipPosition="top"
+                    (onClick)="onEditInDialog(product)"
+                  />
+                  <p-button
+                    icon="pi pi-external-link"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    size="small"
+                    pTooltip="Full Edit"
+                    tooltipPosition="top"
+                    (onClick)="onEdit(product)"
+                  />
+                  <p-button
+                    icon="pi pi-trash"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
+                    size="small"
+                    pTooltip="Delete"
+                    tooltipPosition="top"
+                    (onClick)="onDelete(product)"
+                  />
+                </div>
+              }
             </td>
           </tr>
         </ng-template>
@@ -245,9 +368,9 @@
             <td colspan="11" class="text-center p-4">
               <div class="flex flex-column align-items-center gap-3">
                 <i class="pi pi-inbox text-4xl text-color-secondary"></i>
-                <span class="text-color-secondary">No phones found</span>
+                <span class="text-color-secondary">No products found</span>
                 <p-button
-                  label="Add Your First Phone"
+                  label="Add Your First Product"
                   icon="pi pi-plus"
                   routerLink="/admin/inventory/new"
                 />
@@ -260,14 +383,14 @@
           @for (_ of skeletonRows; track $index) {
             <tr>
               <td><p-skeleton width="1.5rem" height="1.5rem" /></td>
-              <td><p-skeleton width="50px" height="50px" borderRadius="0.5rem" /></td>
+              <td><p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" /></td>
               <td><p-skeleton width="60%" /></td>
               <td><p-skeleton width="70%" /></td>
               <td><p-skeleton width="50%" /></td>
               <td><p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" /></td>
-              <td><p-skeleton width="60%" /></td>
-              <td><p-skeleton width="60%" /></td>
               <td><p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="60%" /></td>
               <td>
                 <div class="flex align-items-center gap-2">
                   <p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" />
@@ -290,14 +413,33 @@
 </div>
 
 <app-mark-as-sold-dialog
-  [phone]="markAsSoldPhone()"
+  [product]="markAsSoldProduct()"
   [visible]="markAsSoldDialogVisible()"
   (visibleChange)="markAsSoldDialogVisible.set($event)"
   (saleSaved)="onSaleSaved()"
 />
 
 <app-print-label-dialog
-  [phone]="printLabelPhone()"
+  [product]="printLabelProduct()"
   [visible]="printLabelDialogVisible()"
   (visibleChange)="printLabelDialogVisible.set($event)"
 />
+
+<app-inventory-image-dialog
+  [product]="imageDialogProduct()"
+  [visible]="imageDialogVisible()"
+  (visibleChange)="imageDialogVisible.set($event)"
+  (imagesSaved)="onImagesSaved()"
+/>
+
+<p-dialog header="Edit Product" [(visible)]="editDialogVisible" [modal]="true"
+          [style]="{ width: '90vw', 'max-width': '1200px' }" [maximizable]="true">
+  @if (editDialogVisible()) {
+    <app-inventory-form
+      [dialogMode]="true"
+      [dialogProductId]="editDialogProductId()"
+      (saved)="onEditDialogSaved()"
+      (cancelled)="onEditDialogCancelled()"
+    />
+  }
+</p-dialog>

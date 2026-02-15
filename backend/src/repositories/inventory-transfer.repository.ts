@@ -6,7 +6,7 @@ import {
   InventoryTransferWithRelations,
   InventoryTransferItem,
   InventoryTransferItemInsert,
-  InventoryTransferItemWithPhone
+  InventoryTransferItemWithProduct
 } from '../entities/inventory-transfer.entity';
 import { InventoryTransferStatus } from '../enums';
 
@@ -40,8 +40,8 @@ export class InventoryTransferRepository {
         source_location:store_locations!source_location_id(id, name, code),
         destination_location:store_locations!destination_location_id(id, name, code),
         items:inventory_transfer_items(
-          id, transfer_id, phone_id, quantity, notes, created_at,
-          phone:phones(id, model, condition, brand:brands(id, name))
+          id, transfer_id, product_id, quantity, notes, created_at,
+          product:products(id, model, condition, brand:brands(id, name))
         )
       `);
 
@@ -86,8 +86,8 @@ export class InventoryTransferRepository {
         source_location:store_locations!source_location_id(id, name, code),
         destination_location:store_locations!destination_location_id(id, name, code),
         items:inventory_transfer_items(
-          id, transfer_id, phone_id, quantity, notes, created_at,
-          phone:phones(id, model, condition, brand:brands(id, name))
+          id, transfer_id, product_id, quantity, notes, created_at,
+          product:products(id, model, condition, brand:brands(id, name))
         )
       `)
       .eq('id', id)
@@ -105,8 +105,8 @@ export class InventoryTransferRepository {
         source_location:store_locations!source_location_id(id, name, code),
         destination_location:store_locations!destination_location_id(id, name, code),
         items:inventory_transfer_items(
-          id, transfer_id, phone_id, quantity, notes, created_at,
-          phone:phones(id, model, condition, brand:brands(id, name))
+          id, transfer_id, product_id, quantity, notes, created_at,
+          product:products(id, model, condition, brand:brands(id, name))
         )
       `)
       .eq('transfer_number', transferNumber)
@@ -169,12 +169,12 @@ export class InventoryTransferRepository {
     return data || [];
   }
 
-  async getItemsByTransferId(transferId: string): Promise<InventoryTransferItemWithPhone[]> {
+  async getItemsByTransferId(transferId: string): Promise<InventoryTransferItemWithProduct[]> {
     const { data, error } = await this.supabase
       .from(this.itemsTableName)
       .select(`
         *,
-        phone:phones(id, model, condition, brand:brands(id, name))
+        product:products(id, model, condition, brand:brands(id, name))
       `)
       .eq('transfer_id', transferId);
 

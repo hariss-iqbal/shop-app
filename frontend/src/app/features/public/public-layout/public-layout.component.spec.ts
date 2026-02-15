@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { PublicLayoutComponent } from './public-layout.component';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ThemeService } from '../../../shared';
-import { PhoneComparisonService } from '../../../shared/services/phone-comparison.service';
+import { ProductComparisonService } from '../../../shared/services/product-comparison.service';
 import { signal, WritableSignal } from '@angular/core';
 import { ThemeMode } from '../../../enums/theme-mode.enum';
 
@@ -16,8 +16,8 @@ describe('PublicLayoutComponent', () => {
   };
   let comparisonServiceMock: {
     count: jasmine.Spy;
-    hasPhones: jasmine.Spy;
-    phones: jasmine.Spy;
+    hasProducts: jasmine.Spy;
+    products: jasmine.Spy;
   };
 
   beforeEach(async () => {
@@ -29,15 +29,15 @@ describe('PublicLayoutComponent', () => {
 
     comparisonServiceMock = {
       count: jasmine.createSpy('count').and.returnValue(0),
-      hasPhones: jasmine.createSpy('hasPhones').and.returnValue(false),
-      phones: jasmine.createSpy('phones').and.returnValue([])
+      hasProducts: jasmine.createSpy('hasProducts').and.returnValue(false),
+      products: jasmine.createSpy('products').and.returnValue([])
     };
 
     await TestBed.configureTestingModule({
       imports: [PublicLayoutComponent, RouterTestingModule],
       providers: [
         { provide: ThemeService, useValue: themeServiceMock },
-        { provide: PhoneComparisonService, useValue: comparisonServiceMock }
+        { provide: ProductComparisonService, useValue: comparisonServiceMock }
       ]
     }).compileComponents();
 
@@ -63,19 +63,16 @@ describe('PublicLayoutComponent', () => {
       expect(brandText).toContain('Phone Shop');
     });
 
-    it('should have navigation links to Home, Catalog, About, and Contact', () => {
+    it('should have navigation links to Home, About, and Contact', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const menubar = compiled.querySelector('[role="menubar"]');
 
       // Desktop navigation links are in a div with role="menubar"
       const menuItems = menubar?.querySelectorAll('a[role="menuitem"]');
-      expect(menuItems?.length).toBeGreaterThanOrEqual(4);
+      expect(menuItems?.length).toBeGreaterThanOrEqual(3);
 
       const homeLink = menubar?.querySelector('a[routerLink="/"]');
       expect(homeLink?.textContent).toContain('Home');
-
-      const catalogLink = menubar?.querySelector('a[routerLink="/catalog"]');
-      expect(catalogLink?.textContent).toContain('Catalog');
 
       const aboutLink = menubar?.querySelector('a[routerLink="/about"]');
       expect(aboutLink?.textContent).toContain('About');

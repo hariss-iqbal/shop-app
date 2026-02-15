@@ -209,7 +209,7 @@ export class AuditLogService {
 
       case 'inventory_deducted':
       case 'inventory_restored':
-      case 'phone_status_changed':
+      case 'product_status_changed':
         const fromStatus = auditLog.previous_state?.['status'] || 'unknown';
         const toStatus = auditLog.new_state?.['status'] || 'unknown';
         return `${label}: ${fromStatus} → ${toStatus}${entityInfo}`;

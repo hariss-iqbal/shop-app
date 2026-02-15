@@ -35,11 +35,11 @@ export interface InventoryTransfer {
 export interface InventoryTransferItem {
   id: string;
   transferId: string;
-  phoneId: string;
+  productId: string;
   quantity: number;
   notes: string | null;
   createdAt: string;
-  phone?: {
+  product?: {
     id: string;
     model: string;
     condition: string;
@@ -49,7 +49,7 @@ export interface InventoryTransferItem {
 }
 
 export interface TransferItemRequest {
-  phoneId: string;
+  productId: string;
   quantity: number;
   notes?: string | null;
 }

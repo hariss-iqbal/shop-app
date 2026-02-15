@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
@@ -36,8 +36,10 @@ import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
   templateUrl: './process-refund-dialog.component.html'
 })
 export class ProcessRefundDialogComponent implements OnChanges {
-  private refundService = inject(RefundService);
-  private toastService = inject(ToastService);
+  constructor(
+    private refundService: RefundService,
+    private toastService: ToastService
+  ) { }
 
   @Input() visible = false;
   @Input() receiptId: string | null = null;

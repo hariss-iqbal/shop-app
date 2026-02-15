@@ -1,4 +1,4 @@
-import { PhoneStatus } from '../enums';
+import { ProductStatus } from '../enums';
 
 /**
  * InventoryDeductionLog Entity
@@ -9,9 +9,9 @@ import { PhoneStatus } from '../enums';
 export interface InventoryDeductionLog {
   id: string;
   sale_id: string | null;
-  phone_id: string;
-  previous_status: PhoneStatus;
-  new_status: PhoneStatus;
+  product_id: string;
+  previous_status: ProductStatus;
+  new_status: ProductStatus;
   deducted_at: string;
   deducted_by: string | null;
   notes: string | null;
@@ -20,9 +20,9 @@ export interface InventoryDeductionLog {
 export interface InventoryDeductionLogInsert {
   id?: string;
   sale_id?: string | null;
-  phone_id: string;
-  previous_status: PhoneStatus;
-  new_status: PhoneStatus;
+  product_id: string;
+  previous_status: ProductStatus;
+  new_status: ProductStatus;
   deducted_at?: string;
   deducted_by?: string | null;
   notes?: string | null;
@@ -34,7 +34,7 @@ export interface InventoryDeductionLogWithRelations extends InventoryDeductionLo
     sale_date: string;
     sale_price: number;
   } | null;
-  phone?: {
+  product?: {
     id: string;
     model: string;
     brand: {
@@ -50,9 +50,9 @@ export interface InventoryDeductionLogWithRelations extends InventoryDeductionLo
 export interface SaleWithInventoryDeductionResult {
   success: boolean;
   saleId?: string;
-  phoneId: string;
-  previousStatus?: PhoneStatus;
-  newStatus?: PhoneStatus;
+  productId: string;
+  previousStatus?: ProductStatus;
+  newStatus?: ProductStatus;
   warning?: string | null;
   inventoryDeducted: boolean;
   error?: string;
@@ -67,12 +67,12 @@ export interface BatchSaleWithInventoryDeductionResult {
   processedItems: number;
   sales?: Array<{
     saleId: string;
-    phoneId: string;
-    previousStatus: PhoneStatus;
-    newStatus: PhoneStatus;
+    productId: string;
+    previousStatus: ProductStatus;
+    newStatus: ProductStatus;
   }>;
   warnings?: Array<{
-    phoneId: string;
+    productId: string;
     warning: string;
   }>;
   inventoryDeducted: boolean;
@@ -86,17 +86,17 @@ export interface InventoryAvailabilityResult {
   allAvailable: boolean;
   hasWarnings: boolean;
   allowOversell: boolean;
-  phones: Array<{
-    phoneId: string;
+  products: Array<{
+    productId: string;
     model: string;
     brandName: string;
-    status: PhoneStatus;
+    status: ProductStatus;
     available: boolean;
     warning?: string;
     error?: string;
   }>;
   warnings: Array<{
-    phoneId: string;
+    productId: string;
     message: string;
   }>;
 }
@@ -106,9 +106,9 @@ export interface InventoryAvailabilityResult {
  */
 export interface RevertSaleResult {
   success: boolean;
-  phoneId?: string;
-  previousStatus?: PhoneStatus;
-  newStatus?: PhoneStatus;
+  productId?: string;
+  previousStatus?: ProductStatus;
+  newStatus?: ProductStatus;
   inventoryRestored: boolean;
   error?: string;
 }

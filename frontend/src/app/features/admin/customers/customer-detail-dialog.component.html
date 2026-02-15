@@ -180,7 +180,7 @@
                       [disabled]="emailSending()"
                     />
                     <label [for]="'receipt-' + sale.id" class="flex-1 cursor-pointer">
-                      <span class="font-medium">{{ sale.brandName }} {{ sale.phoneName }}</span>
+                      <span class="font-medium">{{ sale.brandName }} {{ sale.productName }}</span>
                       <span class="text-color-secondary text-sm ml-2">
                         {{ sale.saleDate | date:'shortDate' }} -
                         {{ sale.salePrice | appCurrency:'1.2-2' }}
@@ -241,7 +241,7 @@
       >
         <ng-template #header>
           <tr>
-            <th>Phone</th>
+            <th>Product</th>
             <th>Date</th>
             <th>Price</th>
             <th style="width: 4rem">View</th>
@@ -250,7 +250,7 @@
         <ng-template #body let-sale>
           <tr>
             <td>
-              <span class="font-medium">{{ sale.brandName }} {{ sale.phoneName }}</span>
+              <span class="font-medium">{{ sale.brandName }} {{ sale.productName }}</span>
             </td>
             <td>{{ sale.saleDate | date:'mediumDate' }}</td>
             <td>
@@ -263,9 +263,9 @@
                 [text]="true"
                 severity="secondary"
                 size="small"
-                pTooltip="View Phone"
+                pTooltip="View Product"
                 tooltipPosition="top"
-                [routerLink]="['/admin/inventory', sale.phoneId, 'edit']"
+                [routerLink]="['/admin/inventory', sale.productId, 'edit']"
               />
             </td>
           </tr>

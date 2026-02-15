@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Input, OnInit, OnDestroy, inject, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit, OnDestroy, Renderer2 } from '@angular/core';
 import { ImageOptimizationService } from '../../core/services/image-optimization.service';
 
 /**
@@ -17,9 +17,11 @@ import { ImageOptimizationService } from '../../core/services/image-optimization
   standalone: true
 })
 export class BlurUpImageDirective implements OnInit, OnDestroy {
-  private el = inject(ElementRef);
-  private renderer = inject(Renderer2);
-  private imageOptimization = inject(ImageOptimizationService);
+  constructor(
+    private el: ElementRef,
+    private renderer: Renderer2,
+    private imageOptimization: ImageOptimizationService
+  ) { }
 
   /**
    * The original image URL used to generate the tiny placeholder

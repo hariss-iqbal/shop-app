@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -10,7 +10,7 @@ import { MessageModule } from 'primeng/message';
 
 import { ReceiptBarcodeService, ReceiptLookupResponse } from '../../../core/services/receipt-barcode.service';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
-import { environment } from '../../../../environments/environment';
+import { ShopDetailsService } from '../../../core/services/shop-details.service';
 
 /**
  * Receipt Lookup Component
@@ -37,18 +37,21 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./receipt-lookup.component.scss']
 })
 export class ReceiptLookupComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private receiptBarcodeService = inject(ReceiptBarcodeService);
+  constructor(
+    private route: ActivatedRoute,
+    private receiptBarcodeService: ReceiptBarcodeService,
+    private shopDetailsService: ShopDetailsService
+  ) { }
 
   loading = signal(true);
   error = signal<string | null>(null);
   lookupResult = signal<ReceiptLookupResponse | null>(null);
   receiptNumber = signal<string>('');
 
-  storeName = environment.businessInfo.name;
-  storeAddress = environment.businessInfo.address;
-  storePhone = environment.businessInfo.phoneDisplay;
-  storePhoneLink = environment.businessInfo.phoneLink;
+  storeName = this.shopDetailsService.shopName;
+  storeAddress = this.shopDetailsService.address;
+  storePhone = this.shopDetailsService.phoneDisplay;
+  storePhoneLink = this.shopDetailsService.phoneLink;
 
   ngOnInit(): void {
     const receiptNum = this.route.snapshot.paramMap.get('receiptNumber');

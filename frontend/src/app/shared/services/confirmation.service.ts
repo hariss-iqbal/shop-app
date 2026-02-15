@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 
 /**
@@ -30,15 +30,15 @@ export interface ConfirmOptions {
  * @example
  * ```typescript
  * // Single item deletion
- * const confirmed = await this.confirmDialogService.confirmDelete('phone', 'iPhone 15 Pro');
+ * const confirmed = await this.confirmDialogService.confirmDelete('product', 'iPhone 15 Pro');
  * if (confirmed) {
- *   await this.phoneService.deletePhone(id);
+ *   await this.productService.deleteProduct(id);
  * }
  *
  * // Bulk deletion
- * const confirmed = await this.confirmDialogService.confirmBulkDelete('phone', 5);
+ * const confirmed = await this.confirmDialogService.confirmBulkDelete('product', 5);
  * if (confirmed) {
- *   await this.phoneService.deletePhones(ids);
+ *   await this.productService.deleteProducts(ids);
  * }
  *
  * // Custom confirmation
@@ -55,7 +55,7 @@ export interface ConfirmOptions {
   providedIn: 'root'
 })
 export class ConfirmDialogService {
-  private confirmationService = inject(ConfirmationService);
+  constructor(private confirmationService: ConfirmationService) { }
 
   /**
    * Displays a custom confirmation dialog.
@@ -82,13 +82,13 @@ export class ConfirmDialogService {
   /**
    * Displays a confirmation dialog for deleting a single item.
    *
-   * @param entityName - The type of entity being deleted (e.g., 'phone', 'supplier')
+   * @param entityName - The type of entity being deleted (e.g., 'product', 'supplier')
    * @param itemDetails - Optional details about the specific item (e.g., 'iPhone 15 Pro')
    * @returns Promise that resolves to true if confirmed, false if cancelled
    *
    * @example
    * ```typescript
-   * const confirmed = await this.confirmDialogService.confirmDelete('phone', 'iPhone 15 Pro');
+   * const confirmed = await this.confirmDialogService.confirmDelete('product', 'iPhone 15 Pro');
    * ```
    */
   confirmDelete(entityName: string, itemDetails?: string): Promise<boolean> {

@@ -64,7 +64,7 @@ export class SaleController {
         await this.auditLogService.logSale({
           eventType: 'sale_created',
           saleId: result.sale.id,
-          phoneId: dto.phoneId,
+          productId: dto.productId,
           amount: result.sale.salePrice,
           buyerName: result.sale.buyerName || undefined,
           buyerPhone: result.sale.buyerPhone || undefined,
@@ -88,7 +88,7 @@ export class SaleController {
   }
 
   /**
-   * Mark a phone as sold with automatic inventory deduction
+   * Mark a product as sold with automatic inventory deduction
    * Feature: F-008 Automatic Inventory Deduction
    * Feature: F-014 Audit Logging
    */
@@ -103,7 +103,7 @@ export class SaleController {
         await this.auditLogService.logSale({
           eventType: 'sale_created',
           saleId: result.sale.id,
-          phoneId: dto.phoneId,
+          productId: dto.productId,
           amount: result.sale.salePrice,
           buyerName: result.sale.buyerName || undefined,
           buyerPhone: result.sale.buyerPhone || undefined,
@@ -141,7 +141,7 @@ export class SaleController {
           await this.auditLogService.logSale({
             eventType: 'batch_sale_completed',
             saleId: sale.id,
-            phoneId: sale.phoneId,
+            productId: sale.productId,
             amount: sale.salePrice,
             buyerName: sale.buyerName || undefined,
             buyerPhone: sale.buyerPhone || undefined,
@@ -163,8 +163,8 @@ export class SaleController {
    * Feature: F-008 Automatic Inventory Deduction
    */
   async checkInventoryAvailability(dto: CheckInventoryAvailabilityDto): Promise<InventoryAvailabilityResponseDto> {
-    if (!dto.phoneIds || dto.phoneIds.length === 0) {
-      throw new Error('At least one phone ID is required');
+    if (!dto.productIds || dto.productIds.length === 0) {
+      throw new Error('At least one product ID is required');
     }
     return this.saleService.checkInventoryAvailability(dto);
   }
@@ -227,8 +227,8 @@ export class SaleController {
   }
 
   private validateCreateDto(dto: CreateSaleDto): void {
-    if (!dto.phoneId) {
-      throw new Error('Phone ID is required');
+    if (!dto.productId) {
+      throw new Error('Product ID is required');
     }
     if (!dto.saleDate) {
       throw new Error('Sale date is required');
@@ -251,8 +251,8 @@ export class SaleController {
   }
 
   private validateMarkAsSoldDto(dto: MarkAsSoldDto): void {
-    if (!dto.phoneId) {
-      throw new Error('Phone ID is required');
+    if (!dto.productId) {
+      throw new Error('Product ID is required');
     }
     if (!dto.saleDate) {
       throw new Error('Sale date is required');
@@ -282,8 +282,8 @@ export class SaleController {
       throw new Error('Sale date is required');
     }
     for (const item of dto.items) {
-      if (!item.phoneId) {
-        throw new Error('Phone ID is required for each item');
+      if (!item.productId) {
+        throw new Error('Product ID is required for each item');
       }
       if (item.salePrice === undefined || item.salePrice < 0) {
         throw new Error('Valid sale price is required for each item');

@@ -1,6 +1,6 @@
 import { PurchaseOrderService } from '../services/purchase-order.service';
 import { InputSanitizationService } from '../services/input-sanitization.service';
-import { PurchaseOrderStatus, PhoneCondition } from '../enums';
+import { PurchaseOrderStatus, ProductCondition } from '../enums';
 import {
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
@@ -10,7 +10,7 @@ import {
   ReceivePurchaseOrderDto,
   ReceivePurchaseOrderResponseDto
 } from '../dto/purchase-order.dto';
-import { PURCHASE_ORDER_CONSTRAINTS, PHONE_CONSTRAINTS } from '../constants/validation.constants';
+import { PURCHASE_ORDER_CONSTRAINTS, PRODUCT_CONSTRAINTS } from '../constants/validation.constants';
 
 /**
  * PurchaseOrder Controller
@@ -57,8 +57,8 @@ export class PurchaseOrderController {
    * Receive Purchase Order with Inventory Creation (F-023)
    *
    * This endpoint handles the full receiving workflow:
-   * - Validates phone records match expected quantity
-   * - Creates phone inventory records
+   * - Validates product records match expected quantity
+   * - Creates product inventory records
    * - Updates PO status to 'received'
    */
   async receiveWithInventory(id: string, dto: ReceivePurchaseOrderDto): Promise<ReceivePurchaseOrderResponseDto> {
@@ -96,71 +96,71 @@ export class PurchaseOrderController {
 
   private sanitizeReceiveDto(dto: ReceivePurchaseOrderDto): ReceivePurchaseOrderDto {
     return {
-      phones: dto.phones.map(phone => ({
-        ...phone,
-        brand: this.sanitizer.sanitizeString(phone.brand),
-        model: this.sanitizer.sanitizeString(phone.model),
-        color: phone.color ? this.sanitizer.sanitizeString(phone.color) : phone.color,
-        imei: phone.imei ? this.sanitizer.sanitizeString(phone.imei) : phone.imei,
-        notes: phone.notes ? this.sanitizer.sanitizeString(phone.notes) : phone.notes
+      products: dto.products.map(product => ({
+        ...product,
+        brand: this.sanitizer.sanitizeString(product.brand),
+        model: this.sanitizer.sanitizeString(product.model),
+        color: product.color ? this.sanitizer.sanitizeString(product.color) : product.color,
+        imei: product.imei ? this.sanitizer.sanitizeString(product.imei) : product.imei,
+        notes: product.notes ? this.sanitizer.sanitizeString(product.notes) : product.notes
       }))
     };
   }
 
   private validateReceiveDto(dto: ReceivePurchaseOrderDto): void {
-    if (!dto.phones || dto.phones.length === 0) {
-      throw new Error('At least one phone record is required');
+    if (!dto.products || dto.products.length === 0) {
+      throw new Error('At least one product record is required');
     }
 
-    const validConditions = Object.values(PhoneCondition);
+    const validConditions = Object.values(ProductCondition);
 
-    for (let i = 0; i < dto.phones.length; i++) {
-      const phone = dto.phones[i];
+    for (let i = 0; i < dto.products.length; i++) {
+      const product = dto.products[i];
 
-      if (phone.lineItemIndex === undefined || phone.lineItemIndex < 0) {
-        throw new Error(`Phone record ${i + 1}: Invalid line item index`);
+      if (product.lineItemIndex === undefined || product.lineItemIndex < 0) {
+        throw new Error(`Product record ${i + 1}: Invalid line item index`);
       }
 
-      if (!phone.brand || phone.brand.trim().length === 0) {
-        throw new Error(`Phone record ${i + 1}: Brand is required`);
+      if (!product.brand || product.brand.trim().length === 0) {
+        throw new Error(`Product record ${i + 1}: Brand is required`);
       }
 
-      if (phone.brand.length > PURCHASE_ORDER_CONSTRAINTS.ITEM_BRAND_MAX) {
-        throw new Error(`Phone record ${i + 1}: Brand must not exceed ${PURCHASE_ORDER_CONSTRAINTS.ITEM_BRAND_MAX} characters`);
+      if (product.brand.length > PURCHASE_ORDER_CONSTRAINTS.ITEM_BRAND_MAX) {
+        throw new Error(`Product record ${i + 1}: Brand must not exceed ${PURCHASE_ORDER_CONSTRAINTS.ITEM_BRAND_MAX} characters`);
       }
 
-      if (!phone.model || phone.model.trim().length === 0) {
-        throw new Error(`Phone record ${i + 1}: Model is required`);
+      if (!product.model || product.model.trim().length === 0) {
+        throw new Error(`Product record ${i + 1}: Model is required`);
       }
 
-      if (phone.model.length > PHONE_CONSTRAINTS.MODEL_MAX) {
-        throw new Error(`Phone record ${i + 1}: Model must not exceed ${PHONE_CONSTRAINTS.MODEL_MAX} characters`);
+      if (product.model.length > PRODUCT_CONSTRAINTS.MODEL_MAX) {
+        throw new Error(`Product record ${i + 1}: Model must not exceed ${PRODUCT_CONSTRAINTS.MODEL_MAX} characters`);
       }
 
-      if (!phone.condition || !validConditions.includes(phone.condition)) {
-        throw new Error(`Phone record ${i + 1}: Valid condition is required (new, used, refurbished)`);
+      if (!product.condition || !validConditions.includes(product.condition)) {
+        throw new Error(`Product record ${i + 1}: Valid condition is required (new, used, open_box)`);
       }
 
-      if (phone.sellingPrice === undefined || phone.sellingPrice < 0) {
-        throw new Error(`Phone record ${i + 1}: Selling price must be non-negative`);
+      if (product.sellingPrice === undefined || product.sellingPrice < 0) {
+        throw new Error(`Product record ${i + 1}: Selling price must be non-negative`);
       }
 
-      if (phone.color && phone.color.length > PHONE_CONSTRAINTS.COLOR_MAX) {
-        throw new Error(`Phone record ${i + 1}: Color must not exceed ${PHONE_CONSTRAINTS.COLOR_MAX} characters`);
+      if (product.color && product.color.length > PRODUCT_CONSTRAINTS.COLOR_MAX) {
+        throw new Error(`Product record ${i + 1}: Color must not exceed ${PRODUCT_CONSTRAINTS.COLOR_MAX} characters`);
       }
 
-      if (phone.imei && phone.imei.length > PHONE_CONSTRAINTS.IMEI_MAX) {
-        throw new Error(`Phone record ${i + 1}: IMEI must not exceed ${PHONE_CONSTRAINTS.IMEI_MAX} characters`);
+      if (product.imei && product.imei.length > PRODUCT_CONSTRAINTS.IMEI_MAX) {
+        throw new Error(`Product record ${i + 1}: IMEI must not exceed ${PRODUCT_CONSTRAINTS.IMEI_MAX} characters`);
       }
 
-      if (phone.batteryHealth !== undefined && phone.batteryHealth !== null) {
-        if (phone.batteryHealth < PHONE_CONSTRAINTS.BATTERY_HEALTH_MIN || phone.batteryHealth > PHONE_CONSTRAINTS.BATTERY_HEALTH_MAX) {
-          throw new Error(`Phone record ${i + 1}: Battery health must be between ${PHONE_CONSTRAINTS.BATTERY_HEALTH_MIN} and ${PHONE_CONSTRAINTS.BATTERY_HEALTH_MAX}`);
+      if (product.batteryHealth !== undefined && product.batteryHealth !== null) {
+        if (product.batteryHealth < PRODUCT_CONSTRAINTS.BATTERY_HEALTH_MIN || product.batteryHealth > PRODUCT_CONSTRAINTS.BATTERY_HEALTH_MAX) {
+          throw new Error(`Product record ${i + 1}: Battery health must be between ${PRODUCT_CONSTRAINTS.BATTERY_HEALTH_MIN} and ${PRODUCT_CONSTRAINTS.BATTERY_HEALTH_MAX}`);
         }
       }
 
-      if (phone.notes && phone.notes.length > PHONE_CONSTRAINTS.NOTES_MAX) {
-        throw new Error(`Phone record ${i + 1}: Notes must not exceed ${PHONE_CONSTRAINTS.NOTES_MAX} characters`);
+      if (product.notes && product.notes.length > PRODUCT_CONSTRAINTS.NOTES_MAX) {
+        throw new Error(`Product record ${i + 1}: Notes must not exceed ${PRODUCT_CONSTRAINTS.NOTES_MAX} characters`);
       }
     }
   }
@@ -189,8 +189,8 @@ export class PurchaseOrderController {
       if (!item.model || item.model.trim().length === 0) {
         throw new Error('Item model is required');
       }
-      if (item.model.length > PHONE_CONSTRAINTS.MODEL_MAX) {
-        throw new Error(`Item model must not exceed ${PHONE_CONSTRAINTS.MODEL_MAX} characters`);
+      if (item.model.length > PRODUCT_CONSTRAINTS.MODEL_MAX) {
+        throw new Error(`Item model must not exceed ${PRODUCT_CONSTRAINTS.MODEL_MAX} characters`);
       }
       if (!item.quantity || item.quantity < 1) {
         throw new Error('Item quantity must be at least 1');

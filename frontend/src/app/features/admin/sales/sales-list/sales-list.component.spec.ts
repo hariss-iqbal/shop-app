@@ -20,9 +20,9 @@ describe('SalesListComponent', () => {
 
   const mockSale: Sale = {
     id: 'sale-1',
-    phoneId: 'phone-1',
+    productId: 'phone-1',
     brandName: 'Apple',
-    phoneName: 'iPhone 15 Pro',
+    productName: 'iPhone 15 Pro',
     saleDate: '2024-01-15',
     salePrice: 1200,
     costPrice: 900,
@@ -50,7 +50,7 @@ describe('SalesListComponent', () => {
       ...mockSale,
       id: 'sale-2',
       brandName: 'Samsung',
-      phoneName: 'Galaxy S24',
+      productName: 'Galaxy S24',
       saleDate: '2024-01-14',
       salePrice: 1000,
       costPrice: 750,
@@ -61,7 +61,7 @@ describe('SalesListComponent', () => {
       ...mockSale,
       id: 'sale-3',
       brandName: 'Google',
-      phoneName: 'Pixel 8',
+      productName: 'Pixel 8',
       saleDate: '2024-01-13',
       salePrice: 800,
       costPrice: 850,
@@ -308,9 +308,9 @@ describe('SalesListComponent', () => {
     }));
   });
 
-  describe('onViewPhone', () => {
-    it('should navigate to phone edit page', () => {
-      component.onViewPhone(mockSale);
+  describe('onViewProduct', () => {
+    it('should navigate to product edit page', () => {
+      component.onViewProduct(mockSale);
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory', 'phone-1', 'edit']);
     });
@@ -538,18 +538,18 @@ describe('SalesListComponent', () => {
     });
   });
 
-  describe('phone link navigation', () => {
+  describe('product link navigation', () => {
     beforeEach(fakeAsync(() => {
       fixture.detectChanges();
       tick();
       fixture.detectChanges();
     }));
 
-    it('should have sales with phone info for navigation', () => {
+    it('should have sales with product info for navigation', () => {
       expect(component.sales().length).toBeGreaterThan(0);
-      expect(component.sales()[0].phoneId).toBeDefined();
+      expect(component.sales()[0].productId).toBeDefined();
       expect(component.sales()[0].brandName).toBeDefined();
-      expect(component.sales()[0].phoneName).toBeDefined();
+      expect(component.sales()[0].productName).toBeDefined();
     });
   });
 

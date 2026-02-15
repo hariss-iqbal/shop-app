@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -41,12 +41,14 @@ import { OfflineTransaction, SyncQueueItem, SyncResolutionAction } from '../../.
   styleUrls: ['./sync-status-panel.component.scss']
 })
 export class SyncStatusPanelComponent implements OnInit {
-  private readonly syncQueue = inject(SyncQueueService);
-  private readonly syncScheduler = inject(SyncSchedulerService);
-  private readonly conflictResolution = inject(ConflictResolutionService);
-  private readonly networkStatus = inject(NetworkStatusService);
-  private readonly toastService = inject(ToastService);
-  private readonly confirmationService = inject(ConfirmationService);
+  constructor(
+    private readonly syncQueue: SyncQueueService,
+    private readonly syncScheduler: SyncSchedulerService,
+    private readonly conflictResolution: ConflictResolutionService,
+    private readonly networkStatus: NetworkStatusService,
+    private readonly toastService: ToastService,
+    private readonly confirmationService: ConfirmationService
+  ) { }
 
   readonly isOnline = this.networkStatus.isOnline;
   readonly isSyncing = this.syncQueue.isSyncing;
@@ -177,7 +179,7 @@ export class SyncStatusPanelComponent implements OnInit {
   getConflictDisplayName(conflict: SyncQueueItem): string {
     if (conflict.operationType === 'CREATE_SALE') {
       const payload = conflict.payload as any;
-      return `${payload.phoneDetails?.brandName} ${payload.phoneDetails?.model}`;
+      return `${payload.productDetails?.brandName} ${payload.productDetails?.model}`;
     }
     return conflict.localTempId;
   }

@@ -17,6 +17,7 @@ export interface ReceiptSequence {
   separator: string;
   is_active: boolean;
   last_generated_at: string | null;
+  last_sequence_date: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -99,6 +100,7 @@ export interface PreviewSequenceResult {
  * Available date formats for receipt numbers
  */
 export type ReceiptDateFormat =
+  | 'DDMMYYYY'   // 05022026
   | 'YY-MM'      // 26-01
   | 'YYYY-MM'    // 2026-01
   | 'YY-MM-DD'   // 26-01-30

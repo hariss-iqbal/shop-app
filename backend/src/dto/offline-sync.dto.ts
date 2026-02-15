@@ -33,8 +33,8 @@ export type SyncStatus =
  */
 export type SyncConflictType =
   | 'RECEIPT_NUMBER_EXISTS'
-  | 'PHONE_ALREADY_SOLD'
-  | 'PHONE_NOT_AVAILABLE'
+  | 'PRODUCT_ALREADY_SOLD'
+  | 'PRODUCT_NOT_AVAILABLE'
   | 'DATA_MODIFIED'
   | 'ENTITY_DELETED';
 
@@ -43,7 +43,7 @@ export type SyncConflictType =
  */
 export interface OfflineSaleDto {
   localId: string;
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
   costPrice: number;
@@ -113,7 +113,7 @@ export interface SyncBatchResponseDto {
  * Request to check for conflicts before syncing
  */
 export interface ConflictCheckRequestDto {
-  phoneIds: string[];
+  productIds: string[];
   receiptNumbers: string[];
 }
 
@@ -123,7 +123,7 @@ export interface ConflictCheckRequestDto {
 export interface ConflictCheckResponseDto {
   hasConflicts: boolean;
   conflicts: Array<{
-    type: 'phone' | 'receipt';
+    type: 'product' | 'receipt';
     id: string;
     reason: string;
     currentStatus?: string;

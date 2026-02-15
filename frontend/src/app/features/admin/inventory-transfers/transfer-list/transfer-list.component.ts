@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -41,10 +41,12 @@ import {
   templateUrl: './transfer-list.component.html'
 })
 export class TransferListComponent implements OnInit {
-  private inventoryTransferService = inject(InventoryTransferService);
-  private storeLocationService = inject(StoreLocationService);
-  private messageService = inject(MessageService);
-  private confirmationService = inject(ConfirmationService);
+  constructor(
+    private inventoryTransferService: InventoryTransferService,
+    private storeLocationService: StoreLocationService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
+  ) { }
 
   transfers = signal<InventoryTransfer[]>([]);
   locations = signal<StoreLocation[]>([]);

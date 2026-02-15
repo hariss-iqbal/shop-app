@@ -56,13 +56,13 @@ export interface InventoryTransferWithRelations extends InventoryTransfer {
     name: string;
     code: string;
   };
-  items?: InventoryTransferItemWithPhone[];
+  items?: InventoryTransferItemWithProduct[];
 }
 
 export interface InventoryTransferItem {
   id: string;
   transfer_id: string;
-  phone_id: string;
+  product_id: string;
   quantity: number;
   notes: string | null;
   created_at: string;
@@ -71,14 +71,14 @@ export interface InventoryTransferItem {
 export interface InventoryTransferItemInsert {
   id?: string;
   transfer_id: string;
-  phone_id: string;
+  product_id: string;
   quantity: number;
   notes?: string | null;
   created_at?: string;
 }
 
-export interface InventoryTransferItemWithPhone extends InventoryTransferItem {
-  phone?: {
+export interface InventoryTransferItemWithProduct extends InventoryTransferItem {
+  product?: {
     id: string;
     model: string;
     condition: string;

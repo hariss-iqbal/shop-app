@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -45,8 +45,10 @@ import { LoyaltyTier } from '../../../../enums';
   styleUrls: ['./loyalty-config.component.scss']
 })
 export class LoyaltyConfigComponent implements OnInit {
-  private loyaltyService = inject(LoyaltyService);
-  private messageService = inject(MessageService);
+  constructor(
+    private loyaltyService: LoyaltyService,
+    private messageService: MessageService
+  ) { }
 
   Math = Math;
 

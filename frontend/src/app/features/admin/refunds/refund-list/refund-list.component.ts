@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -38,8 +38,10 @@ import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
   templateUrl: './refund-list.component.html'
 })
 export class RefundListComponent implements OnInit {
-  private refundService = inject(RefundService);
-  private toastService = inject(ToastService);
+  constructor(
+    private refundService: RefundService,
+    private toastService: ToastService
+  ) { }
 
   refunds = signal<Refund[]>([]);
   summary = signal<RefundSummary | null>(null);

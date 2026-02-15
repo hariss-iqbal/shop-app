@@ -95,7 +95,7 @@ export class AuditLogController {
     const auditLogId = await this.auditLogService.logSale({
       eventType: dto.eventType,
       saleId: dto.saleId,
-      phoneId: dto.phoneId,
+      productId: dto.productId,
       amount: dto.amount,
       buyerName: dto.buyerName,
       buyerPhone: dto.buyerPhone,
@@ -151,7 +151,7 @@ export class AuditLogController {
     this.validateInventoryAuditDto(dto);
     const auditLogId = await this.auditLogService.logInventoryChange({
       eventType: dto.eventType,
-      phoneId: dto.phoneId,
+      productId: dto.productId,
       previousStatus: dto.previousStatus,
       newStatus: dto.newStatus,
       saleId: dto.saleId,
@@ -178,10 +178,10 @@ export class AuditLogController {
       'partial_refund_completed',
       'inventory_deducted',
       'inventory_restored',
-      'phone_status_changed',
-      'phone_created',
-      'phone_updated',
-      'phone_deleted',
+      'product_status_changed',
+      'product_created',
+      'product_updated',
+      'product_deleted',
       'user_role_assigned',
       'user_role_changed',
       'user_role_revoked',
@@ -223,8 +223,8 @@ export class AuditLogController {
     if (!dto.saleId) {
       throw new Error('Sale ID is required');
     }
-    if (!dto.phoneId) {
-      throw new Error('Phone ID is required');
+    if (!dto.productId) {
+      throw new Error('Product ID is required');
     }
     if (dto.amount === undefined || dto.amount < 0) {
       throw new Error('Valid amount is required');
@@ -268,8 +268,8 @@ export class AuditLogController {
     if (!dto.eventType) {
       throw new Error('Event type is required');
     }
-    if (!dto.phoneId) {
-      throw new Error('Phone ID is required');
+    if (!dto.productId) {
+      throw new Error('Product ID is required');
     }
     if (!dto.previousStatus) {
       throw new Error('Previous status is required');

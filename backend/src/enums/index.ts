@@ -1,5 +1,6 @@
-export { PhoneCondition } from './phone-condition.enum';
-export { PhoneStatus } from './phone-status.enum';
+export { ProductCondition } from './product-condition.enum';
+export { ProductStatus } from './product-status.enum';
+export { ProductType } from './product-type.enum';
 export { PtaStatus, PtaStatusLabels, isValidPtaStatus, getPtaStatusLabel } from './pta-status.enum';
 export { PurchaseOrderStatus } from './purchase-order-status.enum';
 export { UserRole, RolePermissions, Permission } from './user-role.enum';

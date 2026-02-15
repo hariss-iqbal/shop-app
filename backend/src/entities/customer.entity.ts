@@ -41,10 +41,10 @@ export interface CustomerWithStats extends Customer {
 
 export interface CustomerPurchaseHistoryItem {
   id: string;
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
-  phoneName: string;
+  productName: string;
   brandName: string;
 }
 

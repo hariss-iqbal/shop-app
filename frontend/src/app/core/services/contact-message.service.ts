@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { SpamPreventionService } from './spam-prevention.service';
 import { RecaptchaService } from './recaptcha.service';
@@ -14,10 +14,12 @@ import {
   providedIn: 'root'
 })
 export class ContactMessageService {
-  private supabase = inject(SupabaseService);
-  private spamPrevention = inject(SpamPreventionService);
-  private recaptchaService = inject(RecaptchaService);
-  private sanitizer = inject(InputSanitizationService);
+  constructor(
+    private supabase: SupabaseService,
+    private spamPrevention: SpamPreventionService,
+    private recaptchaService: RecaptchaService,
+    private sanitizer: InputSanitizationService
+  ) { }
 
   async getMessages(filter?: ContactMessageFilter): Promise<ContactMessageListResponse> {
     let query = this.supabase

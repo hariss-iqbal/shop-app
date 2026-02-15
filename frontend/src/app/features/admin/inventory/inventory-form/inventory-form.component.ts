@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -19,22 +19,21 @@ import { TagModule } from 'primeng/tag';
 import { CheckboxModule } from 'primeng/checkbox';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { MessageModule } from 'primeng/message';
-import { ChipModule } from 'primeng/chip';
-import { PhoneService } from '../../../../core/services/phone.service';
-import { PhoneImageService } from '../../../../core/services/phone-image.service';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { ProductService } from '../../../../core/services/product.service';
+import { ProductImageService } from '../../../../core/services/product-image.service';
 import { BrandService } from '../../../../core/services/brand.service';
 import { SupplierService } from '../../../../core/services/supplier.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
-import { TaxCalculationService } from '../../../../core/services/tax-calculation.service';
 import { Brand } from '../../../../models/brand.model';
 import { Supplier } from '../../../../models/supplier.model';
-import { CreatePhoneRequest, UpdatePhoneRequest } from '../../../../models/phone.model';
-import { PhoneImage } from '../../../../models/phone-image.model';
-import { PhoneCondition, PhoneConditionLabels, PhoneStatus, PhoneStatusLabels, PtaStatus, PtaStatusLabels } from '../../../../enums';
-import { PhoneImageUploadComponent } from '../phone-image-upload/phone-image-upload.component';
-import { PHONE_CONSTRAINTS } from '../../../../constants/validation.constants';
+import { CreateProductRequest, UpdateProductRequest } from '../../../../models/product.model';
+import { ProductImage } from '../../../../models/product-image.model';
+import { ProductCondition, ProductConditionLabels, ProductStatus, ProductStatusLabels, PtaStatus, PtaStatusLabels, ProductType } from '../../../../enums';
+import { ProductImageUploadComponent } from '../product-image-upload/product-image-upload.component';
+import { PRODUCT_CONSTRAINTS } from '../../../../constants/validation.constants';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 
 interface DropdownOption<T> {
@@ -72,27 +71,50 @@ interface BrandSuggestion {
     CheckboxModule,
     RadioButtonModule,
     MessageModule,
-    ChipModule,
-    PhoneImageUploadComponent,
+    SelectButtonModule,
+    ProductImageUploadComponent,
     AppCurrencyPipe
   ],
-  templateUrl: './inventory-form.component.html'
+  templateUrl: './inventory-form.component.html',
+  styles: [`
+    :host ::ng-deep {
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--p-text-muted-color, #b0b0b0) !important;
+        opacity: 0.6 !important;
+      }
+      .p-inputnumber input::placeholder {
+        color: var(--p-text-muted-color, #b0b0b0) !important;
+        opacity: 0.6 !important;
+      }
+      .p-select-label.p-placeholder {
+        color: var(--p-text-muted-color, #b0b0b0) !important;
+        opacity: 0.6 !important;
+      }
+    }
+  `]
 })
 export class InventoryFormComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private phoneService = inject(PhoneService);
-  private brandService = inject(BrandService);
-  private supplierService = inject(SupplierService);
-  private sanitizer = inject(InputSanitizationService);
-  private toastService = inject(ToastService);
-  private focusService = inject(FocusManagementService);
-  private taxCalcService = inject(TaxCalculationService);
-  private phoneImageService = inject(PhoneImageService);
+  dialogMode = input(false);
+  dialogProductId = input<string | null>(null);
+  saved = output<void>();
+  cancelled = output<void>();
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private productService: ProductService,
+    private brandService: BrandService,
+    private supplierService: SupplierService,
+    private sanitizer: InputSanitizationService,
+    private toastService: ToastService,
+    private focusService: FocusManagementService,
+    private productImageService: ProductImageService
+  ) { }
 
   isEdit = false;
-  phoneId: string | null = null;
+  productId: string | null = null;
   today = new Date();
 
   loading = signal(false);
@@ -134,45 +156,8 @@ export class InventoryFormComponent implements OnInit {
     return null;
   });
 
-  /**
-   * Computes tax preview based on current form values
-   * Feature: F-012 Tax Calculation and Compliance
-   */
-  taxPreview = computed(() => {
-    const sellingPrice = this.form?.get('sellingPrice')?.value;
-    const taxRate = this.form?.get('taxRate')?.value;
-    const isTaxInclusive = this.form?.get('isTaxInclusive')?.value;
-    const isTaxExempt = this.form?.get('isTaxExempt')?.value;
-
-    if (!sellingPrice || sellingPrice <= 0) {
-      return null;
-    }
-
-    if (isTaxExempt) {
-      return {
-        basePrice: sellingPrice,
-        taxAmount: 0,
-        totalPrice: sellingPrice
-      };
-    }
-
-    const calc = this.taxCalcService.calculateItemTax(
-      sellingPrice,
-      taxRate || 0,
-      isTaxInclusive || false,
-      false,
-      1
-    );
-
-    return {
-      basePrice: calc.basePrice,
-      taxAmount: calc.taxAmount,
-      totalPrice: calc.totalPrice
-    };
-  });
-
-  conditionOptions: DropdownOption<PhoneCondition>[] = Object.values(PhoneCondition).map(value => ({
-    label: PhoneConditionLabels[value],
+  conditionOptions: DropdownOption<ProductCondition>[] = Object.values(ProductCondition).map(value => ({
+    label: ProductConditionLabels[value],
     value
   }));
 
@@ -181,13 +166,31 @@ export class InventoryFormComponent implements OnInit {
     { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
   ];
 
-  statusOptions: DropdownOption<PhoneStatus>[] = Object.values(PhoneStatus).map(value => ({
-    label: PhoneStatusLabels[value],
+  statusOptions: DropdownOption<ProductStatus>[] = Object.values(ProductStatus).map(value => ({
+    label: ProductStatusLabels[value],
     value
   }));
 
-  /** Validation constraints for phone form fields (F-058: Input Sanitization) */
-  readonly constraints = PHONE_CONSTRAINTS;
+  productTypeOptions = [
+    { label: 'Phone', value: ProductType.PHONE },
+    { label: 'Accessory', value: ProductType.ACCESSORY },
+    { label: 'Tablet', value: ProductType.TABLET },
+    { label: 'Laptop', value: ProductType.LAPTOP }
+  ];
+
+  accessoryCategoryOptions = [
+    { label: 'Case', value: 'Case' },
+    { label: 'Charger', value: 'Charger' },
+    { label: 'Earbuds', value: 'Earbuds' },
+    { label: 'Screen Protector', value: 'Screen Protector' },
+    { label: 'Cable', value: 'Cable' },
+    { label: 'Adapter', value: 'Adapter' },
+    { label: 'Stand', value: 'Stand' },
+    { label: 'Other', value: 'Other' }
+  ];
+
+  /** Validation constraints for product form fields (F-058: Input Sanitization) */
+  readonly constraints = PRODUCT_CONSTRAINTS;
 
   // Dynamic quick options from GSMArena (start empty, populate on fetch)
   ramQuickOptions = signal<number[]>([]);
@@ -209,19 +212,20 @@ export class InventoryFormComponent implements OnInit {
   pendingImagePreviews = signal<string[]>([]);
 
   form: FormGroup = this.fb.group({
+    productType: [ProductType.PHONE],
     brand: [null as Brand | null, Validators.required],
     model: ['', [Validators.required, Validators.maxLength(this.constraints.MODEL_MAX)]],
     storageGb: [null as number | null],
     ramGb: [null as number | null],
     color: ['', Validators.maxLength(this.constraints.COLOR_MAX)],
-    condition: [PhoneCondition.NEW, Validators.required],
+    condition: [ProductCondition.NEW, Validators.required],
     conditionRating: [null as number | null, [Validators.min(1), Validators.max(10)]],
     ptaStatus: [null as PtaStatus | null],
     batteryHealth: [null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]],
     imei: ['', Validators.maxLength(this.constraints.IMEI_MAX)],
     costPrice: [null as number | null, [Validators.required, Validators.min(0)]],
     sellingPrice: [null as number | null, [Validators.required, Validators.min(0)]],
-    status: [PhoneStatus.AVAILABLE, Validators.required],
+    status: [ProductStatus.AVAILABLE, Validators.required],
     purchaseDate: [null as Date | null],
     supplierId: [null as string | null],
     notes: ['', Validators.maxLength(this.constraints.NOTES_MAX)],
@@ -229,20 +233,28 @@ export class InventoryFormComponent implements OnInit {
     // Tax configuration fields (F-012)
     taxRate: [0, [Validators.min(0), Validators.max(100)]],
     isTaxInclusive: [false],
-    isTaxExempt: [false]
+    isTaxExempt: [false],
+    isFeatured: [false]
   });
 
   ngOnInit(): void {
-    this.phoneId = this.route.snapshot.paramMap.get('id');
-    this.isEdit = !!this.phoneId;
+    if (this.dialogMode()) {
+      this.productId = this.dialogProductId();
+    } else {
+      this.productId = this.route.snapshot.paramMap.get('id');
+    }
+    this.isEdit = !!this.productId;
 
-    this.form.get('condition')?.valueChanges.subscribe((condition: PhoneCondition) => {
-      const shouldShow = condition === PhoneCondition.USED || condition === PhoneCondition.OPEN_BOX;
+    this.form.get('condition')?.valueChanges.subscribe((condition: ProductCondition) => {
+      const shouldShow = condition === ProductCondition.USED || condition === ProductCondition.OPEN_BOX;
       this.showBatteryHealth.set(shouldShow);
       if (!shouldShow) {
         this.form.get('batteryHealth')?.setValue(null);
       }
     });
+
+    // Initialize phone-specific controls since default type is PHONE
+    this.onProductTypeChange();
 
     this.loadInitialData();
   }
@@ -263,13 +275,13 @@ export class InventoryFormComponent implements OnInit {
       })));
       this.suppliers.set(suppliers.data);
 
-      // Get last 2 distinct suppliers from recent phones
+      // Get last 2 distinct suppliers from recent products
       if (suppliers.data.length > 0) {
         this.recentSuppliers.set(suppliers.data.slice(0, 2));
       }
 
-      if (this.isEdit && this.phoneId) {
-        await this.loadPhone(this.phoneId);
+      if (this.isEdit && this.productId) {
+        await this.loadProduct(this.productId);
       }
     } catch (error) {
       this.toastService.error('Error', 'Failed to load form data');
@@ -279,42 +291,139 @@ export class InventoryFormComponent implements OnInit {
     }
   }
 
-  private async loadPhone(id: string): Promise<void> {
-    const phone = await this.phoneService.getPhoneById(id);
-    if (!phone) {
-      this.toastService.error('Error', 'Phone not found');
+  private async loadProduct(id: string): Promise<void> {
+    const product = await this.productService.getProductById(id);
+    if (!product) {
+      this.toastService.error('Error', 'Product not found');
       this.router.navigate(['/admin/inventory']);
       return;
     }
 
-    const brand = this.brands().find(b => b.id === phone.brandId);
+    const brand = this.brands().find(b => b.id === product.brandId);
 
-    const shouldShowBatteryHealth = phone.condition === PhoneCondition.USED || phone.condition === PhoneCondition.OPEN_BOX;
+    const shouldShowBatteryHealth = product.condition === ProductCondition.USED || product.condition === ProductCondition.OPEN_BOX;
     this.showBatteryHealth.set(shouldShowBatteryHealth);
+
+    // Set product type first so the correct fields are added
+    this.form.get('productType')?.setValue(product.productType || ProductType.PHONE);
+    this.onProductTypeChange();
 
     this.form.patchValue({
       brand: brand || null,
-      model: phone.model,
-      storageGb: phone.storageGb,
-      ramGb: phone.ramGb,
-      color: phone.color || '',
-      condition: phone.condition,
-      conditionRating: phone.conditionRating,
-      ptaStatus: phone.ptaStatus,
-      batteryHealth: phone.batteryHealth,
-      imei: phone.imei || '',
-      costPrice: phone.costPrice,
-      sellingPrice: phone.sellingPrice,
-      status: phone.status,
-      purchaseDate: phone.purchaseDate ? new Date(phone.purchaseDate) : null,
-      supplierId: phone.supplierId,
-      notes: phone.notes || '',
-      description: phone.description || '',
+      model: product.model,
+      storageGb: product.storageGb,
+      ramGb: product.ramGb,
+      color: product.color || '',
+      condition: product.condition,
+      conditionRating: product.conditionRating,
+      ptaStatus: product.ptaStatus,
+      batteryHealth: product.batteryHealth,
+      imei: product.imei || '',
+      costPrice: product.costPrice,
+      sellingPrice: product.sellingPrice,
+      status: product.status,
+      purchaseDate: product.purchaseDate ? new Date(product.purchaseDate) : null,
+      supplierId: product.supplierId,
+      notes: product.notes || '',
+      description: product.description || '',
       // Tax configuration fields (F-012)
-      taxRate: phone.taxRate ?? 0,
-      isTaxInclusive: phone.isTaxInclusive ?? false,
-      isTaxExempt: phone.isTaxExempt ?? false
+      taxRate: product.taxRate ?? 0,
+      isTaxInclusive: product.isTaxInclusive ?? false,
+      isTaxExempt: product.isTaxExempt ?? false,
+      isFeatured: product.isFeatured ?? false
     });
+
+    // Patch accessory-specific fields if applicable
+    if (product.productType === ProductType.ACCESSORY) {
+      this.form.patchValue({
+        accessoryCategory: product.accessoryCategory || null,
+        compatibleModels: product.compatibleModels || [],
+        material: product.material || '',
+        warrantyMonths: product.warrantyMonths,
+        weightGrams: product.weightGrams,
+        dimensions: product.dimensions || ''
+      });
+    }
+  }
+
+  /**
+   * Handle product type change - add/remove type-specific form controls
+   */
+  onProductTypeChange(): void {
+    const productType = this.form.get('productType')?.value;
+
+    // Phone-specific control names
+    const phoneControls = ['storageGb', 'ramGb', 'imei', 'batteryHealth', 'conditionRating', 'ptaStatus'];
+    // Accessory-specific control names
+    const accessoryControls = ['accessoryCategory', 'compatibleModels', 'material', 'warrantyMonths', 'weightGrams', 'dimensions'];
+
+    if (productType === ProductType.PHONE) {
+      // Add phone-specific controls if not present
+      if (!this.form.get('storageGb')) {
+        this.form.addControl('storageGb', this.fb.control(null as number | null));
+      }
+      if (!this.form.get('ramGb')) {
+        this.form.addControl('ramGb', this.fb.control(null as number | null));
+      }
+      if (!this.form.get('imei')) {
+        this.form.addControl('imei', this.fb.control('', Validators.maxLength(this.constraints.IMEI_MAX)));
+      }
+      if (!this.form.get('batteryHealth')) {
+        this.form.addControl('batteryHealth', this.fb.control(null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]));
+      }
+      if (!this.form.get('conditionRating')) {
+        this.form.addControl('conditionRating', this.fb.control(null as number | null, [Validators.min(1), Validators.max(10)]));
+      }
+      if (!this.form.get('ptaStatus')) {
+        this.form.addControl('ptaStatus', this.fb.control(null as PtaStatus | null));
+      }
+
+      // Remove accessory controls
+      accessoryControls.forEach(ctrl => {
+        if (this.form.get(ctrl)) {
+          this.form.removeControl(ctrl);
+        }
+      });
+    } else if (productType === ProductType.ACCESSORY) {
+      // Add accessory-specific controls if not present
+      if (!this.form.get('accessoryCategory')) {
+        this.form.addControl('accessoryCategory', this.fb.control(null as string | null));
+      }
+      if (!this.form.get('compatibleModels')) {
+        this.form.addControl('compatibleModels', this.fb.control([] as string[]));
+      }
+      if (!this.form.get('material')) {
+        this.form.addControl('material', this.fb.control(''));
+      }
+      if (!this.form.get('warrantyMonths')) {
+        this.form.addControl('warrantyMonths', this.fb.control(null as number | null, [Validators.min(0)]));
+      }
+      if (!this.form.get('weightGrams')) {
+        this.form.addControl('weightGrams', this.fb.control(null as number | null, [Validators.min(0)]));
+      }
+      if (!this.form.get('dimensions')) {
+        this.form.addControl('dimensions', this.fb.control(''));
+      }
+
+      // Remove phone-specific controls
+      phoneControls.forEach(ctrl => {
+        if (this.form.get(ctrl)) {
+          this.form.removeControl(ctrl);
+        }
+      });
+    } else {
+      // Other types (tablet, laptop) - remove both sets for now
+      phoneControls.forEach(ctrl => {
+        if (this.form.get(ctrl)) {
+          this.form.removeControl(ctrl);
+        }
+      });
+      accessoryControls.forEach(ctrl => {
+        if (this.form.get(ctrl)) {
+          this.form.removeControl(ctrl);
+        }
+      });
+    }
   }
 
   searchBrands(event: AutoCompleteCompleteEvent): void {
@@ -415,10 +524,10 @@ export class InventoryFormComponent implements OnInit {
   }
 
   /**
-   * Fetch phone specifications from GSMArena
+   * Fetch product specifications from GSMArena
    * Triggered when user clicks "Fetch Information" button
    */
-  async fetchPhoneSpecs(): Promise<void> {
+  async fetchProductSpecs(): Promise<void> {
     const brand = this.form.get('brand')?.value;
     const model = this.form.get('model')?.value;
 
@@ -429,7 +538,7 @@ export class InventoryFormComponent implements OnInit {
     }
 
     if (!model || model.trim().length === 0) {
-      this.toastService.warn('Model Required', 'Please enter a phone model');
+      this.toastService.warn('Model Required', 'Please enter a model name');
       return;
     }
 
@@ -438,7 +547,7 @@ export class InventoryFormComponent implements OnInit {
     this.specsFetched.set(false);
 
     try {
-      const result = await this.phoneService.fetchPhoneSpecs(brand.name, model.trim());
+      const result = await this.productService.fetchProductSpecs(brand.name, model.trim());
 
       if (result.success && result.data) {
         // Update quick options with fetched data OR fallback if empty
@@ -449,6 +558,22 @@ export class InventoryFormComponent implements OnInit {
         this.ramQuickOptions.set(ramOptions);
         this.storageQuickOptions.set(storageOptions);
         this.colorSuggestions.set(colorOptions);
+
+        // Update model name with canonical name from GSMArena
+        if (result.data.modelName) {
+          this.form.get('model')?.setValue(result.data.modelName);
+        }
+
+        // Auto-apply single results
+        if (ramOptions.length === 1) {
+          this.setRam(ramOptions[0]);
+        }
+        if (storageOptions.length === 1) {
+          this.setStorage(storageOptions[0]);
+        }
+        if (colorOptions.length === 1) {
+          this.setColor(colorOptions[0]);
+        }
 
         this.specsFetched.set(true);
 
@@ -471,7 +596,7 @@ export class InventoryFormComponent implements OnInit {
         this.colorSuggestions.set([]);
 
         this.specsError.set(result.error || 'No specifications found');
-        this.toastService.warn('Not Found', result.error || 'Could not find phone specifications. Using fallback options.');
+        this.toastService.warn('Not Found', result.error || 'Could not find specifications. Using fallback options.');
       }
     } catch (error) {
       // Exception - use fallback options
@@ -524,19 +649,14 @@ export class InventoryFormComponent implements OnInit {
     try {
       const formValue = this.form.value;
       const selectedBrand = formValue.brand as Brand;
+      const productType = formValue.productType as ProductType;
 
-      if (this.isEdit && this.phoneId) {
-        const updateRequest: UpdatePhoneRequest = {
+      if (this.isEdit && this.productId) {
+        const updateRequest: UpdateProductRequest = {
           brandId: selectedBrand.id,
           model: this.sanitizer.sanitize(formValue.model),
-          storageGb: formValue.storageGb,
-          ramGb: formValue.ramGb,
           color: this.sanitizer.sanitizeOrNull(formValue.color),
           condition: formValue.condition,
-          conditionRating: formValue.conditionRating,
-          ptaStatus: formValue.ptaStatus,
-          batteryHealth: this.showBatteryHealth() ? formValue.batteryHealth : null,
-          imei: this.sanitizer.sanitizeOrNull(formValue.imei),
           costPrice: formValue.costPrice,
           sellingPrice: formValue.sellingPrice,
           status: formValue.status,
@@ -544,26 +664,41 @@ export class InventoryFormComponent implements OnInit {
           supplierId: formValue.supplierId || null,
           notes: this.sanitizer.sanitizeOrNull(formValue.notes),
           description: this.sanitizer.sanitizeOrNull(formValue.description),
-          // Tax configuration fields (F-012)
-          taxRate: formValue.isTaxExempt ? 0 : (formValue.taxRate ?? 0),
-          isTaxInclusive: formValue.isTaxInclusive ?? false,
-          isTaxExempt: formValue.isTaxExempt ?? false
+          taxRate: 0,
+          isTaxInclusive: false,
+          isTaxExempt: true,
+          productType,
+          isFeatured: formValue.isFeatured ?? false
         };
 
-        await this.phoneService.updatePhone(this.phoneId, updateRequest);
-        this.toastService.success('Success', 'Phone updated successfully');
+        // Add phone-specific fields
+        if (productType === ProductType.PHONE) {
+          updateRequest.storageGb = formValue.storageGb;
+          updateRequest.ramGb = formValue.ramGb;
+          updateRequest.conditionRating = formValue.conditionRating;
+          updateRequest.ptaStatus = formValue.ptaStatus;
+          updateRequest.batteryHealth = this.showBatteryHealth() ? formValue.batteryHealth : null;
+          updateRequest.imei = this.sanitizer.sanitizeOrNull(formValue.imei);
+        }
+
+        // Add accessory-specific fields
+        if (productType === ProductType.ACCESSORY) {
+          updateRequest.accessoryCategory = formValue.accessoryCategory || null;
+          updateRequest.compatibleModels = formValue.compatibleModels || null;
+          updateRequest.material = this.sanitizer.sanitizeOrNull(formValue.material);
+          updateRequest.warrantyMonths = formValue.warrantyMonths;
+          updateRequest.weightGrams = formValue.weightGrams;
+          updateRequest.dimensions = this.sanitizer.sanitizeOrNull(formValue.dimensions);
+        }
+
+        await this.productService.updateProduct(this.productId, updateRequest);
+        this.toastService.success('Success', 'Product updated successfully');
       } else {
-        const createRequest: CreatePhoneRequest = {
+        const createRequest: CreateProductRequest = {
           brandId: selectedBrand.id,
           model: this.sanitizer.sanitize(formValue.model),
-          storageGb: formValue.storageGb,
-          ramGb: formValue.ramGb,
           color: this.sanitizer.sanitizeOrNull(formValue.color),
           condition: formValue.condition,
-          conditionRating: formValue.conditionRating,
-          ptaStatus: formValue.ptaStatus,
-          batteryHealth: this.showBatteryHealth() ? formValue.batteryHealth : null,
-          imei: this.sanitizer.sanitizeOrNull(formValue.imei),
           costPrice: formValue.costPrice,
           sellingPrice: formValue.sellingPrice,
           status: formValue.status,
@@ -571,47 +706,76 @@ export class InventoryFormComponent implements OnInit {
           supplierId: formValue.supplierId || null,
           notes: this.sanitizer.sanitizeOrNull(formValue.notes),
           description: this.sanitizer.sanitizeOrNull(formValue.description),
-          // Tax configuration fields (F-012)
-          taxRate: formValue.isTaxExempt ? 0 : (formValue.taxRate ?? 0),
-          isTaxInclusive: formValue.isTaxInclusive ?? false,
-          isTaxExempt: formValue.isTaxExempt ?? false
+          taxRate: 0,
+          isTaxInclusive: false,
+          isTaxExempt: true,
+          productType,
+          isFeatured: formValue.isFeatured ?? false
         };
 
-        const createdPhone = await this.phoneService.createPhone(createRequest);
-        this.toastService.success('Success', 'Phone added successfully');
+        // Add phone-specific fields
+        if (productType === ProductType.PHONE) {
+          createRequest.storageGb = formValue.storageGb;
+          createRequest.ramGb = formValue.ramGb;
+          createRequest.conditionRating = formValue.conditionRating;
+          createRequest.ptaStatus = formValue.ptaStatus;
+          createRequest.batteryHealth = this.showBatteryHealth() ? formValue.batteryHealth : null;
+          createRequest.imei = this.sanitizer.sanitizeOrNull(formValue.imei);
+        }
+
+        // Add accessory-specific fields
+        if (productType === ProductType.ACCESSORY) {
+          createRequest.accessoryCategory = formValue.accessoryCategory || null;
+          createRequest.compatibleModels = formValue.compatibleModels || null;
+          createRequest.material = this.sanitizer.sanitizeOrNull(formValue.material);
+          createRequest.warrantyMonths = formValue.warrantyMonths;
+          createRequest.weightGrams = formValue.weightGrams;
+          createRequest.dimensions = this.sanitizer.sanitizeOrNull(formValue.dimensions);
+        }
+
+        const createdProduct = await this.productService.createProduct(createRequest);
+        this.toastService.success('Success', 'Product added successfully');
 
         // Upload pending images if any
-        if (this.pendingImages().length > 0 && createdPhone?.id) {
+        if (this.pendingImages().length > 0 && createdProduct?.id) {
           this.isUploadingImages.set(true);
           try {
             for (const file of this.pendingImages()) {
-              await this.phoneImageService.uploadImage(createdPhone.id, file);
+              await this.productImageService.uploadImage(createdProduct.id, file);
             }
             this.toastService.success('Images Uploaded', `${this.pendingImages().length} image(s) uploaded successfully`);
           } catch (imgError) {
             console.error('Failed to upload images:', imgError);
-            this.toastService.warn('Image Upload Issue', 'Phone was saved but some images failed to upload. You can add them by editing the phone.');
+            this.toastService.warn('Image Upload Issue', 'Product was saved but some images failed to upload. You can add them by editing the product.');
           } finally {
             this.isUploadingImages.set(false);
           }
         }
       }
 
-      this.router.navigate(['/admin/inventory']);
+      if (this.dialogMode()) {
+        this.saved.emit();
+      } else {
+        this.router.navigate(['/admin/inventory']);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'An error occurred';
       this.toastService.error('Error', message);
-      console.error('Failed to save phone:', error);
+      console.error('Failed to save product:', error);
     } finally {
       this.submitting.set(false);
     }
   }
 
   onCancel(): void {
-    this.router.navigate(['/admin/inventory']);
+    if (this.dialogMode()) {
+      this.cancelled.emit();
+    } else {
+      this.router.navigate(['/admin/inventory']);
+    }
   }
 
-  onImagesChanged(images: PhoneImage[]): void {
+  onImagesChanged(images: ProductImage[]): void {
     console.log('Images updated:', images.length);
   }
 

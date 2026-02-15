@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import {
   SyncQueueItem,
-  CachedPhone,
+  CachedProduct,
   CachedBrand,
   OfflineSyncConfig,
   DEFAULT_OFFLINE_SYNC_CONFIG,
@@ -218,36 +218,36 @@ export class OfflineStorageService {
     };
   }
 
-  // ==================== Cached Phones Operations ====================
+  // ==================== Cached Products Operations ====================
 
-  async cachePhone(phone: CachedPhone): Promise<void> {
+  async cacheProduct(product: CachedProduct): Promise<void> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
-      const request = store.put(phone);
+      const request = store.put(product);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error(`Failed to cache phone: ${request.error?.message}`));
+      request.onerror = () => reject(new Error(`Failed to cache product: ${request.error?.message}`));
     });
   }
 
-  async cachePhones(phones: CachedPhone[]): Promise<void> {
+  async cacheProducts(products: CachedProduct[]): Promise<void> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
 
       transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(new Error(`Failed to cache phones: ${transaction.error?.message}`));
+      transaction.onerror = () => reject(new Error(`Failed to cache products: ${transaction.error?.message}`));
 
-      for (const phone of phones) {
-        store.put(phone);
+      for (const product of products) {
+        store.put(product);
       }
     });
   }
 
-  async getCachedPhone(id: string): Promise<CachedPhone | null> {
+  async getCachedProduct(id: string): Promise<CachedProduct | null> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readonly');
@@ -255,11 +255,11 @@ export class OfflineStorageService {
       const request = store.get(id);
 
       request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(new Error(`Failed to get cached phone: ${request.error?.message}`));
+      request.onerror = () => reject(new Error(`Failed to get cached product: ${request.error?.message}`));
     });
   }
 
-  async getAllCachedPhones(): Promise<CachedPhone[]> {
+  async getAllCachedProducts(): Promise<CachedProduct[]> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readonly');
@@ -267,11 +267,11 @@ export class OfflineStorageService {
       const request = store.getAll();
 
       request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error(`Failed to get all cached phones: ${request.error?.message}`));
+      request.onerror = () => reject(new Error(`Failed to get all cached products: ${request.error?.message}`));
     });
   }
 
-  async getAvailableCachedPhones(): Promise<CachedPhone[]> {
+  async getAvailableCachedProducts(): Promise<CachedProduct[]> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readonly');
@@ -280,19 +280,19 @@ export class OfflineStorageService {
       const request = index.getAll('available');
 
       request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error(`Failed to get available cached phones: ${request.error?.message}`));
+      request.onerror = () => reject(new Error(`Failed to get available cached products: ${request.error?.message}`));
     });
   }
 
-  async updateCachedPhoneStatus(id: string, status: string): Promise<void> {
-    const phone = await this.getCachedPhone(id);
-    if (phone) {
-      phone.status = status;
-      await this.cachePhone(phone);
+  async updateCachedProductStatus(id: string, status: string): Promise<void> {
+    const product = await this.getCachedProduct(id);
+    if (product) {
+      product.status = status;
+      await this.cacheProduct(product);
     }
   }
 
-  async removeCachedPhone(id: string): Promise<void> {
+  async removeCachedProduct(id: string): Promise<void> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
@@ -300,11 +300,11 @@ export class OfflineStorageService {
       const request = store.delete(id);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error(`Failed to remove cached phone: ${request.error?.message}`));
+      request.onerror = () => reject(new Error(`Failed to remove cached product: ${request.error?.message}`));
     });
   }
 
-  async clearCachedPhones(): Promise<void> {
+  async clearCachedProducts(): Promise<void> {
     const db = this.ensureDatabase();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
@@ -312,7 +312,7 @@ export class OfflineStorageService {
       const request = store.clear();
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error(`Failed to clear cached phones: ${request.error?.message}`));
+      request.onerror = () => reject(new Error(`Failed to clear cached products: ${request.error?.message}`));
     });
   }
 
@@ -441,20 +441,20 @@ export class OfflineStorageService {
 
   async clearAllData(): Promise<void> {
     await this.clearSyncedItems();
-    await this.clearCachedPhones();
+    await this.clearCachedProducts();
     await this.clearCachedBrands();
   }
 
-  async getStorageStats(): Promise<{ syncQueue: number; phones: number; brands: number }> {
-    const [syncItems, phones, brands] = await Promise.all([
+  async getStorageStats(): Promise<{ syncQueue: number; products: number; brands: number }> {
+    const [syncItems, products, brands] = await Promise.all([
       this.getAllSyncQueueItems(),
-      this.getAllCachedPhones(),
+      this.getAllCachedProducts(),
       this.getAllCachedBrands()
     ]);
 
     return {
       syncQueue: syncItems.length,
-      phones: phones.length,
+      products: products.length,
       brands: brands.length
     };
   }

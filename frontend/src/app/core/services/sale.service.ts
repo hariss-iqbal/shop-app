@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { PaymentMethod } from '../../enums/payment-method.enum';
 import {
@@ -23,14 +23,14 @@ import {
   providedIn: 'root'
 })
 export class SaleService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getSales(filter?: SaleFilter): Promise<SaleListResponse> {
     let query = this.supabase
       .from('sales')
       .select(`
         *,
-        phone:phones(
+        product:products(
           id,
           model,
           brand:brands(id, name)
@@ -104,12 +104,12 @@ export class SaleService {
   }
 
   /**
-   * Check inventory availability for phones before completing a sale
+   * Check inventory availability for products before completing a sale
    * Feature: F-008 Automatic Inventory Deduction
    */
-  async checkInventoryAvailability(phoneIds: string[]): Promise<InventoryAvailabilityResult> {
+  async checkInventoryAvailability(productIds: string[]): Promise<InventoryAvailabilityResult> {
     const { data, error } = await this.supabase.rpc('check_inventory_availability', {
-      p_phone_ids: phoneIds
+      p_product_ids: productIds
     });
 
     if (error) {
@@ -120,20 +120,20 @@ export class SaleService {
       allAvailable: data.allAvailable,
       hasWarnings: data.hasWarnings,
       allowOversell: data.allowOversell,
-      phones: data.phones,
+      products: data.phones,
       warnings: data.warnings
     };
   }
 
   /**
-   * Mark a phone as sold with automatic inventory deduction
+   * Mark a product as sold with automatic inventory deduction
    * Uses atomic RPC to ensure consistency
    * Feature: F-008 Automatic Inventory Deduction
    * Feature: F-024 Multi-Location Inventory Support
    */
   async markAsSold(request: MarkAsSoldRequest): Promise<SaleWithInventoryDeductionResponse> {
     const { data, error } = await this.supabase.rpc('complete_sale_with_inventory_deduction', {
-      p_phone_id: request.phoneId,
+      p_product_id: request.productId,
       p_sale_date: request.saleDate,
       p_sale_price: request.salePrice,
       p_buyer_name: request.buyerName?.trim() || null,
@@ -153,7 +153,7 @@ export class SaleService {
         .from('sales')
         .select(`
           *,
-          phone:phones(
+          product:products(
             id,
             model,
             brand:brands(id, name)
@@ -169,7 +169,7 @@ export class SaleService {
       return {
         success: true,
         sale: saleData ? this.mapToSale(saleData) : undefined,
-        phoneId: data.phoneId,
+        productId: data.phoneId,
         previousStatus: data.previousStatus,
         newStatus: data.newStatus,
         warning: data.warning,
@@ -179,7 +179,7 @@ export class SaleService {
 
     return {
       success: data.success,
-      phoneId: data.phoneId,
+      productId: data.phoneId,
       inventoryDeducted: data.inventoryDeducted,
       error: data.error
     };
@@ -194,7 +194,7 @@ export class SaleService {
   async completeSaleTransaction(request: CompleteSaleTransactionRequest): Promise<BatchSaleWithInventoryDeductionResponse> {
     const { data, error } = await this.supabase.rpc('complete_batch_sale_with_inventory_deduction', {
       p_items: request.items.map(item => ({
-        phoneId: item.phoneId,
+        phoneId: item.productId,
         salePrice: item.salePrice
       })),
       p_sale_date: request.saleDate,
@@ -217,7 +217,7 @@ export class SaleService {
         .from('sales')
         .select(`
           *,
-          phone:phones(
+          product:products(
             id,
             model,
             brand:brands(id, name)
@@ -249,7 +249,7 @@ export class SaleService {
   }
 
   /**
-   * Delete a sale and restore inventory (phone status to available)
+   * Delete a sale and restore inventory (product status to available)
    * Feature: F-008 Automatic Inventory Deduction
    */
   async deleteSale(saleId: string): Promise<{ success: boolean; inventoryRestored: boolean; error?: string }> {
@@ -283,7 +283,7 @@ export class SaleService {
       .from('sales')
       .select(`
         *,
-        phone:phones(
+        product:products(
           id,
           model,
           brand:brands(id, name)
@@ -320,18 +320,18 @@ export class SaleService {
   }
 
   /**
-   * Get inventory deduction logs for a specific phone
+   * Get inventory deduction logs for a specific product
    * Feature: F-008 Automatic Inventory Deduction
    */
-  async getInventoryDeductionLogs(phoneId: string): Promise<any[]> {
+  async getInventoryDeductionLogs(productId: string): Promise<any[]> {
     const { data, error } = await this.supabase
       .from('inventory_deduction_logs')
       .select(`
         *,
         sale:sales(id, sale_date, sale_price),
-        phone:phones(id, model, brand:brands(id, name))
+        product:products(id, model, brand:brands(id, name))
       `)
-      .eq('phone_id', phoneId)
+      .eq('product_id', productId)
       .order('deducted_at', { ascending: false });
 
     if (error) {
@@ -342,8 +342,8 @@ export class SaleService {
   }
 
   private mapToSale(data: Record<string, unknown>): Sale {
-    const phone = data['phone'] as Record<string, unknown> | null;
-    const brand = phone ? (phone['brand'] as Record<string, unknown> | null) : null;
+    const product = data['product'] as Record<string, unknown> | null;
+    const brand = product ? (product['brand'] as Record<string, unknown> | null) : null;
     const location = data['location'] as Record<string, unknown> | null;
 
     const salePrice = data['sale_price'] as number;
@@ -351,9 +351,9 @@ export class SaleService {
 
     return {
       id: data['id'] as string,
-      phoneId: data['phone_id'] as string,
+      productId: data['product_id'] as string,
       brandName: brand ? (brand['name'] as string) : '',
-      phoneName: phone ? (phone['model'] as string) : '',
+      productName: product ? (product['model'] as string) : '',
       saleDate: data['sale_date'] as string,
       salePrice,
       costPrice,

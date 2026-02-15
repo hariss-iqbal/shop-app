@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { PurchaseOrderService } from './purchase-order.service';
 import { SupabaseService } from './supabase.service';
-import { PurchaseOrderStatus, PhoneCondition } from '../../enums';
+import { PurchaseOrderStatus, ProductCondition } from '../../enums';
 import { CreatePurchaseOrderRequest, ReceivePurchaseOrderRequest } from '../../models/purchase-order.model';
 
 describe('PurchaseOrderService', () => {
@@ -657,14 +657,14 @@ describe('PurchaseOrderService', () => {
 
   describe('receiveWithInventory', () => {
     const mockReceiveRequest: ReceivePurchaseOrderRequest = {
-      phones: [
+      products: [
         {
           lineItemIndex: 0,
           brand: 'Apple',
           model: 'iPhone 15',
           color: 'Black',
           imei: '123456789012345',
-          condition: PhoneCondition.NEW,
+          condition: ProductCondition.NEW,
           batteryHealth: null,
           storageGb: 128,
           ramGb: 6,
@@ -700,8 +700,8 @@ describe('PurchaseOrderService', () => {
         .toBeRejectedWithError('Only pending purchase orders can be marked as received');
     });
 
-    it('should throw error when phone count does not match PO item quantities', async () => {
-      // PO has 5 items (quantity=5), but we're only providing 1 phone
+    it('should throw error when product count does not match PO item quantities', async () => {
+      // PO has 5 items (quantity=5), but we're only providing 1 product
       const getByIdSingleSpy = jasmine.createSpy('single').and.returnValue(
         Promise.resolve({ data: mockPurchaseOrdersData[0], error: null })
       );
@@ -711,7 +711,7 @@ describe('PurchaseOrderService', () => {
       mockFrom.and.returnValue({ select: getByIdSelectSpy });
 
       await expectAsync(service.receiveWithInventory('po-1', mockReceiveRequest))
-        .toBeRejectedWithError('Expected 5 phone records but received 1. All items must be received at once.');
+        .toBeRejectedWithError('Expected 5 product records but received 1. All items must be received at once.');
     });
   });
 

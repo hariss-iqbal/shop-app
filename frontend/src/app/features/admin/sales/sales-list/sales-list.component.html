@@ -194,7 +194,7 @@
         <ng-template #header>
           <tr>
             <th pSortableColumn="brandName" style="width: 20%">
-              Phone
+              Product
               <p-sortIcon field="brandName" />
             </th>
             <th pSortableColumn="salePrice" style="width: 13%">
@@ -225,10 +225,10 @@
           <tr>
             <td>
               <a
-                [routerLink]="['/admin/inventory', sale.phoneId, 'edit']"
+                [routerLink]="['/admin/inventory', sale.productId, 'edit']"
                 class="font-medium text-primary no-underline hover:underline cursor-pointer"
               >
-                {{ sale.brandName }} {{ sale.phoneName }}
+                {{ sale.brandName }} {{ sale.productName }}
               </a>
             </td>
             <td>
@@ -304,9 +304,9 @@
                   [text]="true"
                   severity="info"
                   size="small"
-                  pTooltip="View Phone"
+                  pTooltip="View Product"
                   tooltipPosition="top"
-                  (onClick)="onViewPhone(sale)"
+                  (onClick)="onViewProduct(sale)"
                 />
               </div>
             </td>

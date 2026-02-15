@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -32,14 +32,16 @@ interface PolicyRow {
   templateUrl: './storage-config.component.html'
 })
 export class StorageConfigComponent implements OnInit {
-  private storageConfigService = inject(StorageConfigService);
-  private toastService = inject(ToastService);
+  constructor(
+    private storageConfigService: StorageConfigService,
+    private toastService: ToastService
+  ) { }
 
   bucketStatus = signal<StorageBucketStatus | null>(null);
   loading = signal(false);
   error = signal<string | null>(null);
 
-  readonly phoneIdPlaceholder = '{phone_id}';
+  readonly productIdPlaceholder = '{product_id}';
   readonly filenamePlaceholder = '{filename}';
 
   policyRows = computed<PolicyRow[]>(() => {

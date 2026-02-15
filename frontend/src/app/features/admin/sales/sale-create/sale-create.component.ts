@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, CurrencyPipe } from '@angular/common';
@@ -19,7 +19,7 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DialogModule } from 'primeng/dialog';
 
-import { PhoneService } from '../../../../core/services/phone.service';
+import { ProductService } from '../../../../core/services/product.service';
 import { SaleService } from '../../../../core/services/sale.service';
 import { CustomerService } from '../../../../core/services/customer.service';
 import { SupabaseService } from '../../../../core/services/supabase.service';
@@ -40,13 +40,14 @@ import { PointsEarnedResult } from '../../../../models/loyalty.model';
 import { ViewportService } from '../../../../core/services/viewport.service';
 import { TaxCalculationService } from '../../../../core/services/tax-calculation.service';
 import { CurrencyService } from '../../../../core/services/currency.service';
-import { Phone } from '../../../../models/phone.model';
+import { Product } from '../../../../models/product.model';
 import { CartItem, CartSummary, CustomerInfo, ReceiptData, InventoryAvailabilityResult, AppliedDiscountInfo } from '../../../../models/sale.model';
 import { PaymentDetail, SplitPaymentValidation } from '../../../../models/payment.model';
 import { CustomerWithStats } from '../../../../models/customer.model';
-import { PhoneStatus } from '../../../../enums';
+import { ProductStatus } from '../../../../enums';
 import { PrintReceiptDialogComponent } from '../print-receipt-dialog/print-receipt-dialog.component';
 import { CustomerFormDialogComponent } from '../../customers/customer-form-dialog.component';
+import { ImeiPromptDialogComponent } from '../imei-prompt-dialog/imei-prompt-dialog.component';
 
 /**
  * Sale Create Component - Rebuilt without signals
@@ -84,35 +85,38 @@ import { CustomerFormDialogComponent } from '../../customers/customer-form-dialo
     CustomerFormDialogComponent,
     DiscountPanelComponent,
     BarcodeScannerComponent,
-    LoyaltyRedemptionPanelComponent
+    LoyaltyRedemptionPanelComponent,
+    ImeiPromptDialogComponent
   ],
   templateUrl: './sale-create.component.html'
 })
 export class SaleCreateComponent implements OnInit, OnDestroy {
-  private phoneService = inject(PhoneService);
-  private saleService = inject(SaleService);
-  private customerService = inject(CustomerService);
-  private sanitizer = inject(InputSanitizationService);
-  private receiptStorageService = inject(ReceiptStorageService);
-  private paymentService = inject(PaymentService);
-  private toastService = inject(ToastService);
-  private confirmDialogService = inject(ConfirmDialogService);
-  private receiptService = inject(ReceiptService);
-  private whatsAppService = inject(WhatsAppService);
-  private router = inject(Router);
-  private taxCalculationService = inject(TaxCalculationService);
-  private loyaltyService = inject(LoyaltyService);
-  readonly viewportService = inject(ViewportService);
-  private supabaseService = inject(SupabaseService);
-  private currencyService = inject(CurrencyService);
+  constructor(
+    private productService: ProductService,
+    private saleService: SaleService,
+    private customerService: CustomerService,
+    private sanitizer: InputSanitizationService,
+    private receiptStorageService: ReceiptStorageService,
+    private paymentService: PaymentService,
+    private toastService: ToastService,
+    private confirmDialogService: ConfirmDialogService,
+    private receiptService: ReceiptService,
+    private whatsAppService: WhatsAppService,
+    private router: Router,
+    private taxCalculationService: TaxCalculationService,
+    private loyaltyService: LoyaltyService,
+    public readonly viewportService: ViewportService,
+    private supabaseService: SupabaseService,
+    private currencyService: CurrencyService
+  ) { }
 
   // Expose enum to template
-  readonly PhoneStatus = PhoneStatus;
+  readonly ProductStatus = ProductStatus;
 
   // Search state - using regular properties instead of signals
   searchQuery = '';
   showSearchResults = false;
-  filteredPhones: any[] = [];
+  filteredProducts: any[] = [];
   searchLoading = false;
   saving = false;
 
@@ -121,7 +125,7 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
 
   // Inventory availability state (F-008)
   checkingInventory = false;
-  inventoryWarnings: Array<{ phoneId: string; message: string }> = [];
+  inventoryWarnings: Array<{ productId: string; message: string }> = [];
   inventoryError: string | null = null;
 
   // Payment state (F-018)
@@ -154,6 +158,10 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
   customerLookupStatus: 'idle' | 'found' | 'not_found' = 'idle';
   selectedCustomer: CustomerWithStats | null = null;
   showCustomerFormDialog = false;
+
+  // IMEI prompt (F-010)
+  imeiDialogVisible = false;
+  imeiPendingProduct: any = null;
 
   // Cart summary - manually calculated
   cartSummary: CartSummary = {
@@ -219,8 +227,32 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     };
   }
 
-  onProductClick(phone: any): void {
-    this.addPhoneToCart(phone);
+  onProductClick(product: any): void {
+    const productType = product.productType ?? product.product_type;
+    const imei = product.imei;
+    if (productType === 'phone' && !imei) {
+      this.imeiPendingProduct = product;
+      this.imeiDialogVisible = true;
+    } else {
+      this.addProductToCart(product);
+    }
+  }
+
+  onImeiProvided(imei: string): void {
+    if (this.imeiPendingProduct) {
+      this.imeiPendingProduct.imei = imei;
+      this.addProductToCart(this.imeiPendingProduct);
+      this.imeiPendingProduct = null;
+      this.imeiDialogVisible = false;
+    }
+  }
+
+  onImeiSkipped(): void {
+    if (this.imeiPendingProduct) {
+      this.addProductToCart(this.imeiPendingProduct);
+      this.imeiPendingProduct = null;
+      this.imeiDialogVisible = false;
+    }
   }
 
   onSearchInputChange(event: Event): void {
@@ -233,7 +265,7 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     }
 
     if (query.length < 2) {
-      this.filteredPhones = [];
+      this.filteredProducts = [];
       this.showSearchResults = false;
       return;
     }
@@ -256,9 +288,9 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
 
       const brandIds = matchingBrands?.map((b: any) => b.id) || [];
 
-      // Then search phones by model OR matching brand IDs
-      const { data: phones, error } = await this.supabaseService.client
-        .from('phones')
+      // Then search products by model OR matching brand IDs
+      const { data: products, error } = await this.supabaseService.client
+        .from('products')
         .select(`
           id,
           brand_id,
@@ -273,6 +305,7 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
           tax_rate,
           is_tax_inclusive,
           is_tax_exempt,
+          product_type,
           created_at,
           brand:brands!brand_id(id, name, logo_url)
         `)
@@ -287,101 +320,110 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         throw new Error(error.message);
       }
 
-      const existingIds = new Set(this.cartItems.map(item => item.phoneId));
+      const existingIds = new Set(this.cartItems.map(item => item.productId));
 
-      this.filteredPhones = (phones || [])
-        .filter((phone: any) => !existingIds.has(phone.id))
-        .map((phone: any) => ({
-          id: phone.id,
-          phoneId: phone.id,
-          brandId: phone.brand_id,
-          brandName: phone.brand?.name || '',
-          brandLogoUrl: phone.brand?.logo_url || null,
-          model: phone.model,
-          storageGb: phone.storage_gb,
-          color: phone.color,
-          imei: phone.imei,
-          sellingPrice: phone.selling_price,
-          costPrice: phone.cost_price,
-          condition: phone.condition,
-          status: phone.status,
-          taxRate: phone.tax_rate ?? 0,
-          isTaxInclusive: phone.is_tax_inclusive ?? false,
-          isTaxExempt: phone.is_tax_exempt ?? false,
+      this.filteredProducts = (products || [])
+        .filter((p: any) => !existingIds.has(p.id))
+        .map((p: any) => ({
+          id: p.id,
+          productId: p.id,
+          brandId: p.brand_id,
+          brandName: p.brand?.name || '',
+          brandLogoUrl: p.brand?.logo_url || null,
+          model: p.model,
+          storageGb: p.storage_gb,
+          color: p.color,
+          imei: p.imei,
+          sellingPrice: p.selling_price,
+          costPrice: p.cost_price,
+          condition: p.condition,
+          status: p.status,
+          taxRate: p.tax_rate ?? 0,
+          isTaxInclusive: p.is_tax_inclusive ?? false,
+          isTaxExempt: p.is_tax_exempt ?? false,
+          productType: p.product_type ?? null,
           primaryImageUrl: null,
-          createdAt: phone.created_at,
+          createdAt: p.created_at,
           updatedAt: null,
           profitMargin: 0
         }));
 
       this.showSearchResults = true;
     } catch (error) {
-      console.error('Error searching phones:', error);
+      console.error('Error searching products:', error);
       this.toastService.error('Error', 'Failed to search products');
-      this.filteredPhones = [];
+      this.filteredProducts = [];
       this.showSearchResults = false;
     } finally {
       this.searchLoading = false;
     }
   }
 
-  private addPhoneToCart(phone: any): void {
-    if (!phone) return;
+  private addProductToCart(product: any): void {
+    if (!product) return;
 
-    const existingIds = new Set(this.cartItems.map(item => item.phoneId));
-    if (existingIds.has(phone.id)) {
+    const existingIds = new Set(this.cartItems.map(item => item.productId));
+    if (existingIds.has(product.id)) {
       this.toastService.warn('Already in Cart', 'This product is already in the cart');
       return;
     }
 
     try {
-      // Create minimal phone object for cart item creation
-      const minimalPhone: Phone = {
-        id: phone.id,
-        brandId: phone.brandId || phone.brand_id,
-        brandName: phone.brandName || phone.brand?.name || '',
-        brandLogoUrl: phone.brandLogoUrl || phone.brand?.logo_url || null,
-        model: phone.model,
-        storageGb: phone.storageGb ?? phone.storage_gb ?? null,
-        ramGb: phone.ramGb ?? phone.ram_gb ?? null,
-        color: phone.color ?? null,
-        condition: phone.condition,
-        batteryHealth: phone.batteryHealth ?? phone.battery_health ?? null,
-        imei: phone.imei ?? null,
-        sellingPrice: phone.sellingPrice ?? phone.selling_price,
-        costPrice: phone.costPrice ?? phone.cost_price,
+      // Create minimal product object for cart item creation
+      const minimalProduct: Product = {
+        id: product.id,
+        brandId: product.brandId || product.brand_id,
+        brandName: product.brandName || product.brand?.name || '',
+        brandLogoUrl: product.brandLogoUrl || product.brand?.logo_url || null,
+        model: product.model,
+        storageGb: product.storageGb ?? product.storage_gb ?? null,
+        ramGb: product.ramGb ?? product.ram_gb ?? null,
+        color: product.color ?? null,
+        condition: product.condition,
+        batteryHealth: product.batteryHealth ?? product.battery_health ?? null,
+        imei: product.imei ?? null,
+        sellingPrice: product.sellingPrice ?? product.selling_price,
+        costPrice: product.costPrice ?? product.cost_price,
         profitMargin: 0,
-        status: phone.status,
-        taxRate: phone.taxRate ?? phone.tax_rate ?? 0,
-        isTaxInclusive: phone.isTaxInclusive ?? phone.is_tax_inclusive ?? false,
-        isTaxExempt: phone.isTaxExempt ?? phone.is_tax_exempt ?? false,
+        status: product.status,
+        taxRate: product.taxRate ?? product.tax_rate ?? 0,
+        isTaxInclusive: product.isTaxInclusive ?? product.is_tax_inclusive ?? false,
+        isTaxExempt: product.isTaxExempt ?? product.is_tax_exempt ?? false,
         description: null,
         purchaseDate: null,
         supplierId: null,
         supplierName: null,
         notes: null,
         primaryImageUrl: null,
-        conditionRating: phone.conditionRating ?? phone.condition_rating ?? null,
-        ptaStatus: phone.ptaStatus ?? phone.pta_status ?? null,
-        createdAt: phone.createdAt ?? phone.created_at ?? new Date().toISOString(),
-        updatedAt: null
+        conditionRating: product.conditionRating ?? product.condition_rating ?? null,
+        ptaStatus: product.ptaStatus ?? product.pta_status ?? null,
+        createdAt: product.createdAt ?? product.created_at ?? new Date().toISOString(),
+        updatedAt: null,
+        productType: product.productType ?? product.product_type ?? null,
+        accessoryCategory: product.accessoryCategory ?? product.accessory_category ?? null,
+        compatibleModels: product.compatibleModels ?? product.compatible_models ?? null,
+        material: product.material ?? null,
+        warrantyMonths: product.warrantyMonths ?? product.warranty_months ?? null,
+        weightGrams: product.weightGrams ?? product.weight_grams ?? null,
+        dimensions: product.dimensions ?? null,
+        isFeatured: product.isFeatured ?? product.is_featured ?? false,
       };
 
       // Use TaxCalculationService to properly calculate tax (F-012)
-      const cartItem = this.taxCalculationService.phoneToCartItem(minimalPhone);
+      const cartItem = this.taxCalculationService.productToCartItem(minimalProduct);
 
       // Add to cart - simple array push
       this.cartItems = [...this.cartItems, cartItem];
 
       // Clear search
-      this.filteredPhones = [];
+      this.filteredProducts = [];
       this.showSearchResults = false;
       this.searchQuery = '';
 
       // Update summary
       this.updateCartSummary();
 
-      this.toastService.success('Added to Cart', `${minimalPhone.brandName} ${minimalPhone.model} added to cart`);
+      this.toastService.success('Added to Cart', `${minimalProduct.brandName} ${minimalProduct.model} added to cart`);
 
       // Check inventory availability after adding item (fire and forget, don't block)
       this.checkInventoryAvailability().catch(err => {
@@ -547,15 +589,15 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     this.inventoryWarnings = [];
 
     try {
-      const phoneIds = this.cartItems.map(item => item.phoneId);
-      const result: InventoryAvailabilityResult = await this.saleService.checkInventoryAvailability(phoneIds);
+      const productIds = this.cartItems.map(item => item.productId);
+      const result: InventoryAvailabilityResult = await this.saleService.checkInventoryAvailability(productIds);
 
       if (!result.allAvailable && !result.allowOversell) {
         // Find unavailable items
-        const unavailablePhones = result.phones.filter(p => !p.available);
-        if (unavailablePhones.length > 0) {
+        const unavailableProducts = result.products.filter(p => !p.available);
+        if (unavailableProducts.length > 0) {
           this.inventoryError =
-            `Some items are not available: ${unavailablePhones.map(p => p.model).join(', ')}`;
+            `Some items are not available: ${unavailableProducts.map(p => p.model).join(', ')}`;
         }
       }
 
@@ -627,7 +669,7 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
       // Use the new atomic batch sale with inventory deduction, payments, and discount
       const result = await this.saleService.completeSaleTransaction({
         items: this.cartItems.map(item => ({
-          phoneId: item.phoneId,
+          productId: item.productId,
           salePrice: item.salePrice
         })),
         customerInfo: sanitizedCustomerInfo,
@@ -891,10 +933,10 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     this.toastService.info('Scanning...', `Looking up: ${scannedValue}`);
 
     try {
-      // Search for phone by IMEI or model
-      const response = await this.phoneService.getPhones(
+      // Search for product by IMEI or model
+      const response = await this.productService.getProducts(
         { first: 0, rows: 10, globalFilter: scannedValue },
-        { status: PhoneStatus.AVAILABLE }
+        { status: ProductStatus.AVAILABLE }
       );
 
       if (response.data.length === 0) {
@@ -905,26 +947,26 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
       // If exact IMEI match, add directly
       const exactMatch = response.data.find(p => p.imei === scannedValue);
       if (exactMatch) {
-        const alreadyInCart = this.cartItems.some(item => item.phoneId === exactMatch.id);
+        const alreadyInCart = this.cartItems.some(item => item.productId === exactMatch.id);
         if (alreadyInCart) {
           this.toastService.warn('Already in Cart', 'This product is already in your cart');
           return;
         }
 
-        this.addPhoneToCartFromPhone(exactMatch);
+        this.addProductToCartFromProduct(exactMatch);
         this.toastService.success('Product Added', `${exactMatch.brandName} ${exactMatch.model} added to cart`);
         return;
       }
 
       // If multiple matches, use the first one but notify user
       const firstMatch = response.data[0];
-      const alreadyInCart = this.cartItems.some(item => item.phoneId === firstMatch.id);
+      const alreadyInCart = this.cartItems.some(item => item.productId === firstMatch.id);
       if (alreadyInCart) {
         this.toastService.warn('Already in Cart', 'This product is already in your cart');
         return;
       }
 
-      this.addPhoneToCartFromPhone(firstMatch);
+      this.addProductToCartFromProduct(firstMatch);
       if (response.data.length > 1) {
         this.toastService.info(
           'Multiple Matches',
@@ -940,13 +982,13 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Helper to add a phone to the cart from Phone model
+   * Helper to add a product to the cart from Product model
    * Feature: F-025 Mobile-Optimized Interface
    * Feature: F-012 Tax Calculation and Compliance
    */
-  private addPhoneToCartFromPhone(phone: Phone): void {
+  private addProductToCartFromProduct(product: Product): void {
     // Use TaxCalculationService to properly calculate tax (F-012)
-    const cartItem = this.taxCalculationService.phoneToCartItem(phone);
+    const cartItem = this.taxCalculationService.productToCartItem(product);
 
     this.cartItems = [...this.cartItems, cartItem];
     this.updateCartSummary();

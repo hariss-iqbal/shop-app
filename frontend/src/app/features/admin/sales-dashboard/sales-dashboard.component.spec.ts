@@ -45,9 +45,9 @@ describe('SalesDashboardComponent', () => {
   ];
 
   const mockTopProducts: TopSellingProduct[] = [
-    { phoneId: 'phone-1', brandName: 'Apple', model: 'iPhone 15 Pro', unitsSold: 10, totalRevenue: 12000, totalProfit: 3000, averagePrice: 1200 },
-    { phoneId: 'phone-2', brandName: 'Samsung', model: 'Galaxy S24 Ultra', unitsSold: 8, totalRevenue: 9600, totalProfit: 2400, averagePrice: 1200 },
-    { phoneId: 'phone-3', brandName: 'Google', model: 'Pixel 8 Pro', unitsSold: 5, totalRevenue: 4500, totalProfit: 1000, averagePrice: 900 }
+    { productId: 'phone-1', brandName: 'Apple', model: 'iPhone 15 Pro', unitsSold: 10, totalRevenue: 12000, totalProfit: 3000, averagePrice: 1200 },
+    { productId: 'phone-2', brandName: 'Samsung', model: 'Galaxy S24 Ultra', unitsSold: 8, totalRevenue: 9600, totalProfit: 2400, averagePrice: 1200 },
+    { productId: 'phone-3', brandName: 'Google', model: 'Pixel 8 Pro', unitsSold: 5, totalRevenue: 4500, totalProfit: 1000, averagePrice: 900 }
   ];
 
   const mockSalesByBrand: SalesByBrand[] = [
@@ -69,7 +69,7 @@ describe('SalesDashboardComponent', () => {
 
   const mockProductReport: ProductSalesReportResponse = {
     data: [
-      { phoneId: 'phone-1', brandName: 'Apple', model: 'iPhone 15 Pro', condition: 'new', saleDate: '2024-03-01', salePrice: 1200, costPrice: 900, profit: 300, buyerName: 'Customer 1' }
+      { productId: 'phone-1', brandName: 'Apple', model: 'iPhone 15 Pro', condition: 'new', saleDate: '2024-03-01', salePrice: 1200, costPrice: 900, profit: 300, buyerName: 'Customer 1' }
     ],
     total: 1,
     summary: { totalUnits: 1, totalRevenue: 1200, totalProfit: 300, averagePrice: 1200 }

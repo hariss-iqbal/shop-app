@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, OnDestroy } from '@angular/core';
+import { Injectable, signal, OnDestroy } from '@angular/core';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { SupabaseAuthService } from '../../core/services/supabase-auth.service';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -7,8 +7,10 @@ import { RealtimeChannel } from '@supabase/supabase-js';
   providedIn: 'root'
 })
 export class MessageCountService implements OnDestroy {
-  private supabaseService = inject(SupabaseService);
-  private authService = inject(SupabaseAuthService);
+  constructor(
+    private supabaseService: SupabaseService,
+    private authService: SupabaseAuthService
+  ) { }
   private realtimeChannel: RealtimeChannel | null = null;
   private authUnsubscribe: (() => void) | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;

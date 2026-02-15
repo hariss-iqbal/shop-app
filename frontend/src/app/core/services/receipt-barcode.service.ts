@@ -89,7 +89,7 @@ export class ReceiptBarcodeService {
       environment.supabase.url,
       environment.supabase.anonKey
     );
-    this.DEFAULT_STORE_ID = environment.businessInfo.storeId || 'DEFAULT';
+    this.DEFAULT_STORE_ID = environment.storeId || 'DEFAULT';
   }
 
   /**
@@ -366,6 +366,6 @@ export class ReceiptBarcodeService {
    * Feature: F-017 Barcode/QR Code on Receipts
    */
   getStoreId(): string {
-    return environment.businessInfo.storeId || this.DEFAULT_STORE_ID;
+    return environment.storeId || this.DEFAULT_STORE_ID;
   }
 }

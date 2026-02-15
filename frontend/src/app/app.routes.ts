@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import {
   authGuard,
   guestGuard,
+  defaultRouteGuard,
   dashboardGuard,
   inventoryGuard,
   brandsGuard,
@@ -24,23 +25,28 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () => import('./features/public/home/home.component')
-          .then(m => m.HomeComponent)
-      },
-      {
-        path: 'catalog',
         loadComponent: () => import('./features/public/catalog/catalog.component')
           .then(m => m.CatalogComponent)
       },
       {
+        path: 'catalog',
+        redirectTo: '',
+        pathMatch: 'full'
+      },
+      {
+        path: 'product/:id',
+        loadComponent: () => import('./features/public/product-detail/product-detail.component')
+          .then(m => m.ProductDetailComponent)
+      },
+      {
         path: 'phone/:id',
-        loadComponent: () => import('./features/public/phone-detail/phone-detail.component')
-          .then(m => m.PhoneDetailComponent)
+        redirectTo: 'product/:id',
+        pathMatch: 'full'
       },
       {
         path: 'compare',
-        loadComponent: () => import('./features/public/phone-comparison/phone-comparison.component')
-          .then(m => m.PhoneComparisonComponent)
+        loadComponent: () => import('./features/public/product-comparison/product-comparison.component')
+          .then(m => m.ProductComparisonComponent)
       },
       {
         path: 'contact',
@@ -67,8 +73,11 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'dashboard',
-        pathMatch: 'full'
+        pathMatch: 'full',
+        canActivate: [defaultRouteGuard],
+        // Dummy component — guard always redirects, this never renders
+        loadComponent: () => import('./features/admin/dashboard/dashboard.component')
+          .then(m => m.DashboardComponent)
       },
       {
         path: 'dashboard',
@@ -276,6 +285,12 @@ export const routes: Routes = [
         path: 'sync-status',
         loadComponent: () => import('./features/admin/sync-status/sync-status-page.component')
           .then(m => m.SyncStatusPageComponent)
+      },
+      {
+        path: 'sidebar-settings',
+        loadComponent: () => import('./features/admin/sidebar-settings/sidebar-settings.component')
+          .then(m => m.SidebarSettingsComponent),
+        canActivate: [dashboardGuard]
       },
       {
         path: 'shop-details',

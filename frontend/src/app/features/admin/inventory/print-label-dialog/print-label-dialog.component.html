@@ -35,21 +35,21 @@
 
   <!-- Label Preview / Print Content -->
   <div #labelContent class="label-container">
-    @if (phone()) {
+    @if (product()) {
       <div class="label-content">
         <!-- Brand and Model -->
         <div class="label-header">
-          <div class="label-brand">{{ phone()!.brandName }}</div>
-          <div class="label-model">{{ phone()!.model }}</div>
+          <div class="label-brand">{{ product()!.brandName }}</div>
+          <div class="label-model">{{ product()!.model }}</div>
         </div>
 
         <!-- Specifications Row -->
         <div class="label-specs">
-          @if (phone()!.storageGb) {
-            <span class="label-spec-item">{{ phone()!.storageGb }} GB</span>
+          @if (product()!.storageGb) {
+            <span class="label-spec-item">{{ product()!.storageGb }} GB</span>
           }
           <span class="label-spec-item label-condition">
-            {{ getConditionLabel(phone()!.condition) }}
+            {{ getConditionLabel(product()!.condition) }}
           </span>
         </div>
 
@@ -57,7 +57,7 @@
 
         <!-- Price -->
         <div class="label-price">
-          {{ phone()!.sellingPrice | appCurrency }}
+          {{ product()!.sellingPrice | appCurrency }}
         </div>
 
         <!-- QR Code Section -->
@@ -65,7 +65,7 @@
           <div class="label-qr">
             <img
               [src]="qrCodeUrl()"
-              [alt]="'QR code for ' + phone()!.brandName + ' ' + phone()!.model"
+              [alt]="'QR code for ' + product()!.brandName + ' ' + product()!.model"
               class="label-qr-image"
               width="100"
               height="100"
@@ -90,7 +90,7 @@
         label="Print Label"
         icon="pi pi-print"
         (onClick)="onPrint()"
-        ariaLabel="Print phone label"
+        ariaLabel="Print product label"
       />
     </div>
   </ng-template>

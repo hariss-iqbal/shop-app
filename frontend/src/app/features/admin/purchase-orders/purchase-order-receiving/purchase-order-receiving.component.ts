@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, EventEmitter, Output, Input } from '@angular/core';
+import { Component, OnInit, signal, computed, EventEmitter, Output, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
@@ -19,15 +19,15 @@ import { InputSanitizationService } from '../../../../core/services/input-saniti
 import {
   PurchaseOrder,
   ReceivePurchaseOrderRequest,
-  ReceivingPhoneRecord
+  ReceivingProductRecord
 } from '../../../../models/purchase-order.model';
-import { PhoneCondition, PhoneConditionLabels } from '../../../../enums';
+import { ProductCondition, ProductConditionLabels } from '../../../../enums';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { MenuItem } from 'primeng/api';
-import { PHONE_CONSTRAINTS } from '../../../../constants/validation.constants';
+import { PRODUCT_CONSTRAINTS } from '../../../../constants/validation.constants';
 
-interface PhoneFormGroup {
+interface ProductFormGroup {
   lineItemIndex: number;
   brand: string;
   model: string;
@@ -62,50 +62,52 @@ interface PhoneFormGroup {
   styleUrls: ['./purchase-order-receiving.component.scss']
 })
 export class PurchaseOrderReceivingComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private purchaseOrderService = inject(PurchaseOrderService);
-  private sanitizer = inject(InputSanitizationService);
-  private toastService = inject(ToastService);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private fb: FormBuilder,
+    private purchaseOrderService: PurchaseOrderService,
+    private sanitizer: InputSanitizationService,
+    private toastService: ToastService,
+    private focusService: FocusManagementService
+  ) { }
 
   @Input() purchaseOrder: PurchaseOrder | null = null;
   @Output() closed = new EventEmitter<void>();
-  @Output() received = new EventEmitter<{ phonesCreated: number }>();
+  @Output() received = new EventEmitter<{ productsCreated: number }>();
 
   visible = true;
   saving = signal(false);
 
-  /** Validation constraints for phone form fields (F-058: Input Sanitization) */
-  readonly constraints = PHONE_CONSTRAINTS;
+  /** Validation constraints for product form fields (F-058: Input Sanitization) */
+  readonly constraints = PRODUCT_CONSTRAINTS;
 
   form!: FormGroup;
-  phoneFormGroups: PhoneFormGroup[] = [];
+  productFormGroups: ProductFormGroup[] = [];
 
   conditionOptions = [
-    { label: PhoneConditionLabels[PhoneCondition.NEW], value: PhoneCondition.NEW },
-    { label: PhoneConditionLabels[PhoneCondition.USED], value: PhoneCondition.USED },
-    { label: PhoneConditionLabels[PhoneCondition.OPEN_BOX], value: PhoneCondition.OPEN_BOX }
+    { label: ProductConditionLabels[ProductCondition.NEW], value: ProductCondition.NEW },
+    { label: ProductConditionLabels[ProductCondition.USED], value: ProductCondition.USED },
+    { label: ProductConditionLabels[ProductCondition.OPEN_BOX], value: ProductCondition.OPEN_BOX }
   ];
 
   quickFillMenuItems: MenuItem[] = [
     {
       label: 'Set All Condition to New',
       icon: 'pi pi-star',
-      command: () => this.applyToAll('condition', PhoneCondition.NEW)
+      command: () => this.applyToAll('condition', ProductCondition.NEW)
     },
     {
       label: 'Set All Condition to Used',
       icon: 'pi pi-replay',
-      command: () => this.applyToAll('condition', PhoneCondition.USED)
+      command: () => this.applyToAll('condition', ProductCondition.USED)
     },
     {
       label: 'Set All Condition to Open Box',
       icon: 'pi pi-sync',
-      command: () => this.applyToAll('condition', PhoneCondition.OPEN_BOX)
+      command: () => this.applyToAll('condition', ProductCondition.OPEN_BOX)
     },
     { separator: true },
     {
-      label: 'Copy First Phone to All',
+      label: 'Copy First Product to All',
       icon: 'pi pi-copy',
       command: () => this.copyFirstToAll()
     }
@@ -139,12 +141,12 @@ export class PurchaseOrderReceivingComponent implements OnInit {
   private initializeForm(): void {
     if (!this.purchaseOrder) return;
 
-    const phonesArray: FormGroup[] = [];
-    this.phoneFormGroups = [];
+    const productsArray: FormGroup[] = [];
+    this.productFormGroups = [];
 
     this.purchaseOrder.items.forEach((item, itemIdx) => {
       for (let unitIdx = 0; unitIdx < item.quantity; unitIdx++) {
-        this.phoneFormGroups.push({
+        this.productFormGroups.push({
           lineItemIndex: itemIdx,
           brand: item.brand,
           model: item.model,
@@ -152,11 +154,11 @@ export class PurchaseOrderReceivingComponent implements OnInit {
           unitCost: item.unitCost
         });
 
-        const phoneGroup = this.fb.group({
+        const productGroup = this.fb.group({
           lineItemIndex: [itemIdx],
           brand: [item.brand],
           model: [item.model],
-          condition: [PhoneCondition.NEW, Validators.required],
+          condition: [ProductCondition.NEW, Validators.required],
           sellingPrice: [null, [Validators.required, Validators.min(0)]],
           color: [''],
           imei: [''],
@@ -166,12 +168,12 @@ export class PurchaseOrderReceivingComponent implements OnInit {
           notes: ['']
         });
 
-        phonesArray.push(phoneGroup);
+        productsArray.push(productGroup);
       }
     });
 
     this.form = this.fb.group({
-      phones: this.fb.array(phonesArray)
+      products: this.fb.array(productsArray)
     });
 
     this.updateInvalidCount();
@@ -195,7 +197,7 @@ export class PurchaseOrderReceivingComponent implements OnInit {
     let count = 0;
     for (let unitIdx = 0; unitIdx < item.quantity; unitIdx++) {
       const formIdx = this.getFormIndex(itemIdx, unitIdx);
-      if (this.phonesArray.at(formIdx).valid) {
+      if (this.productsArray.at(formIdx).valid) {
         count++;
       }
     }
@@ -203,31 +205,31 @@ export class PurchaseOrderReceivingComponent implements OnInit {
   }
 
   applyToAll(field: string, value: unknown): void {
-    this.phonesArray.controls.forEach((control, idx) => {
+    this.productsArray.controls.forEach((control, idx) => {
       control.get(field)?.setValue(value);
       if (field === 'condition') {
         this.onConditionChange(idx);
       }
     });
-    this.toastService.success('Applied', `${field} updated for all phones`);
+    this.toastService.success('Applied', `${field} updated for all products`);
   }
 
   copyFirstToAll(): void {
-    if (this.phonesArray.length < 2) return;
+    if (this.productsArray.length < 2) return;
 
-    const firstPhone = this.phonesArray.at(0);
+    const firstProduct = this.productsArray.at(0);
     const firstValues = {
-      condition: firstPhone.get('condition')?.value,
-      sellingPrice: firstPhone.get('sellingPrice')?.value,
-      color: firstPhone.get('color')?.value,
-      storageGb: firstPhone.get('storageGb')?.value,
-      ramGb: firstPhone.get('ramGb')?.value,
-      batteryHealth: firstPhone.get('batteryHealth')?.value,
-      notes: firstPhone.get('notes')?.value
+      condition: firstProduct.get('condition')?.value,
+      sellingPrice: firstProduct.get('sellingPrice')?.value,
+      color: firstProduct.get('color')?.value,
+      storageGb: firstProduct.get('storageGb')?.value,
+      ramGb: firstProduct.get('ramGb')?.value,
+      batteryHealth: firstProduct.get('batteryHealth')?.value,
+      notes: firstProduct.get('notes')?.value
     };
 
-    for (let i = 1; i < this.phonesArray.length; i++) {
-      const control = this.phonesArray.at(i);
+    for (let i = 1; i < this.productsArray.length; i++) {
+      const control = this.productsArray.at(i);
       control.get('condition')?.setValue(firstValues.condition);
       control.get('sellingPrice')?.setValue(firstValues.sellingPrice);
       control.get('color')?.setValue(firstValues.color);
@@ -240,7 +242,7 @@ export class PurchaseOrderReceivingComponent implements OnInit {
       }
     }
 
-    this.toastService.success('Copied', 'First phone values copied to all other phones');
+    this.toastService.success('Copied', 'First product values copied to all other products');
   }
 
   copyFirstToRest(itemIdx: number, event: Event): void {
@@ -250,20 +252,20 @@ export class PurchaseOrderReceivingComponent implements OnInit {
     if (item.quantity < 2) return;
 
     const firstFormIdx = this.getFormIndex(itemIdx, 0);
-    const firstPhone = this.phonesArray.at(firstFormIdx);
+    const firstProduct = this.productsArray.at(firstFormIdx);
     const firstValues = {
-      condition: firstPhone.get('condition')?.value,
-      sellingPrice: firstPhone.get('sellingPrice')?.value,
-      color: firstPhone.get('color')?.value,
-      storageGb: firstPhone.get('storageGb')?.value,
-      ramGb: firstPhone.get('ramGb')?.value,
-      batteryHealth: firstPhone.get('batteryHealth')?.value,
-      notes: firstPhone.get('notes')?.value
+      condition: firstProduct.get('condition')?.value,
+      sellingPrice: firstProduct.get('sellingPrice')?.value,
+      color: firstProduct.get('color')?.value,
+      storageGb: firstProduct.get('storageGb')?.value,
+      ramGb: firstProduct.get('ramGb')?.value,
+      batteryHealth: firstProduct.get('batteryHealth')?.value,
+      notes: firstProduct.get('notes')?.value
     };
 
     for (let unitIdx = 1; unitIdx < item.quantity; unitIdx++) {
       const formIdx = this.getFormIndex(itemIdx, unitIdx);
-      const control = this.phonesArray.at(formIdx);
+      const control = this.productsArray.at(formIdx);
       control.get('condition')?.setValue(firstValues.condition);
       control.get('sellingPrice')?.setValue(firstValues.sellingPrice);
       control.get('color')?.setValue(firstValues.color);
@@ -280,22 +282,22 @@ export class PurchaseOrderReceivingComponent implements OnInit {
   }
 
   private updateInvalidCount(): void {
-    const phonesArray = this.form.get('phones') as FormArray;
+    const productsArray = this.form.get('products') as FormArray;
     let count = 0;
-    for (let i = 0; i < phonesArray.length; i++) {
-      if (phonesArray.at(i).invalid) {
+    for (let i = 0; i < productsArray.length; i++) {
+      if (productsArray.at(i).invalid) {
         count++;
       }
     }
     this.invalidCount.set(count);
   }
 
-  get phonesArray(): FormArray {
-    return this.form.get('phones') as FormArray;
+  get productsArray(): FormArray {
+    return this.form.get('products') as FormArray;
   }
 
   getFormControl(index: number, controlName: string): any {
-    return this.phonesArray.at(index).get(controlName);
+    return this.productsArray.at(index).get(controlName);
   }
 
   getFormIndex(itemIdx: number, unitIdx: number): number {
@@ -312,7 +314,7 @@ export class PurchaseOrderReceivingComponent implements OnInit {
 
   shouldShowBatteryHealth(formIdx: number): boolean {
     const condition = this.getFormControl(formIdx, 'condition').value;
-    return condition === PhoneCondition.USED || condition === PhoneCondition.OPEN_BOX;
+    return condition === ProductCondition.USED || condition === ProductCondition.OPEN_BOX;
   }
 
   isFormValid(): boolean {
@@ -325,30 +327,30 @@ export class PurchaseOrderReceivingComponent implements OnInit {
     this.saving.set(true);
 
     try {
-      const phonesValue = this.phonesArray.getRawValue();
-      const phones: ReceivingPhoneRecord[] = phonesValue.map((phone: any) => ({
-        lineItemIndex: phone.lineItemIndex,
-        brand: this.sanitizer.sanitize(phone.brand),
-        model: this.sanitizer.sanitize(phone.model),
-        condition: phone.condition,
-        sellingPrice: phone.sellingPrice,
-        color: this.sanitizer.sanitizeOrNull(phone.color),
-        imei: this.sanitizer.sanitizeOrNull(phone.imei),
-        storageGb: phone.storageGb || null,
-        ramGb: phone.ramGb || null,
-        batteryHealth: phone.batteryHealth || null,
-        notes: this.sanitizer.sanitizeOrNull(phone.notes)
+      const productsValue = this.productsArray.getRawValue();
+      const products: ReceivingProductRecord[] = productsValue.map((product: any) => ({
+        lineItemIndex: product.lineItemIndex,
+        brand: this.sanitizer.sanitize(product.brand),
+        model: this.sanitizer.sanitize(product.model),
+        condition: product.condition,
+        sellingPrice: product.sellingPrice,
+        color: this.sanitizer.sanitizeOrNull(product.color),
+        imei: this.sanitizer.sanitizeOrNull(product.imei),
+        storageGb: product.storageGb || null,
+        ramGb: product.ramGb || null,
+        batteryHealth: product.batteryHealth || null,
+        notes: this.sanitizer.sanitizeOrNull(product.notes)
       }));
 
-      const request: ReceivePurchaseOrderRequest = { phones };
+      const request: ReceivePurchaseOrderRequest = { products };
       const result = await this.purchaseOrderService.receiveWithInventory(this.purchaseOrder.id, request);
 
       this.toastService.success(
         'Order Received',
-        `Successfully created ${result.phonesCreated} phone${result.phonesCreated > 1 ? 's' : ''} in inventory`
+        `Successfully created ${result.productsCreated} product${result.productsCreated > 1 ? 's' : ''} in inventory`
       );
 
-      this.received.emit({ phonesCreated: result.phonesCreated });
+      this.received.emit({ productsCreated: result.productsCreated });
       this.visible = false;
     } catch (error) {
       console.error('Failed to receive order:', error);

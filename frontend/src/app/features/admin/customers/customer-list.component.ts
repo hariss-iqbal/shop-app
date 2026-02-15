@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -41,9 +41,11 @@ import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
   templateUrl: './customer-list.component.html'
 })
 export class CustomerListComponent implements OnInit {
-  private customerService = inject(CustomerService);
-  private toastService = inject(ToastService);
-  private confirmDialogService = inject(ConfirmDialogService);
+  constructor(
+    private customerService: CustomerService,
+    private toastService: ToastService,
+    private confirmDialogService: ConfirmDialogService
+  ) { }
 
   customers = signal<CustomerWithStats[]>([]);
   loading = signal(false);

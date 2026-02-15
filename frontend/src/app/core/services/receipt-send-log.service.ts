@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   ReceiptSendLog,
@@ -18,7 +18,7 @@ import {
   providedIn: 'root'
 })
 export class ReceiptSendLogService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getSendLogs(receiptId: string): Promise<ReceiptSendLogListResponse> {
     const { data, error, count } = await this.supabase

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -38,12 +38,14 @@ import { PurchaseOrderReceivingComponent } from '../purchase-order-receiving/pur
   styleUrls: ['./purchase-order-detail.component.scss']
 })
 export class PurchaseOrderDetailComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private location = inject(Location);
-  private purchaseOrderService = inject(PurchaseOrderService);
-  private toastService = inject(ToastService);
-  private confirmDialogService = inject(ConfirmDialogService);
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private location: Location,
+    private purchaseOrderService: PurchaseOrderService,
+    private toastService: ToastService,
+    private confirmDialogService: ConfirmDialogService
+  ) { }
 
   purchaseOrder = signal<PurchaseOrder | null>(null);
   loading = signal(true);
@@ -142,7 +144,7 @@ export class PurchaseOrderDetailComponent implements OnInit {
     this.showReceivingDialog.set(false);
   }
 
-  async onOrderReceived(_event: { phonesCreated: number }): Promise<void> {
+  async onOrderReceived(_event: { productsCreated: number }): Promise<void> {
     this.showReceivingDialog.set(false);
 
     const po = this.purchaseOrder();

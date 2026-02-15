@@ -34,7 +34,7 @@ describe('PrintRefundReceiptDialogComponent', () => {
       {
         id: 'item-1',
         originalSaleId: 'sale-1',
-        phoneId: 'phone-1',
+        productId: 'phone-1',
         itemName: 'iPhone 15 Pro',
         quantity: 1,
         unitPrice: 100,

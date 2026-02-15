@@ -21,7 +21,7 @@ describe('ConflictResolutionService', () => {
   let mockSyncScheduler: jasmine.SpyObj<SyncSchedulerService>;
 
   const mockSalePayload: OfflineSalePayload = {
-    phoneId: 'phone-1',
+    productId: 'product-1',
     saleDate: '2024-01-15',
     salePrice: 500,
     costPrice: 400,
@@ -29,7 +29,7 @@ describe('ConflictResolutionService', () => {
     buyerPhone: '1234567890',
     buyerEmail: 'test@example.com',
     notes: null,
-    phoneDetails: {
+    productDetails: {
       brandName: 'Apple',
       model: 'iPhone 13',
       storageGb: 128,
@@ -58,10 +58,10 @@ describe('ConflictResolutionService', () => {
     localTempId: 'conflict-id-1',
     entityType: 'sale',
     conflictData: {
-      conflictType: 'PHONE_ALREADY_SOLD',
-      description: 'Phone was sold by another user',
+      conflictType: 'PRODUCT_ALREADY_SOLD',
+      description: 'Product was sold by another user',
       localData: mockSalePayload,
-      serverData: { phoneId: 'phone-1', currentStatus: 'sold' },
+      serverData: { productId: 'product-1', currentStatus: 'sold' },
       detectedAt: '2024-01-15T10:05:00Z',
       resolutionOptions: [
         {
@@ -87,7 +87,7 @@ describe('ConflictResolutionService', () => {
 
     mockOfflineStorage = jasmine.createSpyObj('OfflineStorageService', [
       'updateSyncQueueItem',
-      'updateCachedPhoneStatus',
+      'updateCachedProductStatus',
       'generateLocalReceiptNumber'
     ]);
 
@@ -101,7 +101,7 @@ describe('ConflictResolutionService', () => {
     mockSyncQueue.removeItem.and.returnValue(Promise.resolve());
     mockSyncQueue.refreshCounts.and.returnValue(Promise.resolve());
     mockOfflineStorage.updateSyncQueueItem.and.returnValue(Promise.resolve());
-    mockOfflineStorage.updateCachedPhoneStatus.and.returnValue(Promise.resolve());
+    mockOfflineStorage.updateCachedProductStatus.and.returnValue(Promise.resolve());
     mockOfflineStorage.generateLocalReceiptNumber.and.returnValue('OFF-20240115-NEW1');
     mockSyncScheduler.retryItem.and.returnValue(Promise.resolve({
       success: true,
@@ -221,7 +221,7 @@ describe('ConflictResolutionService', () => {
 
         await service.resolveConflict(request);
 
-        expect(mockOfflineStorage.updateCachedPhoneStatus).toHaveBeenCalledWith('phone-1', 'available');
+        expect(mockOfflineStorage.updateCachedProductStatus).toHaveBeenCalledWith('product-1', 'available');
       }));
     });
 
@@ -491,7 +491,7 @@ describe('ConflictResolutionService', () => {
       const summary = await service.getConflictSummary();
 
       expect(summary.total).toBe(1);
-      expect(summary.byType['PHONE_ALREADY_SOLD']).toBe(1);
+      expect(summary.byType['PRODUCT_ALREADY_SOLD']).toBe(1);
     }));
 
     it('should handle items without conflict data', fakeAsync(async () => {
@@ -511,7 +511,7 @@ describe('ConflictResolutionService', () => {
     it('should return display info for PHONE_ALREADY_SOLD', () => {
       const info = service.getConflictDisplayInfo(mockConflictItem);
 
-      expect(info.title).toBe('Phone Already Sold');
+      expect(info.title).toBe('Product Already Sold');
       expect(info.description).toContain('sold by another user');
       expect(info.localSummary).toContain('Apple iPhone 13');
       expect(info.options.length).toBeGreaterThan(0);
@@ -522,13 +522,13 @@ describe('ConflictResolutionService', () => {
         ...mockConflictItem,
         conflictData: {
           ...mockConflictItem.conflictData!,
-          conflictType: 'PHONE_NOT_AVAILABLE'
+          conflictType: 'PRODUCT_NOT_AVAILABLE'
         }
       };
 
       const info = service.getConflictDisplayInfo(item);
 
-      expect(info.title).toBe('Phone Not Available');
+      expect(info.title).toBe('Product Not Available');
     });
 
     it('should return display info for RECEIPT_NUMBER_EXISTS', () => {

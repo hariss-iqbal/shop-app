@@ -1,12 +1,14 @@
 <div class="grid">
-  <div class="col-12">
-    <div class="flex align-items-center justify-content-between mb-4">
-      <h1 class="text-3xl font-bold m-0">{{ isEdit ? 'Edit Phone' : 'Add Phone' }}</h1>
-      @if (isEdit) {
-        <p-tag [value]="'ID: ' + phoneId" severity="secondary" />
-      }
+  @if (!dialogMode()) {
+    <div class="col-12">
+      <div class="flex align-items-center justify-content-between mb-4">
+        <h1 class="text-3xl font-bold m-0">{{ isEdit ? 'Edit Product' : 'Add Product' }}</h1>
+        @if (isEdit) {
+          <p-tag [value]="'ID: ' + productId" severity="secondary" />
+        }
+      </div>
     </div>
-  </div>
+  }
 
   @if (loading()) {
     <div class="col-12">
@@ -56,10 +58,19 @@
       <p-card>
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           <div class="grid">
+
+            <!-- Product Type Selector -->
+            <div class="col-12">
+              <div class="field">
+                <label for="productType" class="block font-medium mb-2">Product Type</label>
+                <p-selectButton [options]="productTypeOptions" formControlName="productType" (onChange)="onProductTypeChange()"></p-selectButton>
+              </div>
+            </div>
+
             <!-- Section: Basic Information -->
             <div class="col-12">
               <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
-                <i class="pi pi-mobile text-primary"></i>
+                <i class="pi pi-box text-primary"></i>
                 Basic Information
               </h3>
             </div>
@@ -82,7 +93,7 @@
                 placeholder="Type to search or create new brand..."
                 styleClass="w-full"
                 inputStyleClass="w-full"
-                ariaLabel="Phone brand"
+                ariaLabel="Product brand"
               >
                 <ng-template let-item pTemplate="item">
                   @if (item.isCreateNew) {
@@ -121,17 +132,19 @@
                   [maxlength]="constraints.MODEL_MAX"
                   aria-describedby="model-help"
                 />
-                <p-button
-                  label="Fetch Info"
-                  icon="pi pi-search"
-                  [outlined]="true"
-                  size="small"
-                  (onClick)="fetchPhoneSpecs()"
-                  [loading]="fetchingSpecs()"
-                  [disabled]="!form.get('brand')?.value || !form.get('model')?.value || fetchingSpecs()"
-                  pTooltip="Auto-fill specs from GSMArena"
-                  tooltipPosition="top"
-                />
+                @if (form.get('productType')?.value === 'phone') {
+                  <p-button
+                    label="Fetch Info"
+                    icon="pi pi-search"
+                    [outlined]="true"
+                    size="small"
+                    (onClick)="fetchProductSpecs()"
+                    [loading]="fetchingSpecs()"
+                    [disabled]="!form.get('brand')?.value || !form.get('model')?.value || fetchingSpecs()"
+                    pTooltip="Auto-fill specs from GSMArena"
+                    tooltipPosition="top"
+                  />
+                }
               </div>
               @if (form.controls['model'].invalid && form.controls['model'].touched) {
                 <small id="model-help" class="p-error block mt-1">Model name is required</small>
@@ -146,138 +159,348 @@
               }
             </div>
 
-            <!-- Section: Specifications -->
-            <div class="col-12 mt-3">
-              <p-divider />
-              <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
-                <i class="pi pi-cog text-primary"></i>
-                Specifications
-              </h3>
-            </div>
+            <!-- Phone-Specific: Specifications Section -->
+            @if (form.get('productType')?.value === 'phone') {
+              <!-- Section: Specifications -->
+              <div class="col-12 mt-3">
+                <p-divider />
+                <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
+                  <i class="pi pi-cog text-primary"></i>
+                  Phone Specifications
+                </h3>
+              </div>
 
-            <!-- Storage GB -->
-            <div class="col-12 md:col-6 lg:col-3">
-              <label for="storageGb" class="block font-medium mb-2">
-                Storage (GB)
-                @if (specsFetched()) {
-                  <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+              <!-- Storage GB -->
+              <div class="col-12 md:col-6 lg:col-3">
+                <label for="storageGb" class="block font-medium mb-2">
+                  Storage (GB)
+                  @if (specsFetched()) {
+                    <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+                  }
+                </label>
+                <p-inputNumber
+                  id="storageGb"
+                  formControlName="storageGb"
+                  [min]="0"
+                  [max]="9999"
+                  [showButtons]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="e.g., 128"
+                  ariaLabel="Storage capacity in gigabytes"
+                />
+                @if (storageQuickOptions().length > 0) {
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @for (opt of storageQuickOptions(); track opt) {
+                      <p-button
+                        [label]="opt + 'GB'"
+                        [severity]="form.get('storageGb')?.value === opt ? 'primary' : 'secondary'"
+                        [outlined]="form.get('storageGb')?.value !== opt"
+                        size="small"
+                        (onClick)="setStorage(opt)"
+                      />
+                    }
+                  </div>
                 }
-              </label>
-              <p-inputNumber
-                id="storageGb"
-                formControlName="storageGb"
-                [min]="0"
-                [max]="9999"
-                [showButtons]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-                placeholder="e.g., 128"
-                ariaLabel="Storage capacity in gigabytes"
-              />
-              @if (storageQuickOptions().length > 0) {
-                <div class="flex flex-wrap gap-1 mt-2">
-                  @for (opt of storageQuickOptions(); track opt) {
-                    <p-button
-                      [label]="opt + 'GB'"
-                      [severity]="form.get('storageGb')?.value === opt ? 'primary' : 'secondary'"
-                      [outlined]="form.get('storageGb')?.value !== opt"
-                      size="small"
-                      (onClick)="setStorage(opt)"
-                    />
+              </div>
+
+              <!-- RAM GB -->
+              <div class="col-12 md:col-6 lg:col-3">
+                <label for="ramGb" class="block font-medium mb-2">
+                  RAM (GB)
+                  @if (specsFetched()) {
+                    <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+                  }
+                </label>
+                <p-inputNumber
+                  id="ramGb"
+                  formControlName="ramGb"
+                  [min]="0"
+                  [max]="999"
+                  [showButtons]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="e.g., 8"
+                  ariaLabel="RAM in gigabytes"
+                />
+                @if (ramQuickOptions().length > 0) {
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @for (opt of ramQuickOptions(); track opt) {
+                      <p-button
+                        [label]="opt + 'GB'"
+                        [severity]="form.get('ramGb')?.value === opt ? 'primary' : 'secondary'"
+                        [outlined]="form.get('ramGb')?.value !== opt"
+                        size="small"
+                        (onClick)="setRam(opt)"
+                      />
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- IMEI -->
+              <div class="col-12 md:col-6 lg:col-3">
+                <label for="imei" class="block font-medium mb-2">
+                  IMEI
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="International Mobile Equipment Identity - unique device identifier" tooltipPosition="top"></i>
+                </label>
+                <input
+                  id="imei"
+                  type="text"
+                  pInputText
+                  formControlName="imei"
+                  class="w-full"
+                  placeholder="15-digit IMEI"
+                  [maxlength]="constraints.IMEI_MAX"
+                />
+              </div>
+
+              <!-- Color (shown for phones in specs section) -->
+              <div class="col-12 md:col-6 lg:col-3">
+                <label for="color" class="block font-medium mb-2">
+                  Color
+                  @if (specsFetched() && colorSuggestions().length > 0) {
+                    <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
+                  }
+                </label>
+                <input
+                  id="color"
+                  type="text"
+                  pInputText
+                  formControlName="color"
+                  class="w-full"
+                  placeholder="e.g., Space Black"
+                  [maxlength]="constraints.COLOR_MAX"
+                />
+                @if (colorSuggestions().length > 0) {
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    @for (color of colorSuggestions(); track color) {
+                      <p-button
+                        [label]="color"
+                        [severity]="form.get('color')?.value === color ? 'primary' : 'secondary'"
+                        [outlined]="form.get('color')?.value !== color"
+                        size="small"
+                        (onClick)="setColor(color)"
+                      />
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Section: Condition (phone-specific) -->
+              <div class="col-12 mt-3">
+                <p-divider />
+                <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
+                  <i class="pi pi-check-circle text-primary"></i>
+                  Phone Condition
+                </h3>
+              </div>
+
+              <!-- Condition Rating -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="conditionRating" class="block font-medium mb-2">
+                  Condition Rating (1-10)
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Rate the physical condition of the device from 1 (poor) to 10 (excellent)" tooltipPosition="top"></i>
+                </label>
+                <p-inputNumber
+                  id="conditionRating"
+                  formControlName="conditionRating"
+                  [min]="1"
+                  [max]="10"
+                  [showButtons]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="1-10"
+                  ariaLabel="Condition rating from 1 to 10"
+                />
+                @if (form.controls['conditionRating']?.invalid && form.controls['conditionRating']?.touched) {
+                  <small class="p-error block mt-1">Condition rating must be between 1 and 10</small>
+                }
+              </div>
+
+              <!-- PTA Status -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="ptaStatus" class="block font-medium mb-2">
+                  PTA Status
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Pakistan Telecommunication Authority approval status" tooltipPosition="top"></i>
+                </label>
+                <p-select
+                  id="ptaStatus"
+                  formControlName="ptaStatus"
+                  [options]="ptaStatusOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select PTA status"
+                  styleClass="w-full"
+                  ariaLabel="PTA approval status"
+                  [showClear]="true"
+                />
+              </div>
+
+              <!-- Battery Health (conditionally shown) -->
+              @if (showBatteryHealth()) {
+                <div class="col-12 md:col-6 lg:col-4">
+                  <label for="batteryHealth" class="block font-medium mb-2">
+                    Battery Health (%)
+                    <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Current battery capacity compared to when it was new" tooltipPosition="top"></i>
+                  </label>
+                  <p-inputNumber
+                    id="batteryHealth"
+                    formControlName="batteryHealth"
+                    [min]="0"
+                    [max]="100"
+                    [showButtons]="true"
+                    suffix="%"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                    placeholder="0-100"
+                    ariaLabel="Battery health percentage"
+                  />
+                  @if (form.controls['batteryHealth']?.invalid && form.controls['batteryHealth']?.touched) {
+                    <small class="p-error block mt-1">Battery health must be between 0% and 100%</small>
                   }
                 </div>
               }
-            </div>
+            }
 
-            <!-- RAM GB -->
-            <div class="col-12 md:col-6 lg:col-3">
-              <label for="ramGb" class="block font-medium mb-2">
-                RAM (GB)
-                @if (specsFetched()) {
-                  <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
-                }
-              </label>
-              <p-inputNumber
-                id="ramGb"
-                formControlName="ramGb"
-                [min]="0"
-                [max]="999"
-                [showButtons]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-                placeholder="e.g., 8"
-                ariaLabel="RAM in gigabytes"
-              />
-              @if (ramQuickOptions().length > 0) {
-                <div class="flex flex-wrap gap-1 mt-2">
-                  @for (opt of ramQuickOptions(); track opt) {
-                    <p-button
-                      [label]="opt + 'GB'"
-                      [severity]="form.get('ramGb')?.value === opt ? 'primary' : 'secondary'"
-                      [outlined]="form.get('ramGb')?.value !== opt"
-                      size="small"
-                      (onClick)="setRam(opt)"
-                    />
-                  }
-                </div>
-              }
-            </div>
+            <!-- Accessory-Specific Fields -->
+            @if (form.get('productType')?.value === 'accessory') {
+              <div class="col-12 mt-3">
+                <p-divider />
+                <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
+                  <i class="pi pi-box text-primary"></i>
+                  Accessory Details
+                </h3>
+              </div>
 
-            <!-- Color -->
-            <div class="col-12 md:col-6 lg:col-3">
-              <label for="color" class="block font-medium mb-2">
-                Color
-                @if (specsFetched() && colorSuggestions().length > 0) {
-                  <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
-                }
-              </label>
-              <input
-                id="color"
-                type="text"
-                pInputText
-                formControlName="color"
-                class="w-full"
-                placeholder="e.g., Space Black"
-                [maxlength]="constraints.COLOR_MAX"
-              />
-              @if (colorSuggestions().length > 0) {
-                <div class="flex flex-wrap gap-1 mt-2">
-                  @for (color of colorSuggestions(); track color) {
-                    <p-button
-                      [label]="color"
-                      [severity]="form.get('color')?.value === color ? 'primary' : 'secondary'"
-                      [outlined]="form.get('color')?.value !== color"
-                      size="small"
-                      (onClick)="setColor(color)"
-                    />
-                  }
-                </div>
-              }
-            </div>
+              <!-- Accessory Category -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="accessoryCategory" class="block font-medium mb-2">Category</label>
+                <p-select
+                  id="accessoryCategory"
+                  formControlName="accessoryCategory"
+                  [options]="accessoryCategoryOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select category"
+                  styleClass="w-full"
+                  ariaLabel="Accessory category"
+                  [showClear]="true"
+                />
+              </div>
 
-            <!-- IMEI -->
-            <div class="col-12 md:col-6 lg:col-3">
-              <label for="imei" class="block font-medium mb-2">
-                IMEI
-                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="International Mobile Equipment Identity - unique device identifier" tooltipPosition="top"></i>
-              </label>
-              <input
-                id="imei"
-                type="text"
-                pInputText
-                formControlName="imei"
-                class="w-full"
-                placeholder="15-digit IMEI"
-                [maxlength]="constraints.IMEI_MAX"
-              />
-            </div>
+              <!-- Compatible Models -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="compatibleModels" class="block font-medium mb-2">
+                  Compatible Models
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Enter model names this accessory is compatible with" tooltipPosition="top"></i>
+                </label>
+                <p-autoComplete
+                  id="compatibleModels"
+                  formControlName="compatibleModels"
+                  [multiple]="true"
+                  placeholder="Type and press Enter"
+                  styleClass="w-full"
+                  ariaLabel="Compatible models"
+                  [suggestions]="[]"
+                />
+              </div>
 
-            <!-- Section: Condition -->
+              <!-- Material -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="material" class="block font-medium mb-2">Material</label>
+                <input
+                  id="material"
+                  type="text"
+                  pInputText
+                  formControlName="material"
+                  class="w-full"
+                  placeholder="e.g., Silicone, Leather, Plastic"
+                />
+              </div>
+
+              <!-- Warranty Months -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="warrantyMonths" class="block font-medium mb-2">Warranty (Months)</label>
+                <p-inputNumber
+                  id="warrantyMonths"
+                  formControlName="warrantyMonths"
+                  [min]="0"
+                  [max]="120"
+                  [showButtons]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="e.g., 12"
+                  ariaLabel="Warranty duration in months"
+                />
+              </div>
+
+              <!-- Weight Grams -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="weightGrams" class="block font-medium mb-2">Weight (grams)</label>
+                <p-inputNumber
+                  id="weightGrams"
+                  formControlName="weightGrams"
+                  [min]="0"
+                  [max]="99999"
+                  [showButtons]="true"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="e.g., 50"
+                  ariaLabel="Weight in grams"
+                />
+              </div>
+
+              <!-- Dimensions -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="dimensions" class="block font-medium mb-2">Dimensions</label>
+                <input
+                  id="dimensions"
+                  type="text"
+                  pInputText
+                  formControlName="dimensions"
+                  class="w-full"
+                  placeholder="e.g., 15 x 8 x 1 cm"
+                />
+              </div>
+
+              <!-- Color (for accessories) -->
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="color" class="block font-medium mb-2">Color</label>
+                <input
+                  id="color"
+                  type="text"
+                  pInputText
+                  formControlName="color"
+                  class="w-full"
+                  placeholder="e.g., Black"
+                  [maxlength]="constraints.COLOR_MAX"
+                />
+              </div>
+            }
+
+            <!-- Color field for non-phone, non-accessory types -->
+            @if (form.get('productType')?.value !== 'phone' && form.get('productType')?.value !== 'accessory') {
+              <div class="col-12 md:col-6 lg:col-3">
+                <label for="color" class="block font-medium mb-2">Color</label>
+                <input
+                  id="color"
+                  type="text"
+                  pInputText
+                  formControlName="color"
+                  class="w-full"
+                  placeholder="e.g., Silver"
+                  [maxlength]="constraints.COLOR_MAX"
+                />
+              </div>
+            }
+
+            <!-- Section: Condition (shared across all types) -->
             <div class="col-12 mt-3">
               <p-divider />
               <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
                 <i class="pi pi-check-circle text-primary"></i>
-                Condition
+                Condition &amp; Status
               </h3>
             </div>
 
@@ -292,78 +515,12 @@
                 optionValue="value"
                 placeholder="Select condition"
                 styleClass="w-full"
-                ariaLabel="Phone condition"
+                ariaLabel="Product condition"
               />
               @if (form.controls['condition'].invalid && form.controls['condition'].touched) {
                 <small class="p-error block mt-1">Please select a condition</small>
               }
             </div>
-
-            <!-- Condition Rating -->
-            <div class="col-12 md:col-6 lg:col-4">
-              <label for="conditionRating" class="block font-medium mb-2">
-                Condition Rating (1-10)
-                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Rate the physical condition of the device from 1 (poor) to 10 (excellent)" tooltipPosition="top"></i>
-              </label>
-              <p-inputNumber
-                id="conditionRating"
-                formControlName="conditionRating"
-                [min]="1"
-                [max]="10"
-                [showButtons]="true"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-                placeholder="1-10"
-                ariaLabel="Condition rating from 1 to 10"
-              />
-              @if (form.controls['conditionRating'].invalid && form.controls['conditionRating'].touched) {
-                <small class="p-error block mt-1">Condition rating must be between 1 and 10</small>
-              }
-            </div>
-
-            <!-- PTA Status -->
-            <div class="col-12 md:col-6 lg:col-4">
-              <label for="ptaStatus" class="block font-medium mb-2">
-                PTA Status
-                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Pakistan Telecommunication Authority approval status" tooltipPosition="top"></i>
-              </label>
-              <p-select
-                id="ptaStatus"
-                formControlName="ptaStatus"
-                [options]="ptaStatusOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select PTA status"
-                styleClass="w-full"
-                ariaLabel="PTA approval status"
-                [showClear]="true"
-              />
-            </div>
-
-            <!-- Battery Health (conditionally shown) -->
-            @if (showBatteryHealth()) {
-              <div class="col-12 md:col-6 lg:col-4">
-                <label for="batteryHealth" class="block font-medium mb-2">
-                  Battery Health (%)
-                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Current battery capacity compared to when it was new" tooltipPosition="top"></i>
-                </label>
-                <p-inputNumber
-                  id="batteryHealth"
-                  formControlName="batteryHealth"
-                  [min]="0"
-                  [max]="100"
-                  [showButtons]="true"
-                  suffix="%"
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                  placeholder="0-100"
-                  ariaLabel="Battery health percentage"
-                />
-                @if (form.controls['batteryHealth'].invalid && form.controls['batteryHealth'].touched) {
-                  <small class="p-error block mt-1">Battery health must be between 0% and 100%</small>
-                }
-              </div>
-            }
 
             <!-- Status -->
             <div class="col-12 md:col-6 lg:col-4">
@@ -396,7 +553,7 @@
             <div class="col-12 md:col-6 lg:col-4">
               <label for="costPrice" class="block font-medium mb-2">
                 Cost Price <span class="text-red-500">*</span>
-                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="The price you paid to acquire this phone" tooltipPosition="top"></i>
+                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="The price you paid to acquire this product" tooltipPosition="top"></i>
               </label>
               <p-inputNumber
                 id="costPrice"
@@ -418,7 +575,7 @@
             <div class="col-12 md:col-6 lg:col-4">
               <label for="sellingPrice" class="block font-medium mb-2">
                 Selling Price <span class="text-red-500">*</span>
-                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="The price you will sell this phone for" tooltipPosition="top"></i>
+                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="The price you will sell this product for" tooltipPosition="top"></i>
               </label>
               <p-inputNumber
                 id="sellingPrice"
@@ -457,113 +614,6 @@
                 }
               </div>
             </div>
-
-            <!-- Section: Tax Configuration (F-012) -->
-            <div class="col-12 mt-3">
-              <p-divider />
-              <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
-                <i class="pi pi-percentage text-primary"></i>
-                Tax Configuration
-              </h3>
-            </div>
-
-            <!-- Tax Exempt Checkbox -->
-            <div class="col-12">
-              <div class="flex align-items-center gap-3 mb-3">
-                <p-checkbox
-                  formControlName="isTaxExempt"
-                  [binary]="true"
-                  inputId="isTaxExempt"
-                />
-                <label for="isTaxExempt" class="font-medium cursor-pointer">
-                  Tax Exempt Item
-                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Mark this item as tax exempt (0% tax). Tax exempt items are clearly marked on receipts." tooltipPosition="top"></i>
-                </label>
-              </div>
-              @if (form.get('isTaxExempt')?.value) {
-                <p-message severity="info" text="This item is tax exempt and will display 0% tax on receipts" styleClass="mb-3 w-full" />
-              }
-            </div>
-
-            @if (!form.get('isTaxExempt')?.value) {
-              <!-- Tax Rate -->
-              <div class="col-12 md:col-6 lg:col-4">
-                <label for="taxRate" class="block font-medium mb-2">
-                  Tax Rate (%)
-                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Tax rate percentage applied to this item (e.g., 10 for 10% tax)" tooltipPosition="top"></i>
-                </label>
-                <p-inputNumber
-                  id="taxRate"
-                  formControlName="taxRate"
-                  [min]="0"
-                  [max]="100"
-                  [minFractionDigits]="0"
-                  [maxFractionDigits]="2"
-                  suffix="%"
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                  placeholder="e.g., 10"
-                  ariaLabel="Tax rate percentage"
-                />
-                @if (form.controls['taxRate'].invalid && form.controls['taxRate'].touched) {
-                  <small class="p-error block mt-1">Tax rate must be between 0% and 100%</small>
-                }
-              </div>
-
-              <!-- Tax Inclusive Checkbox -->
-              <div class="col-12 md:col-6 lg:col-4">
-                <label class="block font-medium mb-2">Tax Pricing Model</label>
-                <div class="surface-100 border-round p-3">
-                  <div class="flex align-items-center gap-3">
-                    <p-checkbox
-                      formControlName="isTaxInclusive"
-                      [binary]="true"
-                      inputId="isTaxInclusive"
-                    />
-                    <label for="isTaxInclusive" class="cursor-pointer">
-                      Price includes tax
-                    </label>
-                  </div>
-                  <div class="text-xs text-color-secondary mt-2">
-                    @if (form.get('isTaxInclusive')?.value) {
-                      <i class="pi pi-info-circle mr-1"></i>
-                      The selling price already includes the tax amount. The base price will be extracted for receipts.
-                    } @else {
-                      <i class="pi pi-info-circle mr-1"></i>
-                      Tax will be added on top of the selling price during checkout.
-                    }
-                  </div>
-                </div>
-              </div>
-
-              <!-- Tax Preview -->
-              <div class="col-12 md:col-6 lg:col-4">
-                <label class="block font-medium mb-2">Tax Preview</label>
-                <div class="surface-100 border-round p-3">
-                  @if (taxPreview()) {
-                    <div class="text-sm">
-                      <div class="flex justify-content-between mb-1">
-                        <span class="text-color-secondary">Base Price:</span>
-                        <span class="font-medium">{{ taxPreview()!.basePrice | appCurrency:'1.2-2' }}</span>
-                      </div>
-                      <div class="flex justify-content-between mb-1">
-                        <span class="text-color-secondary">Tax ({{ form.get('taxRate')?.value || 0 }}%):</span>
-                        <span class="font-medium">{{ taxPreview()!.taxAmount | appCurrency:'1.2-2' }}</span>
-                      </div>
-                      <p-divider styleClass="my-2" />
-                      <div class="flex justify-content-between">
-                        <span class="font-semibold">Total:</span>
-                        <span class="font-bold text-primary">{{ taxPreview()!.totalPrice | appCurrency:'1.2-2' }}</span>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="text-sm text-color-secondary text-center">
-                      Enter selling price and tax rate to see preview
-                    </div>
-                  }
-                </div>
-              </div>
-            }
 
             <!-- Section: Procurement -->
             <div class="col-12 mt-3">
@@ -616,7 +666,7 @@
                 [showClear]="true"
                 placeholder="Select supplier (optional)"
                 styleClass="w-full"
-                ariaLabel="Phone supplier"
+                ariaLabel="Product supplier"
                 [filter]="supplierOptions().length > 5"
                 filterPlaceholder="Search suppliers..."
               />
@@ -629,6 +679,21 @@
                 <i class="pi pi-file-edit text-primary"></i>
                 Additional Information
               </h3>
+            </div>
+
+            <!-- Featured Product -->
+            <div class="col-12">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  formControlName="isFeatured"
+                  [binary]="true"
+                  inputId="isFeatured"
+                />
+                <label for="isFeatured" class="font-medium cursor-pointer">
+                  Featured Product
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Featured products display an orange badge and appear prominently in the catalog" tooltipPosition="top"></i>
+                </label>
+              </div>
             </div>
 
             <!-- Notes -->
@@ -662,7 +727,7 @@
                 formControlName="description"
                 rows="3"
                 class="w-full"
-                placeholder="Enter phone description for catalog..."
+                placeholder="Enter product description for catalog..."
                 [maxlength]="constraints.DESCRIPTION_MAX"
                 aria-describedby="description-help"
               ></textarea>
@@ -670,15 +735,15 @@
             </div>
 
             <!-- Image Upload Section -->
-            @if (isEdit && phoneId) {
+            @if (isEdit && productId) {
               <div class="col-12 mt-3">
                 <p-divider />
                 <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
                   <i class="pi pi-images text-primary"></i>
-                  Phone Images
+                  Product Images
                 </h3>
-                <app-phone-image-upload
-                  [phoneId]="phoneId"
+                <app-product-image-upload
+                  [productId]="productId"
                   (imagesChanged)="onImagesChanged($event)"
                 />
               </div>
@@ -687,12 +752,12 @@
                 <p-divider />
                 <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
                   <i class="pi pi-images text-primary"></i>
-                  Phone Images
+                  Product Images
                 </h3>
                 <div class="surface-100 border-round p-4">
                   <div class="flex flex-column align-items-center gap-3">
                     <i class="pi pi-cloud-upload text-4xl text-500"></i>
-                    <p class="text-500 m-0 text-center">Select images to upload when you save the phone</p>
+                    <p class="text-500 m-0 text-center">Select images to upload when you save the product</p>
                     <input
                       type="file"
                       #imageInput
@@ -747,7 +812,7 @@
                     (onClick)="onCancel()"
                   />
                   <p-button
-                    [label]="isEdit ? 'Update Phone' : 'Add Phone'"
+                    [label]="isEdit ? 'Update Product' : 'Add Product'"
                     type="submit"
                     [icon]="isEdit ? 'pi pi-check' : 'pi pi-plus'"
                     [loading]="submitting()"

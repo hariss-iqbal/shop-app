@@ -115,9 +115,9 @@ describe('SaleService', () => {
       const firstSale = result.data[0];
 
       expect(firstSale.id).toBe('sale-1');
-      expect(firstSale.phoneId).toBe('phone-1');
+      expect(firstSale.productId).toBe('phone-1');
       expect(firstSale.brandName).toBe('Apple');
-      expect(firstSale.phoneName).toBe('iPhone 15 Pro');
+      expect(firstSale.productName).toBe('iPhone 15 Pro');
       expect(firstSale.saleDate).toBe('2024-01-15');
       expect(firstSale.salePrice).toBe(1200);
       expect(firstSale.costPrice).toBe(900);
@@ -207,7 +207,7 @@ describe('SaleService', () => {
       const result = await service.getSales();
 
       expect(result.data[0].brandName).toBe('');
-      expect(result.data[0].phoneName).toBe('');
+      expect(result.data[0].productName).toBe('');
     });
 
     it('should handle null brand data gracefully', async () => {
@@ -216,7 +216,7 @@ describe('SaleService', () => {
           ...mockSaleDbRecord,
           phone: {
             id: 'phone-1',
-            model: 'Test Phone',
+            model: 'Test Product',
             brand: null
           }
         }],
@@ -227,7 +227,7 @@ describe('SaleService', () => {
       const result = await service.getSales();
 
       expect(result.data[0].brandName).toBe('');
-      expect(result.data[0].phoneName).toBe('Test Phone');
+      expect(result.data[0].productName).toBe('Test Phone');
     });
   });
 
@@ -366,7 +366,7 @@ describe('SaleService', () => {
 
   describe('markAsSold', () => {
     const markAsSoldRequest: MarkAsSoldRequest = {
-      phoneId: 'phone-1',
+      productId: 'product-1',
       salePrice: 1200,
       saleDate: '2024-01-15',
       buyerName: '  John Doe  ',
@@ -419,7 +419,7 @@ describe('SaleService', () => {
 
       expect(result.success).toBe(true);
       expect(result.sale?.id).toBe('sale-1');
-      expect(result.phoneId).toBe('phone-1');
+      expect(result.productId).toBe('product-1');
     });
 
     it('should trim buyer information', async () => {
@@ -499,7 +499,7 @@ describe('SaleService', () => {
       });
 
       const requestWithEmptyStrings: MarkAsSoldRequest = {
-        phoneId: 'phone-1',
+        productId: 'product-1',
         salePrice: 1200,
         saleDate: '2024-01-15',
         buyerName: '   ',
@@ -662,7 +662,7 @@ describe('SaleService', () => {
           updated_at: null,
           phone: {
             id: 'phone-1',
-            model: 'Test Phone',
+            model: 'Test Product',
             brand: { id: 'brand-1', name: 'Test Brand' }
           }
         }],

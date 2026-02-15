@@ -155,7 +155,7 @@ export class AuditLogRepository {
     const { data, error } = await this.supabase.rpc('log_sale_audit', {
       p_event_type: input.eventType,
       p_sale_id: input.saleId,
-      p_phone_id: input.phoneId,
+      p_product_id: input.productId,
       p_amount: input.amount,
       p_buyer_name: input.buyerName || null,
       p_buyer_phone: input.buyerPhone || null,
@@ -214,7 +214,7 @@ export class AuditLogRepository {
   async logInventoryAudit(input: InventoryAuditInput): Promise<string> {
     const { data, error } = await this.supabase.rpc('log_inventory_audit', {
       p_event_type: input.eventType,
-      p_phone_id: input.phoneId,
+      p_product_id: input.productId,
       p_previous_status: input.previousStatus,
       p_new_status: input.newStatus,
       p_sale_id: input.saleId || null,

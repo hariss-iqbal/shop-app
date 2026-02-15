@@ -1,5 +1,5 @@
 /**
- * Migration Script: Migrate Phone Images from Supabase Storage to Cloudinary
+ * Migration Script: Migrate Product Images from Supabase Storage to Cloudinary
  *
  * This script implements Option B migration strategy:
  * - Downloads all existing images from Supabase Storage
@@ -61,9 +61,9 @@ function loadEnv(): Environment {
   throw new Error('.env file not found');
 }
 
-interface PhoneImage {
+interface ProductImage {
   id: string;
-  phone_id: string;
+  product_id: string;
   image_url: string;
   storage_path: string;
   is_primary: boolean;
@@ -115,7 +115,7 @@ class CloudinaryMigrationService {
 
     try {
       // Step 1: Fetch all phone images from database
-      const images = await this.fetchAllPhoneImages();
+      const images = await this.fetchAllProductImages();
       console.log(`📦 Found ${images.length} images to migrate\n`);
 
       if (images.length === 0) {
@@ -128,7 +128,7 @@ class CloudinaryMigrationService {
         success: 0,
         failed: 0,
         skipped: 0,
-        errors: [] as Array<{ image: PhoneImage; error: string }>
+        errors: [] as Array<{ image: ProductImage; error: string }>
       };
 
       for (let i = 0; i < images.length; i++) {
@@ -149,7 +149,7 @@ class CloudinaryMigrationService {
           const filePath = await this.downloadFromSupabase(image.storage_path);
 
           // Upload to Cloudinary
-          const cloudinaryResult = await this.uploadToCloudinary(filePath, image.phone_id);
+          const cloudinaryResult = await this.uploadToCloudinary(filePath, image.product_id);
 
           // Update database
           await this.updateImageRecord(image.id, cloudinaryResult);
@@ -191,9 +191,9 @@ class CloudinaryMigrationService {
   /**
    * Fetch all phone images from database
    */
-  private async fetchAllPhoneImages(): Promise<PhoneImage[]> {
+  private async fetchAllProductImages(): Promise<ProductImage[]> {
     const { data, error } = await this.supabase
-      .from('phone_images')
+      .from('product_images')
       .select('*')
       .order('created_at', { ascending: true });
 
@@ -231,11 +231,11 @@ class CloudinaryMigrationService {
   /**
    * Upload an image to Cloudinary
    */
-  private async uploadToCloudinary(filePath: string, phoneId: string): Promise<CloudinaryUploadResult> {
+  private async uploadToCloudinary(filePath: string, productId: string): Promise<CloudinaryUploadResult> {
     const formData = new FormData();
     formData.append('file', fs.createReadStream(filePath));
     formData.append('upload_preset', this.env.cloudinaryUploadPreset);
-    formData.append('folder', `phone-images/${phoneId}`);
+    formData.append('folder', `product-images/${productId}`);
 
     const response = await fetch(this.cloudinaryUploadUrl, {
       method: 'POST',
@@ -257,7 +257,7 @@ class CloudinaryMigrationService {
    */
   private async updateImageRecord(imageId: string, cloudinaryResult: CloudinaryUploadResult): Promise<void> {
     const { error } = await this.supabase
-      .from('phone_images')
+      .from('product_images')
       .update({
         image_url: cloudinaryResult.secure_url,
         storage_path: '', // Empty for Cloudinary images
@@ -284,7 +284,7 @@ class CloudinaryMigrationService {
     success: number;
     failed: number;
     skipped: number;
-    errors: Array<{ image: PhoneImage; error: string }>;
+    errors: Array<{ image: ProductImage; error: string }>;
   }): void {
     console.log('\n' + '='.repeat(50));
     console.log('📊 MIGRATION SUMMARY');
@@ -322,7 +322,7 @@ class CloudinaryMigrationService {
     try {
       // Fetch all images with non-empty storage_path (legacy Supabase images)
       const { data: images, error } = await this.supabase
-        .from('phone_images')
+        .from('product_images')
         .select('storage_path')
         .not('storage_path', 'is', null)
         .not('storage_path', 'eq', '');

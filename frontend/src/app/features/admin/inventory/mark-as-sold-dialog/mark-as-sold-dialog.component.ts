@@ -1,4 +1,4 @@
-import { Component, inject, signal, input, output, computed, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, signal, input, output, computed, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
@@ -18,7 +18,7 @@ import { CustomerService } from '../../../../core/services/customer.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
-import { Phone } from '../../../../models/phone.model';
+import { Product } from '../../../../models/product.model';
 import { CustomerWithStats } from '../../../../models/customer.model';
 import { CustomerFormDialogComponent } from '../../customers/customer-form-dialog.component';
 
@@ -49,13 +49,15 @@ import { CustomerFormDialogComponent } from '../../customers/customer-form-dialo
   templateUrl: './mark-as-sold-dialog.component.html'
 })
 export class MarkAsSoldDialogComponent implements OnChanges {
-  private saleService = inject(SaleService);
-  private customerService = inject(CustomerService);
-  private sanitizer = inject(InputSanitizationService);
-  private toastService = inject(ToastService);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private saleService: SaleService,
+    private customerService: CustomerService,
+    private sanitizer: InputSanitizationService,
+    private toastService: ToastService,
+    private focusService: FocusManagementService
+  ) { }
 
-  phone = input<Phone | null>(null);
+  product = input<Product | null>(null);
   visible = input<boolean>(false);
   visibleChange = output<boolean>();
   saleSaved = output<void>();
@@ -77,12 +79,12 @@ export class MarkAsSoldDialogComponent implements OnChanges {
   private customerLookupTimeout: ReturnType<typeof setTimeout> | null = null;
 
   dialogHeader = computed(() => {
-    const p = this.phone();
+    const p = this.product();
     return p ? `Mark as Sold - ${p.brandName} ${p.model}` : 'Mark as Sold';
   });
 
   getEstimatedProfit(): number {
-    const p = this.phone();
+    const p = this.product();
     if (!p || this.salePrice === null) return 0;
     return this.salePrice - p.costPrice;
   }
@@ -107,8 +109,8 @@ export class MarkAsSoldDialogComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['phone'] || changes['visible']) {
-      const p = this.phone();
+    if (changes['product'] || changes['visible']) {
+      const p = this.product();
       const v = this.visible();
       if (v && p) {
         this.resetForm(p);
@@ -212,7 +214,7 @@ export class MarkAsSoldDialogComponent implements OnChanges {
   }
 
   async onConfirm(): Promise<void> {
-    const p = this.phone();
+    const p = this.product();
     if (!p || !this.isFormValid()) return;
 
     this.saving.set(true);
@@ -221,7 +223,7 @@ export class MarkAsSoldDialogComponent implements OnChanges {
       const saleDateFormatted = this.formatDate(this.saleDate!);
 
       await this.saleService.markAsSold({
-        phoneId: p.id,
+        productId: p.id,
         salePrice: this.salePrice!,
         saleDate: saleDateFormatted,
         buyerName: this.sanitizer.sanitizeOrNull(this.buyerName),
@@ -235,15 +237,15 @@ export class MarkAsSoldDialogComponent implements OnChanges {
       this.visibleChange.emit(false);
       this.saleSaved.emit();
     } catch (error) {
-      this.toastService.error('Error', 'Failed to mark phone as sold');
+      this.toastService.error('Error', 'Failed to mark product as sold');
       console.error('Failed to mark as sold:', error);
     } finally {
       this.saving.set(false);
     }
   }
 
-  private resetForm(phone: Phone): void {
-    this.salePrice = phone.sellingPrice;
+  private resetForm(product: Product): void {
+    this.salePrice = product.sellingPrice;
     this.saleDate = new Date();
     this.buyerName = '';
     this.buyerPhone = '';

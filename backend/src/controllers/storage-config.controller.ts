@@ -10,8 +10,8 @@ import { StorageBucketStatusDto } from '../dto/storage-config.dto';
 export class StorageConfigController {
   constructor(private readonly storageConfigService: StorageConfigService) {}
 
-  async getPhoneImagesBucketStatus(): Promise<StorageBucketStatusDto> {
-    return this.storageConfigService.getPhoneImagesBucketStatus();
+  async getProductImagesBucketStatus(): Promise<StorageBucketStatusDto> {
+    return this.storageConfigService.getProductImagesBucketStatus();
   }
 
   async getStorageConstants(): Promise<{
@@ -26,7 +26,7 @@ export class StorageConfigController {
       maxFileSizeBytes: this.storageConfigService.getMaxFileSizeBytes(),
       maxFileSizeMB: this.storageConfigService.getMaxFileSizeBytes() / (1024 * 1024),
       allowedMimeTypes: this.storageConfigService.getAllowedMimeTypes(),
-      pathStructure: 'phone-images/{phone_id}/{filename}'
+      pathStructure: 'product-images/{product_id}/{filename}'
     };
   }
 }

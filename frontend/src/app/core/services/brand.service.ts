@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Brand, CreateBrandRequest, UpdateBrandRequest } from '../../models/brand.model';
 
@@ -6,7 +6,7 @@ import { Brand, CreateBrandRequest, UpdateBrandRequest } from '../../models/bran
   providedIn: 'root'
 })
 export class BrandService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getBrands(): Promise<Brand[]> {
     const { data, error } = await this.supabase
@@ -124,12 +124,12 @@ export class BrandService {
 
   async deleteBrand(id: string): Promise<void> {
     const { count } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('*', { count: 'exact', head: true })
       .eq('brand_id', id);
 
     if (count && count > 0) {
-      throw new Error(`Cannot delete brand: ${count} phone(s) are using this brand`);
+      throw new Error(`Cannot delete brand: ${count} product(s) are using this brand`);
     }
 
     const { error } = await this.supabase

@@ -1,6 +1,6 @@
 import { LocationInventoryService } from '../services/location-inventory.service';
 import {
-  AssignPhoneToLocationDto,
+  AssignProductToLocationDto,
   UpdateLocationInventoryDto,
   LocationInventoryResponseDto,
   LocationInventoryListResponseDto,
@@ -28,51 +28,51 @@ export class LocationInventoryController {
     return this.locationInventoryService.findByLocation(locationId, filter);
   }
 
-  async findByPhone(phoneId: string): Promise<LocationInventoryResponseDto[]> {
-    if (!phoneId) {
-      throw new Error('Phone ID is required');
+  async findByProduct(productId: string): Promise<LocationInventoryResponseDto[]> {
+    if (!productId) {
+      throw new Error('Product ID is required');
     }
-    return this.locationInventoryService.findByPhone(phoneId);
+    return this.locationInventoryService.findByProduct(productId);
   }
 
-  async getQuantityAtLocation(phoneId: string, locationId: string): Promise<number> {
-    if (!phoneId) {
-      throw new Error('Phone ID is required');
+  async getQuantityAtLocation(productId: string, locationId: string): Promise<number> {
+    if (!productId) {
+      throw new Error('Product ID is required');
     }
     if (!locationId) {
       throw new Error('Location ID is required');
     }
-    return this.locationInventoryService.getQuantityAtLocation(phoneId, locationId);
+    return this.locationInventoryService.getQuantityAtLocation(productId, locationId);
   }
 
-  async assignPhoneToLocation(dto: AssignPhoneToLocationDto): Promise<LocationInventoryResponseDto> {
+  async assignProductToLocation(dto: AssignProductToLocationDto): Promise<LocationInventoryResponseDto> {
     this.validateAssignDto(dto);
-    return this.locationInventoryService.assignPhoneToLocation(dto);
+    return this.locationInventoryService.assignProductToLocation(dto);
   }
 
   async updateInventory(
-    phoneId: string,
+    productId: string,
     locationId: string,
     dto: UpdateLocationInventoryDto
   ): Promise<LocationInventoryResponseDto> {
-    if (!phoneId) {
-      throw new Error('Phone ID is required');
+    if (!productId) {
+      throw new Error('Product ID is required');
     }
     if (!locationId) {
       throw new Error('Location ID is required');
     }
 
     this.validateUpdateDto(dto);
-    return this.locationInventoryService.updateInventory(phoneId, locationId, dto);
+    return this.locationInventoryService.updateInventory(productId, locationId, dto);
   }
 
   async adjustQuantity(
-    phoneId: string,
+    productId: string,
     locationId: string,
     quantityChange: number
   ): Promise<LocationInventoryResponseDto> {
-    if (!phoneId) {
-      throw new Error('Phone ID is required');
+    if (!productId) {
+      throw new Error('Product ID is required');
     }
     if (!locationId) {
       throw new Error('Location ID is required');
@@ -81,12 +81,12 @@ export class LocationInventoryController {
       throw new Error('Quantity change must be a number');
     }
 
-    return this.locationInventoryService.adjustQuantity(phoneId, locationId, quantityChange);
+    return this.locationInventoryService.adjustQuantity(productId, locationId, quantityChange);
   }
 
-  async deductStock(phoneId: string, locationId: string, quantity: number = 1): Promise<void> {
-    if (!phoneId) {
-      throw new Error('Phone ID is required');
+  async deductStock(productId: string, locationId: string, quantity: number = 1): Promise<void> {
+    if (!productId) {
+      throw new Error('Product ID is required');
     }
     if (!locationId) {
       throw new Error('Location ID is required');
@@ -95,7 +95,7 @@ export class LocationInventoryController {
       throw new Error('Quantity must be positive');
     }
 
-    return this.locationInventoryService.deductStock(phoneId, locationId, quantity);
+    return this.locationInventoryService.deductStock(productId, locationId, quantity);
   }
 
   async getLocationStats(locationId: string): Promise<LocationInventoryStatsDto> {
@@ -109,9 +109,9 @@ export class LocationInventoryController {
     return this.locationInventoryService.getLowStockItems(locationId);
   }
 
-  private validateAssignDto(dto: AssignPhoneToLocationDto): void {
-    if (!dto.phoneId) {
-      throw new Error('Phone ID is required');
+  private validateAssignDto(dto: AssignProductToLocationDto): void {
+    if (!dto.productId) {
+      throw new Error('Product ID is required');
     }
     if (!dto.locationId) {
       throw new Error('Location ID is required');

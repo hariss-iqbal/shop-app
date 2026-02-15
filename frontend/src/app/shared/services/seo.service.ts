@@ -1,7 +1,8 @@
-import { Injectable, inject } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { DOCUMENT } from '@angular/common';
 import { environment } from '../../../environments/environment';
+import { ShopDetailsService } from '../../core/services/shop-details.service';
 
 export interface SeoConfig {
   title: string;
@@ -13,12 +14,18 @@ export interface SeoConfig {
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
-  private title = inject(Title);
-  private meta = inject(Meta);
-  private document = inject(DOCUMENT);
+  constructor(
+    private title: Title,
+    private meta: Meta,
+    @Inject(DOCUMENT) private document: Document,
+    private shopDetailsService: ShopDetailsService
+  ) { }
 
-  private readonly siteName = environment.siteName;
   private readonly siteUrl = environment.siteUrl;
+
+  private get siteName(): string {
+    return this.shopDetailsService.shopName() || 'Phone Shop';
+  }
 
   updateMetaTags(config: SeoConfig): void {
     const fullTitle = `${config.title} | ${this.siteName}`;

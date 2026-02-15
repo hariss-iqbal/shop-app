@@ -1,4 +1,4 @@
-import { Component, inject, input, output, computed, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, input, output, computed, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
@@ -70,12 +70,14 @@ export interface ResendReceiptEvent {
   templateUrl: './resend-receipt-dialog.component.html'
 })
 export class ResendReceiptDialogComponent implements OnChanges {
-  private receiptStorageService = inject(ReceiptStorageService);
-  private receiptSendLogService = inject(ReceiptSendLogService);
-  private emailReceiptService = inject(EmailReceiptService);
-  private whatsAppService = inject(WhatsAppService);
-  private toastService = inject(ToastService);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private receiptStorageService: ReceiptStorageService,
+    private receiptSendLogService: ReceiptSendLogService,
+    private emailReceiptService: EmailReceiptService,
+    private whatsAppService: WhatsAppService,
+    private toastService: ToastService,
+    private focusService: FocusManagementService
+  ) { }
 
   receipt = input<StoredReceipt | null>(null);
   visible = input<boolean>(false);

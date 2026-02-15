@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   SalesDashboardFilter,
@@ -14,7 +14,7 @@ import {
 
 interface SaleRecord {
   id: string;
-  phone_id: string;
+  product_id: string;
   sale_date: string;
   sale_price: number;
   cost_price: number;
@@ -31,7 +31,7 @@ interface SaleRecord {
   providedIn: 'root'
 })
 export class SalesDashboardService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getKpis(filter?: SalesDashboardFilter): Promise<SalesDashboardKpi> {
     const [totalRevenue, totalProfit, transactionCount] = await Promise.all([
@@ -93,10 +93,10 @@ export class SalesDashboardService {
   }
 
   async getTopSellingProducts(filter?: SalesDashboardFilter, limit: number = 10): Promise<TopSellingProduct[]> {
-    const sales = await this.getSalesWithPhoneData(filter);
+    const sales = await this.getSalesWithProductData(filter);
 
     const productMap = new Map<string, {
-      phoneId: string;
+      productId: string;
       brandName: string;
       model: string;
       unitsSold: number;
@@ -105,7 +105,7 @@ export class SalesDashboardService {
     }>();
 
     sales.forEach(sale => {
-      const phoneId = sale.phone_id;
+      const productId = sale.product_id;
       const brandName = sale.brandName;
       const model = sale.model;
       const profit = (sale.sale_price || 0) - (sale.cost_price || 0);
@@ -119,7 +119,7 @@ export class SalesDashboardService {
         entry.totalProfit += profit;
       } else {
         productMap.set(key, {
-          phoneId,
+          productId,
           brandName,
           model,
           unitsSold: 1,
@@ -139,7 +139,7 @@ export class SalesDashboardService {
   }
 
   async getSalesByBrand(filter?: SalesDashboardFilter): Promise<SalesByBrand[]> {
-    const sales = await this.getSalesWithPhoneData(filter);
+    const sales = await this.getSalesWithProductData(filter);
 
     const totalRevenue = sales.reduce((sum, s) => sum + (s.sale_price || 0), 0);
 
@@ -304,7 +304,7 @@ export class SalesDashboardService {
     endDate?: string;
     brandId?: string;
   }): Promise<ProductSalesReportResponse> {
-    let sales = await this.getSalesWithPhoneData({
+    let sales = await this.getSalesWithProductData({
       startDate: options?.startDate,
       endDate: options?.endDate
     });
@@ -314,7 +314,7 @@ export class SalesDashboardService {
     }
 
     const reportData = sales.map(sale => ({
-      phoneId: sale.phone_id,
+      productId: sale.product_id,
       brandName: sale.brandName,
       model: sale.model,
       condition: sale.condition,
@@ -345,7 +345,7 @@ export class SalesDashboardService {
   private async getSalesData(filter?: SalesDashboardFilter): Promise<SaleRecord[]> {
     let query = this.supabase
       .from('sales')
-      .select('id, phone_id, sale_date, sale_price, cost_price, buyer_name, created_by');
+      .select('id, product_id, sale_date, sale_price, cost_price, buyer_name, created_by');
 
     if (filter?.startDate) {
       query = query.gte('sale_date', filter.startDate);
@@ -362,8 +362,8 @@ export class SalesDashboardService {
     return data || [];
   }
 
-  private async getSalesWithPhoneData(filter?: SalesDashboardFilter): Promise<Array<{
-    phone_id: string;
+  private async getSalesWithProductData(filter?: SalesDashboardFilter): Promise<Array<{
+    product_id: string;
     sale_date: string;
     sale_price: number;
     cost_price: number;
@@ -377,13 +377,13 @@ export class SalesDashboardService {
       .from('sales')
       .select(`
         id,
-        phone_id,
+        product_id,
         sale_date,
         sale_price,
         cost_price,
         buyer_name,
         created_by,
-        phone:phones(
+        product:products(
           id,
           model,
           condition,
@@ -405,19 +405,19 @@ export class SalesDashboardService {
     }
 
     return (data || []).map((sale: Record<string, unknown>) => {
-      const phoneData = sale['phone'] as Record<string, unknown> | null;
-      const brandData = phoneData?.['brand'] as Record<string, unknown> | null;
+      const productData = sale['product'] as Record<string, unknown> | null;
+      const brandData = productData?.['brand'] as Record<string, unknown> | null;
 
       return {
-        phone_id: sale['phone_id'] as string,
+        product_id: sale['product_id'] as string,
         sale_date: sale['sale_date'] as string,
         sale_price: sale['sale_price'] as number,
         cost_price: sale['cost_price'] as number,
         buyer_name: sale['buyer_name'] as string | null,
         brandId: brandData?.['id'] as string || 'unknown',
         brandName: brandData?.['name'] as string || 'Unknown',
-        model: phoneData?.['model'] as string || 'Unknown',
-        condition: phoneData?.['condition'] as string || 'Unknown'
+        model: productData?.['model'] as string || 'Unknown',
+        condition: productData?.['condition'] as string || 'Unknown'
       };
     });
   }

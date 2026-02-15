@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { DiscountType, CouponStatus } from '../../enums';
 import {
@@ -27,7 +27,7 @@ import {
   providedIn: 'root'
 })
 export class CouponService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   // =====================================================
   // Coupon CRUD

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   StockAlertConfig,
@@ -6,13 +6,13 @@ import {
   StockAlert,
   StockAlertsResponse
 } from '../../models/stock-alert-config.model';
-import { PhoneStatus } from '../../enums';
+import { ProductStatus } from '../../enums';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StockAlertService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getConfig(): Promise<StockAlertConfig> {
     const { data, error } = await this.supabase
@@ -65,9 +65,9 @@ export class StockAlertService {
     const alerts: StockAlert[] = [];
 
     const { count: totalStock, error: stockError } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('*', { count: 'exact', head: true })
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (stockError) {
       throw new Error(stockError.message);
@@ -96,9 +96,9 @@ export class StockAlertService {
 
       for (const brand of brands || []) {
         const { count: brandStock, error: brandError } = await this.supabase
-          .from('phones')
+          .from('products')
           .select('*', { count: 'exact', head: true })
-          .eq('status', PhoneStatus.AVAILABLE)
+          .eq('status', ProductStatus.AVAILABLE)
           .eq('brand_id', brand.id);
 
         if (brandError) {

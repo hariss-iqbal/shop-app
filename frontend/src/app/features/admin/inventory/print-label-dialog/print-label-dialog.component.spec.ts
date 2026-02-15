@@ -3,9 +3,10 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Component, signal } from '@angular/core';
 
 import { PrintLabelDialogComponent } from './print-label-dialog.component';
-import { Phone } from '../../../../models/phone.model';
-import { PhoneCondition } from '../../../../enums/phone-condition.enum';
-import { PhoneStatus } from '../../../../enums/phone-status.enum';
+import { Product } from '../../../../models/product.model';
+import { ProductCondition } from '../../../../enums/product-condition.enum';
+import { ProductStatus } from '../../../../enums/product-status.enum';
+import { ProductType } from '../../../../enums/product-type.enum';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 
 @Component({
@@ -19,7 +20,7 @@ import { FocusManagementService } from '../../../../shared/services/focus-manage
   imports: [PrintLabelDialogComponent]
 })
 class TestHostComponent {
-  phone = signal<Phone | null>(null);
+  phone = signal<Product | null>(null);
   visible = signal(false);
 }
 
@@ -29,23 +30,23 @@ describe('PrintLabelDialogComponent', () => {
   let hostComponent: TestHostComponent;
   let hostFixture: ComponentFixture<TestHostComponent>;
 
-  const mockPhone: Phone = {
+  const mockProduct: Product = {
     id: 'test-phone-123',
     brandId: 'brand-1',
     brandName: 'Apple',
     brandLogoUrl: null,
-    model: 'iPhone 14 Pro',
+    model: 'iProduct 14 Pro',
     description: 'Test phone',
     storageGb: 256,
     ramGb: 6,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: '123456789012345',
     costPrice: 800,
     sellingPrice: 999,
     profitMargin: 24.9,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: '2024-01-15',
     supplierId: null,
     supplierName: null,
@@ -101,10 +102,10 @@ describe('PrintLabelDialogComponent', () => {
     });
 
     it('should display phone info in header when phone is provided', () => {
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
 
-      expect(component.dialogHeader()).toBe('Print Label - Apple iPhone 14 Pro');
+      expect(component.dialogHeader()).toBe('Print Label - Apple iProduct 14 Pro');
     });
   });
 
@@ -117,27 +118,27 @@ describe('PrintLabelDialogComponent', () => {
     });
 
     it('should generate QR code URL with phone detail link', () => {
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
 
       const qrUrl = component.qrCodeUrl();
       expect(qrUrl).toContain('api.qrserver.com');
       expect(qrUrl).toContain('size=200x200');
-      expect(qrUrl).toContain(encodeURIComponent(`/phone/${mockPhone.id}`));
+      expect(qrUrl).toContain(encodeURIComponent(`/phone/${mockProduct.id}`));
     });
   });
 
   describe('Condition Label', () => {
     it('should return correct label for NEW condition', () => {
-      expect(component.getConditionLabel(PhoneCondition.NEW)).toBe('New');
+      expect(component.getConditionLabel(ProductCondition.NEW)).toBe('New');
     });
 
     it('should return correct label for USED condition', () => {
-      expect(component.getConditionLabel(PhoneCondition.USED)).toBe('Used');
+      expect(component.getConditionLabel(ProductCondition.USED)).toBe('Used');
     });
 
     it('should return correct label for REFURBISHED condition', () => {
-      expect(component.getConditionLabel(PhoneCondition.REFURBISHED)).toBe('Refurbished');
+      expect(component.getConditionLabel(ProductCondition.REFURBISHED)).toBe('Refurbished');
     });
   });
 
@@ -216,7 +217,7 @@ describe('PrintLabelDialogComponent', () => {
 
     it('should open print window with correct dimensions', () => {
       spyOn(window, 'open').and.returnValue(mockPrintWindow as unknown as Window);
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
 
       component.onPrint();
@@ -225,21 +226,21 @@ describe('PrintLabelDialogComponent', () => {
 
     it('should write phone details to print window', () => {
       spyOn(window, 'open').and.returnValue(mockPrintWindow as unknown as Window);
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
 
       component.onPrint();
 
       const writtenHtml = mockPrintWindow.document.write.calls.mostRecent().args[0] as string;
       expect(writtenHtml).toContain('Apple');
-      expect(writtenHtml).toContain('iPhone 14 Pro');
+      expect(writtenHtml).toContain('iProduct 14 Pro');
       expect(writtenHtml).toContain('256 GB');
       expect(writtenHtml).toContain('$999');
     });
 
     it('should include QR code when showQrCode is true', () => {
       spyOn(window, 'open').and.returnValue(mockPrintWindow as unknown as Window);
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
       component.showQrCode = true;
 
@@ -265,7 +266,7 @@ describe('PrintLabelDialogComponent', () => {
 
     it('should close print window document after writing', () => {
       spyOn(window, 'open').and.returnValue(mockPrintWindow as unknown as Window);
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
 
       component.onPrint();
@@ -274,7 +275,7 @@ describe('PrintLabelDialogComponent', () => {
 
     it('should handle case when window.open returns null', () => {
       spyOn(window, 'open').and.returnValue(null);
-      fixture.componentRef.setInput('phone', mockPhone);
+      fixture.componentRef.setInput('phone', mockProduct);
       fixture.detectChanges();
 
       expect(() => component.onPrint()).not.toThrow();
@@ -283,8 +284,8 @@ describe('PrintLabelDialogComponent', () => {
 
   describe('HTML Escaping', () => {
     it('should escape HTML characters in phone details', () => {
-      const phoneWithSpecialChars: Phone = {
-        ...mockPhone,
+      const phoneWithSpecialChars: Product = {
+        ...mockProduct,
         brandName: 'Test <b>Bold</b>',
         model: 'Model & "Special"'
       };
@@ -311,8 +312,8 @@ describe('PrintLabelDialogComponent', () => {
 
   describe('Label Content Display', () => {
     it('should not display storage when storageGb is null', () => {
-      const phoneWithoutStorage: Phone = {
-        ...mockPhone,
+      const phoneWithoutStorage: Product = {
+        ...mockProduct,
         storageGb: null
       };
 
@@ -338,7 +339,7 @@ describe('PrintLabelDialogComponent', () => {
 
   describe('Host Component Integration', () => {
     it('should update dialog visibility through host component', () => {
-      hostComponent.phone.set(mockPhone);
+      hostComponent.phone.set(mockProduct);
       hostComponent.visible.set(true);
       hostFixture.detectChanges();
 
@@ -350,7 +351,7 @@ describe('PrintLabelDialogComponent', () => {
     });
 
     it('should close dialog when visibleChange emits false', () => {
-      hostComponent.phone.set(mockPhone);
+      hostComponent.phone.set(mockProduct);
       hostComponent.visible.set(true);
       hostFixture.detectChanges();
 

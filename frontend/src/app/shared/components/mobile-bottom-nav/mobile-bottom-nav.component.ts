@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -38,10 +38,12 @@ interface NavItem {
   styleUrls: ['./mobile-bottom-nav.component.scss']
 })
 export class MobileBottomNavComponent {
-  private viewportService = inject(ViewportService);
-  private authService = inject(SupabaseAuthService);
-  private messageCountService = inject(MessageCountService);
-  private router = inject(Router);
+  constructor(
+    private viewportService: ViewportService,
+    private authService: SupabaseAuthService,
+    private messageCountService: MessageCountService,
+    private router: Router
+  ) { }
 
   private readonly allNavItems: NavItem[] = [
     {

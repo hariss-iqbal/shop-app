@@ -1,12 +1,12 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { OfflineStorageService } from './offline-storage.service';
 import { SyncQueueService } from './sync-queue.service';
 import { NetworkStatusService } from './network-status.service';
 import { SaleService } from './sale.service';
-import { PhoneService } from './phone.service';
+import { ProductService } from './product.service';
 import {
   OfflineSalePayload,
-  CachedPhone,
+  CachedProduct,
   SyncQueueItem
 } from '../../models/offline-sync.model';
 import {
@@ -17,7 +17,7 @@ import {
   BatchSaleWithInventoryDeductionResponse,
   CartItem
 } from '../../models/sale.model';
-import { PhoneStatus } from '../../enums';
+import { ProductStatus } from '../../enums';
 
 /**
  * Offline Sale Response - mimics online response for offline operations
@@ -50,17 +50,19 @@ export interface OfflineBatchSaleResponse {
  * Feature: F-020 Offline Mode and Sync
  *
  * Handles sales operations when offline. Queues transactions locally
- * and provides cached phone data for offline sale processing.
+ * and provides cached product data for offline sale processing.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class OfflineSaleService {
-  private readonly offlineStorage = inject(OfflineStorageService);
-  private readonly syncQueue = inject(SyncQueueService);
-  private readonly networkStatus = inject(NetworkStatusService);
-  private readonly saleService = inject(SaleService);
-  private readonly phoneService = inject(PhoneService);
+  constructor(
+    private readonly offlineStorage: OfflineStorageService,
+    private readonly syncQueue: SyncQueueService,
+    private readonly networkStatus: NetworkStatusService,
+    private readonly saleService: SaleService,
+    private readonly productService: ProductService
+  ) { }
 
   // Cache refresh state
   private readonly _isRefreshingCache = signal(false);
@@ -76,7 +78,7 @@ export class OfflineSaleService {
   /**
    * Process a sale - online or offline depending on network status
    */
-  async processSale(request: MarkAsSoldRequest, phoneDetails: {
+  async processSale(request: MarkAsSoldRequest, productDetails: {
     brandName: string;
     model: string;
     storageGb: number | null;
@@ -94,7 +96,7 @@ export class OfflineSaleService {
     }
 
     // Process offline
-    return this.processOfflineSale(request, phoneDetails);
+    return this.processOfflineSale(request, productDetails);
   }
 
   /**
@@ -102,7 +104,7 @@ export class OfflineSaleService {
    */
   async processOfflineSale(
     request: MarkAsSoldRequest,
-    phoneDetails: {
+    productDetails: {
       brandName: string;
       model: string;
       storageGb: number | null;
@@ -118,9 +120,9 @@ export class OfflineSaleService {
     const localReceiptNumber = this.offlineStorage.generateLocalReceiptNumber();
 
     // Calculate tax amounts
-    const taxRate = phoneDetails.taxRate;
-    const isTaxInclusive = phoneDetails.isTaxInclusive;
-    const isTaxExempt = phoneDetails.isTaxExempt;
+    const taxRate = productDetails.taxRate;
+    const isTaxInclusive = productDetails.isTaxInclusive;
+    const isTaxExempt = productDetails.isTaxExempt;
 
     let basePrice: number;
     let taxAmount: number;
@@ -137,22 +139,22 @@ export class OfflineSaleService {
     }
 
     const payload: OfflineSalePayload = {
-      phoneId: request.phoneId,
+      productId: request.productId,
       saleDate: request.saleDate,
       salePrice: request.salePrice,
-      costPrice: phoneDetails.costPrice,
+      costPrice: productDetails.costPrice,
       buyerName: request.buyerName || null,
       buyerPhone: request.buyerPhone || null,
       buyerEmail: request.buyerEmail || null,
       notes: request.notes || null,
       payments: request.payments,
-      phoneDetails: {
-        brandName: phoneDetails.brandName,
-        model: phoneDetails.model,
-        storageGb: phoneDetails.storageGb,
-        color: phoneDetails.color,
-        condition: phoneDetails.condition,
-        imei: phoneDetails.imei
+      productDetails: {
+        brandName: productDetails.brandName,
+        model: productDetails.model,
+        storageGb: productDetails.storageGb,
+        color: productDetails.color,
+        condition: productDetails.condition,
+        imei: productDetails.imei
       },
       localReceiptNumber,
       taxRate,
@@ -163,8 +165,8 @@ export class OfflineSaleService {
 
     const queueItem = await this.syncQueue.queueSale(payload);
 
-    // Mark phone as sold in local cache
-    await this.offlineStorage.updateCachedPhoneStatus(request.phoneId, 'sold');
+    // Mark product as sold in local cache
+    await this.offlineStorage.updateCachedProductStatus(request.productId, 'sold');
 
     return {
       success: true,
@@ -202,11 +204,11 @@ export class OfflineSaleService {
     const localIds: string[] = [];
 
     for (const item of request.items) {
-      const cartItem = cartItems.find(c => c.phoneId === item.phoneId);
+      const cartItem = cartItems.find(c => c.productId === item.productId);
       if (!cartItem) continue;
 
       const payload: OfflineSalePayload = {
-        phoneId: item.phoneId,
+        productId: item.productId,
         saleDate: request.saleDate,
         salePrice: item.salePrice,
         costPrice: cartItem.costPrice,
@@ -215,7 +217,7 @@ export class OfflineSaleService {
         buyerEmail: request.customerInfo.email || null,
         notes: request.notes,
         payments: request.payments,
-        phoneDetails: {
+        productDetails: {
           brandName: cartItem.brandName,
           model: cartItem.model,
           storageGb: cartItem.storageGb,
@@ -234,8 +236,8 @@ export class OfflineSaleService {
       queueItems.push(queueItem);
       localIds.push(queueItem.localTempId);
 
-      // Mark phone as sold in local cache
-      await this.offlineStorage.updateCachedPhoneStatus(item.phoneId, 'sold');
+      // Mark product as sold in local cache
+      await this.offlineStorage.updateCachedProductStatus(item.productId, 'sold');
     }
 
     return {
@@ -251,28 +253,28 @@ export class OfflineSaleService {
   }
 
   /**
-   * Get cached phones for offline sale
+   * Get cached products for offline sale
    */
-  async getAvailablePhones(): Promise<CachedPhone[]> {
+  async getAvailableProducts(): Promise<CachedProduct[]> {
     if (this.networkStatus.isOnline()) {
       // Refresh cache if online
-      await this.refreshPhoneCache();
+      await this.refreshProductCache();
     }
 
-    return this.offlineStorage.getAvailableCachedPhones();
+    return this.offlineStorage.getAvailableCachedProducts();
   }
 
   /**
-   * Get a specific cached phone
+   * Get a specific cached product
    */
-  async getCachedPhone(id: string): Promise<CachedPhone | null> {
-    return this.offlineStorage.getCachedPhone(id);
+  async getCachedProduct(id: string): Promise<CachedProduct | null> {
+    return this.offlineStorage.getCachedProduct(id);
   }
 
   /**
-   * Refresh the phone cache from server
+   * Refresh the product cache from server
    */
-  async refreshPhoneCache(): Promise<void> {
+  async refreshProductCache(): Promise<void> {
     if (!this.networkStatus.isOnline()) {
       return;
     }
@@ -281,76 +283,76 @@ export class OfflineSaleService {
     this._cacheError.set(null);
 
     try {
-      // Fetch available phones from server
-      const response = await this.phoneService.getPhones(
+      // Fetch available products from server
+      const response = await this.productService.getProducts(
         { first: 0, rows: 1000 },
-        { status: PhoneStatus.AVAILABLE }
+        { status: ProductStatus.AVAILABLE }
       );
 
-      const cachedPhones: CachedPhone[] = response.data.map(phone => ({
-        id: phone.id,
-        brandId: phone.brandId,
-        brandName: phone.brandName,
-        model: phone.model,
-        storageGb: phone.storageGb,
-        ramGb: phone.ramGb,
-        color: phone.color,
-        condition: phone.condition,
-        imei: phone.imei,
-        costPrice: phone.costPrice,
-        sellingPrice: phone.sellingPrice,
-        status: phone.status,
-        taxRate: phone.taxRate,
-        isTaxInclusive: phone.isTaxInclusive,
-        isTaxExempt: phone.isTaxExempt,
-        primaryImageUrl: phone.primaryImageUrl || null,
+      const cachedProducts: CachedProduct[] = response.data.map(product => ({
+        id: product.id,
+        brandId: product.brandId,
+        brandName: product.brandName,
+        model: product.model,
+        storageGb: product.storageGb,
+        ramGb: product.ramGb,
+        color: product.color,
+        condition: product.condition,
+        imei: product.imei,
+        costPrice: product.costPrice,
+        sellingPrice: product.sellingPrice,
+        status: product.status,
+        taxRate: product.taxRate,
+        isTaxInclusive: product.isTaxInclusive,
+        isTaxExempt: product.isTaxExempt,
+        primaryImageUrl: product.primaryImageUrl || null,
         cachedAt: new Date().toISOString()
       }));
 
-      await this.offlineStorage.cachePhones(cachedPhones);
+      await this.offlineStorage.cacheProducts(cachedProducts);
       this._lastCacheRefresh.set(new Date().toISOString());
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh phone cache';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh product cache';
       this._cacheError.set(errorMessage);
-      console.error('Failed to refresh phone cache:', error);
+      console.error('Failed to refresh product cache:', error);
     } finally {
       this._isRefreshingCache.set(false);
     }
   }
 
   /**
-   * Build a cart item from cached phone data
+   * Build a cart item from cached product data
    */
-  buildCartItemFromCache(phone: CachedPhone): CartItem {
+  buildCartItemFromCache(product: CachedProduct): CartItem {
     let basePrice: number;
     let taxAmount: number;
 
-    if (phone.isTaxExempt) {
-      basePrice = phone.sellingPrice;
+    if (product.isTaxExempt) {
+      basePrice = product.sellingPrice;
       taxAmount = 0;
-    } else if (phone.isTaxInclusive) {
-      basePrice = phone.sellingPrice / (1 + phone.taxRate / 100);
-      taxAmount = phone.sellingPrice - basePrice;
+    } else if (product.isTaxInclusive) {
+      basePrice = product.sellingPrice / (1 + product.taxRate / 100);
+      taxAmount = product.sellingPrice - basePrice;
     } else {
-      basePrice = phone.sellingPrice;
-      taxAmount = phone.sellingPrice * (phone.taxRate / 100);
+      basePrice = product.sellingPrice;
+      taxAmount = product.sellingPrice * (product.taxRate / 100);
     }
 
     return {
-      phoneId: phone.id,
-      brandName: phone.brandName,
-      model: phone.model,
-      storageGb: phone.storageGb,
-      color: phone.color,
-      condition: phone.condition,
-      imei: phone.imei,
-      costPrice: phone.costPrice,
-      sellingPrice: phone.sellingPrice,
-      salePrice: phone.sellingPrice,
-      taxRate: phone.taxRate,
-      primaryImageUrl: phone.primaryImageUrl,
-      isTaxInclusive: phone.isTaxInclusive,
-      isTaxExempt: phone.isTaxExempt,
+      productId: product.id,
+      brandName: product.brandName,
+      model: product.model,
+      storageGb: product.storageGb,
+      color: product.color,
+      condition: product.condition,
+      imei: product.imei,
+      costPrice: product.costPrice,
+      sellingPrice: product.sellingPrice,
+      salePrice: product.sellingPrice,
+      taxRate: product.taxRate,
+      primaryImageUrl: product.primaryImageUrl,
+      isTaxInclusive: product.isTaxInclusive,
+      isTaxExempt: product.isTaxExempt,
       basePrice,
       taxAmount
     };
@@ -364,9 +366,9 @@ export class OfflineSaleService {
 
     return {
       id: localId,
-      phoneId: payload.phoneId,
-      brandName: payload.phoneDetails.brandName,
-      phoneName: payload.phoneDetails.model,
+      productId: payload.productId,
+      brandName: payload.productDetails.brandName,
+      productName: payload.productDetails.model,
       saleDate: payload.saleDate,
       salePrice: payload.salePrice,
       costPrice: payload.costPrice,
@@ -393,11 +395,11 @@ export class OfflineSaleService {
   }
 
   /**
-   * Check if a phone is available (considering offline sales)
+   * Check if a product is available (considering offline sales)
    */
-  async isPhoneAvailable(phoneId: string): Promise<boolean> {
-    const cachedPhone = await this.offlineStorage.getCachedPhone(phoneId);
-    return cachedPhone?.status === 'available';
+  async isProductAvailable(productId: string): Promise<boolean> {
+    const cachedProduct = await this.offlineStorage.getCachedProduct(productId);
+    return cachedProduct?.status === 'available';
   }
 
   /**
@@ -409,10 +411,10 @@ export class OfflineSaleService {
   }
 
   /**
-   * Clear phone cache
+   * Clear product cache
    */
-  async clearPhoneCache(): Promise<void> {
-    await this.offlineStorage.clearCachedPhones();
+  async clearProductCache(): Promise<void> {
+    await this.offlineStorage.clearCachedProducts();
     this._lastCacheRefresh.set(null);
   }
 }

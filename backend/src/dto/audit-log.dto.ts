@@ -73,7 +73,7 @@ export interface AuditLogPaginationDto {
 export interface CreateSaleAuditLogDto {
   eventType: AuditEventType;
   saleId: string;
-  phoneId: string;
+  productId: string;
   amount: number;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -120,7 +120,7 @@ export interface CreatePermissionChangeAuditLogDto {
  */
 export interface CreateInventoryAuditLogDto {
   eventType: AuditEventType;
-  phoneId: string;
+  productId: string;
   previousStatus: string;
   newStatus: string;
   saleId?: string | null;
@@ -179,7 +179,7 @@ export const EVENT_TYPE_GROUPS: EventTypeGroupDto[] = [
   {
     category: 'inventory',
     label: 'Inventory',
-    eventTypes: ['inventory_deducted', 'inventory_restored', 'phone_status_changed', 'phone_created', 'phone_updated', 'phone_deleted']
+    eventTypes: ['inventory_deducted', 'inventory_restored', 'product_status_changed', 'product_created', 'product_updated', 'product_deleted']
   },
   {
     category: 'users',
@@ -217,10 +217,10 @@ export function getEventTypeLabel(eventType: AuditEventType): string {
     // Inventory
     inventory_deducted: 'Inventory Deducted',
     inventory_restored: 'Inventory Restored',
-    phone_status_changed: 'Phone Status Changed',
-    phone_created: 'Phone Created',
-    phone_updated: 'Phone Updated',
-    phone_deleted: 'Phone Deleted',
+    product_status_changed: 'Product Status Changed',
+    product_created: 'Product Created',
+    product_updated: 'Product Updated',
+    product_deleted: 'Product Deleted',
     // Users
     user_role_assigned: 'User Role Assigned',
     user_role_changed: 'User Role Changed',
@@ -258,10 +258,10 @@ export function getEventTypeSeverity(eventType: AuditEventType): 'info' | 'succe
     // Inventory - info
     inventory_deducted: 'info',
     inventory_restored: 'info',
-    phone_status_changed: 'info',
-    phone_created: 'success',
-    phone_updated: 'info',
-    phone_deleted: 'danger',
+    product_status_changed: 'info',
+    product_created: 'success',
+    product_updated: 'info',
+    product_deleted: 'danger',
     // Users - warn
     user_role_assigned: 'success',
     user_role_changed: 'warn',

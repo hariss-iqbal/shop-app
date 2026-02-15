@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -24,9 +24,9 @@ import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
 
 interface SaleForEmail {
   id: string;
-  phoneId: string;
+  productId: string;
   brandName: string;
-  phoneName: string;
+  productName: string;
   saleDate: string;
   salePrice: number;
   selected?: boolean;
@@ -57,9 +57,11 @@ interface SaleForEmail {
   templateUrl: './customer-detail-dialog.component.html'
 })
 export class CustomerDetailDialogComponent {
-  private customerService = inject(CustomerService);
-  private emailReceiptService = inject(EmailReceiptService);
-  private toastService = inject(ToastService);
+  constructor(
+    private customerService: CustomerService,
+    private emailReceiptService: EmailReceiptService,
+    private toastService: ToastService
+  ) { }
 
   @Input() visible = false;
   @Input() set customerId(value: string | null) {
@@ -97,9 +99,9 @@ export class CustomerDetailDialogComponent {
       // Initialize sales for email selection
       this.salesForEmail = data.sales.map(sale => ({
         id: sale.id,
-        phoneId: sale.phoneId,
+        productId: sale.productId,
         brandName: sale.brandName,
-        phoneName: sale.phoneName,
+        productName: sale.productName,
         saleDate: sale.saleDate,
         salePrice: sale.salePrice,
         selected: false

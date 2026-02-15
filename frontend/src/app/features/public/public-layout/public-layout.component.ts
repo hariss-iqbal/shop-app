@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, HostListener, PLATFORM_ID } from '@angular/core';
+import { Component, HostListener, Inject, PLATFORM_ID, computed, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -12,9 +12,8 @@ import { BadgeModule } from 'primeng/badge';
 import { SkipLinkComponent } from '../../../shared/components/skip-link.component';
 import { BackToTopComponent } from '../../../shared/components/back-to-top.component';
 import { ThemeService } from '../../../shared';
-import { PhoneComparisonService } from '../../../shared/services/phone-comparison.service';
+import { ProductComparisonService } from '../../../shared/services/product-comparison.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
-import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-public-layout',
@@ -37,31 +36,32 @@ import { environment } from '../../../../environments/environment';
   styleUrls: ['./public-layout.component.scss']
 })
 export class PublicLayoutComponent {
-  private platformId = inject(PLATFORM_ID);
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private router: Router,
+    public themeService: ThemeService,
+    public comparisonService: ProductComparisonService,
+    public shopDetailsService: ShopDetailsService
+  ) { }
   private isBrowser = isPlatformBrowser(this.platformId);
-  private router = inject(Router);
-
-  themeService = inject(ThemeService);
-  comparisonService = inject(PhoneComparisonService);
-  shopDetailsService = inject(ShopDetailsService);
 
   currentYear = new Date().getFullYear();
   mobileMenuOpen = signal(false);
   mobileSearchOpen = signal(false);
   searchQuery = '';
 
-  shopName = computed(() => this.shopDetailsService.cachedDetails()?.shopName ?? environment.businessInfo.name);
-  phoneDisplay = computed(() => this.shopDetailsService.cachedDetails()?.phoneDisplay ?? environment.businessInfo.phoneDisplay);
-  phoneLink = computed(() => this.shopDetailsService.cachedDetails()?.phoneLink ?? environment.businessInfo.phoneLink);
-  email = computed(() => this.shopDetailsService.cachedDetails()?.email ?? environment.businessInfo.email);
-  whatsappNumber = computed(() => this.shopDetailsService.cachedDetails()?.whatsappNumber ?? environment.whatsapp.phoneNumber);
-  address = computed(() => this.shopDetailsService.cachedDetails()?.address ?? environment.businessInfo.address);
-  weekdayHours = computed(() => this.shopDetailsService.cachedDetails()?.weekdayHours ?? environment.businessInfo.hours.weekdays);
-  facebookUrl = computed(() => this.shopDetailsService.cachedDetails()?.facebookUrl ?? '#');
-  instagramUrl = computed(() => this.shopDetailsService.cachedDetails()?.instagramUrl ?? '#');
-  twitterUrl = computed(() => this.shopDetailsService.cachedDetails()?.twitterUrl ?? '#');
+  shopName = this.shopDetailsService.shopName;
+  phoneDisplay = this.shopDetailsService.phoneDisplay;
+  phoneLink = this.shopDetailsService.phoneLink;
+  email = this.shopDetailsService.email;
+  whatsappNumber = this.shopDetailsService.whatsappNumber;
+  address = this.shopDetailsService.address;
+  weekdayHours = this.shopDetailsService.weekdayHours;
+  facebookUrl = computed(() => this.shopDetailsService.facebookUrl() || '#');
+  instagramUrl = computed(() => this.shopDetailsService.instagramUrl() || '#');
+  twitterUrl = computed(() => this.shopDetailsService.twitterUrl() || '#');
 
-  hasEmail = computed(() => !!this.shopDetailsService.cachedDetails()?.email);
+  hasEmail = this.shopDetailsService.hasEmail;
 
   get mobileMenuVisible(): boolean {
     return this.mobileMenuOpen();
@@ -77,7 +77,7 @@ export class PublicLayoutComponent {
 
   performSearch(): void {
     if (this.searchQuery.trim()) {
-      this.router.navigate(['/catalog'], {
+      this.router.navigate(['/'], {
         queryParams: { search: this.searchQuery.trim() }
       });
       this.searchQuery = '';

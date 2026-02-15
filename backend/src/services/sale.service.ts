@@ -1,5 +1,5 @@
 import { SaleRepository } from '../repositories/sale.repository';
-import { PhoneRepository } from '../repositories/phone.repository';
+import { ProductRepository } from '../repositories/product.repository';
 import { SalePaymentRepository } from '../repositories/sale-payment.repository';
 import { SaleWithRelations } from '../entities/sale.entity';
 import { PaymentSummaryJson } from '../entities/sale-payment.entity';
@@ -30,7 +30,7 @@ import { PaymentMethod } from '../enums';
 export class SaleService {
   constructor(
     private readonly saleRepository: SaleRepository,
-    private readonly phoneRepository: PhoneRepository,
+    private readonly productRepository: ProductRepository,
     private readonly salePaymentRepository?: SalePaymentRepository
   ) {}
 
@@ -65,7 +65,7 @@ export class SaleService {
    */
   async create(dto: CreateSaleDto): Promise<SaleWithInventoryDeductionResponseDto> {
     const result = await this.saleRepository.completeSaleWithInventoryDeduction(
-      dto.phoneId,
+      dto.productId,
       dto.saleDate,
       dto.salePrice,
       dto.buyerName?.trim() || null,
@@ -78,7 +78,7 @@ export class SaleService {
     if (!result.success) {
       return {
         success: false,
-        phoneId: dto.phoneId,
+        productId: dto.productId,
         inventoryDeducted: false,
         error: result.error
       };
@@ -89,7 +89,7 @@ export class SaleService {
     return {
       success: true,
       sale: saleWithRelations ? this.toResponseDto(saleWithRelations) : undefined,
-      phoneId: result.phoneId,
+      productId: result.productId,
       previousStatus: result.previousStatus,
       newStatus: result.newStatus,
       warning: result.warning,
@@ -98,14 +98,14 @@ export class SaleService {
   }
 
   /**
-   * Mark a phone as sold with automatic inventory deduction
+   * Mark a product as sold with automatic inventory deduction
    * Uses atomic RPC to ensure consistency
    * Feature: F-008 Automatic Inventory Deduction
    * Feature: F-024 Multi-Location Inventory Support
    */
   async markAsSold(dto: MarkAsSoldDto): Promise<SaleWithInventoryDeductionResponseDto> {
     const result = await this.saleRepository.completeSaleWithInventoryDeduction(
-      dto.phoneId,
+      dto.productId,
       dto.saleDate,
       dto.salePrice,
       dto.buyerName?.trim() || null,
@@ -118,7 +118,7 @@ export class SaleService {
     if (!result.success) {
       return {
         success: false,
-        phoneId: dto.phoneId,
+        productId: dto.productId,
         inventoryDeducted: false,
         error: result.error
       };
@@ -129,7 +129,7 @@ export class SaleService {
     return {
       success: true,
       sale: saleWithRelations ? this.toResponseDto(saleWithRelations) : undefined,
-      phoneId: result.phoneId,
+      productId: result.productId,
       previousStatus: result.previousStatus,
       newStatus: result.newStatus,
       warning: result.warning,
@@ -190,7 +190,7 @@ export class SaleService {
    * Feature: F-008 Automatic Inventory Deduction
    */
   async checkInventoryAvailability(dto: CheckInventoryAvailabilityDto): Promise<InventoryAvailabilityResponseDto> {
-    return this.saleRepository.checkInventoryAvailability(dto.phoneIds);
+    return this.saleRepository.checkInventoryAvailability(dto.productIds);
   }
 
   async update(id: string, dto: UpdateSaleDto): Promise<SaleResponseDto> {
@@ -214,7 +214,7 @@ export class SaleService {
   }
 
   /**
-   * Delete a sale and restore inventory (phone status to available)
+   * Delete a sale and restore inventory (product status to available)
    * Uses atomic RPC to ensure consistency
    * Feature: F-008 Automatic Inventory Deduction
    */
@@ -316,9 +316,9 @@ export class SaleService {
 
     return {
       id: sale.id,
-      phoneId: sale.phone_id,
-      brandName: sale.phone?.brand?.name || '',
-      phoneName: sale.phone?.model || '',
+      productId: sale.product_id,
+      brandName: sale.product?.brand?.name || '',
+      productName: sale.product?.model || '',
       saleDate: sale.sale_date,
       salePrice: sale.sale_price,
       costPrice: sale.cost_price,

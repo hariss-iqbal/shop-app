@@ -1,12 +1,14 @@
-import { Directive, ElementRef, OnInit, OnDestroy, inject } from '@angular/core';
+import { Directive, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { FocusManagementService } from '../services/focus-management.service';
 
 @Directive({
   selector: '[appFocusTrap]'
 })
 export class FocusTrapDirective implements OnInit, OnDestroy {
-  private el = inject(ElementRef);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private el: ElementRef,
+    private focusService: FocusManagementService
+  ) { }
   private boundKeydown = this.onKeydown.bind(this);
 
   ngOnInit(): void {

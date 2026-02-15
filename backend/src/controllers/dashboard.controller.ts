@@ -1,5 +1,5 @@
 import { DashboardService } from '../services/dashboard.service';
-import { DateRangeFilterDto, DashboardKpiDto, MonthlySalesDataDto, RecentPhoneDto, StockByBrandDto } from '../dto/dashboard.dto';
+import { DateRangeFilterDto, DashboardKpiDto, MonthlySalesDataDto, RecentProductDto, StockByBrandDto } from '../dto/dashboard.dto';
 
 /**
  * Dashboard Controller
@@ -29,8 +29,8 @@ export class DashboardController {
     return this.dashboardService.getStockByBrand();
   }
 
-  async getRecentlyAddedPhones(): Promise<RecentPhoneDto[]> {
-    return this.dashboardService.getRecentlyAddedPhones();
+  async getRecentlyAddedProducts(): Promise<RecentProductDto[]> {
+    return this.dashboardService.getRecentlyAddedProducts();
   }
 
   private validateDateRange(dateRange: DateRangeFilterDto): void {

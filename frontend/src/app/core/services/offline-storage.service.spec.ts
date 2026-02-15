@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { OfflineStorageService } from './offline-storage.service';
 import {
   SyncQueueItem,
-  CachedPhone,
+  CachedProduct,
   CachedBrand,
   DEFAULT_OFFLINE_SYNC_CONFIG,
   OFFLINE_DB_NAME
@@ -19,7 +19,7 @@ describe('OfflineStorageService', () => {
     id: 'test-id-1',
     operationType: 'CREATE_SALE',
     payload: {
-      phoneId: 'phone-1',
+      productId: 'product-1',
       saleDate: '2024-01-15',
       salePrice: 500,
       costPrice: 400,
@@ -27,7 +27,7 @@ describe('OfflineStorageService', () => {
       buyerPhone: '1234567890',
       buyerEmail: 'test@example.com',
       notes: null,
-      phoneDetails: {
+      productDetails: {
         brandName: 'Apple',
         model: 'iPhone 13',
         storageGb: 128,
@@ -52,8 +52,8 @@ describe('OfflineStorageService', () => {
     entityType: 'sale'
   };
 
-  const mockCachedPhone: CachedPhone = {
-    id: 'phone-1',
+  const mockCachedProduct: CachedProduct = {
+    id: 'product-1',
     brandId: 'brand-1',
     brandName: 'Apple',
     model: 'iPhone 13',
@@ -164,11 +164,11 @@ describe('OfflineStorageService', () => {
       expect(mockSyncQueueItem.entityType).toBe('sale');
     });
 
-    it('should have correct CachedPhone structure', () => {
-      expect(mockCachedPhone.id).toBeDefined();
-      expect(mockCachedPhone.brandName).toBe('Apple');
-      expect(mockCachedPhone.status).toBe('available');
-      expect(mockCachedPhone.taxRate).toBe(10);
+    it('should have correct CachedProduct structure', () => {
+      expect(mockCachedProduct.id).toBeDefined();
+      expect(mockCachedProduct.brandName).toBe('Apple');
+      expect(mockCachedProduct.status).toBe('available');
+      expect(mockCachedProduct.taxRate).toBe(10);
     });
 
     it('should have correct CachedBrand structure', () => {

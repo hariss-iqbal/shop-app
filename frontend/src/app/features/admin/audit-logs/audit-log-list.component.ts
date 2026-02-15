@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, DatePipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -58,8 +58,10 @@ import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
   templateUrl: './audit-log-list.component.html'
 })
 export class AuditLogListComponent implements OnInit {
-  private auditLogService = inject(AuditLogService);
-  private toastService = inject(ToastService);
+  constructor(
+    private auditLogService: AuditLogService,
+    private toastService: ToastService
+  ) { }
 
   auditLogs = signal<AuditLog[]>([]);
   summary = signal<AuditLogSummary | null>(null);
@@ -215,10 +217,10 @@ export class AuditLogListComponent implements OnInit {
     if (!summary?.eventsByType) return 0;
     return (summary.eventsByType['inventory_deducted'] || 0) +
       (summary.eventsByType['inventory_restored'] || 0) +
-      (summary.eventsByType['phone_status_changed'] || 0) +
-      (summary.eventsByType['phone_created'] || 0) +
-      (summary.eventsByType['phone_updated'] || 0) +
-      (summary.eventsByType['phone_deleted'] || 0);
+      (summary.eventsByType['product_status_changed'] || 0) +
+      (summary.eventsByType['product_created'] || 0) +
+      (summary.eventsByType['product_updated'] || 0) +
+      (summary.eventsByType['product_deleted'] || 0);
   }
 
   getAuthEventCount(): number {

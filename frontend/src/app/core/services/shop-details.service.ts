@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { ShopDetails, UpsertShopDetailsRequest, OpeningHoursEntry } from '../../models/shop-details.model';
 
@@ -6,10 +6,39 @@ import { ShopDetails, UpsertShopDetailsRequest, OpeningHoursEntry } from '../../
   providedIn: 'root'
 })
 export class ShopDetailsService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   cachedDetails = signal<ShopDetails | null>(null);
   loaded = signal(false);
+
+  // --- Convenience computed signals ---
+  // Components should use these instead of navigating cachedDetails() directly.
+
+  readonly shopName = computed(() => this.cachedDetails()?.shopName ?? '');
+  readonly tagline = computed(() => this.cachedDetails()?.tagline ?? '');
+  readonly description = computed(() => this.cachedDetails()?.description ?? '');
+  readonly address = computed(() => this.cachedDetails()?.address ?? '');
+  readonly phoneDisplay = computed(() => this.cachedDetails()?.phoneDisplay ?? '');
+  readonly phoneLink = computed(() => this.cachedDetails()?.phoneLink ?? '');
+  readonly email = computed(() => this.cachedDetails()?.email ?? '');
+  readonly whatsappNumber = computed(() => this.cachedDetails()?.whatsappNumber ?? '');
+  readonly weekdayHours = computed(() => this.cachedDetails()?.weekdayHours ?? '');
+  readonly weekendHours = computed(() => this.cachedDetails()?.weekendHours ?? '');
+  readonly openingHours = computed(() => this.cachedDetails()?.openingHours ?? []);
+  readonly mapEmbedUrl = computed(() => this.cachedDetails()?.mapEmbedUrl ?? '');
+  readonly mapSearchUrl = computed(() => this.cachedDetails()?.mapSearchUrl ?? '');
+  readonly facebookUrl = computed(() => this.cachedDetails()?.facebookUrl ?? '');
+  readonly instagramUrl = computed(() => this.cachedDetails()?.instagramUrl ?? '');
+  readonly twitterUrl = computed(() => this.cachedDetails()?.twitterUrl ?? '');
+  readonly websiteUrl = computed(() => this.cachedDetails()?.websiteUrl ?? '');
+  readonly currencyCode = computed(() => this.cachedDetails()?.currencyCode ?? 'PKR');
+  readonly currencyLocale = computed(() => this.cachedDetails()?.currencyLocale ?? 'en-PK');
+  readonly currencySymbol = computed(() => this.cachedDetails()?.currencySymbol ?? 'Rs.');
+  readonly currencyDecimals = computed(() => this.cachedDetails()?.currencyDecimals ?? 0);
+  readonly logoUrl = computed(() => this.cachedDetails()?.logoUrl ?? '');
+  readonly sidebarItemOrder = computed(() => this.cachedDetails()?.sidebarItemOrder ?? null);
+  readonly defaultLandingRoute = computed(() => this.cachedDetails()?.defaultLandingRoute ?? '/admin/dashboard');
+  readonly hasEmail = computed(() => !!this.cachedDetails()?.email);
 
   async getShopDetails(): Promise<ShopDetails | null> {
     if (this.loaded()) {
@@ -102,6 +131,8 @@ export class ShopDetailsService {
       currencySymbol: data['currency_symbol'] as string,
       currencyDecimals: data['currency_decimals'] as number,
       logoUrl: data['logo_url'] as string | null,
+      sidebarItemOrder: (data['sidebar_item_order'] as string[]) || null,
+      defaultLandingRoute: (data['default_landing_route'] as string) || null,
       createdAt: data['created_at'] as string,
       updatedAt: data['updated_at'] as string | null
     };
@@ -131,6 +162,8 @@ export class ShopDetailsService {
     if (request.currencySymbol !== undefined) result['currency_symbol'] = request.currencySymbol;
     if (request.currencyDecimals !== undefined) result['currency_decimals'] = request.currencyDecimals;
     if (request.logoUrl !== undefined) result['logo_url'] = request.logoUrl;
+    if (request.sidebarItemOrder !== undefined) result['sidebar_item_order'] = request.sidebarItemOrder;
+    if (request.defaultLandingRoute !== undefined) result['default_landing_route'] = request.defaultLandingRoute;
     return result;
   }
 }

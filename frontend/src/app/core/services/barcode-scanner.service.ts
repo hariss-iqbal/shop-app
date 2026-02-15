@@ -1,4 +1,4 @@
-import { Injectable, signal, inject, PLATFORM_ID, computed } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID, computed, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 /**
@@ -41,7 +41,6 @@ export interface ScannerState {
   providedIn: 'root'
 })
 export class BarcodeScannerService {
-  private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   private mediaStream: MediaStream | null = null;
@@ -66,7 +65,9 @@ export class BarcodeScannerService {
     lastScan: this.lastScan()
   }));
 
-  constructor() {
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
     if (this.isBrowser) {
       this.checkBarcodeApiSupport();
       this.enumerateCameras();

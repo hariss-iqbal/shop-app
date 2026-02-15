@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 export type ToastSeverity = 'success' | 'error' | 'warn' | 'info';
@@ -27,7 +27,7 @@ export const TOAST_DEFAULTS = {
   providedIn: 'root'
 })
 export class ToastService {
-  private messageService = inject(MessageService);
+  constructor(private messageService: MessageService) { }
 
   success(summary: string, detail?: string, life?: number): void {
     this.show('success', { summary, detail, life });

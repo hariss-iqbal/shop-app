@@ -72,7 +72,7 @@ export class OfflineSyncController {
    * POST /api/sync/check-conflicts
    */
   async checkConflicts(dto: ConflictCheckRequestDto): Promise<ConflictCheckResponseDto> {
-    if (!dto.phoneIds || dto.phoneIds.length === 0) {
+    if (!dto.productIds || dto.productIds.length === 0) {
       return { hasConflicts: false, conflicts: [] };
     }
 
@@ -187,8 +187,8 @@ export class OfflineSyncController {
         if (!sale.localId) {
           throw new Error('Local ID is required for each sale');
         }
-        if (!sale.phoneId) {
-          throw new Error('Phone ID is required for each sale');
+        if (!sale.productId) {
+          throw new Error('Product ID is required for each sale');
         }
         if (!sale.saleDate) {
           throw new Error('Sale date is required for each sale');

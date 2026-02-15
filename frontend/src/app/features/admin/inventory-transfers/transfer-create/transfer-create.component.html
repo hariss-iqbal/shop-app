@@ -77,7 +77,7 @@
 
             <ng-template pTemplate="header">
               <tr>
-                <th>Phone</th>
+                <th>Product</th>
                 <th>Available</th>
                 <th>Action</th>
               </tr>
@@ -87,8 +87,8 @@
               <tr>
                 <td>
                   <div class="flex flex-column">
-                    <span class="font-medium">{{ item.phone?.model }}</span>
-                    <span class="text-color-secondary text-sm">{{ item.phone?.brandName }}</span>
+                    <span class="font-medium">{{ item.product?.model }}</span>
+                    <span class="text-color-secondary text-sm">{{ item.product?.brandName }}</span>
                   </div>
                 </td>
                 <td>{{ item.quantity }}</td>
@@ -130,7 +130,7 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th>Phone</th>
+            <th>Product</th>
             <th>Brand</th>
             <th style="width: 150px">Quantity</th>
             <th style="width: 200px">Notes</th>
@@ -140,8 +140,8 @@
 
         <ng-template pTemplate="body" let-item let-i="rowIndex">
           <tr>
-            <td>{{ item.phone?.model }}</td>
-            <td>{{ item.phone?.brandName }}</td>
+            <td>{{ item.product?.model }}</td>
+            <td>{{ item.product?.brandName }}</td>
             <td>
               <p-inputNumber
                 [(ngModel)]="item.quantity"

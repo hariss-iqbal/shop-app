@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -49,10 +49,12 @@ interface TimelineEvent {
   templateUrl: './transfer-detail.component.html'
 })
 export class TransferDetailComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private inventoryTransferService = inject(InventoryTransferService);
-  private messageService = inject(MessageService);
-  private confirmationService = inject(ConfirmationService);
+  constructor(
+    private route: ActivatedRoute,
+    private inventoryTransferService: InventoryTransferService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
+  ) { }
 
   transfer = signal<InventoryTransfer | null>(null);
   loading = signal(false);

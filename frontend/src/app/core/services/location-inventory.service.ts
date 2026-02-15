@@ -1,8 +1,8 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   LocationInventory,
-  AssignPhoneToLocationRequest,
+  AssignProductToLocationRequest,
   UpdateLocationInventoryRequest,
   LocationInventoryListResponse,
   LocationInventoryStats,
@@ -18,14 +18,14 @@ import {
   providedIn: 'root'
 })
 export class LocationInventoryService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getInventoryByLocation(locationId: string, filter?: LocationInventoryFilter): Promise<LocationInventoryListResponse> {
     let query = this.supabase
       .from('location_inventory')
       .select(`
         *,
-        phone:phones(
+        product:products(
           id, model, status, selling_price, cost_price, condition,
           brand:brands(id, name)
         ),
@@ -56,18 +56,18 @@ export class LocationInventoryService {
     };
   }
 
-  async getInventoryByPhone(phoneId: string): Promise<LocationInventory[]> {
+  async getInventoryByProduct(productId: string): Promise<LocationInventory[]> {
     const { data, error } = await this.supabase
       .from('location_inventory')
       .select(`
         *,
-        phone:phones(
+        product:products(
           id, model, status, selling_price, cost_price, condition,
           brand:brands(id, name)
         ),
         location:store_locations(id, name, code)
       `)
-      .eq('phone_id', phoneId);
+      .eq('product_id', productId);
 
     if (error) {
       throw new Error(error.message);
@@ -76,11 +76,11 @@ export class LocationInventoryService {
     return (data || []).map(this.mapToLocationInventory);
   }
 
-  async getQuantityAtLocation(phoneId: string, locationId: string): Promise<number> {
+  async getQuantityAtLocation(productId: string, locationId: string): Promise<number> {
     const { data, error } = await this.supabase
       .from('location_inventory')
       .select('quantity')
-      .eq('phone_id', phoneId)
+      .eq('product_id', productId)
       .eq('location_id', locationId)
       .single();
 
@@ -94,9 +94,9 @@ export class LocationInventoryService {
     return data?.quantity || 0;
   }
 
-  async assignPhoneToLocation(request: AssignPhoneToLocationRequest): Promise<LocationInventory> {
-    const { data: result, error } = await this.supabase.rpc('assign_phone_to_location', {
-      p_phone_id: request.phoneId,
+  async assignProductToLocation(request: AssignProductToLocationRequest): Promise<LocationInventory> {
+    const { data: result, error } = await this.supabase.rpc('assign_product_to_location', {
+      p_product_id: request.productId,
       p_location_id: request.locationId,
       p_quantity: request.quantity ?? 1
     });
@@ -106,15 +106,15 @@ export class LocationInventoryService {
     }
 
     if (!result.success) {
-      throw new Error(result.error || 'Failed to assign phone to location');
+      throw new Error(result.error || 'Failed to assign product to location');
     }
 
-    const inventory = await this.getInventoryByPhone(request.phoneId);
+    const inventory = await this.getInventoryByProduct(request.productId);
     return inventory.find(i => i.locationId === request.locationId)!;
   }
 
   async updateInventory(
-    phoneId: string,
+    productId: string,
     locationId: string,
     request: UpdateLocationInventoryRequest
   ): Promise<LocationInventory> {
@@ -127,34 +127,34 @@ export class LocationInventoryService {
     const { error } = await this.supabase
       .from('location_inventory')
       .update(updateData)
-      .eq('phone_id', phoneId)
+      .eq('product_id', productId)
       .eq('location_id', locationId);
 
     if (error) {
       throw new Error(error.message);
     }
 
-    const inventory = await this.getInventoryByPhone(phoneId);
+    const inventory = await this.getInventoryByProduct(productId);
     return inventory.find(i => i.locationId === locationId)!;
   }
 
-  async adjustQuantity(phoneId: string, locationId: string, quantityChange: number): Promise<LocationInventory> {
-    const currentQuantity = await this.getQuantityAtLocation(phoneId, locationId);
+  async adjustQuantity(productId: string, locationId: string, quantityChange: number): Promise<LocationInventory> {
+    const currentQuantity = await this.getQuantityAtLocation(productId, locationId);
     const newQuantity = currentQuantity + quantityChange;
 
     if (newQuantity < 0) {
       throw new Error('Insufficient stock at location');
     }
 
-    return this.updateInventory(phoneId, locationId, { quantity: newQuantity });
+    return this.updateInventory(productId, locationId, { quantity: newQuantity });
   }
 
-  async deductStock(phoneId: string, locationId: string, quantity: number = 1): Promise<void> {
+  async deductStock(productId: string, locationId: string, quantity: number = 1): Promise<void> {
     if (quantity <= 0) {
       throw new Error('Quantity must be positive');
     }
 
-    await this.adjustQuantity(phoneId, locationId, -quantity);
+    await this.adjustQuantity(productId, locationId, -quantity);
   }
 
   async getLocationStats(locationId: string): Promise<LocationInventoryStats> {
@@ -163,7 +163,7 @@ export class LocationInventoryService {
       .select(`
         quantity,
         min_stock_level,
-        phone:phones(selling_price)
+        product:products(selling_price)
       `)
       .eq('location_id', locationId)
       .gt('quantity', 0);
@@ -176,8 +176,8 @@ export class LocationInventoryService {
     const totalProducts = items.length;
     const totalUnits = items.reduce((sum, item) => sum + (item.quantity as number), 0);
     const totalValue = items.reduce((sum, item) => {
-      const phoneData = item.phone as unknown as Record<string, unknown> | null;
-      const price = (phoneData?.['selling_price'] as number) || 0;
+      const productData = item.product as unknown as Record<string, unknown> | null;
+      const price = (productData?.['selling_price'] as number) || 0;
       return sum + ((item.quantity as number) * price);
     }, 0);
     const lowStockCount = items.filter(item =>
@@ -192,7 +192,7 @@ export class LocationInventoryService {
       .from('location_inventory')
       .select(`
         *,
-        phone:phones(
+        product:products(
           id, model, status, selling_price, cost_price, condition,
           brand:brands(id, name)
         ),
@@ -218,26 +218,26 @@ export class LocationInventoryService {
   }
 
   private mapToLocationInventory(data: Record<string, unknown>): LocationInventory {
-    const phone = data['phone'] as Record<string, unknown> | null;
+    const product = data['product'] as Record<string, unknown> | null;
     const location = data['location'] as Record<string, unknown> | null;
-    const brand = phone?.['brand'] as Record<string, unknown> | null;
+    const brand = product?.['brand'] as Record<string, unknown> | null;
 
     return {
       id: data['id'] as string,
-      phoneId: data['phone_id'] as string,
+      productId: data['product_id'] as string,
       locationId: data['location_id'] as string,
       quantity: data['quantity'] as number,
       minStockLevel: data['min_stock_level'] as number | null,
       maxStockLevel: data['max_stock_level'] as number | null,
       createdAt: data['created_at'] as string,
       updatedAt: data['updated_at'] as string | null,
-      phone: phone ? {
-        id: phone['id'] as string,
-        model: phone['model'] as string,
-        status: phone['status'] as string,
-        sellingPrice: phone['selling_price'] as number,
-        costPrice: phone['cost_price'] as number,
-        condition: phone['condition'] as string,
+      product: product ? {
+        id: product['id'] as string,
+        model: product['model'] as string,
+        status: product['status'] as string,
+        sellingPrice: product['selling_price'] as number,
+        costPrice: product['cost_price'] as number,
+        condition: product['condition'] as string,
         brandId: brand?.['id'] as string || '',
         brandName: brand?.['name'] as string || ''
       } : undefined,

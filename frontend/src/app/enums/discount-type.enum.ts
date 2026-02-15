@@ -30,9 +30,9 @@ export function getDiscountTypeIcon(type: DiscountType): string {
   return DiscountTypeIcons[type] || 'pi pi-tag';
 }
 
-export function formatDiscountValue(type: DiscountType, value: number): string {
+export function formatDiscountValue(type: DiscountType, value: number, currencySymbol: string = 'Rs.'): string {
   if (type === DiscountType.PERCENTAGE) {
     return `${value}%`;
   }
-  return `$${value.toFixed(2)}`;
+  return `${currencySymbol}${value.toFixed(2)}`;
 }

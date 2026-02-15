@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { NetworkStatusService } from '../../../core/services/network-status.service';
@@ -11,9 +11,11 @@ import { NetworkStatusService } from '../../../core/services/network-status.serv
   styleUrls: ['./offline-page.component.scss']
 })
 export class OfflinePageComponent implements OnInit, OnDestroy {
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly networkStatusService = inject(NetworkStatusService);
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly networkStatusService: NetworkStatusService
+  ) { }
 
   readonly isOnline = this.networkStatusService.isOnline;
   readonly isRetrying = signal(false);

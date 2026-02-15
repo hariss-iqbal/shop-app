@@ -137,7 +137,7 @@ export class RefundService {
     const items = refundData.items.map(item => ({
       id: item.id,
       originalSaleId: item.originalSaleId,
-      phoneId: item.phoneId,
+      productId: item.productId,
       itemName: item.itemName,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -146,7 +146,7 @@ export class RefundService {
       originalUnitPrice: item.originalUnitPrice,
       isCustomPrice: item.isCustomPrice,
       priceDifference: item.priceDifference,
-      phoneModel: item.phoneModel,
+      productModel: item.productModel,
       brandName: item.brandName
     }));
 
@@ -351,7 +351,7 @@ export class RefundService {
     const items: RefundItemResponseDto[] = (refund.items || []).map(item => ({
       id: item.id,
       originalSaleId: item.original_sale_id,
-      phoneId: item.phone_id,
+      productId: item.product_id,
       itemName: item.item_name,
       quantity: item.quantity,
       unitPrice: item.unit_price,

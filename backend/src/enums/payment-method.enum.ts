@@ -6,8 +6,7 @@
 export enum PaymentMethod {
   CASH = 'cash',
   CARD = 'card',
-  UPI = 'upi',
-  OTHER = 'other'
+  BANK_TRANSFER = 'bank_transfer'
 }
 
 /**
@@ -16,8 +15,7 @@ export enum PaymentMethod {
 export const PaymentMethodLabels: Record<PaymentMethod, string> = {
   [PaymentMethod.CASH]: 'Cash',
   [PaymentMethod.CARD]: 'Card',
-  [PaymentMethod.UPI]: 'UPI',
-  [PaymentMethod.OTHER]: 'Other'
+  [PaymentMethod.BANK_TRANSFER]: 'Bank Transfer'
 };
 
 /**

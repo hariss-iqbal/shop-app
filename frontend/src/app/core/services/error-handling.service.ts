@@ -1,4 +1,4 @@
-import { Injectable, inject, isDevMode } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastService } from '../../shared/services/toast.service';
 import { SupabaseAuthService } from './supabase-auth.service';
@@ -25,10 +25,12 @@ export interface ErrorLogEntry {
   providedIn: 'root'
 })
 export class ErrorHandlingService {
-  private toastService = inject(ToastService);
-  private router = inject(Router);
-  private authService = inject(SupabaseAuthService);
-  private networkStatusService = inject(NetworkStatusService);
+  constructor(
+    private toastService: ToastService,
+    private router: Router,
+    private authService: SupabaseAuthService,
+    private networkStatusService: NetworkStatusService
+  ) { }
 
   handleSupabaseError(error: SupabaseErrorResponse): void {
     const status = error.status ?? this.inferStatusFromCode(error.code);
@@ -189,6 +191,9 @@ export class ErrorHandlingService {
 
   isSupabaseError(error: unknown): error is SupabaseErrorResponse {
     if (typeof error !== 'object' || error === null) return false;
+    // AbortErrors have message + code but are not Supabase errors
+    if (error instanceof DOMException && error.name === 'AbortError') return false;
+    if (error instanceof Error && error.name === 'AbortError') return false;
     return 'message' in error && (
       'code' in error || 'status' in error || 'details' in error
     );

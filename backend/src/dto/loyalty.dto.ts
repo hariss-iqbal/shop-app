@@ -257,7 +257,7 @@ export interface SaleLoyaltyInfoDto {
 
 export interface CreateSaleWithLoyaltyDto {
   /** Standard sale fields */
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
   buyerName?: string | null;

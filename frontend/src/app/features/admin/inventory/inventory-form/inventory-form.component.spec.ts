@@ -6,7 +6,7 @@ import { provideRouter } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 
 import { InventoryFormComponent } from './inventory-form.component';
-import { PhoneService } from '../../../../core/services/phone.service';
+import { ProductService } from '../../../../core/services/product.service';
 import { BrandService } from '../../../../core/services/brand.service';
 import { SupplierService } from '../../../../core/services/supplier.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
@@ -14,17 +14,17 @@ import { SupabaseService } from '../../../../core/services/supabase.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirmation.service';
-import { PhoneImageService } from '../../../../core/services/phone-image.service';
-import { Phone } from '../../../../models/phone.model';
+import { ProductImageService } from '../../../../core/services/product-image.service';
+import { Product } from '../../../../models/product.model';
 import { Brand } from '../../../../models/brand.model';
 import { Supplier } from '../../../../models/supplier.model';
-import { PhoneStatus } from '../../../../enums/phone-status.enum';
-import { PhoneCondition } from '../../../../enums/phone-condition.enum';
+import { ProductStatus } from '../../../../enums/product-status.enum';
+import { ProductCondition } from '../../../../enums/product-condition.enum';
 
 describe('InventoryFormComponent', () => {
   let component: InventoryFormComponent;
   let fixture: ComponentFixture<InventoryFormComponent>;
-  let mockPhoneService: jasmine.SpyObj<PhoneService>;
+  let mockProductService: jasmine.SpyObj<ProductService>;
   let mockBrandService: jasmine.SpyObj<BrandService>;
   let mockSupplierService: jasmine.SpyObj<SupplierService>;
   let mockSanitizer: jasmine.SpyObj<InputSanitizationService>;
@@ -33,7 +33,7 @@ describe('InventoryFormComponent', () => {
   let mockRouter: jasmine.SpyObj<Router>;
   let mockSupabaseService: any;
   let mockConfirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
-  let mockPhoneImageService: jasmine.SpyObj<PhoneImageService>;
+  let mockProductImageService: jasmine.SpyObj<ProductImageService>;
   let mockConfirmationService: jasmine.SpyObj<ConfirmationService>;
 
   const mockBrands: Brand[] = [
@@ -46,7 +46,7 @@ describe('InventoryFormComponent', () => {
     { id: 'supplier-2', name: 'Mobile Parts Inc', contactPerson: 'Jane Smith', contactEmail: 'jane@mobileparts.com', contactPhone: '555-0200', address: '456 Mobile Ave', notes: null, createdAt: '2024-01-01T00:00:00Z', updatedAt: null }
   ];
 
-  const mockPhone: Phone = {
+  const mockProduct: Product = {
     id: 'phone-1',
     brandId: 'brand-1',
     brandName: 'Apple',
@@ -56,13 +56,13 @@ describe('InventoryFormComponent', () => {
     storageGb: 256,
     ramGb: 8,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: '123456789012345',
     costPrice: 900,
     sellingPrice: 1200,
     profitMargin: 25,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: '2024-01-15',
     supplierId: 'supplier-1',
     supplierName: 'TechSupply Co',
@@ -76,7 +76,7 @@ describe('InventoryFormComponent', () => {
   };
 
   const setupTestBed = (phoneId: string | null = null) => {
-    mockPhoneService = jasmine.createSpyObj('PhoneService', ['getPhoneById', 'createPhone', 'updatePhone']);
+    mockProductService = jasmine.createSpyObj('ProductService', ['getProductById', 'createProduct', 'updateProduct']);
     mockBrandService = jasmine.createSpyObj('BrandService', ['getBrands', 'createBrand']);
     mockSupplierService = jasmine.createSpyObj('SupplierService', ['getSuppliers']);
     mockSanitizer = jasmine.createSpyObj('InputSanitizationService', ['sanitize', 'sanitizeOrNull']);
@@ -84,12 +84,12 @@ describe('InventoryFormComponent', () => {
     mockFocusService = jasmine.createSpyObj('FocusManagementService', ['saveTriggerElement', 'restoreFocus']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
     mockConfirmDialogService = jasmine.createSpyObj('ConfirmDialogService', ['confirmDelete', 'confirmBulkDelete', 'confirmAction']);
-    mockPhoneImageService = jasmine.createSpyObj('PhoneImageService', ['getImagesByPhoneId', 'uploadMultipleImages', 'reorderImages', 'setPrimary', 'deleteImage', 'validateFile']);
+    mockProductImageService = jasmine.createSpyObj('ProductImageService', ['getImagesByProductId', 'uploadMultipleImages', 'reorderImages', 'setPrimary', 'deleteImage', 'validateFile']);
     mockConfirmationService = jasmine.createSpyObj('ConfirmationService', ['confirm']);
 
     // Setup default returns for image service
-    mockPhoneImageService.getImagesByPhoneId.and.returnValue(Promise.resolve({ data: [], total: 0 }));
-    mockPhoneImageService.validateFile.and.returnValue({ valid: true });
+    mockProductImageService.getImagesByProductId.and.returnValue(Promise.resolve({ data: [], total: 0 }));
+    mockProductImageService.validateFile.and.returnValue({ valid: true });
     mockConfirmDialogService.confirmDelete.and.returnValue(Promise.resolve(true));
 
     mockSupabaseService = {
@@ -123,7 +123,7 @@ describe('InventoryFormComponent', () => {
       ],
       providers: [
         provideRouter([]),
-        { provide: PhoneService, useValue: mockPhoneService },
+        { provide: ProductService, useValue: mockProductService },
         { provide: BrandService, useValue: mockBrandService },
         { provide: SupplierService, useValue: mockSupplierService },
         { provide: InputSanitizationService, useValue: mockSanitizer },
@@ -132,7 +132,7 @@ describe('InventoryFormComponent', () => {
         { provide: FocusManagementService, useValue: mockFocusService },
         { provide: Router, useValue: mockRouter },
         { provide: ConfirmDialogService, useValue: mockConfirmDialogService },
-        { provide: PhoneImageService, useValue: mockPhoneImageService },
+        { provide: ProductImageService, useValue: mockProductImageService },
         { provide: ConfirmationService, useValue: mockConfirmationService },
         {
           provide: ActivatedRoute,
@@ -163,7 +163,7 @@ describe('InventoryFormComponent', () => {
         tick();
 
         expect(component.isEdit).toBe(false);
-        expect(component.phoneId).toBeNull();
+        expect(component.productId).toBeNull();
       }));
 
       it('should load brands and suppliers on init', fakeAsync(() => {
@@ -182,8 +182,8 @@ describe('InventoryFormComponent', () => {
 
         expect(component.form.get('brand')?.value).toBeNull();
         expect(component.form.get('model')?.value).toBe('');
-        expect(component.form.get('condition')?.value).toBe(PhoneCondition.NEW);
-        expect(component.form.get('status')?.value).toBe(PhoneStatus.AVAILABLE);
+        expect(component.form.get('condition')?.value).toBe(ProductCondition.NEW);
+        expect(component.form.get('status')?.value).toBe(ProductStatus.AVAILABLE);
         expect(component.form.get('costPrice')?.value).toBeNull();
         expect(component.form.get('sellingPrice')?.value).toBeNull();
       }));
@@ -236,7 +236,7 @@ describe('InventoryFormComponent', () => {
         conditionControl?.setValue(null);
         expect(conditionControl?.valid).toBe(false);
 
-        conditionControl?.setValue(PhoneCondition.NEW);
+        conditionControl?.setValue(ProductCondition.NEW);
         expect(conditionControl?.valid).toBe(true);
       });
 
@@ -263,7 +263,7 @@ describe('InventoryFormComponent', () => {
         statusControl?.setValue(null);
         expect(statusControl?.valid).toBe(false);
 
-        statusControl?.setValue(PhoneStatus.AVAILABLE);
+        statusControl?.setValue(ProductStatus.AVAILABLE);
         expect(statusControl?.valid).toBe(true);
       });
 
@@ -312,10 +312,10 @@ describe('InventoryFormComponent', () => {
         component.form.patchValue({
           brand: mockBrands[0],
           model: 'iPhone 15',
-          condition: PhoneCondition.NEW,
+          condition: ProductCondition.NEW,
           costPrice: 900,
           sellingPrice: 1200,
-          status: PhoneStatus.AVAILABLE
+          status: ProductStatus.AVAILABLE
         });
 
         expect(component.form.valid).toBe(true);
@@ -329,25 +329,25 @@ describe('InventoryFormComponent', () => {
       }));
 
       it('should hide battery health for NEW condition', () => {
-        component.form.get('condition')?.setValue(PhoneCondition.NEW);
+        component.form.get('condition')?.setValue(ProductCondition.NEW);
         expect(component.showBatteryHealth()).toBe(false);
       });
 
       it('should show battery health for USED condition', () => {
-        component.form.get('condition')?.setValue(PhoneCondition.USED);
+        component.form.get('condition')?.setValue(ProductCondition.USED);
         expect(component.showBatteryHealth()).toBe(true);
       });
 
       it('should show battery health for REFURBISHED condition', () => {
-        component.form.get('condition')?.setValue(PhoneCondition.REFURBISHED);
+        component.form.get('condition')?.setValue(ProductCondition.REFURBISHED);
         expect(component.showBatteryHealth()).toBe(true);
       });
 
       it('should clear battery health when condition changes to NEW', () => {
-        component.form.get('condition')?.setValue(PhoneCondition.USED);
+        component.form.get('condition')?.setValue(ProductCondition.USED);
         component.form.get('batteryHealth')?.setValue(85);
 
-        component.form.get('condition')?.setValue(PhoneCondition.NEW);
+        component.form.get('condition')?.setValue(ProductCondition.NEW);
 
         expect(component.form.get('batteryHealth')?.value).toBeNull();
       });
@@ -450,7 +450,7 @@ describe('InventoryFormComponent', () => {
       }));
 
       it('should create phone on valid form submission', fakeAsync(() => {
-        mockPhoneService.createPhone.and.returnValue(Promise.resolve(mockPhone));
+        mockProductService.createProduct.and.returnValue(Promise.resolve(mockProduct));
 
         component.form.patchValue({
           brand: mockBrands[0],
@@ -458,11 +458,11 @@ describe('InventoryFormComponent', () => {
           storageGb: 256,
           ramGb: 8,
           color: 'Space Black',
-          condition: PhoneCondition.NEW,
+          condition: ProductCondition.NEW,
           imei: '123456789012345',
           costPrice: 900,
           sellingPrice: 1200,
-          status: PhoneStatus.AVAILABLE,
+          status: ProductStatus.AVAILABLE,
           supplierId: 'supplier-1',
           notes: 'Test notes',
           description: 'Test description'
@@ -471,13 +471,13 @@ describe('InventoryFormComponent', () => {
         component.onSubmit();
         tick();
 
-        expect(mockPhoneService.createPhone).toHaveBeenCalledWith(jasmine.objectContaining({
+        expect(mockProductService.createProduct).toHaveBeenCalledWith(jasmine.objectContaining({
           brandId: 'brand-1',
           model: 'iPhone 15 Pro',
-          condition: PhoneCondition.NEW,
+          condition: ProductCondition.NEW,
           costPrice: 900,
           sellingPrice: 1200,
-          status: PhoneStatus.AVAILABLE
+          status: ProductStatus.AVAILABLE
         }));
         expect(mockToastService.success).toHaveBeenCalledWith('Success', 'Phone added successfully');
         expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory']);
@@ -487,20 +487,20 @@ describe('InventoryFormComponent', () => {
         component.onSubmit();
         tick();
 
-        expect(mockPhoneService.createPhone).not.toHaveBeenCalled();
+        expect(mockProductService.createProduct).not.toHaveBeenCalled();
         expect(component.form.touched).toBe(true);
       }));
 
       it('should show error toast on create failure', fakeAsync(() => {
-        mockPhoneService.createPhone.and.returnValue(Promise.reject(new Error('Create failed')));
+        mockProductService.createProduct.and.returnValue(Promise.reject(new Error('Create failed')));
 
         component.form.patchValue({
           brand: mockBrands[0],
           model: 'iPhone 15 Pro',
-          condition: PhoneCondition.NEW,
+          condition: ProductCondition.NEW,
           costPrice: 900,
           sellingPrice: 1200,
-          status: PhoneStatus.AVAILABLE
+          status: ProductStatus.AVAILABLE
         });
 
         component.onSubmit();
@@ -584,7 +584,7 @@ describe('InventoryFormComponent', () => {
   describe('Edit Mode (existing phone)', () => {
     beforeEach(async () => {
       await setupTestBed('phone-1');
-      mockPhoneService.getPhoneById.and.returnValue(Promise.resolve(mockPhone));
+      mockProductService.getProductById.and.returnValue(Promise.resolve(mockProduct));
       fixture = TestBed.createComponent(InventoryFormComponent);
       component = fixture.componentInstance;
     });
@@ -594,7 +594,7 @@ describe('InventoryFormComponent', () => {
       tick();
 
       expect(component.isEdit).toBe(true);
-      expect(component.phoneId).toBe('phone-1');
+      expect(component.productId).toBe('phone-1');
     }));
 
     it('should display "Edit Phone" title', fakeAsync(() => {
@@ -610,7 +610,7 @@ describe('InventoryFormComponent', () => {
       fixture.detectChanges();
       tick();
 
-      expect(mockPhoneService.getPhoneById).toHaveBeenCalledWith('phone-1');
+      expect(mockProductService.getProductById).toHaveBeenCalledWith('phone-1');
     }));
 
     it('should populate form with existing phone data', fakeAsync(() => {
@@ -621,10 +621,10 @@ describe('InventoryFormComponent', () => {
       expect(component.form.get('storageGb')?.value).toBe(256);
       expect(component.form.get('ramGb')?.value).toBe(8);
       expect(component.form.get('color')?.value).toBe('Space Black');
-      expect(component.form.get('condition')?.value).toBe(PhoneCondition.NEW);
+      expect(component.form.get('condition')?.value).toBe(ProductCondition.NEW);
       expect(component.form.get('costPrice')?.value).toBe(900);
       expect(component.form.get('sellingPrice')?.value).toBe(1200);
-      expect(component.form.get('status')?.value).toBe(PhoneStatus.AVAILABLE);
+      expect(component.form.get('status')?.value).toBe(ProductStatus.AVAILABLE);
     }));
 
     it('should populate form with correct brand', fakeAsync(() => {
@@ -637,8 +637,8 @@ describe('InventoryFormComponent', () => {
     }));
 
     it('should show battery health for used phone', fakeAsync(() => {
-      const usedPhone = { ...mockPhone, condition: PhoneCondition.USED, batteryHealth: 85 };
-      mockPhoneService.getPhoneById.and.returnValue(Promise.resolve(usedPhone));
+      const usedPhone = { ...mockProduct, condition: ProductCondition.USED, batteryHealth: 85 };
+      mockProductService.getProductById.and.returnValue(Promise.resolve(usedPhone));
 
       fixture.detectChanges();
       tick();
@@ -648,7 +648,7 @@ describe('InventoryFormComponent', () => {
     }));
 
     it('should navigate to inventory list if phone not found', fakeAsync(() => {
-      mockPhoneService.getPhoneById.and.returnValue(Promise.resolve(null));
+      mockProductService.getProductById.and.returnValue(Promise.resolve(null));
 
       fixture.detectChanges();
       tick();
@@ -658,7 +658,7 @@ describe('InventoryFormComponent', () => {
     }));
 
     it('should update phone on valid form submission', fakeAsync(() => {
-      mockPhoneService.updatePhone.and.returnValue(Promise.resolve(mockPhone));
+      mockProductService.updateProduct.and.returnValue(Promise.resolve(mockProduct));
 
       fixture.detectChanges();
       tick();
@@ -668,7 +668,7 @@ describe('InventoryFormComponent', () => {
       component.onSubmit();
       tick();
 
-      expect(mockPhoneService.updatePhone).toHaveBeenCalledWith('phone-1', jasmine.objectContaining({
+      expect(mockProductService.updateProduct).toHaveBeenCalledWith('phone-1', jasmine.objectContaining({
         model: 'iPhone 15 Pro Max'
       }));
       expect(mockToastService.success).toHaveBeenCalledWith('Success', 'Phone updated successfully');
@@ -676,7 +676,7 @@ describe('InventoryFormComponent', () => {
     }));
 
     it('should show error toast on update failure', async () => {
-      mockPhoneService.updatePhone.and.returnValue(Promise.reject(new Error('Update failed')));
+      mockProductService.updateProduct.and.returnValue(Promise.reject(new Error('Update failed')));
 
       fixture.detectChanges();
       await fixture.whenStable();

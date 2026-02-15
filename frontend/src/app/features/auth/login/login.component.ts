@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { SupabaseAuthService } from '../../../core';
 import { ToastService } from '../../../shared';
+import { ShopDetailsService } from '../../../core/services/shop-details.service';
 
 @Component({
   selector: 'app-login',
@@ -24,18 +25,22 @@ import { ToastService } from '../../../shared';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private authService = inject(SupabaseAuthService);
-  private toastService = inject(ToastService);
 
   loginForm: FormGroup;
   loading = false;
   errorMessage: string | null = null;
   private returnUrl: string | null = null;
 
-  constructor() {
+  shopName = this.shopDetailsService.shopName;
+
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private route: ActivatedRoute,
+    private authService: SupabaseAuthService,
+    private toastService: ToastService,
+    private shopDetailsService: ShopDetailsService
+  ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]]

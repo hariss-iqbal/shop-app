@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { Inject, Injectable, OnDestroy, PLATFORM_ID, computed, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
@@ -31,11 +31,7 @@ interface StoredSessionData {
   providedIn: 'root'
 })
 export class SupabaseAuthService implements OnDestroy {
-  private supabaseService = inject(SupabaseService);
-  private router = inject(Router);
-  private auditLogService = inject(AuditLogService);
   private authSubscription: { unsubscribe: () => void } | null = null;
-  private platformId = inject(PLATFORM_ID);
 
   private readonly _user = signal<User | null>(null);
   private readonly _session = signal<Session | null>(null);
@@ -97,7 +93,12 @@ export class SupabaseAuthService implements OnDestroy {
   readonly canAccessSystemSettings = computed(() => this._permissions()?.canAccessSystemSettings ?? false);
   readonly canAccessAuditLogs = computed(() => this._permissions()?.canAccessAuditLogs ?? false);
 
-  constructor() {
+  constructor(
+    private supabaseService: SupabaseService,
+    private router: Router,
+    private auditLogService: AuditLogService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
     this.initializeAuthListener();
     this.checkInitialSession();
     if (isPlatformBrowser(this.platformId)) {
@@ -284,6 +285,12 @@ export class SupabaseAuthService implements OnDestroy {
 
       this.finalizeInitialization(session);
     } catch (err) {
+      // AbortErrors from Supabase's Web Locks API are benign — don't treat as auth failure
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        this._roleInitialized.set(true);
+        this.finalizeInitialization(null);
+        return;
+      }
       console.error('Failed to check authentication status:', err);
       this._error.set('Failed to check authentication status');
       this.clearSessionFromStorage();

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -7,6 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { UserRoleService, SupabaseAuthService } from '../../../../core';
@@ -39,15 +40,18 @@ interface RoleOption {
     CardModule,
     DialogModule,
     InputTextModule,
+    PasswordModule,
     FormsModule,
     DatePipe
   ],
   templateUrl: './user-list.component.html'
 })
 export class UserListComponent implements OnInit {
-  private userRoleService = inject(UserRoleService);
-  authService = inject(SupabaseAuthService);
-  private toastService = inject(ToastService);
+  constructor(
+    private userRoleService: UserRoleService,
+    public authService: SupabaseAuthService,
+    private toastService: ToastService
+  ) { }
 
   users = signal<UserRoleResponse[]>([]);
   roleStats = signal<RoleStats[]>([]);
@@ -59,6 +63,13 @@ export class UserListComponent implements OnInit {
 
   getRoleDisplayName = getRoleDisplayName;
   getRoleSeverity = getRoleSeverity;
+
+  // Create user dialog
+  createDialogVisible = false;
+  creating = signal(false);
+  newUserEmail = '';
+  newUserPassword = '';
+  newUserRole: UserRole = UserRole.CASHIER;
 
   roleOptions: RoleOption[] = [
     { label: 'Administrator', value: UserRole.ADMIN },
@@ -108,6 +119,35 @@ export class UserListComponent implements OnInit {
       console.error('Failed to update role:', error);
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  openCreateDialog(): void {
+    this.newUserEmail = '';
+    this.newUserPassword = '';
+    this.newUserRole = UserRole.CASHIER;
+    this.createDialogVisible = true;
+  }
+
+  async createUser(): Promise<void> {
+    if (!this.newUserEmail || !this.newUserPassword || !this.newUserRole) return;
+
+    this.creating.set(true);
+    try {
+      const result = await this.userRoleService.createUser(this.newUserEmail, this.newUserPassword, this.newUserRole);
+      if (result.warning) {
+        this.toastService.warn('User Created', result.warning);
+      } else {
+        this.toastService.success('User Created', `${this.newUserEmail} created as ${getRoleDisplayName(this.newUserRole)}`);
+      }
+      this.createDialogVisible = false;
+      await this.loadData();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create user';
+      this.toastService.error('Error', message);
+      console.error('Failed to create user:', error);
+    } finally {
+      this.creating.set(false);
     }
   }
 }

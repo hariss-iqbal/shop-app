@@ -57,7 +57,7 @@ export class InventoryTransferController {
       sourceLocationId: dto.sourceLocationId,
       destinationLocationId: dto.destinationLocationId,
       items: dto.items.map(item => ({
-        phoneId: item.phoneId,
+        productId: item.productId,
         quantity: item.quantity,
         notes: item.notes ? this.sanitizationService.sanitize(item.notes) : null
       })),
@@ -127,8 +127,8 @@ export class InventoryTransferController {
     }
 
     for (const item of dto.items) {
-      if (!item.phoneId) {
-        throw new Error('Phone ID is required for each item');
+      if (!item.productId) {
+        throw new Error('Product ID is required for each item');
       }
       if (!item.quantity || item.quantity < INVENTORY_TRANSFER_CONSTRAINTS.QUANTITY_MIN) {
         throw new Error(`Quantity must be at least ${INVENTORY_TRANSFER_CONSTRAINTS.QUANTITY_MIN}`);

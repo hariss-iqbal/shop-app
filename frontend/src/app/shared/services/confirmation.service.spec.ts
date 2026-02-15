@@ -160,61 +160,61 @@ describe('ConfirmDialogService', () => {
 
   describe('confirmDelete()', () => {
     it('should call confirm with correct header', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
       expect(lastConfirmCall.header).toBe('Confirm Delete');
     });
 
     it('should include entity name in message', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
-      expect(lastConfirmCall.message).toContain('phone');
+      expect(lastConfirmCall.message).toContain('product');
     });
 
     it('should include "Are you sure" in message', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
       expect(lastConfirmCall.message).toContain('Are you sure you want to delete');
     });
 
     it('should include "cannot be undone" in message', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
       expect(lastConfirmCall.message).toContain('This action cannot be undone');
     });
 
     it('should include item details when provided', () => {
-      service.confirmDelete('phone', 'iPhone 15 Pro');
+      service.confirmDelete('product', 'iPhone 15 Pro');
 
       expect(lastConfirmCall.message).toContain('iPhone 15 Pro');
     });
 
     it('should format item details in bold', () => {
-      service.confirmDelete('phone', 'iPhone 15 Pro');
+      service.confirmDelete('product', 'iPhone 15 Pro');
 
       expect(lastConfirmCall.message).toContain('<strong>iPhone 15 Pro</strong>');
     });
 
     it('should use trash icon', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
       expect(lastConfirmCall.icon).toBe('pi pi-trash');
     });
 
     it('should use "Confirm" as accept label', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
       expect(lastConfirmCall.acceptLabel).toBe('Confirm');
     });
 
     it('should use "Cancel" as reject label', () => {
-      service.confirmDelete('phone');
+      service.confirmDelete('product');
 
       expect(lastConfirmCall.rejectLabel).toBe('Cancel');
     });
 
     it('should resolve to true when confirmed', async () => {
-      const promise = service.confirmDelete('phone');
+      const promise = service.confirmDelete('product');
       lastConfirmCall.accept!();
 
       const result = await promise;
@@ -222,7 +222,7 @@ describe('ConfirmDialogService', () => {
     });
 
     it('should resolve to false when cancelled', async () => {
-      const promise = service.confirmDelete('phone');
+      const promise = service.confirmDelete('product');
       lastConfirmCall.reject!();
 
       const result = await promise;
@@ -232,62 +232,62 @@ describe('ConfirmDialogService', () => {
 
   describe('confirmBulkDelete()', () => {
     it('should call confirm with correct header', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
       expect(lastConfirmCall.header).toBe('Confirm Bulk Delete');
     });
 
     it('should include count in message', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
       expect(lastConfirmCall.message).toContain('<strong>5</strong>');
     });
 
     it('should include entity name in message', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
-      expect(lastConfirmCall.message).toContain('phone');
+      expect(lastConfirmCall.message).toContain('product');
     });
 
     it('should pluralize entity name when count > 1', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
-      expect(lastConfirmCall.message).toContain('phones');
+      expect(lastConfirmCall.message).toContain('products');
     });
 
     it('should not pluralize entity name when count is 1', () => {
-      service.confirmBulkDelete('phone', 1);
+      service.confirmBulkDelete('product', 1);
 
-      expect(lastConfirmCall.message).not.toContain('phones');
-      expect(lastConfirmCall.message).toContain('phone');
+      expect(lastConfirmCall.message).not.toContain('products');
+      expect(lastConfirmCall.message).toContain('product');
     });
 
     it('should include "cannot be undone" in message', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
       expect(lastConfirmCall.message).toContain('This action cannot be undone');
     });
 
     it('should use trash icon', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
       expect(lastConfirmCall.icon).toBe('pi pi-trash');
     });
 
     it('should use "Confirm" as accept label', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
       expect(lastConfirmCall.acceptLabel).toBe('Confirm');
     });
 
     it('should use "Cancel" as reject label', () => {
-      service.confirmBulkDelete('phone', 5);
+      service.confirmBulkDelete('product', 5);
 
       expect(lastConfirmCall.rejectLabel).toBe('Cancel');
     });
 
     it('should resolve to true when confirmed', async () => {
-      const promise = service.confirmBulkDelete('phone', 5);
+      const promise = service.confirmBulkDelete('product', 5);
       lastConfirmCall.accept!();
 
       const result = await promise;
@@ -295,7 +295,7 @@ describe('ConfirmDialogService', () => {
     });
 
     it('should resolve to false when cancelled', async () => {
-      const promise = service.confirmBulkDelete('phone', 5);
+      const promise = service.confirmBulkDelete('product', 5);
       lastConfirmCall.reject!();
 
       const result = await promise;
@@ -311,27 +311,27 @@ describe('ConfirmDialogService', () => {
 
   describe('confirmBulkAction()', () => {
     it('should include action name in header', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.header).toBe('Confirm Mark as Sold');
     });
 
     it('should include action name in message (lowercase)', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.message).toContain('mark as sold');
     });
 
     it('should include count in message', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.message).toContain('<strong>3</strong>');
     });
 
     it('should include entity name in message', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
-      expect(lastConfirmCall.message).toContain('phone');
+      expect(lastConfirmCall.message).toContain('product');
     });
 
     it('should pluralize entity name when count > 1', () => {
@@ -347,31 +347,31 @@ describe('ConfirmDialogService', () => {
     });
 
     it('should use exclamation-triangle icon', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.icon).toBe('pi pi-exclamation-triangle');
     });
 
     it('should use warning button style', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.acceptButtonStyleClass).toBe('p-button-warning');
     });
 
     it('should use "Confirm" as accept label', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.acceptLabel).toBe('Confirm');
     });
 
     it('should use "Cancel" as reject label', () => {
-      service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      service.confirmBulkAction('Mark as Sold', 'product', 3);
 
       expect(lastConfirmCall.rejectLabel).toBe('Cancel');
     });
 
     it('should resolve to true when confirmed', async () => {
-      const promise = service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      const promise = service.confirmBulkAction('Mark as Sold', 'product', 3);
       lastConfirmCall.accept!();
 
       const result = await promise;
@@ -379,7 +379,7 @@ describe('ConfirmDialogService', () => {
     });
 
     it('should resolve to false when cancelled', async () => {
-      const promise = service.confirmBulkAction('Mark as Sold', 'phone', 3);
+      const promise = service.confirmBulkAction('Mark as Sold', 'product', 3);
       lastConfirmCall.reject!();
 
       const result = await promise;
@@ -467,25 +467,25 @@ describe('ConfirmDialogService', () => {
     });
 
     it('should handle item details with HTML special characters', () => {
-      service.confirmDelete('phone', 'Samsung <Galaxy> S24');
+      service.confirmDelete('product', 'Samsung <Galaxy> S24');
 
       expect(lastConfirmCall.message).toContain('Samsung <Galaxy> S24');
     });
 
     it('should handle empty item details', () => {
-      service.confirmDelete('phone', '');
+      service.confirmDelete('product', '');
 
       expect(lastConfirmCall.message).not.toContain('<strong></strong>');
     });
 
     it('should handle zero count in bulk delete', () => {
-      service.confirmBulkDelete('phone', 0);
+      service.confirmBulkDelete('product', 0);
 
       expect(lastConfirmCall.message).toContain('<strong>0</strong>');
     });
 
     it('should handle negative count in bulk delete', () => {
-      service.confirmBulkDelete('phone', -1);
+      service.confirmBulkDelete('product', -1);
 
       expect(lastConfirmCall.message).toContain('<strong>-1</strong>');
     });
@@ -504,7 +504,7 @@ describe('ConfirmDialogService', () => {
     });
 
     it('should handle unicode characters in item details', () => {
-      service.confirmDelete('phone', 'iPhone 15 Pro 📱');
+      service.confirmDelete('product', 'iPhone 15 Pro 📱');
 
       expect(lastConfirmCall.message).toContain('iPhone 15 Pro 📱');
     });
@@ -512,7 +512,7 @@ describe('ConfirmDialogService', () => {
 
   describe('concurrent confirmations', () => {
     it('should handle multiple sequential confirmations', async () => {
-      const promise1 = service.confirmDelete('phone', 'Item 1');
+      const promise1 = service.confirmDelete('product', 'Item 1');
       lastConfirmCall.accept!();
       const result1 = await promise1;
 

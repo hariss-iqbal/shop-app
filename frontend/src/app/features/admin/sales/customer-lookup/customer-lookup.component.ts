@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -44,11 +44,13 @@ import { PrintReceiptDialogComponent } from '../print-receipt-dialog/print-recei
   templateUrl: './customer-lookup.component.html'
 })
 export class CustomerLookupComponent implements OnInit {
-  private saleService = inject(SaleService);
-  private toastService = inject(ToastService);
-  private receiptService = inject(ReceiptService);
-  private whatsAppService = inject(WhatsAppService);
-  private route = inject(ActivatedRoute);
+  constructor(
+    private saleService: SaleService,
+    private toastService: ToastService,
+    private receiptService: ReceiptService,
+    private whatsAppService: WhatsAppService,
+    private route: ActivatedRoute
+  ) { }
 
   phoneNumber = '';
   searching = signal(false);

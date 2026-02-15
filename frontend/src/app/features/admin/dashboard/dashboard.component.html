@@ -83,6 +83,28 @@
     </div>
   }
 
+  <!-- Quick Actions -->
+  <div class="col-12">
+    <div class="flex flex-column sm:flex-row gap-3">
+      <p-button
+        label="Create New Sale"
+        icon="pi pi-shopping-cart"
+        styleClass="flex-1"
+        severity="success"
+        size="large"
+        (onClick)="navigateToNewSale()"
+      />
+      <p-button
+        label="Add Inventory"
+        icon="pi pi-plus"
+        styleClass="flex-1"
+        severity="primary"
+        size="large"
+        (onClick)="navigateToAddProduct()"
+      />
+    </div>
+  </div>
+
   <!-- Stock Alerts (above KPI cards) -->
   <div class="col-12">
     <app-stock-alerts-panel
@@ -116,7 +138,7 @@
               </div>
             </div>
           } @else {
-            <div class="flex align-items-center gap-3" role="article" aria-label="Total Stock: {{ kpis().stockCount }} phones available">
+            <div class="flex align-items-center gap-3" role="article" aria-label="Total Stock: {{ kpis().stockCount }} products available">
               <div class="w-3rem h-3rem border-round bg-blue-100 flex align-items-center justify-content-center flex-shrink-0">
                 <i class="pi pi-mobile text-blue-500 text-2xl" aria-hidden="true"></i>
               </div>
@@ -269,7 +291,7 @@
             <div class="flex flex-column align-items-center justify-content-center text-color-secondary" style="height: 300px" role="status">
               <i class="pi pi-chart-pie text-4xl mb-3" aria-hidden="true"></i>
               <span class="text-lg">No stock data available</span>
-              <span class="text-sm mt-1">Inventory will appear here once phones are added</span>
+              <span class="text-sm mt-1">Inventory will appear here once products are added</span>
             </div>
           }
         </p-card>
@@ -277,8 +299,8 @@
     </div>
   </section>
 
-  <!-- Recently Added Phones Section -->
-  <section class="col-12" aria-label="Recently added phones">
+  <!-- Recently Added Products Section -->
+  <section class="col-12" aria-label="Recently added products">
     <p-card>
       <ng-template #header>
         <div class="flex align-items-center justify-content-between px-3 pt-3">
@@ -295,7 +317,7 @@
         </div>
       </ng-template>
       @if (loading()) {
-        <div class="flex flex-column gap-3" aria-busy="true" aria-label="Loading recently added phones">
+        <div class="flex flex-column gap-3" aria-busy="true" aria-label="Loading recently added products">
           @for (_ of skeletonRows; track $index) {
             <div class="flex align-items-center gap-3">
               <p-skeleton width="15%" />
@@ -306,17 +328,17 @@
             </div>
           }
         </div>
-      } @else if (recentPhones().length > 0) {
+      } @else if (recentProducts().length > 0) {
         <p-table
-          [value]="recentPhones()"
+          [value]="recentProducts()"
           [rowHover]="true"
-          (onRowSelect)="onRecentPhoneClick($any($event).data)"
+          (onRowSelect)="onRecentProductClick($any($event).data)"
           selectionMode="single"
           dataKey="id"
           [scrollable]="true"
           scrollDirection="horizontal"
           [tableStyle]="{ 'min-width': '40rem' }"
-          ariaLabel="Recently added phones table"
+          ariaLabel="Recently added products table"
         >
           <ng-template #header>
             <tr>
@@ -328,18 +350,18 @@
               <th scope="col" class="w-3rem"></th>
             </tr>
           </ng-template>
-          <ng-template #body let-phone>
-            <tr [pSelectableRow]="phone" class="cursor-pointer" role="button" tabindex="0" [attr.aria-label]="'Edit ' + phone.brandName + ' ' + phone.model">
-              <td>{{ phone.brandName }}</td>
-              <td class="font-medium">{{ phone.model }}</td>
+          <ng-template #body let-product>
+            <tr [pSelectableRow]="product" class="cursor-pointer" role="button" tabindex="0" [attr.aria-label]="'Edit ' + product.brandName + ' ' + product.model">
+              <td>{{ product.brandName }}</td>
+              <td class="font-medium">{{ product.model }}</td>
               <td>
                 <p-tag
-                  [value]="phone.condition | titlecase"
-                  [severity]="getConditionSeverity(phone.condition)"
+                  [value]="product.condition | titlecase"
+                  [severity]="getConditionSeverity(product.condition)"
                 />
               </td>
-              <td>{{ phone.sellingPrice | appCurrency:'1.2-2' }}</td>
-              <td>{{ phone.createdAt | date:'mediumDate' }}</td>
+              <td>{{ product.sellingPrice | appCurrency:'1.2-2' }}</td>
+              <td>{{ product.createdAt | date:'mediumDate' }}</td>
               <td class="text-right">
                 <i class="pi pi-pencil text-color-secondary text-sm" aria-hidden="true"></i>
               </td>
@@ -349,14 +371,14 @@
       } @else {
         <div class="flex flex-column align-items-center justify-content-center text-color-secondary py-5" role="status">
           <i class="pi pi-inbox text-4xl mb-3" aria-hidden="true"></i>
-          <span class="text-lg">No phones added yet</span>
-          <span class="text-sm mt-1 mb-3">Recently added phones will appear here</span>
+          <span class="text-lg">No products added yet</span>
+          <span class="text-sm mt-1 mb-3">Recently added products will appear here</span>
           <p-button
             icon="pi pi-plus"
-            label="Add Phone"
+            label="Add Product"
             [outlined]="true"
-            (onClick)="navigateToAddPhone()"
-            ariaLabel="Add new phone to inventory"
+            (onClick)="navigateToAddProduct()"
+            ariaLabel="Add new product to inventory"
           />
         </div>
       }

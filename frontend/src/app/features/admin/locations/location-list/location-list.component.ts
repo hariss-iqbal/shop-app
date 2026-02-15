@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -38,9 +38,11 @@ import { StoreLocation, CreateStoreLocationRequest, UpdateStoreLocationRequest }
   templateUrl: './location-list.component.html'
 })
 export class LocationListComponent implements OnInit {
-  private storeLocationService = inject(StoreLocationService);
-  private messageService = inject(MessageService);
-  private confirmationService = inject(ConfirmationService);
+  constructor(
+    private storeLocationService: StoreLocationService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
+  ) { }
 
   locations = signal<StoreLocation[]>([]);
   loading = signal(false);

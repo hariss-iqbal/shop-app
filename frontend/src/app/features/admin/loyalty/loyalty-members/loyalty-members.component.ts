@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -63,8 +63,10 @@ import {
   styleUrls: ['./loyalty-members.component.scss']
 })
 export class LoyaltyMembersComponent implements OnInit {
-  private loyaltyService = inject(LoyaltyService);
-  private messageService = inject(MessageService);
+  constructor(
+    private loyaltyService: LoyaltyService,
+    private messageService: MessageService
+  ) { }
 
   loading = signal(true);
   members = signal<CustomerLoyalty[]>([]);

@@ -62,7 +62,7 @@
 
             <ng-template pTemplate="header">
               <tr>
-                <th>Phone</th>
+                <th>Product</th>
                 <th>Brand</th>
                 <th>Condition</th>
                 <th class="text-right">Quantity</th>
@@ -73,14 +73,14 @@
             <ng-template pTemplate="body" let-item>
               <tr>
                 <td>
-                  <span class="font-medium">{{ item.phone?.model || 'Unknown' }}</span>
+                  <span class="font-medium">{{ item.product?.model || 'Unknown' }}</span>
                 </td>
-                <td>{{ item.phone?.brandName || '-' }}</td>
+                <td>{{ item.product?.brandName || '-' }}</td>
                 <td>
-                  @if (item.phone?.condition) {
+                  @if (item.product?.condition) {
                     <p-tag
-                      [value]="item.phone.condition | titlecase"
-                      [severity]="getConditionSeverity(item.phone.condition)">
+                      [value]="item.product.condition | titlecase"
+                      [severity]="getConditionSeverity(item.product.condition)">
                     </p-tag>
                   } @else {
                     -

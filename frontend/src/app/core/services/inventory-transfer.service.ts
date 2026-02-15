@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { InventoryTransferStatus } from '../../enums';
 import {
@@ -27,7 +27,7 @@ export interface TransferLazyLoadParams {
   providedIn: 'root'
 })
 export class InventoryTransferService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getTransfers(
     params: TransferLazyLoadParams,
@@ -40,8 +40,8 @@ export class InventoryTransferService {
         source_location:store_locations!source_location_id(id, name, code),
         destination_location:store_locations!destination_location_id(id, name, code),
         items:inventory_transfer_items(
-          id, transfer_id, phone_id, quantity, notes, created_at,
-          phone:phones(id, model, condition, brand:brands(id, name))
+          id, transfer_id, product_id, quantity, notes, created_at,
+          product:products(id, model, condition, brand:brands(id, name))
         )
       `, { count: 'exact' });
 
@@ -88,8 +88,8 @@ export class InventoryTransferService {
         source_location:store_locations!source_location_id(id, name, code),
         destination_location:store_locations!destination_location_id(id, name, code),
         items:inventory_transfer_items(
-          id, transfer_id, phone_id, quantity, notes, created_at,
-          phone:phones(id, model, condition, brand:brands(id, name))
+          id, transfer_id, product_id, quantity, notes, created_at,
+          product:products(id, model, condition, brand:brands(id, name))
         )
       `)
       .eq('id', id)
@@ -113,8 +113,8 @@ export class InventoryTransferService {
         source_location:store_locations!source_location_id(id, name, code),
         destination_location:store_locations!destination_location_id(id, name, code),
         items:inventory_transfer_items(
-          id, transfer_id, phone_id, quantity, notes, created_at,
-          phone:phones(id, model, condition, brand:brands(id, name))
+          id, transfer_id, product_id, quantity, notes, created_at,
+          product:products(id, model, condition, brand:brands(id, name))
         )
       `)
       .eq('transfer_number', transferNumber)
@@ -135,7 +135,7 @@ export class InventoryTransferService {
       p_source_location_id: request.sourceLocationId,
       p_destination_location_id: request.destinationLocationId,
       p_items: request.items.map(item => ({
-        phone_id: item.phoneId,
+        product_id: item.productId,
         quantity: item.quantity,
         notes: item.notes || null
       })),
@@ -294,20 +294,20 @@ export class InventoryTransferService {
   }
 
   private mapToTransferItem(data: Record<string, unknown>): InventoryTransferItem {
-    const phone = data['phone'] as Record<string, unknown> | null;
-    const brand = phone?.['brand'] as Record<string, unknown> | null;
+    const product = data['product'] as Record<string, unknown> | null;
+    const brand = product?.['brand'] as Record<string, unknown> | null;
 
     return {
       id: data['id'] as string,
       transferId: data['transfer_id'] as string,
-      phoneId: data['phone_id'] as string,
+      productId: data['product_id'] as string,
       quantity: data['quantity'] as number,
       notes: data['notes'] as string | null,
       createdAt: data['created_at'] as string,
-      phone: phone ? {
-        id: phone['id'] as string,
-        model: phone['model'] as string,
-        condition: phone['condition'] as string,
+      product: product ? {
+        id: product['id'] as string,
+        model: product['model'] as string,
+        condition: product['condition'] as string,
         brandId: brand?.['id'] as string || '',
         brandName: brand?.['name'] as string || ''
       } : undefined

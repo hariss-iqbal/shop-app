@@ -4,16 +4,17 @@ import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { InventoryStatusActionsComponent } from './inventory-status-actions.component';
-import { PhoneService } from '../../../../core/services/phone.service';
+import { ProductService } from '../../../../core/services/product.service';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { Phone } from '../../../../models/phone.model';
-import { PhoneStatus } from '../../../../enums/phone-status.enum';
-import { PhoneCondition } from '../../../../enums/phone-condition.enum';
+import { Product } from '../../../../models/product.model';
+import { ProductStatus } from '../../../../enums/product-status.enum';
+import { ProductCondition } from '../../../../enums/product-condition.enum';
+import { ProductType } from '../../../../enums/product-type.enum';
 
 describe('InventoryStatusActionsComponent', () => {
   let component: InventoryStatusActionsComponent;
   let fixture: ComponentFixture<TestHostComponent>;
-  let mockPhoneService: jasmine.SpyObj<PhoneService>;
+  let mockProductService: jasmine.SpyObj<ProductService>;
   let mockToastService: jasmine.SpyObj<ToastService>;
 
   const createMockPhone = (overrides: Partial<Phone> = {}): Phone => ({
@@ -26,13 +27,13 @@ describe('InventoryStatusActionsComponent', () => {
     storageGb: 256,
     ramGb: 8,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: '123456789012345',
     costPrice: 900,
     sellingPrice: 1200,
     profitMargin: 25,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: null,
     supplierId: null,
     supplierName: null,
@@ -77,7 +78,7 @@ describe('InventoryStatusActionsComponent', () => {
   }
 
   beforeEach(async () => {
-    mockPhoneService = jasmine.createSpyObj('PhoneService', ['updatePhoneStatus']);
+    mockProductService = jasmine.createSpyObj('ProductService', ['updateProductStatus']);
     mockToastService = jasmine.createSpyObj('ToastService', ['success', 'error']);
 
     await TestBed.configureTestingModule({
@@ -86,7 +87,7 @@ describe('InventoryStatusActionsComponent', () => {
         TestHostComponent
       ],
       providers: [
-        { provide: PhoneService, useValue: mockPhoneService },
+        { provide: ProductService, useValue: mockProductService },
         { provide: ToastService, useValue: mockToastService }
       ]
     }).compileComponents();
@@ -105,7 +106,7 @@ describe('InventoryStatusActionsComponent', () => {
       const tag = fixture.debugElement.query(By.css('p-tag'));
       expect(tag).toBeTruthy();
       // Use component method to verify the label value
-      expect(component.getStatusLabel(PhoneStatus.AVAILABLE)).toBe('Available');
+      expect(component.getStatusLabel(ProductStatus.AVAILABLE)).toBe('Available');
     });
 
     it('should display a dropdown button', () => {
@@ -116,24 +117,24 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Status Tag Display', () => {
     it('should show "Available" label with success severity for available phones', () => {
-      expect(component.getStatusLabel(PhoneStatus.AVAILABLE)).toBe('Available');
-      expect(component.getStatusSeverity(PhoneStatus.AVAILABLE)).toBe('success');
+      expect(component.getStatusLabel(ProductStatus.AVAILABLE)).toBe('Available');
+      expect(component.getStatusSeverity(ProductStatus.AVAILABLE)).toBe('success');
     });
 
     it('should show "Sold" label with danger severity for sold phones', () => {
-      expect(component.getStatusLabel(PhoneStatus.SOLD)).toBe('Sold');
-      expect(component.getStatusSeverity(PhoneStatus.SOLD)).toBe('danger');
+      expect(component.getStatusLabel(ProductStatus.SOLD)).toBe('Sold');
+      expect(component.getStatusSeverity(ProductStatus.SOLD)).toBe('danger');
     });
 
     it('should show "Reserved" label with warn severity for reserved phones', () => {
-      expect(component.getStatusLabel(PhoneStatus.RESERVED)).toBe('Reserved');
-      expect(component.getStatusSeverity(PhoneStatus.RESERVED)).toBe('warn');
+      expect(component.getStatusLabel(ProductStatus.RESERVED)).toBe('Reserved');
+      expect(component.getStatusSeverity(ProductStatus.RESERVED)).toBe('warn');
     });
   });
 
   describe('Menu Items - Available Phone', () => {
     beforeEach(() => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.AVAILABLE }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.AVAILABLE }));
       fixture.detectChanges();
     });
 
@@ -167,7 +168,7 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Menu Items - Reserved Phone', () => {
     beforeEach(() => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.RESERVED }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.RESERVED }));
       fixture.detectChanges();
     });
 
@@ -193,7 +194,7 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Menu Items - Sold Phone', () => {
     beforeEach(() => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.SOLD }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.SOLD }));
       fixture.detectChanges();
     });
 
@@ -218,12 +219,12 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Quick Status Change - Mark as Available', () => {
     beforeEach(() => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.RESERVED }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.RESERVED }));
       fixture.detectChanges();
     });
 
-    it('should call PhoneService.updatePhoneStatus when Mark as Available is clicked', fakeAsync(() => {
-      mockPhoneService.updatePhoneStatus.and.returnValue(Promise.resolve(createMockPhone({ status: PhoneStatus.AVAILABLE })));
+    it('should call ProductService.updateProductStatus when Mark as Available is clicked', fakeAsync(() => {
+      mockProductService.updateProductStatus.and.returnValue(Promise.resolve(createMockPhone({ status: ProductStatus.AVAILABLE })));
 
       const menuItems = component.menuItems();
       const availableItem = menuItems.find(item => item.label === 'Mark as Available');
@@ -231,11 +232,11 @@ describe('InventoryStatusActionsComponent', () => {
 
       tick();
 
-      expect(mockPhoneService.updatePhoneStatus).toHaveBeenCalledWith('phone-1', PhoneStatus.AVAILABLE);
+      expect(mockProductService.updateProductStatus).toHaveBeenCalledWith('phone-1', ProductStatus.AVAILABLE);
     }));
 
     it('should show success toast on successful status change', fakeAsync(() => {
-      mockPhoneService.updatePhoneStatus.and.returnValue(Promise.resolve(createMockPhone({ status: PhoneStatus.AVAILABLE })));
+      mockProductService.updateProductStatus.and.returnValue(Promise.resolve(createMockPhone({ status: ProductStatus.AVAILABLE })));
 
       const menuItems = component.menuItems();
       const availableItem = menuItems.find(item => item.label === 'Mark as Available');
@@ -250,7 +251,7 @@ describe('InventoryStatusActionsComponent', () => {
     }));
 
     it('should emit statusChanged event on successful status change', fakeAsync(() => {
-      mockPhoneService.updatePhoneStatus.and.returnValue(Promise.resolve(createMockPhone({ status: PhoneStatus.AVAILABLE })));
+      mockProductService.updateProductStatus.and.returnValue(Promise.resolve(createMockPhone({ status: ProductStatus.AVAILABLE })));
 
       const menuItems = component.menuItems();
       const availableItem = menuItems.find(item => item.label === 'Mark as Available');
@@ -264,7 +265,7 @@ describe('InventoryStatusActionsComponent', () => {
 
     it('should show loading state during status update', fakeAsync(() => {
       let resolvePromise: Function;
-      mockPhoneService.updatePhoneStatus.and.returnValue(new Promise(resolve => {
+      mockProductService.updateProductStatus.and.returnValue(new Promise(resolve => {
         resolvePromise = resolve;
       }));
 
@@ -274,14 +275,14 @@ describe('InventoryStatusActionsComponent', () => {
 
       expect(component.updating()).toBeTrue();
 
-      resolvePromise!(createMockPhone({ status: PhoneStatus.AVAILABLE }));
+      resolvePromise!(createMockPhone({ status: ProductStatus.AVAILABLE }));
       tick();
 
       expect(component.updating()).toBeFalse();
     }));
 
     it('should show error toast on failure', fakeAsync(() => {
-      mockPhoneService.updatePhoneStatus.and.returnValue(Promise.reject(new Error('Network error')));
+      mockProductService.updateProductStatus.and.returnValue(Promise.reject(new Error('Network error')));
 
       const menuItems = component.menuItems();
       const availableItem = menuItems.find(item => item.label === 'Mark as Available');
@@ -295,12 +296,12 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Quick Status Change - Mark as Reserved', () => {
     beforeEach(() => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.AVAILABLE }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.AVAILABLE }));
       fixture.detectChanges();
     });
 
-    it('should call PhoneService.updatePhoneStatus when Mark as Reserved is clicked', fakeAsync(() => {
-      mockPhoneService.updatePhoneStatus.and.returnValue(Promise.resolve(createMockPhone({ status: PhoneStatus.RESERVED })));
+    it('should call ProductService.updateProductStatus when Mark as Reserved is clicked', fakeAsync(() => {
+      mockProductService.updateProductStatus.and.returnValue(Promise.resolve(createMockPhone({ status: ProductStatus.RESERVED })));
 
       const menuItems = component.menuItems();
       const reservedItem = menuItems.find(item => item.label === 'Mark as Reserved');
@@ -308,11 +309,11 @@ describe('InventoryStatusActionsComponent', () => {
 
       tick();
 
-      expect(mockPhoneService.updatePhoneStatus).toHaveBeenCalledWith('phone-1', PhoneStatus.RESERVED);
+      expect(mockProductService.updateProductStatus).toHaveBeenCalledWith('phone-1', ProductStatus.RESERVED);
     }));
 
     it('should show success toast with Reserved status', fakeAsync(() => {
-      mockPhoneService.updatePhoneStatus.and.returnValue(Promise.resolve(createMockPhone({ status: PhoneStatus.RESERVED })));
+      mockProductService.updateProductStatus.and.returnValue(Promise.resolve(createMockPhone({ status: ProductStatus.RESERVED })));
 
       const menuItems = component.menuItems();
       const reservedItem = menuItems.find(item => item.label === 'Mark as Reserved');
@@ -329,7 +330,7 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Mark as Sold Action', () => {
     it('should emit markAsSoldRequested with phone when Mark as Sold is clicked', () => {
-      const phone = createMockPhone({ status: PhoneStatus.AVAILABLE });
+      const phone = createMockPhone({ status: ProductStatus.AVAILABLE });
       fixture.componentInstance.phone.set(phone);
       fixture.detectChanges();
 
@@ -340,21 +341,21 @@ describe('InventoryStatusActionsComponent', () => {
       expect(fixture.componentInstance.markAsSoldPhone).toEqual(phone);
     });
 
-    it('should not call PhoneService.updatePhoneStatus for Mark as Sold', () => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.AVAILABLE }));
+    it('should not call ProductService.updateProductStatus for Mark as Sold', () => {
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.AVAILABLE }));
       fixture.detectChanges();
 
       const menuItems = component.menuItems();
       const soldItem = menuItems.find(item => item.label === 'Mark as Sold');
       soldItem?.command?.({});
 
-      expect(mockPhoneService.updatePhoneStatus).not.toHaveBeenCalled();
+      expect(mockProductService.updateProductStatus).not.toHaveBeenCalled();
     });
   });
 
   describe('Print Label Action', () => {
     it('should emit printLabelRequested with phone when Print Label is clicked', () => {
-      const phone = createMockPhone({ status: PhoneStatus.AVAILABLE });
+      const phone = createMockPhone({ status: ProductStatus.AVAILABLE });
       fixture.componentInstance.phone.set(phone);
       fixture.detectChanges();
 
@@ -369,7 +370,7 @@ describe('InventoryStatusActionsComponent', () => {
   describe('Menu Items Update on Phone Change', () => {
     it('should rebuild menu items when phone input changes', () => {
       // Start with available phone
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.AVAILABLE }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.AVAILABLE }));
       fixture.detectChanges();
 
       let menuItems = component.menuItems();
@@ -377,7 +378,7 @@ describe('InventoryStatusActionsComponent', () => {
       expect(menuItems.find(item => item.label === 'Mark as Reserved')).toBeDefined();
 
       // Change to reserved phone
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.RESERVED }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.RESERVED }));
       fixture.detectChanges();
 
       menuItems = component.menuItems();
@@ -410,11 +411,11 @@ describe('InventoryStatusActionsComponent', () => {
 
   describe('Button Disabled State', () => {
     it('should disable button while updating', fakeAsync(() => {
-      fixture.componentInstance.phone.set(createMockPhone({ status: PhoneStatus.RESERVED }));
+      fixture.componentInstance.phone.set(createMockPhone({ status: ProductStatus.RESERVED }));
       fixture.detectChanges();
 
       let resolvePromise: Function;
-      mockPhoneService.updatePhoneStatus.and.returnValue(new Promise(resolve => {
+      mockProductService.updateProductStatus.and.returnValue(new Promise(resolve => {
         resolvePromise = resolve;
       }));
 
@@ -426,7 +427,7 @@ describe('InventoryStatusActionsComponent', () => {
 
       expect(component.updating()).toBeTrue();
 
-      resolvePromise!(createMockPhone({ status: PhoneStatus.AVAILABLE }));
+      resolvePromise!(createMockPhone({ status: ProductStatus.AVAILABLE }));
       tick();
       fixture.detectChanges();
 

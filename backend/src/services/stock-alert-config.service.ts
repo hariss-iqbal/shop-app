@@ -1,8 +1,8 @@
 import { StockAlertConfigRepository } from '../repositories/stock-alert-config.repository';
-import { PhoneRepository } from '../repositories/phone.repository';
+import { ProductRepository } from '../repositories/product.repository';
 import { BrandRepository } from '../repositories/brand.repository';
 import { StockAlertConfig, StockAlertConfigUpdate } from '../entities/stock-alert-config.entity';
-import { PhoneStatus } from '../enums';
+import { ProductStatus } from '../enums';
 import {
   UpdateStockAlertConfigDto,
   StockAlertConfigResponseDto,
@@ -18,7 +18,7 @@ import {
 export class StockAlertConfigService {
   constructor(
     private readonly stockAlertConfigRepository: StockAlertConfigRepository,
-    private readonly phoneRepository: PhoneRepository,
+    private readonly productRepository: ProductRepository,
     private readonly brandRepository: BrandRepository
   ) {}
 
@@ -44,7 +44,7 @@ export class StockAlertConfigService {
     const config = await this.stockAlertConfigRepository.getOrCreate();
     const alerts: StockAlertDto[] = [];
 
-    const totalStock = await this.phoneRepository.count(PhoneStatus.AVAILABLE);
+    const totalStock = await this.productRepository.count(ProductStatus.AVAILABLE);
 
     if (totalStock < config.low_stock_threshold) {
       alerts.push({
@@ -59,7 +59,7 @@ export class StockAlertConfigService {
       const brands = await this.brandRepository.findAll();
 
       for (const brand of brands) {
-        const brandStock = await this.phoneRepository.countByBrand(brand.id, PhoneStatus.AVAILABLE);
+        const brandStock = await this.productRepository.countByBrand(brand.id, ProductStatus.AVAILABLE);
 
         if (brandStock === 0) {
           alerts.push({

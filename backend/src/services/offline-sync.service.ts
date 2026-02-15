@@ -1,6 +1,6 @@
 import { OfflineSyncLogRepository } from '../repositories/offline-sync-log.repository';
 import { SaleRepository } from '../repositories/sale.repository';
-import { PhoneRepository } from '../repositories/phone.repository';
+import { ProductRepository } from '../repositories/product.repository';
 import { OfflineSyncLogInsert } from '../entities/offline-sync-log.entity';
 import {
   SyncBatchRequestDto,
@@ -28,7 +28,7 @@ export class OfflineSyncService {
   constructor(
     private readonly syncLogRepository: OfflineSyncLogRepository,
     private readonly saleRepository: SaleRepository,
-    private readonly phoneRepository: PhoneRepository
+    private readonly productRepository: ProductRepository
   ) {}
 
   /**
@@ -111,41 +111,41 @@ export class OfflineSyncService {
     const log = await this.syncLogRepository.create(logEntry);
 
     try {
-      // Check if phone is available
-      const phone = await this.phoneRepository.findById(sale.phoneId);
+      // Check if product is available
+      const product = await this.productRepository.findById(sale.productId);
 
-      if (!phone) {
+      if (!product) {
         await this.syncLogRepository.markAsConflict(
           log.id,
-          'PHONE_NOT_AVAILABLE',
-          'The phone no longer exists in the system'
+          'PRODUCT_NOT_AVAILABLE',
+          'The product no longer exists in the system'
         );
         return {
           localId: sale.localId,
           success: false,
-          conflictType: 'PHONE_NOT_AVAILABLE',
-          conflictDetails: 'The phone no longer exists in the system'
+          conflictType: 'PRODUCT_NOT_AVAILABLE',
+          conflictDetails: 'The product no longer exists in the system'
         };
       }
 
-      if (phone.status !== 'available') {
+      if (product.status !== 'available') {
         await this.syncLogRepository.markAsConflict(
           log.id,
-          'PHONE_ALREADY_SOLD',
-          `Phone is currently marked as "${phone.status}"`
+          'PRODUCT_ALREADY_SOLD',
+          `Product is currently marked as "${product.status}"`
         );
         return {
           localId: sale.localId,
           success: false,
-          conflictType: 'PHONE_ALREADY_SOLD',
-          conflictDetails: `Phone is currently marked as "${phone.status}"`,
-          serverData: { phoneId: phone.id, currentStatus: phone.status }
+          conflictType: 'PRODUCT_ALREADY_SOLD',
+          conflictDetails: `Product is currently marked as "${product.status}"`,
+          serverData: { productId: product.id, currentStatus: product.status }
         };
       }
 
       // Process the sale
       const result = await this.saleRepository.completeSaleWithInventoryDeduction(
-        sale.phoneId,
+        sale.productId,
         sale.saleDate,
         sale.salePrice,
         sale.buyerName,
@@ -216,22 +216,22 @@ export class OfflineSyncService {
   async checkConflicts(request: ConflictCheckRequestDto): Promise<ConflictCheckResponseDto> {
     const conflicts: ConflictCheckResponseDto['conflicts'] = [];
 
-    // Check phone availability
-    for (const phoneId of request.phoneIds) {
-      const phone = await this.phoneRepository.findById(phoneId);
+    // Check product availability
+    for (const productId of request.productIds) {
+      const product = await this.productRepository.findById(productId);
 
-      if (!phone) {
+      if (!product) {
         conflicts.push({
-          type: 'phone',
-          id: phoneId,
-          reason: 'Phone not found in inventory'
+          type: 'product',
+          id: productId,
+          reason: 'Product not found in inventory'
         });
-      } else if (phone.status !== 'available') {
+      } else if (product.status !== 'available') {
         conflicts.push({
-          type: 'phone',
-          id: phoneId,
-          reason: `Phone is marked as "${phone.status}"`,
-          currentStatus: phone.status
+          type: 'product',
+          id: productId,
+          reason: `Product is marked as "${product.status}"`,
+          currentStatus: product.status
         });
       }
     }

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   PurchaseOrder,
@@ -10,7 +10,7 @@ import {
   ReceivePurchaseOrderRequest,
   ReceivePurchaseOrderResponse
 } from '../../models/purchase-order.model';
-import { PurchaseOrderStatus, PhoneStatus } from '../../enums';
+import { PurchaseOrderStatus, ProductStatus } from '../../enums';
 
 export interface PurchaseOrderSummary {
   totalOrders: number;
@@ -25,7 +25,7 @@ export interface PurchaseOrderSummary {
   providedIn: 'root'
 })
 export class PurchaseOrderService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getPurchaseOrders(filter?: PurchaseOrderFilter): Promise<PurchaseOrderListResponse> {
     let query = this.supabase
@@ -222,14 +222,14 @@ export class PurchaseOrderService {
    * This workflow:
    * 1. Validates the PO is pending
    * 2. Resolves brand names to brand IDs (creates brands if they don't exist)
-   * 3. Creates individual phone records for each unit with status='available'
-   * 4. Sets phone's cost_price from PO item's unit_cost
-   * 5. Sets phone's supplier_id from PO's supplier
+   * 3. Creates individual product records for each unit with status='available'
+   * 4. Sets product's cost_price from PO item's unit_cost
+   * 5. Sets product's supplier_id from PO's supplier
    * 6. Updates PO status to 'received'
    *
    * @param id - Purchase Order ID
-   * @param request - Receiving data with phone records
-   * @returns Updated PO and list of created phone IDs
+   * @param request - Receiving data with product records
+   * @returns Updated PO and list of created product IDs
    */
   async receiveWithInventory(id: string, request: ReceivePurchaseOrderRequest): Promise<ReceivePurchaseOrderResponse> {
     const existing = await this.getPurchaseOrderById(id);
@@ -241,29 +241,29 @@ export class PurchaseOrderService {
       throw new Error('Only pending purchase orders can be marked as received');
     }
 
-    const expectedPhoneCount = existing.items.reduce((sum, item) => sum + item.quantity, 0);
-    if (request.phones.length !== expectedPhoneCount) {
+    const expectedProductCount = existing.items.reduce((sum, item) => sum + item.quantity, 0);
+    if (request.products.length !== expectedProductCount) {
       throw new Error(
-        `Expected ${expectedPhoneCount} phone records but received ${request.phones.length}. ` +
+        `Expected ${expectedProductCount} product records but received ${request.products.length}. ` +
         `All items must be received at once.`
       );
     }
 
     const brandCache = new Map<string, string>();
-    const createdPhoneIds: string[] = [];
+    const createdProductIds: string[] = [];
 
-    for (const phoneRecord of request.phones) {
-      const item = existing.items[phoneRecord.lineItemIndex];
+    for (const productRecord of request.products) {
+      const item = existing.items[productRecord.lineItemIndex];
       if (!item) {
-        throw new Error(`Invalid line item index: ${phoneRecord.lineItemIndex}`);
+        throw new Error(`Invalid line item index: ${productRecord.lineItemIndex}`);
       }
 
-      let brandId = brandCache.get(phoneRecord.brand.toLowerCase());
+      let brandId = brandCache.get(productRecord.brand.toLowerCase());
       if (!brandId) {
         const { data: brandData, error: brandError } = await this.supabase
           .from('brands')
           .select('id')
-          .eq('name', phoneRecord.brand)
+          .eq('name', productRecord.brand)
           .single();
 
         if (brandError && brandError.code !== 'PGRST116') {
@@ -275,7 +275,7 @@ export class PurchaseOrderService {
         } else {
           const { data: newBrand, error: createBrandError } = await this.supabase
             .from('brands')
-            .insert({ name: phoneRecord.brand.trim() })
+            .insert({ name: productRecord.brand.trim() })
             .select()
             .single();
 
@@ -284,47 +284,47 @@ export class PurchaseOrderService {
           }
           brandId = newBrand.id as string;
         }
-        brandCache.set(phoneRecord.brand.toLowerCase(), brandId);
+        brandCache.set(productRecord.brand.toLowerCase(), brandId);
       }
 
-      if (phoneRecord.imei) {
-        const { data: existingPhone } = await this.supabase
-          .from('phones')
+      if (productRecord.imei) {
+        const { data: existingProduct } = await this.supabase
+          .from('products')
           .select('id')
-          .eq('imei', phoneRecord.imei)
+          .eq('imei', productRecord.imei)
           .single();
 
-        if (existingPhone) {
-          throw new Error(`Phone with IMEI "${phoneRecord.imei}" already exists`);
+        if (existingProduct) {
+          throw new Error(`Product with IMEI "${productRecord.imei}" already exists`);
         }
       }
 
-      const { data: phoneData, error: phoneError } = await this.supabase
-        .from('phones')
+      const { data: productData, error: productError } = await this.supabase
+        .from('products')
         .insert({
           brand_id: brandId,
-          model: phoneRecord.model.trim(),
-          color: phoneRecord.color?.trim() || null,
-          imei: phoneRecord.imei?.trim() || null,
-          condition: phoneRecord.condition,
-          battery_health: phoneRecord.batteryHealth || null,
-          storage_gb: phoneRecord.storageGb || null,
-          ram_gb: phoneRecord.ramGb || null,
+          model: productRecord.model.trim(),
+          color: productRecord.color?.trim() || null,
+          imei: productRecord.imei?.trim() || null,
+          condition: productRecord.condition,
+          battery_health: productRecord.batteryHealth || null,
+          storage_gb: productRecord.storageGb || null,
+          ram_gb: productRecord.ramGb || null,
           cost_price: item.unitCost,
-          selling_price: phoneRecord.sellingPrice,
-          status: PhoneStatus.AVAILABLE,
+          selling_price: productRecord.sellingPrice,
+          status: ProductStatus.AVAILABLE,
           supplier_id: existing.supplierId,
           purchase_date: existing.orderDate,
-          notes: phoneRecord.notes?.trim() || null
+          notes: productRecord.notes?.trim() || null
         })
         .select()
         .single();
 
-      if (phoneError) {
-        throw new Error(phoneError.message);
+      if (productError) {
+        throw new Error(productError.message);
       }
 
-      createdPhoneIds.push(phoneData.id as string);
+      createdProductIds.push(productData.id as string);
     }
 
     const { error: updateError } = await this.supabase
@@ -340,8 +340,8 @@ export class PurchaseOrderService {
 
     return {
       purchaseOrder: updatedPo!,
-      phonesCreated: createdPhoneIds.length,
-      createdPhoneIds
+      productsCreated: createdProductIds.length,
+      createdProductIds
     };
   }
 

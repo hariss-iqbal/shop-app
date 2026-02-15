@@ -33,13 +33,13 @@ describe('ProcessPartialRefundDialogComponent', () => {
       {
         id: 'item-1',
         saleId: 'sale-1',
-        phoneId: 'phone-1',
+        productId: 'phone-1',
         itemName: 'iPhone 15 Pro',
         quantity: 1,
         unitPrice: 100,
         total: 100,
-        phoneStatus: 'sold',
-        phoneModel: 'iPhone 15 Pro',
+        productStatus: 'sold',
+        productModel: 'iPhone 15 Pro',
         brandName: 'Apple',
         canRestoreInventory: true,
         alreadyRefunded: false,
@@ -48,13 +48,13 @@ describe('ProcessPartialRefundDialogComponent', () => {
       {
         id: 'item-2',
         saleId: 'sale-2',
-        phoneId: 'phone-2',
+        productId: 'phone-2',
         itemName: 'Samsung Galaxy S24',
         quantity: 1,
         unitPrice: 100,
         total: 100,
-        phoneStatus: 'sold',
-        phoneModel: 'Galaxy S24',
+        productStatus: 'sold',
+        productModel: 'Galaxy S24',
         brandName: 'Samsung',
         canRestoreInventory: true,
         alreadyRefunded: false,
@@ -462,7 +462,7 @@ describe('ProcessPartialRefundDialogComponent', () => {
         originalUnitPrice: 100,
         returnPrice: 150,
         total: 150,
-        phoneId: 'phone-1',
+        productId: 'phone-1',
         inventoryRestored: true,
         isCustomPrice: true,
         priceDifference: 50
@@ -572,7 +572,7 @@ describe('ProcessPartialRefundDialogComponent', () => {
         {
           ...mockPartialRefundableResponse.items![0],
           canRestoreInventory: false,
-          phoneId: null
+          productId: null
         }
       ]
     };

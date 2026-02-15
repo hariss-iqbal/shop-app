@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -58,11 +58,13 @@ import { StoreLocation } from '../../../models/store-location.model';
   styleUrls: ['./receipt-sequence-config.component.scss']
 })
 export class ReceiptSequenceConfigComponent implements OnInit {
-  private readonly receiptSequenceService = inject(ReceiptSequenceService);
-  private readonly storeLocationService = inject(StoreLocationService);
-  private readonly toastService = inject(ToastService);
-  private readonly confirmationService = inject(ConfirmationService);
-  private readonly fb = inject(FormBuilder);
+  constructor(
+    private readonly receiptSequenceService: ReceiptSequenceService,
+    private readonly storeLocationService: StoreLocationService,
+    private readonly toastService: ToastService,
+    private readonly confirmationService: ConfirmationService,
+    private readonly fb: FormBuilder
+  ) { }
 
   sequences = signal<ReceiptSequence[]>([]);
   storeLocations = signal<StoreLocation[]>([]);

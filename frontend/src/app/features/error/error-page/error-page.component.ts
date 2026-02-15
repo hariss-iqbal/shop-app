@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
@@ -10,7 +10,7 @@ import { ButtonModule } from 'primeng/button';
   styleUrls: ['./error-page.component.scss']
 })
 export class ErrorPageComponent {
-  private router = inject(Router);
+  constructor(private router: Router) { }
 
   navigateHome(): void {
     this.router.navigate(['/']);

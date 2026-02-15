@@ -19,7 +19,7 @@ describe('SyncQueueService', () => {
   let mockNetworkStatus: jasmine.SpyObj<NetworkStatusService>;
 
   const mockSalePayload: OfflineSalePayload = {
-    phoneId: 'phone-1',
+    productId: 'product-1',
     saleDate: '2024-01-15',
     salePrice: 500,
     costPrice: 400,
@@ -27,7 +27,7 @@ describe('SyncQueueService', () => {
     buyerPhone: '1234567890',
     buyerEmail: 'test@example.com',
     notes: null,
-    phoneDetails: {
+    productDetails: {
       brandName: 'Apple',
       model: 'iPhone 13',
       storageGb: 128,
@@ -237,8 +237,8 @@ describe('SyncQueueService', () => {
         ...mockSyncQueueItem,
         status: 'conflict',
         conflictData: {
-          conflictType: 'PHONE_ALREADY_SOLD',
-          description: 'Phone was sold',
+          conflictType: 'PRODUCT_ALREADY_SOLD',
+          description: 'Product was sold',
           localData: mockSalePayload,
           serverData: null,
           detectedAt: '2024-01-15T10:00:00Z',
@@ -356,9 +356,9 @@ describe('SyncQueueService', () => {
     it('should set conflict status with details', fakeAsync(async () => {
       await service.markAsConflict(
         'test-id-1',
-        'PHONE_ALREADY_SOLD',
-        'Phone was sold by another user',
-        { phoneId: 'phone-1', currentStatus: 'sold' }
+        'PRODUCT_ALREADY_SOLD',
+        'Product was sold by another user',
+        { productId: 'product-1', currentStatus: 'sold' }
       );
 
       expect(mockOfflineStorage.updateSyncQueueItem).toHaveBeenCalled();
@@ -366,8 +366,8 @@ describe('SyncQueueService', () => {
       const updatedItem = mockOfflineStorage.updateSyncQueueItem.calls.mostRecent().args[0];
       expect(updatedItem.status).toBe('conflict');
       expect(updatedItem.conflictData).toBeDefined();
-      expect(updatedItem.conflictData!.conflictType).toBe('PHONE_ALREADY_SOLD');
-      expect(updatedItem.conflictData!.description).toBe('Phone was sold by another user');
+      expect(updatedItem.conflictData!.conflictType).toBe('PRODUCT_ALREADY_SOLD');
+      expect(updatedItem.conflictData!.description).toBe('Product was sold by another user');
     }));
 
     it('should provide resolution options for RECEIPT_NUMBER_EXISTS', fakeAsync(async () => {
@@ -387,7 +387,7 @@ describe('SyncQueueService', () => {
     it('should provide resolution options for PHONE_ALREADY_SOLD', fakeAsync(async () => {
       await service.markAsConflict(
         'test-id-1',
-        'PHONE_ALREADY_SOLD',
+        'PRODUCT_ALREADY_SOLD',
         'Phone already sold'
       );
 

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   StorageBucketConfig,
@@ -22,7 +22,7 @@ const PATH_STRUCTURE = 'phone-images/{phone_id}/{filename}';
   providedIn: 'root'
 })
 export class StorageConfigService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   getStorageConstants(): StorageConstants {
     return {

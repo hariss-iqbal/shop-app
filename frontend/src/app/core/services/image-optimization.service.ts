@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { environment } from '@env/environment';
 import { CloudinaryService } from './cloudinary.service';
 
@@ -29,7 +29,7 @@ const DETAIL_IMAGE_WIDTH = 800;
 export class ImageOptimizationService {
   private supabaseUrl = environment.supabase.url;
   private storagePath = '/storage/v1/object/public/phone-images/';
-  private cloudinary = inject(CloudinaryService);
+  constructor(private cloudinary: CloudinaryService) { }
 
   getTransformedUrl(originalUrl: string, options: TransformOptions): string {
     if (!originalUrl) {

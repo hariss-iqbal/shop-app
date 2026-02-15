@@ -29,7 +29,7 @@ export class SaleRepository {
       .from(this.tableName)
       .select(`
         *,
-        phone:phones(
+        product:products(
           id,
           model,
           brand:brands(id, name)
@@ -71,7 +71,7 @@ export class SaleRepository {
       .from(this.tableName)
       .select(`
         *,
-        phone:phones(
+        product:products(
           id,
           model,
           brand:brands(id, name)
@@ -89,11 +89,11 @@ export class SaleRepository {
     return data;
   }
 
-  async findByPhoneId(phoneId: string): Promise<Sale | null> {
+  async findByProductId(productId: string): Promise<Sale | null> {
     const { data, error } = await this.supabase
       .from(this.tableName)
       .select('*')
-      .eq('phone_id', phoneId)
+      .eq('product_id', productId)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
@@ -225,7 +225,7 @@ export class SaleRepository {
       .from(this.tableName)
       .select(`
         *,
-        phone:phones(
+        product:products(
           id,
           model,
           brand:brands(id, name)
@@ -249,7 +249,7 @@ export class SaleRepository {
    * Feature: F-024 Multi-Location Inventory Support
    */
   async completeSaleWithInventoryDeduction(
-    phoneId: string,
+    productId: string,
     saleDate: string,
     salePrice: number,
     buyerName?: string | null,
@@ -259,7 +259,7 @@ export class SaleRepository {
     locationId?: string | null
   ): Promise<SaleWithInventoryDeductionResult> {
     const { data, error } = await this.supabase.rpc('complete_sale_with_inventory_deduction', {
-      p_phone_id: phoneId,
+      p_product_id: productId,
       p_sale_date: saleDate,
       p_sale_price: salePrice,
       p_buyer_name: buyerName || null,
@@ -274,7 +274,7 @@ export class SaleRepository {
     return {
       success: data.success,
       saleId: data.saleId,
-      phoneId: data.phoneId,
+      productId: data.productId,
       previousStatus: data.previousStatus,
       newStatus: data.newStatus,
       warning: data.warning,
@@ -289,7 +289,7 @@ export class SaleRepository {
    * Feature: F-024 Multi-Location Inventory Support
    */
   async completeBatchSaleWithInventoryDeduction(
-    items: Array<{ phoneId: string; salePrice: number }>,
+    items: Array<{ productId: string; salePrice: number }>,
     saleDate: string,
     buyerName?: string | null,
     buyerPhone?: string | null,
@@ -299,7 +299,7 @@ export class SaleRepository {
   ): Promise<BatchSaleWithInventoryDeductionResult> {
     const { data, error } = await this.supabase.rpc('complete_batch_sale_with_inventory_deduction', {
       p_items: items.map(item => ({
-        phoneId: item.phoneId,
+        productId: item.productId,
         salePrice: item.salePrice
       })),
       p_sale_date: saleDate,
@@ -324,12 +324,12 @@ export class SaleRepository {
   }
 
   /**
-   * Check inventory availability for phones before sale
+   * Check inventory availability for products before sale
    * Feature: F-008 Automatic Inventory Deduction
    */
-  async checkInventoryAvailability(phoneIds: string[]): Promise<InventoryAvailabilityResult> {
+  async checkInventoryAvailability(productIds: string[]): Promise<InventoryAvailabilityResult> {
     const { data, error } = await this.supabase.rpc('check_inventory_availability', {
-      p_phone_ids: phoneIds
+      p_product_ids: productIds
     });
 
     if (error) throw error;
@@ -338,13 +338,13 @@ export class SaleRepository {
       allAvailable: data.allAvailable,
       hasWarnings: data.hasWarnings,
       allowOversell: data.allowOversell,
-      phones: data.phones,
+      products: data.products,
       warnings: data.warnings
     };
   }
 
   /**
-   * Revert a sale and restore inventory (phone status)
+   * Revert a sale and restore inventory (product status)
    * Feature: F-008 Automatic Inventory Deduction
    */
   async revertSaleRestoreInventory(saleId: string): Promise<RevertSaleResult> {
@@ -356,7 +356,7 @@ export class SaleRepository {
 
     return {
       success: data.success,
-      phoneId: data.phoneId,
+      productId: data.productId,
       previousStatus: data.previousStatus,
       newStatus: data.newStatus,
       inventoryRestored: data.inventoryRestored,

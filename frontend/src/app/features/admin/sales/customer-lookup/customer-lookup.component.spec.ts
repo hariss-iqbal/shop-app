@@ -21,9 +21,9 @@ describe('CustomerLookupComponent', () => {
 
   const mockSale: Sale = {
     id: 'sale-123abc45',
-    phoneId: 'phone-1',
+    productId: 'phone-1',
     brandName: 'Apple',
-    phoneName: 'iPhone 15 Pro',
+    productName: 'iPhone 15 Pro',
     saleDate: '2024-01-15',
     salePrice: 1200,
     costPrice: 900,
@@ -53,7 +53,7 @@ describe('CustomerLookupComponent', () => {
       saleDate: '2024-01-10',
       salePrice: 1000,
       brandName: 'Samsung',
-      phoneName: 'Galaxy S24'
+      productName: 'Galaxy S24'
     },
     {
       ...mockSale,
@@ -61,7 +61,7 @@ describe('CustomerLookupComponent', () => {
       saleDate: '2024-01-05',
       salePrice: 800,
       brandName: 'Google',
-      phoneName: 'Pixel 8'
+      productName: 'Pixel 8'
     }
   ];
 

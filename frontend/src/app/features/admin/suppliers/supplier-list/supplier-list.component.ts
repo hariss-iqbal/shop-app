@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -32,10 +32,12 @@ import { Supplier } from '../../../../models/supplier.model';
   templateUrl: './supplier-list.component.html'
 })
 export class SupplierListComponent implements OnInit {
-  private supplierService = inject(SupplierService);
-  private toastService = inject(ToastService);
-  private confirmDialogService = inject(ConfirmDialogService);
-  private router = inject(Router);
+  constructor(
+    private supplierService: SupplierService,
+    private toastService: ToastService,
+    private confirmDialogService: ConfirmDialogService,
+    private router: Router
+  ) { }
 
   @ViewChild('dt') table!: Table;
 

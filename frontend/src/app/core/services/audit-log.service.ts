@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { CurrencyService } from './currency.service';
 import {
   AuditLog,
   AuditLogListResponse,
@@ -28,7 +29,10 @@ export interface AuthAuditInput {
   providedIn: 'root'
 })
 export class AuditLogService {
-  private supabase = inject(SupabaseService);
+  constructor(
+    private supabase: SupabaseService,
+    private currencyService: CurrencyService
+  ) { }
 
   /**
    * Get audit logs with filtering and pagination
@@ -237,10 +241,10 @@ export class AuditLogService {
       'partial_refund_completed',
       'inventory_deducted',
       'inventory_restored',
-      'phone_status_changed',
-      'phone_created',
-      'phone_updated',
-      'phone_deleted',
+      'product_status_changed',
+      'product_created',
+      'product_updated',
+      'product_deleted',
       'user_role_assigned',
       'user_role_changed',
       'user_role_revoked',
@@ -400,7 +404,7 @@ export class AuditLogService {
     const newState = data['new_state'] as Record<string, unknown> | null;
 
     const userInfo = userEmail || 'System';
-    const amountInfo = amount ? ` ($${amount.toFixed(2)})` : '';
+    const amountInfo = amount ? ` (${this.currencyService.format(amount, { minDecimals: 2, maxDecimals: 2 })})` : '';
 
     switch (eventType) {
       case 'sale_created':
@@ -418,7 +422,7 @@ export class AuditLogService {
 
       case 'inventory_deducted':
       case 'inventory_restored':
-      case 'phone_status_changed':
+      case 'product_status_changed':
         const fromStatus = previousState?.['status'] || 'unknown';
         const toStatus = newState?.['status'] || 'unknown';
         return `${label}: ${fromStatus} to ${toStatus}`;

@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { ReceiptService } from './receipt.service';
 import { ToastService } from './toast.service';
 import { ReceiptData, WhatsAppSendResult } from '../../models/sale.model';
@@ -29,8 +29,10 @@ export interface ShareResult {
   providedIn: 'root'
 })
 export class WhatsAppService {
-  private readonly receiptService = inject(ReceiptService);
-  private readonly toastService = inject(ToastService);
+  constructor(
+    private readonly receiptService: ReceiptService,
+    private readonly toastService: ToastService
+  ) { }
 
   /** Signal to track sending state for UI feedback */
   readonly sending = signal(false);

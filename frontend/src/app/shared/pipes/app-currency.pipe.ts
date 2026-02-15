@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform, inject } from '@angular/core';
+import { Pipe, PipeTransform } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { CurrencyService } from '../../core/services/currency.service';
 
@@ -20,7 +20,7 @@ import { CurrencyService } from '../../core/services/currency.service';
   standalone: true
 })
 export class AppCurrencyPipe implements PipeTransform {
-  private currencyService = inject(CurrencyService);
+  constructor(private currencyService: CurrencyService) { }
   private currencyPipe = new CurrencyPipe(this.currencyService.locale);
 
   transform(

@@ -1,10 +1,9 @@
-import { Component, OnInit, inject, computed } from '@angular/core';
+import { Component, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
-import { environment } from '../../../../environments/environment';
 
 interface ValueItem {
   icon: string;
@@ -37,14 +36,17 @@ interface OpeningHoursItem {
   styleUrls: ['./about.component.scss']
 })
 export class AboutComponent implements OnInit {
-  private seoService = inject(SeoService);
-  private shopDetailsService = inject(ShopDetailsService);
+  constructor(
+    private seoService: SeoService,
+    private shopDetailsService: ShopDetailsService
+  ) { }
 
-  phoneDisplay = computed(() => this.shopDetailsService.cachedDetails()?.phoneDisplay ?? environment.businessInfo.phoneDisplay);
-  phoneLink = computed(() => this.shopDetailsService.cachedDetails()?.phoneLink ?? environment.businessInfo.phoneLink);
-  emailAddress = computed(() => this.shopDetailsService.cachedDetails()?.email ?? environment.businessInfo.email);
-  whatsappNumber = computed(() => this.shopDetailsService.cachedDetails()?.whatsappNumber ?? environment.whatsapp.phoneNumber);
-  address = computed(() => this.shopDetailsService.cachedDetails()?.address ?? environment.businessInfo.address);
+  shopName = this.shopDetailsService.shopName;
+  phoneDisplay = this.shopDetailsService.phoneDisplay;
+  phoneLink = this.shopDetailsService.phoneLink;
+  emailAddress = this.shopDetailsService.email;
+  whatsappNumber = this.shopDetailsService.whatsappNumber;
+  address = this.shopDetailsService.address;
   displayOpeningHours = computed(() => {
     const details = this.shopDetailsService.cachedDetails();
     if (details?.openingHours && details.openingHours.length > 0) {
@@ -81,7 +83,7 @@ export class AboutComponent implements OnInit {
   ];
 
   // teamMembers: TeamMember[] = [
-  //   { name: 'Ahmed Hassan', initials: 'AH', role: 'Founder & CEO', bio: 'Started Spring Mobiles with a vision...' },
+  //   { name: 'Ahmed Hassan', initials: 'AH', role: 'Founder & CEO', bio: 'Started the shop with a vision...' },
   //   { name: 'Sarah Miller', initials: 'SM', role: 'Operations Manager', bio: 'Ensures smooth operations...' },
   //   { name: 'James Wilson', initials: 'JW', role: 'Technical Lead', bio: 'Heads our phone inspection team...' }
   // ];
@@ -97,9 +99,10 @@ export class AboutComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const name = this.shopDetailsService.shopName() || 'our shop';
     this.seoService.updateMetaTags({
       title: 'About Us',
-      description: 'Learn about Spring Mobiles - your trusted source for new, used, and open box phones since 2015. Quality assured, transparent pricing, and exceptional customer service.',
+      description: `Learn about ${name} - your trusted source for new, used, and open box phones. Quality assured, transparent pricing, and exceptional customer service.`,
       url: '/about'
     });
   }

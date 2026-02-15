@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   LoyaltyConfig,
@@ -35,7 +35,7 @@ import {
   providedIn: 'root'
 })
 export class LoyaltyService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   // Cached config for quick access
   private configCache = signal<LoyaltyConfig | null>(null);

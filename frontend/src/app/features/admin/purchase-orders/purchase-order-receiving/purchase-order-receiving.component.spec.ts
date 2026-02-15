@@ -7,7 +7,7 @@ import { InputSanitizationService } from '../../../../core/services/input-saniti
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { PurchaseOrder, ReceivePurchaseOrderResponse } from '../../../../models/purchase-order.model';
-import { PurchaseOrderStatus, PhoneCondition } from '../../../../enums';
+import { PurchaseOrderStatus, ProductCondition } from '../../../../enums';
 
 describe('PurchaseOrderReceivingComponent', () => {
   let component: PurchaseOrderReceivingComponent;
@@ -90,38 +90,38 @@ describe('PurchaseOrderReceivingComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should initialize form with correct number of phone entries', () => {
+    it('should initialize form with correct number of product entries', () => {
       // 2 from first item + 1 from second item = 3 total
-      expect(component.phonesArray.length).toBe(3);
+      expect(component.productsArray.length).toBe(3);
     });
 
     it('should pre-fill brand and model from PO items', () => {
-      const firstPhone = component.phonesArray.at(0);
-      const secondPhone = component.phonesArray.at(1);
-      const thirdPhone = component.phonesArray.at(2);
+      const firstProduct = component.productsArray.at(0);
+      const secondProduct = component.productsArray.at(1);
+      const thirdProduct = component.productsArray.at(2);
 
-      expect(firstPhone.get('brand')?.value).toBe('Apple');
-      expect(firstPhone.get('model')?.value).toBe('iPhone 15');
-      expect(secondPhone.get('brand')?.value).toBe('Apple');
-      expect(secondPhone.get('model')?.value).toBe('iPhone 15');
-      expect(thirdPhone.get('brand')?.value).toBe('Samsung');
-      expect(thirdPhone.get('model')?.value).toBe('Galaxy S24');
+      expect(firstProduct.get('brand')?.value).toBe('Apple');
+      expect(firstProduct.get('model')?.value).toBe('iPhone 15');
+      expect(secondProduct.get('brand')?.value).toBe('Apple');
+      expect(secondProduct.get('model')?.value).toBe('iPhone 15');
+      expect(thirdProduct.get('brand')?.value).toBe('Samsung');
+      expect(thirdProduct.get('model')?.value).toBe('Galaxy S24');
     });
 
     it('should set default condition to NEW', () => {
-      const firstPhone = component.phonesArray.at(0);
-      expect(firstPhone.get('condition')?.value).toBe(PhoneCondition.NEW);
+      const firstProduct = component.productsArray.at(0);
+      expect(firstProduct.get('condition')?.value).toBe(ProductCondition.NEW);
     });
 
     it('should require condition and selling price', () => {
-      const firstPhone = component.phonesArray.at(0);
+      const firstProduct = component.productsArray.at(0);
 
       // Clear required fields
-      firstPhone.get('condition')?.setValue(null);
-      firstPhone.get('sellingPrice')?.setValue(null);
+      firstProduct.get('condition')?.setValue(null);
+      firstProduct.get('sellingPrice')?.setValue(null);
 
-      expect(firstPhone.get('condition')?.invalid).toBeTrue();
-      expect(firstPhone.get('sellingPrice')?.invalid).toBeTrue();
+      expect(firstProduct.get('condition')?.invalid).toBeTrue();
+      expect(firstProduct.get('sellingPrice')?.invalid).toBeTrue();
     });
   });
 
@@ -148,14 +148,14 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should update count when forms become valid', () => {
-      // Make first phone valid
-      component.phonesArray.at(0).get('sellingPrice')?.setValue(999);
+      // Make first product valid
+      component.productsArray.at(0).get('sellingPrice')?.setValue(999);
 
       expect(component.invalidCount()).toBe(2);
     });
 
     it('should be 0 when all forms are valid', () => {
-      component.phonesArray.controls.forEach(control => {
+      component.productsArray.controls.forEach(control => {
         control.get('sellingPrice')?.setValue(999);
       });
 
@@ -196,17 +196,17 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should return false for NEW condition', () => {
-      component.phonesArray.at(0).get('condition')?.setValue(PhoneCondition.NEW);
+      component.productsArray.at(0).get('condition')?.setValue(ProductCondition.NEW);
       expect(component.shouldShowBatteryHealth(0)).toBeFalse();
     });
 
     it('should return true for USED condition', () => {
-      component.phonesArray.at(0).get('condition')?.setValue(PhoneCondition.USED);
+      component.productsArray.at(0).get('condition')?.setValue(ProductCondition.USED);
       expect(component.shouldShowBatteryHealth(0)).toBeTrue();
     });
 
     it('should return true for REFURBISHED condition', () => {
-      component.phonesArray.at(0).get('condition')?.setValue(PhoneCondition.REFURBISHED);
+      component.productsArray.at(0).get('condition')?.setValue(ProductCondition.REFURBISHED);
       expect(component.shouldShowBatteryHealth(0)).toBeTrue();
     });
   });
@@ -221,7 +221,7 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should return true when form is valid', () => {
-      component.phonesArray.controls.forEach(control => {
+      component.productsArray.controls.forEach(control => {
         control.get('sellingPrice')?.setValue(999);
       });
 
@@ -232,20 +232,20 @@ describe('PurchaseOrderReceivingComponent', () => {
   describe('onSubmit', () => {
     const mockResponse: ReceivePurchaseOrderResponse = {
       purchaseOrder: { ...mockPurchaseOrder, status: PurchaseOrderStatus.RECEIVED },
-      phonesCreated: 3,
-      createdPhoneIds: ['phone-1', 'phone-2', 'phone-3']
+      productsCreated: 3,
+      createdProductIds: ['phone-1', 'phone-2', 'phone-3']
     };
 
     beforeEach(() => {
       fixture.detectChanges();
       // Make form valid
-      component.phonesArray.controls.forEach(control => {
+      component.productsArray.controls.forEach(control => {
         control.get('sellingPrice')?.setValue(999);
       });
     });
 
     it('should not submit when form is invalid', fakeAsync(() => {
-      component.phonesArray.at(0).get('sellingPrice')?.setValue(null);
+      component.productsArray.at(0).get('sellingPrice')?.setValue(null);
 
       component.onSubmit();
       tick();
@@ -288,7 +288,7 @@ describe('PurchaseOrderReceivingComponent', () => {
       component.onSubmit();
       tick();
 
-      expect(component.received.emit).toHaveBeenCalledWith({ phonesCreated: 3 });
+      expect(component.received.emit).toHaveBeenCalledWith({ productsCreated: 3 });
     }));
 
     it('should close dialog on success', fakeAsync(() => {
@@ -357,7 +357,7 @@ describe('PurchaseOrderReceivingComponent', () => {
       mockPurchaseOrderService.receiveWithInventory.and.returnValue(
         new Promise(resolve => setTimeout(() => resolve({} as ReceivePurchaseOrderResponse), 1000))
       );
-      component.phonesArray.controls.forEach(control => {
+      component.productsArray.controls.forEach(control => {
         control.get('sellingPrice')?.setValue(999);
       });
 
@@ -395,9 +395,9 @@ describe('PurchaseOrderReceivingComponent', () => {
     it('should have all three condition options', () => {
       expect(component.conditionOptions.length).toBe(3);
       expect(component.conditionOptions.map(o => o.value)).toEqual([
-        PhoneCondition.NEW,
-        PhoneCondition.USED,
-        PhoneCondition.REFURBISHED
+        ProductCondition.NEW,
+        ProductCondition.USED,
+        ProductCondition.REFURBISHED
       ]);
     });
   });
@@ -408,8 +408,8 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should enable battery health for USED condition', () => {
-      const firstPhone = component.phonesArray.at(0);
-      firstPhone.get('condition')?.setValue(PhoneCondition.USED);
+      const firstPhone = component.productsArray.at(0);
+      firstPhone.get('condition')?.setValue(ProductCondition.USED);
 
       component.onConditionChange(0);
 
@@ -417,8 +417,8 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should enable battery health for REFURBISHED condition', () => {
-      const firstPhone = component.phonesArray.at(0);
-      firstPhone.get('condition')?.setValue(PhoneCondition.REFURBISHED);
+      const firstPhone = component.productsArray.at(0);
+      firstPhone.get('condition')?.setValue(ProductCondition.REFURBISHED);
 
       component.onConditionChange(0);
 
@@ -426,15 +426,15 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should disable and clear battery health for NEW condition', () => {
-      const firstPhone = component.phonesArray.at(0);
+      const firstPhone = component.productsArray.at(0);
 
       // First set to USED with battery health value
-      firstPhone.get('condition')?.setValue(PhoneCondition.USED);
+      firstPhone.get('condition')?.setValue(ProductCondition.USED);
       component.onConditionChange(0);
       firstPhone.get('batteryHealth')?.setValue(85);
 
       // Then change back to NEW
-      firstPhone.get('condition')?.setValue(PhoneCondition.NEW);
+      firstPhone.get('condition')?.setValue(ProductCondition.NEW);
       component.onConditionChange(0);
 
       expect(firstPhone.get('batteryHealth')?.disabled).toBeTrue();
@@ -447,21 +447,21 @@ describe('PurchaseOrderReceivingComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should return 0 when no phones are valid', () => {
+    it('should return 0 when no products are valid', () => {
       expect(component.getLineItemValidCount(0)).toBe(0);
     });
 
-    it('should count valid phones in a line item', () => {
-      // Make first phone valid
-      component.phonesArray.at(0).get('sellingPrice')?.setValue(999);
+    it('should count valid products in a line item', () => {
+      // Make first product valid
+      component.productsArray.at(0).get('sellingPrice')?.setValue(999);
 
       expect(component.getLineItemValidCount(0)).toBe(1);
     });
 
-    it('should return full count when all phones in item are valid', () => {
-      // Make both phones in first item valid
-      component.phonesArray.at(0).get('sellingPrice')?.setValue(999);
-      component.phonesArray.at(1).get('sellingPrice')?.setValue(999);
+    it('should return full count when all products in item are valid', () => {
+      // Make both products in first item valid
+      component.productsArray.at(0).get('sellingPrice')?.setValue(999);
+      component.productsArray.at(1).get('sellingPrice')?.setValue(999);
 
       expect(component.getLineItemValidCount(0)).toBe(2);
     });
@@ -472,26 +472,26 @@ describe('PurchaseOrderReceivingComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should apply condition to all phones', () => {
-      component.applyToAll('condition', PhoneCondition.USED);
+    it('should apply condition to all products', () => {
+      component.applyToAll('condition', ProductCondition.USED);
 
-      component.phonesArray.controls.forEach(control => {
-        expect(control.get('condition')?.value).toBe(PhoneCondition.USED);
+      component.productsArray.controls.forEach(control => {
+        expect(control.get('condition')?.value).toBe(ProductCondition.USED);
       });
     });
 
-    it('should apply selling price to all phones', () => {
+    it('should apply selling price to all products', () => {
       component.applyToAll('sellingPrice', 1299);
 
-      component.phonesArray.controls.forEach(control => {
+      component.productsArray.controls.forEach(control => {
         expect(control.get('sellingPrice')?.value).toBe(1299);
       });
     });
 
     it('should show success toast', () => {
-      component.applyToAll('condition', PhoneCondition.NEW);
+      component.applyToAll('condition', ProductCondition.NEW);
 
-      expect(mockToastService.success).toHaveBeenCalledWith('Applied', 'condition updated for all phones');
+      expect(mockToastService.success).toHaveBeenCalledWith('Applied', 'condition updated for all products');
     });
   });
 
@@ -500,18 +500,18 @@ describe('PurchaseOrderReceivingComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should copy first phone values to all others', () => {
-      const firstPhone = component.phonesArray.at(0);
-      firstPhone.get('sellingPrice')?.setValue(1099);
-      firstPhone.get('color')?.setValue('Space Gray');
-      firstPhone.get('storageGb')?.setValue(256);
-      firstPhone.get('ramGb')?.setValue(8);
-      firstPhone.get('notes')?.setValue('Test note');
+    it('should copy first product values to all others', () => {
+      const firstProduct = component.productsArray.at(0);
+      firstProduct.get('sellingPrice')?.setValue(1099);
+      firstProduct.get('color')?.setValue('Space Gray');
+      firstProduct.get('storageGb')?.setValue(256);
+      firstProduct.get('ramGb')?.setValue(8);
+      firstProduct.get('notes')?.setValue('Test note');
 
       component.copyFirstToAll();
 
-      for (let i = 1; i < component.phonesArray.length; i++) {
-        const control = component.phonesArray.at(i);
+      for (let i = 1; i < component.productsArray.length; i++) {
+        const control = component.productsArray.at(i);
         expect(control.get('sellingPrice')?.value).toBe(1099);
         expect(control.get('color')?.value).toBe('Space Gray');
         expect(control.get('storageGb')?.value).toBe(256);
@@ -525,19 +525,19 @@ describe('PurchaseOrderReceivingComponent', () => {
 
       expect(mockToastService.success).toHaveBeenCalledWith(
         'Copied',
-        'First phone values copied to all other phones'
+        'First product values copied to all other products'
       );
     });
 
-    it('should not copy IMEI (each phone should have unique IMEI)', () => {
-      const firstPhone = component.phonesArray.at(0);
-      firstPhone.get('imei')?.setValue('123456789012345');
+    it('should not copy IMEI (each product should have unique IMEI)', () => {
+      const firstProduct = component.productsArray.at(0);
+      firstProduct.get('imei')?.setValue('123456789012345');
 
       component.copyFirstToAll();
 
       // IMEI should not be copied
-      for (let i = 1; i < component.phonesArray.length; i++) {
-        const control = component.phonesArray.at(i);
+      for (let i = 1; i < component.productsArray.length; i++) {
+        const control = component.productsArray.at(i);
         expect(control.get('imei')?.value).toBe('');
       }
     });
@@ -549,7 +549,7 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should copy first unit values to other units in same line item', () => {
-      const firstPhone = component.phonesArray.at(0);
+      const firstPhone = component.productsArray.at(0);
       firstPhone.get('sellingPrice')?.setValue(1099);
       firstPhone.get('color')?.setValue('Midnight');
 
@@ -557,11 +557,11 @@ describe('PurchaseOrderReceivingComponent', () => {
       component.copyFirstToRest(0, mockEvent);
 
       // Second unit (index 1) should have copied values
-      expect(component.phonesArray.at(1).get('sellingPrice')?.value).toBe(1099);
-      expect(component.phonesArray.at(1).get('color')?.value).toBe('Midnight');
+      expect(component.productsArray.at(1).get('sellingPrice')?.value).toBe(1099);
+      expect(component.productsArray.at(1).get('color')?.value).toBe('Midnight');
 
       // Third unit (different line item) should not be affected
-      expect(component.phonesArray.at(2).get('sellingPrice')?.value).toBeNull();
+      expect(component.productsArray.at(2).get('sellingPrice')?.value).toBeNull();
     });
 
     it('should stop event propagation', () => {
@@ -590,25 +590,25 @@ describe('PurchaseOrderReceivingComponent', () => {
     });
 
     it('should initialize battery health as disabled (NEW condition)', () => {
-      component.phonesArray.controls.forEach(control => {
+      component.productsArray.controls.forEach(control => {
         expect(control.get('batteryHealth')?.disabled).toBeTrue();
       });
     });
 
     it('should include battery health in getRawValue even when disabled', () => {
-      const firstPhone = component.phonesArray.at(0);
+      const firstPhone = component.productsArray.at(0);
 
       // Enable and set value
-      firstPhone.get('condition')?.setValue(PhoneCondition.USED);
+      firstPhone.get('condition')?.setValue(ProductCondition.USED);
       component.onConditionChange(0);
       firstPhone.get('batteryHealth')?.setValue(90);
 
       // Then disable
-      firstPhone.get('condition')?.setValue(PhoneCondition.NEW);
+      firstPhone.get('condition')?.setValue(ProductCondition.NEW);
       component.onConditionChange(0);
 
       // getRawValue should still include batteryHealth (as null)
-      const rawValue = component.phonesArray.getRawValue();
+      const rawValue = component.productsArray.getRawValue();
       expect(rawValue[0].batteryHealth).toBeNull();
     });
   });

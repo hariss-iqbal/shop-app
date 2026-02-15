@@ -19,7 +19,7 @@ export class LocationInventoryRepository {
 
   async findAll(options?: {
     locationId?: string;
-    phoneId?: string;
+    productId?: string;
     lowStockOnly?: boolean;
     limit?: number;
     offset?: number;
@@ -28,7 +28,7 @@ export class LocationInventoryRepository {
       .from(this.tableName)
       .select(`
         *,
-        phone:phones(
+        product:products(
           id, model, status, selling_price, cost_price, condition,
           brand:brands(id, name)
         ),
@@ -38,8 +38,8 @@ export class LocationInventoryRepository {
     if (options?.locationId) {
       query = query.eq('location_id', options.locationId);
     }
-    if (options?.phoneId) {
-      query = query.eq('phone_id', options.phoneId);
+    if (options?.productId) {
+      query = query.eq('product_id', options.productId);
     }
     if (options?.lowStockOnly) {
       query = query.lte('quantity', this.supabase.rpc('coalesce', { value: 'min_stock_level', default_value: 0 }));
@@ -66,7 +66,7 @@ export class LocationInventoryRepository {
       .from(this.tableName)
       .select(`
         *,
-        phone:phones(
+        product:products(
           id, model, status, selling_price, cost_price, condition,
           brand:brands(id, name)
         ),
@@ -80,29 +80,29 @@ export class LocationInventoryRepository {
     return data || [];
   }
 
-  async findByPhoneId(phoneId: string): Promise<LocationInventoryWithRelations[]> {
+  async findByProductId(productId: string): Promise<LocationInventoryWithRelations[]> {
     const { data, error } = await this.supabase
       .from(this.tableName)
       .select(`
         *,
-        phone:phones(
+        product:products(
           id, model, status, selling_price, cost_price, condition,
           brand:brands(id, name)
         ),
         location:store_locations(id, name, code)
       `)
-      .eq('phone_id', phoneId)
+      .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
   }
 
-  async findByPhoneAndLocation(phoneId: string, locationId: string): Promise<LocationInventory | null> {
+  async findByProductAndLocation(productId: string, locationId: string): Promise<LocationInventory | null> {
     const { data, error } = await this.supabase
       .from(this.tableName)
       .select('*')
-      .eq('phone_id', phoneId)
+      .eq('product_id', productId)
       .eq('location_id', locationId)
       .single();
 
@@ -124,7 +124,7 @@ export class LocationInventoryRepository {
   async upsert(inventory: LocationInventoryInsert): Promise<LocationInventory> {
     const { data, error } = await this.supabase
       .from(this.tableName)
-      .upsert(inventory, { onConflict: 'phone_id,location_id' })
+      .upsert(inventory, { onConflict: 'product_id,location_id' })
       .select()
       .single();
 
@@ -144,13 +144,13 @@ export class LocationInventoryRepository {
     return data;
   }
 
-  async updateQuantity(phoneId: string, locationId: string, quantityChange: number): Promise<LocationInventory> {
-    const existing = await this.findByPhoneAndLocation(phoneId, locationId);
+  async updateQuantity(productId: string, locationId: string, quantityChange: number): Promise<LocationInventory> {
+    const existing = await this.findByProductAndLocation(productId, locationId);
 
     if (!existing) {
       if (quantityChange > 0) {
         return this.create({
-          phone_id: phoneId,
+          product_id: productId,
           location_id: locationId,
           quantity: quantityChange
         });
@@ -194,7 +194,7 @@ export class LocationInventoryRepository {
       .select(`
         quantity,
         min_stock_level,
-        phone:phones(selling_price)
+        product:products(selling_price)
       `)
       .eq('location_id', locationId)
       .gt('quantity', 0);
@@ -205,7 +205,7 @@ export class LocationInventoryRepository {
     const totalProducts = items.length;
     const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
     const totalValue = items.reduce((sum, item) => {
-      const price = (item.phone as { selling_price: number })?.selling_price || 0;
+      const price = (item.product as { selling_price: number })?.selling_price || 0;
       return sum + (item.quantity * price);
     }, 0);
     const lowStockCount = items.filter(item =>

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   ReceiptSequence,
@@ -28,7 +28,7 @@ import {
   providedIn: 'root'
 })
 export class ReceiptSequenceService {
-  private readonly supabaseService = inject(SupabaseService);
+  constructor(private readonly supabaseService: SupabaseService) { }
   private readonly tableName = 'receipt_sequences';
   private readonly logsTableName = 'receipt_number_logs';
 

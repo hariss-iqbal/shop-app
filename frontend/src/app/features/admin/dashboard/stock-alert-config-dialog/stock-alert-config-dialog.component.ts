@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, input, output, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -23,9 +23,11 @@ import { StockAlertConfig } from '../../../../models/stock-alert-config.model';
   templateUrl: './stock-alert-config-dialog.component.html'
 })
 export class StockAlertConfigDialogComponent implements OnChanges {
-  private stockAlertService = inject(StockAlertService);
-  private toastService = inject(ToastService);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private stockAlertService: StockAlertService,
+    private toastService: ToastService,
+    private focusService: FocusManagementService
+  ) { }
 
   visible = input<boolean>(false);
   config = input<StockAlertConfig | null>(null);

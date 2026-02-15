@@ -1,6 +1,6 @@
 export { BrandRepository } from './brand.repository';
-export { PhoneRepository } from './phone.repository';
-export { PhoneImageRepository } from './phone-image.repository';
+export { ProductRepository } from './product.repository';
+export { ProductImageRepository } from './product-image.repository';
 export { SupplierRepository } from './supplier.repository';
 export { PurchaseOrderRepository } from './purchase-order.repository';
 export { PurchaseOrderItemRepository } from './purchase-order-item.repository';

@@ -3,7 +3,7 @@
   <section class="about-hero" aria-labelledby="hero-heading">
     <div class="hero-content">
       <span class="hero-badge">Our Story</span>
-      <h1 id="hero-heading" class="hero-title">About Spring Mobiles</h1>
+      <h1 id="hero-heading" class="hero-title">About {{ shopName() }}</h1>
       <p class="hero-subtitle">
         Your trusted destination for quality mobile phones since 2015. We believe everyone deserves access to premium technology at fair prices.
       </p>
@@ -18,7 +18,7 @@
           <span class="section-badge">Our Journey</span>
           <h2 id="story-heading" class="section-title">From Passion to Purpose</h2>
           <p class="story-text">
-            Spring Mobiles was founded with a simple yet powerful mission: to make quality mobile devices accessible to everyone.
+            {{ shopName() }} was founded with a simple yet powerful mission: to make quality mobile devices accessible to everyone.
             What started as a small family business has grown into a trusted destination for thousands of customers seeking
             reliable smartphones at fair prices.
           </p>
@@ -34,7 +34,7 @@
         </div>
       </div>
       <div class="col-12 lg:col-6">
-        <div class="story-image-container" role="img" aria-label="Spring Mobiles store front illustration">
+        <div class="story-image-container" role="img" [attr.aria-label]="shopName() + ' store front illustration'">
           <div class="story-visual">
             <div class="visual-icon-container">
               <i class="pi pi-mobile text-6xl text-primary" aria-hidden="true"></i>
@@ -83,7 +83,7 @@
   <!-- Team section commented out
   <section class="team-section" aria-labelledby="team-heading">
     <div class="section-header">
-      <span class="section-badge">The People Behind Spring Mobiles</span>
+      <span class="section-badge">The People Behind {{ shopName() }}</span>
       <h2 id="team-heading" class="section-title">Meet Our Team</h2>
       <p class="section-subtitle">A dedicated group of phone enthusiasts ready to help you find your perfect device</p>
     </div>
@@ -217,7 +217,7 @@
         Browse our catalog of quality mobile devices or get in touch with our team for personalized assistance.
       </p>
       <div class="cta-actions">
-        <a routerLink="/catalog" class="no-underline" aria-label="Browse our phone catalog">
+        <a routerLink="/" class="no-underline" aria-label="Browse our phone catalog">
           <p-button
             label="Browse Catalog"
             icon="pi pi-th-large"

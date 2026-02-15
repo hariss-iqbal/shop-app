@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   SavedReceiptSearch,
@@ -17,7 +17,7 @@ import {
   providedIn: 'root'
 })
 export class SavedReceiptSearchService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getSavedSearches(): Promise<SavedSearchListResponse> {
     const { data, error, count } = await this.supabase

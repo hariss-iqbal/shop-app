@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, input, output, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -49,8 +49,10 @@ import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
   templateUrl: './barcode-scanner-dialog.component.html'
 })
 export class BarcodeScannerDialogComponent implements OnChanges {
-  private receiptBarcodeService = inject(ReceiptBarcodeService);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private receiptBarcodeService: ReceiptBarcodeService,
+    private focusService: FocusManagementService
+  ) { }
 
   visible = input<boolean>(false);
   visibleChange = output<boolean>();

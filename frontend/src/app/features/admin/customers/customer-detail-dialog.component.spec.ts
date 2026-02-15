@@ -28,18 +28,18 @@ describe('CustomerDetailDialogComponent', () => {
   const mockSales: CustomerSaleHistoryItem[] = [
     {
       id: 'sale-1',
-      phoneId: 'phone-1',
+      productId: 'phone-1',
       saleDate: '2024-01-15',
       salePrice: 1200,
-      phoneName: 'iPhone 15 Pro',
+      productName: 'iPhone 15 Pro',
       brandName: 'Apple'
     },
     {
       id: 'sale-2',
-      phoneId: 'phone-2',
+      productId: 'phone-2',
       saleDate: '2024-01-10',
       salePrice: 1000,
-      phoneName: 'Galaxy S24',
+      productName: 'Galaxy S24',
       brandName: 'Samsung'
     }
   ];
@@ -322,7 +322,7 @@ describe('CustomerDetailDialogComponent', () => {
       expect(data).toBeTruthy();
       expect(data!.sales.length).toBe(2);
       expect(data!.sales[0].brandName).toBe('Apple');
-      expect(data!.sales[0].phoneName).toBe('iPhone 15 Pro');
+      expect(data!.sales[0].productName).toBe('iPhone 15 Pro');
       expect(data!.stats.totalTransactions).toBe(2);
       expect(data!.stats.totalSpent).toBe(2200);
     });

@@ -1,4 +1,4 @@
-import { PurchaseOrderStatus, PhoneCondition } from '../enums';
+import { PurchaseOrderStatus, ProductCondition } from '../enums';
 
 /**
  * PurchaseOrder Model
@@ -67,52 +67,52 @@ export interface PurchaseOrderFilter {
  */
 
 /**
- * Represents a single phone record to be created during receiving
+ * Represents a single product record to be created during receiving
  * Pre-filled with brand/model from PO item, admin fills in rest
  */
-export interface ReceivingPhoneRecord {
-  /** Index of the PO line item this phone belongs to */
+export interface ReceivingProductRecord {
+  /** Index of the PO line item this product belongs to */
   lineItemIndex: number;
   /** Brand name from the PO item (pre-filled) */
   brand: string;
   /** Model name from the PO item (pre-filled) */
   model: string;
-  /** Color of the phone */
+  /** Color of the product */
   color?: string | null;
-  /** IMEI number (unique per phone) */
+  /** IMEI number (unique per product) */
   imei?: string | null;
-  /** Phone condition */
-  condition: PhoneCondition;
+  /** Product condition */
+  condition: ProductCondition;
   /** Battery health percentage (0-100), applicable for used/open box */
   batteryHealth?: number | null;
   /** Storage capacity in GB */
   storageGb?: number | null;
   /** RAM in GB */
   ramGb?: number | null;
-  /** Selling price for this phone */
+  /** Selling price for this product */
   sellingPrice: number;
-  /** Optional notes for this phone */
+  /** Optional notes for this product */
   notes?: string | null;
 }
 
 /**
  * Request for the receiving workflow
- * Contains all phone records to be created when marking PO as received
+ * Contains all product records to be created when marking PO as received
  */
 export interface ReceivePurchaseOrderRequest {
-  /** Array of phone records, one for each unit in the PO */
-  phones: ReceivingPhoneRecord[];
+  /** Array of product records, one for each unit in the PO */
+  products: ReceivingProductRecord[];
 }
 
 /**
  * Response from the receiving workflow
- * Returns the updated PO and count of created phones
+ * Returns the updated PO and count of created products
  */
 export interface ReceivePurchaseOrderResponse {
   /** The updated purchase order with status = 'received' */
   purchaseOrder: PurchaseOrder;
-  /** Number of phone records created */
-  phonesCreated: number;
-  /** IDs of the created phones */
-  createdPhoneIds: string[];
+  /** Number of product records created */
+  productsCreated: number;
+  /** IDs of the created products */
+  createdProductIds: string[];
 }

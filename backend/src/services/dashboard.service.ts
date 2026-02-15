@@ -1,5 +1,5 @@
 import { DashboardRepository } from '../repositories/dashboard.repository';
-import { DateRangeFilterDto, DashboardKpiDto, MonthlySalesDataDto, RecentPhoneDto, StockByBrandDto } from '../dto/dashboard.dto';
+import { DateRangeFilterDto, DashboardKpiDto, MonthlySalesDataDto, RecentProductDto, StockByBrandDto } from '../dto/dashboard.dto';
 
 /**
  * Dashboard Service
@@ -39,7 +39,7 @@ export class DashboardService {
     return this.dashboardRepository.getStockByBrand();
   }
 
-  async getRecentlyAddedPhones(): Promise<RecentPhoneDto[]> {
-    return this.dashboardRepository.getRecentlyAddedPhones(5);
+  async getRecentlyAddedProducts(): Promise<RecentProductDto[]> {
+    return this.dashboardRepository.getRecentlyAddedProducts(5);
   }
 }

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { TaxCalculationService } from './tax-calculation.service';
-import { Phone } from '../../models/phone.model';
+import { Product } from '../../models/product.model';
 import { CartItem } from '../../models/sale.model';
-import { PhoneCondition, PhoneStatus } from '../../enums';
+import { ProductCondition, ProductStatus } from '../../enums';
 
 describe('TaxCalculationService', () => {
   let service: TaxCalculationService;
@@ -144,9 +144,9 @@ describe('TaxCalculationService', () => {
     });
   });
 
-  describe('calculatePhoneTax', () => {
-    const mockPhone: Phone = {
-      id: 'test-phone-1',
+  describe('calculateProductTax', () => {
+    const mockProduct: Product = {
+      id: 'test-product-1',
       brandId: 'brand-1',
       brandName: 'Apple',
       brandLogoUrl: null,
@@ -155,13 +155,13 @@ describe('TaxCalculationService', () => {
       storageGb: 256,
       ramGb: 8,
       color: 'Black',
-      condition: PhoneCondition.NEW,
+      condition: ProductCondition.NEW,
       batteryHealth: null,
       imei: '123456789012345',
       costPrice: 900,
       sellingPrice: 1200,
       profitMargin: 25,
-      status: PhoneStatus.AVAILABLE,
+      status: ProductStatus.AVAILABLE,
       purchaseDate: null,
       supplierId: null,
       supplierName: null,
@@ -174,8 +174,8 @@ describe('TaxCalculationService', () => {
       isTaxExempt: false
     };
 
-    it('should calculate tax from phone properties', () => {
-      const result = service.calculatePhoneTax(mockPhone);
+    it('should calculate tax from product properties', () => {
+      const result = service.calculateProductTax(mockProduct);
 
       expect(result.unitBasePrice).toBe(1200);
       expect(result.unitTaxAmount).toBe(120);
@@ -183,25 +183,25 @@ describe('TaxCalculationService', () => {
     });
 
     it('should use override price when provided', () => {
-      const result = service.calculatePhoneTax(mockPhone, 1, 1000);
+      const result = service.calculateProductTax(mockProduct, 1, 1000);
 
       expect(result.unitBasePrice).toBe(1000);
       expect(result.unitTaxAmount).toBe(100);
       expect(result.totalPrice).toBe(1100);
     });
 
-    it('should handle tax-inclusive phone', () => {
-      const taxInclusivePhone = { ...mockPhone, isTaxInclusive: true };
-      const result = service.calculatePhoneTax(taxInclusivePhone);
+    it('should handle tax-inclusive product', () => {
+      const taxInclusiveProduct = { ...mockProduct, isTaxInclusive: true };
+      const result = service.calculateProductTax(taxInclusiveProduct);
 
       expect(result.unitBasePrice).toBeCloseTo(1090.91, 2);
       expect(result.unitTaxAmount).toBeCloseTo(109.09, 2);
       expect(result.totalPrice).toBe(1200);
     });
 
-    it('should handle tax-exempt phone', () => {
-      const taxExemptPhone = { ...mockPhone, isTaxExempt: true };
-      const result = service.calculatePhoneTax(taxExemptPhone);
+    it('should handle tax-exempt product', () => {
+      const taxExemptProduct = { ...mockProduct, isTaxExempt: true };
+      const result = service.calculateProductTax(taxExemptProduct);
 
       expect(result.unitBasePrice).toBe(1200);
       expect(result.unitTaxAmount).toBe(0);
@@ -210,9 +210,9 @@ describe('TaxCalculationService', () => {
     });
   });
 
-  describe('phoneToCartItem', () => {
-    const mockPhone: Phone = {
-      id: 'test-phone-1',
+  describe('productToCartItem', () => {
+    const mockProduct: Product = {
+      id: 'test-product-1',
       brandId: 'brand-1',
       brandName: 'Samsung',
       brandLogoUrl: null,
@@ -221,13 +221,13 @@ describe('TaxCalculationService', () => {
       storageGb: 128,
       ramGb: 8,
       color: 'White',
-      condition: PhoneCondition.NEW,
+      condition: ProductCondition.NEW,
       batteryHealth: null,
       imei: '987654321012345',
       costPrice: 700,
       sellingPrice: 900,
       profitMargin: 22.22,
-      status: PhoneStatus.AVAILABLE,
+      status: ProductStatus.AVAILABLE,
       purchaseDate: null,
       supplierId: null,
       supplierName: null,
@@ -240,10 +240,10 @@ describe('TaxCalculationService', () => {
       isTaxExempt: false
     };
 
-    it('should convert phone to cart item with calculated tax', () => {
-      const cartItem = service.phoneToCartItem(mockPhone);
+    it('should convert product to cart item with calculated tax', () => {
+      const cartItem = service.productToCartItem(mockProduct);
 
-      expect(cartItem.phoneId).toBe('test-phone-1');
+      expect(cartItem.productId).toBe('test-product-1');
       expect(cartItem.brandName).toBe('Samsung');
       expect(cartItem.model).toBe('Galaxy S24');
       expect(cartItem.salePrice).toBe(900);
@@ -255,7 +255,7 @@ describe('TaxCalculationService', () => {
     });
 
     it('should use sale price override', () => {
-      const cartItem = service.phoneToCartItem(mockPhone, 800);
+      const cartItem = service.productToCartItem(mockProduct, 800);
 
       expect(cartItem.salePrice).toBe(800);
       expect(cartItem.basePrice).toBe(800);
@@ -267,7 +267,7 @@ describe('TaxCalculationService', () => {
     it('should calculate summary for cart with mixed tax rates', () => {
       const cartItems: CartItem[] = [
         {
-          phoneId: '1',
+          productId: '1',
           brandName: 'Apple',
           model: 'iPhone 15',
           storageGb: 128,
@@ -285,7 +285,7 @@ describe('TaxCalculationService', () => {
           taxAmount: 120
         },
         {
-          phoneId: '2',
+          productId: '2',
           brandName: 'Samsung',
           model: 'Galaxy S24',
           storageGb: 128,
@@ -315,7 +315,7 @@ describe('TaxCalculationService', () => {
     it('should group tax breakdown by rate', () => {
       const cartItems: CartItem[] = [
         {
-          phoneId: '1',
+          productId: '1',
           brandName: 'Apple',
           model: 'iPhone 15',
           storageGb: 128,
@@ -333,7 +333,7 @@ describe('TaxCalculationService', () => {
           taxAmount: 120
         },
         {
-          phoneId: '2',
+          productId: '2',
           brandName: 'Apple',
           model: 'iPhone 14',
           storageGb: 128,
@@ -364,7 +364,7 @@ describe('TaxCalculationService', () => {
     it('should handle tax-exempt items in breakdown', () => {
       const cartItems: CartItem[] = [
         {
-          phoneId: '1',
+          productId: '1',
           brandName: 'Apple',
           model: 'iPhone 15',
           storageGb: 128,
@@ -393,7 +393,7 @@ describe('TaxCalculationService', () => {
     it('should sort tax breakdown by rate ascending', () => {
       const cartItems: CartItem[] = [
         {
-          phoneId: '1',
+          productId: '1',
           brandName: 'Apple',
           model: 'iPhone 15',
           storageGb: 128,
@@ -411,7 +411,7 @@ describe('TaxCalculationService', () => {
           taxAmount: 180
         },
         {
-          phoneId: '2',
+          productId: '2',
           brandName: 'Samsung',
           model: 'Galaxy',
           storageGb: 128,
@@ -493,8 +493,8 @@ describe('TaxCalculationService', () => {
   });
 
   describe('hasTaxConfigured', () => {
-    const basePhone: Phone = {
-      id: 'test-phone',
+    const baseProduct: Product = {
+      id: 'test-product',
       brandId: 'brand-1',
       brandName: 'Apple',
       brandLogoUrl: null,
@@ -503,13 +503,13 @@ describe('TaxCalculationService', () => {
       storageGb: 128,
       ramGb: 8,
       color: 'Black',
-      condition: PhoneCondition.NEW,
+      condition: ProductCondition.NEW,
       batteryHealth: null,
       imei: null,
       costPrice: 900,
       sellingPrice: 1200,
       profitMargin: 25,
-      status: PhoneStatus.AVAILABLE,
+      status: ProductStatus.AVAILABLE,
       purchaseDate: null,
       supplierId: null,
       supplierName: null,
@@ -523,23 +523,23 @@ describe('TaxCalculationService', () => {
     };
 
     it('should return true when tax rate is greater than 0', () => {
-      const phone = { ...basePhone, taxRate: 10 };
-      expect(service.hasTaxConfigured(phone)).toBe(true);
+      const product = { ...baseProduct, taxRate: 10 };
+      expect(service.hasTaxConfigured(product)).toBe(true);
     });
 
     it('should return true when item is tax exempt', () => {
-      const phone = { ...basePhone, isTaxExempt: true };
-      expect(service.hasTaxConfigured(phone)).toBe(true);
+      const product = { ...baseProduct, isTaxExempt: true };
+      expect(service.hasTaxConfigured(product)).toBe(true);
     });
 
     it('should return false when no tax configured', () => {
-      expect(service.hasTaxConfigured(basePhone)).toBe(false);
+      expect(service.hasTaxConfigured(baseProduct)).toBe(false);
     });
   });
 
   describe('getTaxStatusLabel', () => {
-    const basePhone: Phone = {
-      id: 'test-phone',
+    const baseProduct: Product = {
+      id: 'test-product',
       brandId: 'brand-1',
       brandName: 'Apple',
       brandLogoUrl: null,
@@ -548,13 +548,13 @@ describe('TaxCalculationService', () => {
       storageGb: 128,
       ramGb: 8,
       color: 'Black',
-      condition: PhoneCondition.NEW,
+      condition: ProductCondition.NEW,
       batteryHealth: null,
       imei: null,
       costPrice: 900,
       sellingPrice: 1200,
       profitMargin: 25,
-      status: PhoneStatus.AVAILABLE,
+      status: ProductStatus.AVAILABLE,
       purchaseDate: null,
       supplierId: null,
       supplierName: null,
@@ -568,22 +568,22 @@ describe('TaxCalculationService', () => {
     };
 
     it('should return "Tax Exempt" for exempt items', () => {
-      const phone = { ...basePhone, isTaxExempt: true };
-      expect(service.getTaxStatusLabel(phone)).toBe('Tax Exempt');
+      const product = { ...baseProduct, isTaxExempt: true };
+      expect(service.getTaxStatusLabel(product)).toBe('Tax Exempt');
     });
 
     it('should return "No Tax" for 0% tax rate', () => {
-      expect(service.getTaxStatusLabel(basePhone)).toBe('No Tax');
+      expect(service.getTaxStatusLabel(baseProduct)).toBe('No Tax');
     });
 
     it('should return tax rate with percentage', () => {
-      const phone = { ...basePhone, taxRate: 10 };
-      expect(service.getTaxStatusLabel(phone)).toBe('10% Tax');
+      const product = { ...baseProduct, taxRate: 10 };
+      expect(service.getTaxStatusLabel(product)).toBe('10% Tax');
     });
 
     it('should indicate inclusive pricing', () => {
-      const phone = { ...basePhone, taxRate: 10, isTaxInclusive: true };
-      expect(service.getTaxStatusLabel(phone)).toBe('10% Tax (incl.)');
+      const product = { ...baseProduct, taxRate: 10, isTaxInclusive: true };
+      expect(service.getTaxStatusLabel(product)).toBe('10% Tax (incl.)');
     });
   });
 
@@ -591,7 +591,7 @@ describe('TaxCalculationService', () => {
     it('should calculate cart summary including profit', () => {
       const cartItems: CartItem[] = [
         {
-          phoneId: '1',
+          productId: '1',
           brandName: 'Apple',
           model: 'iPhone 15',
           storageGb: 128,

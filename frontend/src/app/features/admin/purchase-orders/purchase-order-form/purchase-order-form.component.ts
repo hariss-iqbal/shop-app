@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 import { FormBuilder, FormArray, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -53,13 +53,15 @@ interface LineItemForm {
   styleUrls: ['./purchase-order-form.component.scss']
 })
 export class PurchaseOrderFormComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private router = inject(Router);
-  private supplierService = inject(SupplierService);
-  private purchaseOrderService = inject(PurchaseOrderService);
-  private brandService = inject(BrandService);
-  private sanitizer = inject(InputSanitizationService);
-  private toastService = inject(ToastService);
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private supplierService: SupplierService,
+    private purchaseOrderService: PurchaseOrderService,
+    private brandService: BrandService,
+    private sanitizer: InputSanitizationService,
+    private toastService: ToastService
+  ) { }
 
   suppliers = signal<Supplier[]>([]);
   brands = signal<Brand[]>([]);

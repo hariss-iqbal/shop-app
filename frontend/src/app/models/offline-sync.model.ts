@@ -86,7 +86,7 @@ export type SyncPayload =
  * Offline Sale Payload - data for creating a sale offline
  */
 export interface OfflineSalePayload {
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
   costPrice: number;
@@ -95,8 +95,8 @@ export interface OfflineSalePayload {
   buyerEmail: string | null;
   notes: string | null;
   payments?: PaymentDetail[];
-  /** Cached phone details for offline display */
-  phoneDetails: {
+  /** Cached product details for offline display */
+  productDetails: {
     brandName: string;
     model: string;
     storageGb: number | null;
@@ -192,8 +192,8 @@ export interface SyncConflictData {
  */
 export type SyncConflictType =
   | 'RECEIPT_NUMBER_EXISTS'    // Receipt number already exists on server
-  | 'PHONE_ALREADY_SOLD'       // Phone was sold by another user
-  | 'PHONE_NOT_AVAILABLE'      // Phone is no longer available
+  | 'PRODUCT_ALREADY_SOLD'     // Product was sold by another user
+  | 'PRODUCT_NOT_AVAILABLE'    // Product is no longer available
   | 'DATA_MODIFIED'            // Data was modified on server
   | 'ENTITY_DELETED';          // Entity was deleted on server
 
@@ -359,7 +359,7 @@ export interface ResolveConflictResponse {
 /**
  * Cached phone data for offline use
  */
-export interface CachedPhone {
+export interface CachedProduct {
   id: string;
   brandId: string;
   brandName: string;

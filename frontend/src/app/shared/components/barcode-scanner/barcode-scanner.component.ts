@@ -1,14 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  Output,
-  ViewChild,
-  inject,
-  signal,
-  OnDestroy
-} from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -64,8 +54,10 @@ export class BarcodeScannerComponent implements OnDestroy {
   @Output() dialogOpened = new EventEmitter<void>();
   @Output() dialogClosed = new EventEmitter<void>();
 
-  scannerService = inject(BarcodeScannerService);
-  viewportService = inject(ViewportService);
+  constructor(
+    public scannerService: BarcodeScannerService,
+    public viewportService: ViewportService
+  ) { }
 
   dialogVisible = false;
   initializing = signal(false);

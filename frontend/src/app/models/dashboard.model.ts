@@ -34,7 +34,7 @@ export interface MonthlySalesData {
   revenue: number;
 }
 
-export interface RecentPhone {
+export interface RecentProduct {
   id: string;
   brandName: string;
   model: string;

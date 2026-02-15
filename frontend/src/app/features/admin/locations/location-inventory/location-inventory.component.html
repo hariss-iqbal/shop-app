@@ -111,7 +111,7 @@
       [rowsPerPageOptions]="[10, 25, 50]"
       [showCurrentPageReport]="true"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} items"
-      [globalFilterFields]="['phone.model', 'phone.brandName']"
+      [globalFilterFields]="['product.model', 'product.brandName']"
       styleClass="p-datatable-sm"
       [rowHover]="true">
 
@@ -134,11 +134,11 @@
 
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="phone.model">Phone <p-sortIcon field="phone.model"></p-sortIcon></th>
-          <th pSortableColumn="phone.brandName">Brand <p-sortIcon field="phone.brandName"></p-sortIcon></th>
+          <th pSortableColumn="product.model">Product <p-sortIcon field="product.model"></p-sortIcon></th>
+          <th pSortableColumn="product.brandName">Brand <p-sortIcon field="product.brandName"></p-sortIcon></th>
           <th>Condition</th>
           <th pSortableColumn="quantity" class="text-right">Qty <p-sortIcon field="quantity"></p-sortIcon></th>
-          <th pSortableColumn="phone.sellingPrice" class="text-right">Unit Price <p-sortIcon field="phone.sellingPrice"></p-sortIcon></th>
+          <th pSortableColumn="product.sellingPrice" class="text-right">Unit Price <p-sortIcon field="product.sellingPrice"></p-sortIcon></th>
           <th class="text-right">Total Value</th>
           <th>Stock Status</th>
         </tr>
@@ -151,21 +151,21 @@
               <div class="flex align-items-center justify-content-center border-round surface-100" style="width: 2.5rem; height: 2.5rem;">
                 <i class="pi pi-mobile text-color-secondary"></i>
               </div>
-              <span class="font-medium">{{ item.phone?.model || 'Unknown' }}</span>
+              <span class="font-medium">{{ item.product?.model || 'Unknown' }}</span>
             </div>
           </td>
-          <td>{{ item.phone?.brandName || '-' }}</td>
+          <td>{{ item.product?.brandName || '-' }}</td>
           <td>
             <p-tag
-              [value]="item.phone?.condition | titlecase"
-              [severity]="getConditionSeverity(item.phone?.condition)">
+              [value]="item.product?.condition | titlecase"
+              [severity]="getConditionSeverity(item.product?.condition)">
             </p-tag>
           </td>
           <td class="text-right">
             <span class="font-bold text-lg">{{ item.quantity }}</span>
           </td>
-          <td class="text-right">{{ item.phone?.sellingPrice | currency }}</td>
-          <td class="text-right font-medium">{{ (item.quantity * (item.phone?.sellingPrice || 0)) | currency }}</td>
+          <td class="text-right">{{ item.product?.sellingPrice | currency }}</td>
+          <td class="text-right font-medium">{{ (item.quantity * (item.product?.sellingPrice || 0)) | currency }}</td>
           <td>
             @if (item.minStockLevel !== null) {
               @if (item.quantity <= item.minStockLevel) {

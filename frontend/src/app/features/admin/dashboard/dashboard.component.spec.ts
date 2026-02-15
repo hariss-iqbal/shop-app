@@ -6,7 +6,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
 import { StockAlertService } from '../../../core/services/stock-alert.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { ThemeService } from '../../../shared/services/theme.service';
-import { DashboardKPIs, MonthlySalesData, RecentPhone, StockByBrand } from '../../../models/dashboard.model';
+import { DashboardKPIs, MonthlySalesData, RecentProduct, StockByBrand } from '../../../models/dashboard.model';
 import { StockAlertsResponse } from '../../../models/stock-alert-config.model';
 import { DashboardDateRange, ThemeMode } from '../../../enums';
 import { signal } from '@angular/core';
@@ -39,7 +39,7 @@ describe('DashboardComponent', () => {
     { brandId: 'brand-2', brandName: 'Samsung', count: 10 }
   ];
 
-  const mockRecentPhones: RecentPhone[] = [
+  const mockRecentProducts: RecentProduct[] = [
     {
       id: 'phone-1',
       brandName: 'Apple',
@@ -75,7 +75,7 @@ describe('DashboardComponent', () => {
       'getKpis',
       'getSalesByDateRange',
       'getStockByBrand',
-      'getRecentlyAddedPhones'
+      'getRecentlyAddedProducts'
     ]);
 
     mockStockAlertService = jasmine.createSpyObj('StockAlertService', ['getAlerts']);
@@ -89,7 +89,7 @@ describe('DashboardComponent', () => {
     mockDashboardService.getKpis.and.returnValue(Promise.resolve(mockKpis));
     mockDashboardService.getSalesByDateRange.and.returnValue(Promise.resolve(mockMonthlySales));
     mockDashboardService.getStockByBrand.and.returnValue(Promise.resolve(mockStockByBrand));
-    mockDashboardService.getRecentlyAddedPhones.and.returnValue(Promise.resolve(mockRecentPhones));
+    mockDashboardService.getRecentlyAddedProducts.and.returnValue(Promise.resolve(mockRecentProducts));
     mockStockAlertService.getAlerts.and.returnValue(Promise.resolve(mockAlertsResponse));
 
     await TestBed.configureTestingModule({
@@ -119,7 +119,7 @@ describe('DashboardComponent', () => {
       expect(mockDashboardService.getKpis).toHaveBeenCalled();
       expect(mockDashboardService.getSalesByDateRange).toHaveBeenCalled();
       expect(mockDashboardService.getStockByBrand).toHaveBeenCalled();
-      expect(mockDashboardService.getRecentlyAddedPhones).toHaveBeenCalled();
+      expect(mockDashboardService.getRecentlyAddedProducts).toHaveBeenCalled();
       expect(mockStockAlertService.getAlerts).toHaveBeenCalled();
     }));
 
@@ -138,12 +138,12 @@ describe('DashboardComponent', () => {
       expect(kpis.totalSales).toBe(10);
     }));
 
-    it('should populate recent phones after loading', fakeAsync(() => {
+    it('should populate recent products after loading', fakeAsync(() => {
       fixture.detectChanges();
       tick();
 
-      expect(component.recentPhones().length).toBe(2);
-      expect(component.recentPhones()[0].model).toBe('iPhone 15 Pro');
+      expect(component.recentProducts().length).toBe(2);
+      expect(component.recentProducts()[0].model).toBe('iPhone 15 Pro');
     }));
 
     it('should populate stock by brand after loading', fakeAsync(() => {
@@ -187,7 +187,7 @@ describe('DashboardComponent', () => {
 
     it('should display 4 KPI cards as per acceptance criteria', () => {
       const cards = fixture.nativeElement.querySelectorAll('p-card');
-      // 4 KPI cards + 2 chart cards + 1 recent phones card = 7 total cards
+      // 4 KPI cards + 2 chart cards + 1 recent products card = 7 total cards
       expect(cards.length).toBeGreaterThanOrEqual(4);
     });
   });
@@ -266,7 +266,7 @@ describe('DashboardComponent', () => {
       mockDashboardService.getKpis.calls.reset();
       mockDashboardService.getSalesByDateRange.calls.reset();
       mockDashboardService.getStockByBrand.calls.reset();
-      mockDashboardService.getRecentlyAddedPhones.calls.reset();
+      mockDashboardService.getRecentlyAddedProducts.calls.reset();
       mockStockAlertService.getAlerts.calls.reset();
 
       component.loadAll();
@@ -275,7 +275,7 @@ describe('DashboardComponent', () => {
       expect(mockDashboardService.getKpis).toHaveBeenCalledTimes(1);
       expect(mockDashboardService.getSalesByDateRange).toHaveBeenCalledTimes(1);
       expect(mockDashboardService.getStockByBrand).toHaveBeenCalledTimes(1);
-      expect(mockDashboardService.getRecentlyAddedPhones).toHaveBeenCalledTimes(1);
+      expect(mockDashboardService.getRecentlyAddedProducts).toHaveBeenCalledTimes(1);
       expect(mockStockAlertService.getAlerts).toHaveBeenCalledTimes(1);
     }));
 
@@ -327,55 +327,55 @@ describe('DashboardComponent', () => {
     }));
   });
 
-  describe('recently added phones table', () => {
+  describe('recently added products table', () => {
     beforeEach(fakeAsync(() => {
       fixture.detectChanges();
       tick();
       fixture.detectChanges();
     }));
 
-    it('should display recently added phones', () => {
+    it('should display recently added products', () => {
       const compiled = fixture.nativeElement;
       expect(compiled.textContent).toContain('iPhone 15 Pro');
       expect(compiled.textContent).toContain('Apple');
     });
 
-    it('should navigate to phone edit on row click', fakeAsync(() => {
-      const phone = mockRecentPhones[0];
-      component.onRecentPhoneClick(phone);
+    it('should navigate to product edit on row click', fakeAsync(() => {
+      const product = mockRecentProducts[0];
+      component.onRecentProductClick(product);
 
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory', 'phone-1', 'edit']);
     }));
 
-    it('should show empty state when no phones exist', fakeAsync(() => {
-      mockDashboardService.getRecentlyAddedPhones.and.returnValue(Promise.resolve([]));
+    it('should show empty state when no products exist', fakeAsync(() => {
+      mockDashboardService.getRecentlyAddedProducts.and.returnValue(Promise.resolve([]));
 
       component.loadAll();
       tick();
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement;
-      expect(compiled.textContent).toContain('No phones added yet');
+      expect(compiled.textContent).toContain('No products added yet');
     }));
 
-    it('should display fewer than 5 phones without error when fewer exist', fakeAsync(() => {
-      const threePhones: RecentPhone[] = [
+    it('should display fewer than 5 products without error when fewer exist', fakeAsync(() => {
+      const threePhones: RecentProduct[] = [
         { id: 'phone-1', brandName: 'Apple', model: 'iPhone 15', condition: 'new', sellingPrice: 1200, createdAt: '2024-01-15T10:00:00Z' },
         { id: 'phone-2', brandName: 'Samsung', model: 'Galaxy S24', condition: 'used', sellingPrice: 900, createdAt: '2024-01-14T10:00:00Z' },
         { id: 'phone-3', brandName: 'Google', model: 'Pixel 8', condition: 'refurbished', sellingPrice: 700, createdAt: '2024-01-13T10:00:00Z' }
       ];
-      mockDashboardService.getRecentlyAddedPhones.and.returnValue(Promise.resolve(threePhones));
+      mockDashboardService.getRecentlyAddedProducts.and.returnValue(Promise.resolve(threePhones));
 
       component.loadAll();
       tick();
       fixture.detectChanges();
 
-      expect(component.recentPhones().length).toBe(3);
+      expect(component.recentProducts().length).toBe(3);
       const compiled = fixture.nativeElement;
       expect(compiled.textContent).toContain('iPhone 15');
       expect(compiled.textContent).toContain('Galaxy S24');
       expect(compiled.textContent).toContain('Pixel 8');
-      expect(compiled.textContent).not.toContain('No phones added yet');
+      expect(compiled.textContent).not.toContain('No products added yet');
     }));
 
     it('should display all required columns: brand, model, condition, selling_price, date added', fakeAsync(() => {
@@ -410,7 +410,7 @@ describe('DashboardComponent', () => {
     it('should have table with proper accessibility attributes', fakeAsync(() => {
       const table = fixture.nativeElement.querySelector('p-table');
       expect(table).toBeTruthy();
-      expect(table.getAttribute('ariaLabel')).toBe('Recently added phones table');
+      expect(table.getAttribute('ariaLabel')).toBe('Recently added products table');
     }));
 
     it('should display View All button in header', fakeAsync(() => {
@@ -423,24 +423,24 @@ describe('DashboardComponent', () => {
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory']);
     }));
 
-    it('should display Add Phone button in empty state', fakeAsync(() => {
-      mockDashboardService.getRecentlyAddedPhones.and.returnValue(Promise.resolve([]));
+    it('should display Add Product button in empty state', fakeAsync(() => {
+      mockDashboardService.getRecentlyAddedProducts.and.returnValue(Promise.resolve([]));
       component.loadAll();
       tick();
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement;
-      expect(compiled.textContent).toContain('Add Phone');
+      expect(compiled.textContent).toContain('Add Product');
     }));
 
-    it('should navigate to add phone on button click', fakeAsync(() => {
-      component.navigateToAddPhone();
+    it('should navigate to add product on button click', fakeAsync(() => {
+      component.navigateToAddProduct();
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory/new']);
     }));
 
     it('should display edit icon in each row', fakeAsync(() => {
       const icons = fixture.nativeElement.querySelectorAll('.pi-pencil');
-      expect(icons.length).toBe(2); // 2 phones in mock data
+      expect(icons.length).toBe(2); // 2 products in mock data
     }));
   });
 

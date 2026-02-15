@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -48,10 +48,12 @@ interface SupplierOption {
   styleUrls: ['./purchase-order-list.component.scss']
 })
 export class PurchaseOrderListComponent implements OnInit {
-  private purchaseOrderService = inject(PurchaseOrderService);
-  private supplierService = inject(SupplierService);
-  private toastService = inject(ToastService);
-  private router = inject(Router);
+  constructor(
+    private purchaseOrderService: PurchaseOrderService,
+    private supplierService: SupplierService,
+    private toastService: ToastService,
+    private router: Router
+  ) { }
 
   purchaseOrders = signal<PurchaseOrder[]>([]);
   suppliers = signal<Supplier[]>([]);

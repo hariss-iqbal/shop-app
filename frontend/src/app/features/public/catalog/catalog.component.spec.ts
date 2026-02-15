@@ -1,34 +1,34 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { CatalogComponent } from './catalog.component';
 import { RouterTestingModule } from '@angular/router/testing';
-import { PhoneService } from '../../../core/services/phone.service';
+import { ProductService } from '../../../core/services/product.service';
 import { BrandService } from '../../../core/services/brand.service';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
-import { PhoneComparisonService } from '../../../shared/services/phone-comparison.service';
-import { Phone } from '../../../models/phone.model';
+import { ProductComparisonService } from '../../../shared/services/product-comparison.service';
+import { Product } from '../../../models/product.model';
 import { Brand } from '../../../models/brand.model';
-import { PhoneStatus, PhoneCondition } from '../../../enums';
+import { ProductStatus, ProductCondition } from '../../../enums';
 
 describe('CatalogComponent', () => {
   let component: CatalogComponent;
   let fixture: ComponentFixture<CatalogComponent>;
-  let phoneServiceMock: jasmine.SpyObj<PhoneService>;
+  let productServiceMock: jasmine.SpyObj<ProductService>;
   let brandServiceMock: jasmine.SpyObj<BrandService>;
   let imageOptimizationMock: jasmine.SpyObj<ImageOptimizationService>;
   let toastServiceMock: jasmine.SpyObj<ToastService>;
   let seoServiceMock: jasmine.SpyObj<SeoService>;
-  let comparisonServiceMock: jasmine.SpyObj<PhoneComparisonService>;
+  let comparisonServiceMock: jasmine.SpyObj<ProductComparisonService>;
 
   const mockBrands: Brand[] = [
     { id: 'brand-1', name: 'Apple', logoUrl: 'https://example.com/apple.png', createdAt: new Date().toISOString(), updatedAt: null },
     { id: 'brand-2', name: 'Samsung', logoUrl: 'https://example.com/samsung.png', createdAt: new Date().toISOString(), updatedAt: null }
   ];
 
-  const mockPhones: Phone[] = [
+  const mockProducts: Product[] = [
     {
-      id: 'phone-1',
+      id: 'product-1',
       brandId: 'brand-1',
       brandName: 'Apple',
       brandLogoUrl: 'https://example.com/apple.png',
@@ -37,13 +37,13 @@ describe('CatalogComponent', () => {
       storageGb: 256,
       ramGb: 6,
       color: 'Space Black',
-      condition: PhoneCondition.NEW,
+      condition: ProductCondition.NEW,
       batteryHealth: null,
       imei: '123456789012345',
       costPrice: 800,
       sellingPrice: 999,
       profitMargin: 19.92,
-      status: PhoneStatus.AVAILABLE,
+      status: ProductStatus.AVAILABLE,
       purchaseDate: '2024-01-15',
       supplierId: null,
       supplierName: null,
@@ -56,7 +56,7 @@ describe('CatalogComponent', () => {
       isTaxExempt: false
     },
     {
-      id: 'phone-2',
+      id: 'product-2',
       brandId: 'brand-2',
       brandName: 'Samsung',
       brandLogoUrl: 'https://example.com/samsung.png',
@@ -65,13 +65,13 @@ describe('CatalogComponent', () => {
       storageGb: 128,
       ramGb: 8,
       color: 'Phantom Black',
-      condition: PhoneCondition.USED,
+      condition: ProductCondition.USED,
       batteryHealth: 92,
       imei: '987654321098765',
       costPrice: 600,
       sellingPrice: 799,
       profitMargin: 24.91,
-      status: PhoneStatus.AVAILABLE,
+      status: ProductStatus.AVAILABLE,
       purchaseDate: '2024-02-01',
       supplierId: null,
       supplierName: null,
@@ -86,8 +86,8 @@ describe('CatalogComponent', () => {
   ];
 
   beforeEach(async () => {
-    phoneServiceMock = jasmine.createSpyObj('PhoneService', [
-      'getCatalogPhones',
+    productServiceMock = jasmine.createSpyObj('ProductService', [
+      'getCatalogProducts',
       'getDistinctStorageOptions',
       'getPriceRange'
     ]);
@@ -101,41 +101,41 @@ describe('CatalogComponent', () => {
     ]);
     toastServiceMock = jasmine.createSpyObj('ToastService', ['error', 'warn', 'success']);
     seoServiceMock = jasmine.createSpyObj('SeoService', ['updateMetaTags']);
-    comparisonServiceMock = jasmine.createSpyObj('PhoneComparisonService', [
-      'hasPhones',
+    comparisonServiceMock = jasmine.createSpyObj('ProductComparisonService', [
+      'hasProducts',
       'count',
-      'phones',
+      'products',
       'isSelected',
       'toggle',
       'remove',
       'clear',
       'canCompare',
-      'getPhoneIds'
+      'getProductIds'
     ]);
 
-    phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 2 });
-    phoneServiceMock.getDistinctStorageOptions.and.resolveTo([64, 128, 256, 512]);
-    phoneServiceMock.getPriceRange.and.resolveTo({ min: 100, max: 1500 });
+    productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 2 });
+    productServiceMock.getDistinctStorageOptions.and.resolveTo([64, 128, 256, 512]);
+    productServiceMock.getPriceRange.and.resolveTo({ min: 100, max: 1500 });
     brandServiceMock.getBrands.and.resolveTo(mockBrands);
     imageOptimizationMock.getCardImageUrl.and.callFake((url: string) => url);
     imageOptimizationMock.getCardSrcSet.and.returnValue('');
     imageOptimizationMock.getListImageUrl.and.callFake((url: string) => url);
     imageOptimizationMock.getListSrcSet.and.returnValue('');
     imageOptimizationMock.getTinyPlaceholderUrl.and.callFake((url: string) => url ? url + '?tiny' : '');
-    comparisonServiceMock.hasPhones.and.returnValue(false);
+    comparisonServiceMock.hasProducts.and.returnValue(false);
     comparisonServiceMock.count.and.returnValue(0);
-    comparisonServiceMock.phones.and.returnValue([]);
+    comparisonServiceMock.products.and.returnValue([]);
     comparisonServiceMock.isSelected.and.returnValue(false);
 
     await TestBed.configureTestingModule({
       imports: [CatalogComponent, RouterTestingModule],
       providers: [
-        { provide: PhoneService, useValue: phoneServiceMock },
+        { provide: ProductService, useValue: productServiceMock },
         { provide: BrandService, useValue: brandServiceMock },
         { provide: ImageOptimizationService, useValue: imageOptimizationMock },
         { provide: ToastService, useValue: toastServiceMock },
         { provide: SeoService, useValue: seoServiceMock },
-        { provide: PhoneComparisonService, useValue: comparisonServiceMock }
+        { provide: ProductComparisonService, useValue: comparisonServiceMock }
       ]
     }).compileComponents();
 
@@ -153,9 +153,9 @@ describe('CatalogComponent', () => {
       tick();
 
       expect(seoServiceMock.updateMetaTags).toHaveBeenCalledWith({
-        title: 'Phone Catalog',
+        title: jasmine.stringContaining('Quality Mobile Products'),
         description: jasmine.stringContaining('Browse our wide selection'),
-        url: '/catalog'
+        url: '/'
       });
     }));
 
@@ -171,17 +171,17 @@ describe('CatalogComponent', () => {
       fixture.detectChanges();
       tick();
 
-      expect(phoneServiceMock.getDistinctStorageOptions).toHaveBeenCalled();
-      expect(phoneServiceMock.getPriceRange).toHaveBeenCalled();
+      expect(productServiceMock.getDistinctStorageOptions).toHaveBeenCalled();
+      expect(productServiceMock.getPriceRange).toHaveBeenCalled();
     }));
 
-    it('should load phones with status=available filter', fakeAsync(() => {
+    it('should load products with status=available filter', fakeAsync(() => {
       fixture.detectChanges();
       tick();
 
-      expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-      const callArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
-      expect(callArgs[1]?.status).toBe(PhoneStatus.AVAILABLE);
+      expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+      const callArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
+      expect(callArgs[1]?.status).toBe(ProductStatus.AVAILABLE);
     }));
   });
 
@@ -210,24 +210,24 @@ describe('CatalogComponent', () => {
     });
   });
 
-  describe('Phone Card Display', () => {
+  describe('Product Card Display', () => {
     beforeEach(fakeAsync(() => {
       fixture.detectChanges();
       tick();
       fixture.detectChanges();
     }));
 
-    it('should display phones', () => {
-      expect(component.phones().length).toBe(2);
+    it('should display products', () => {
+      expect(component.products().length).toBe(2);
     });
 
-    it('should show phone brand name', () => {
+    it('should show product brand name', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('Apple');
       expect(compiled.textContent).toContain('Samsung');
     });
 
-    it('should show phone model', () => {
+    it('should show product model', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('iPhone 14 Pro');
       expect(compiled.textContent).toContain('Galaxy S24');
@@ -259,7 +259,7 @@ describe('CatalogComponent', () => {
       fixture.detectChanges();
     }));
 
-    it('should show placeholder for phones without image', () => {
+    it('should show placeholder for products without image', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const placeholders = compiled.querySelectorAll('.pi-image');
       expect(placeholders.length).toBeGreaterThan(0);
@@ -322,7 +322,7 @@ describe('CatalogComponent', () => {
     it('should clear filters when clearFilters is called', fakeAsync(() => {
       component.searchQuery = 'test';
       component.selectedBrandId = 'brand-1';
-      component.selectedConditions = [PhoneCondition.NEW];
+      component.selectedConditions = [ProductCondition.NEW];
 
       component.clearFilters();
       tick();
@@ -368,32 +368,32 @@ describe('CatalogComponent', () => {
 
   describe('Condition Labels and Severity', () => {
     it('should return correct label for NEW condition', () => {
-      const label = component.getConditionLabel(PhoneCondition.NEW);
+      const label = component.getConditionLabel(ProductCondition.NEW);
       expect(label).toBe('New');
     });
 
     it('should return correct label for USED condition', () => {
-      const label = component.getConditionLabel(PhoneCondition.USED);
+      const label = component.getConditionLabel(ProductCondition.USED);
       expect(label).toBe('Used');
     });
 
     it('should return correct label for REFURBISHED condition', () => {
-      const label = component.getConditionLabel(PhoneCondition.REFURBISHED);
+      const label = component.getConditionLabel(ProductCondition.REFURBISHED);
       expect(label).toBe('Refurbished');
     });
 
     it('should return success severity for NEW condition', () => {
-      const severity = component.getConditionSeverity(PhoneCondition.NEW);
+      const severity = component.getConditionSeverity(ProductCondition.NEW);
       expect(severity).toBe('success');
     });
 
     it('should return warn severity for USED condition', () => {
-      const severity = component.getConditionSeverity(PhoneCondition.USED);
+      const severity = component.getConditionSeverity(ProductCondition.USED);
       expect(severity).toBe('warn');
     });
 
     it('should return info severity for REFURBISHED condition', () => {
-      const severity = component.getConditionSeverity(PhoneCondition.REFURBISHED);
+      const severity = component.getConditionSeverity(ProductCondition.REFURBISHED);
       expect(severity).toBe('info');
     });
   });
@@ -404,29 +404,29 @@ describe('CatalogComponent', () => {
       tick();
     }));
 
-    it('should toggle phone comparison', () => {
+    it('should toggle product comparison', () => {
       const event = new Event('click');
       spyOn(event, 'stopPropagation');
 
-      component.toggleCompare(event, mockPhones[0]);
+      component.toggleCompare(event, mockProducts[0]);
 
       expect(event.stopPropagation).toHaveBeenCalled();
-      expect(comparisonServiceMock.toggle).toHaveBeenCalledWith(mockPhones[0]);
+      expect(comparisonServiceMock.toggle).toHaveBeenCalledWith(mockProducts[0]);
     });
 
     it('should show warning when comparison is full', fakeAsync(() => {
       comparisonServiceMock.toggle.and.returnValue('full');
       const event = new Event('click');
 
-      component.toggleCompare(event, mockPhones[0]);
+      component.toggleCompare(event, mockProducts[0]);
       tick();
 
       expect(toastServiceMock.warn).toHaveBeenCalled();
     }));
 
-    it('should remove phone from comparison', () => {
-      component.removeFromCompare('phone-1');
-      expect(comparisonServiceMock.remove).toHaveBeenCalledWith('phone-1');
+    it('should remove product from comparison', () => {
+      component.removeFromCompare('product-1');
+      expect(comparisonServiceMock.remove).toHaveBeenCalledWith('product-1');
     });
 
     it('should clear all comparisons', () => {
@@ -436,19 +436,19 @@ describe('CatalogComponent', () => {
   });
 
   describe('Empty State', () => {
-    it('should show empty state when no phones found', fakeAsync(() => {
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: [], total: 0 });
+    it('should show empty state when no products found', fakeAsync(() => {
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: [], total: 0 });
 
       fixture.detectChanges();
       tick();
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.textContent).toContain('No phones found');
+      expect(compiled.textContent).toContain('No products found');
     }));
 
     it('should show clear filters button in empty state when filters are active', fakeAsync(() => {
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: [], total: 0 });
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: [], total: 0 });
 
       fixture.detectChanges();
       tick();
@@ -458,7 +458,7 @@ describe('CatalogComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.textContent).toContain('No phones match your current filters');
+      expect(compiled.textContent).toContain('No products match your current filters');
     }));
   });
 
@@ -490,13 +490,13 @@ describe('CatalogComponent', () => {
       expect(toggle?.getAttribute('aria-label')).toContain('grid and list view');
     });
 
-    it('should have role="list" on phone container', () => {
+    it('should have role="list" on product container', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const list = compiled.querySelector('[role="list"]');
       expect(list).toBeTruthy();
     });
 
-    it('should have role="listitem" on phone cards', () => {
+    it('should have role="listitem" on product cards', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const items = compiled.querySelectorAll('[role="listitem"]');
       expect(items.length).toBeGreaterThan(0);
@@ -517,7 +517,7 @@ describe('CatalogComponent', () => {
 
   describe('Error Handling', () => {
     it('should show error toast when loading fails', fakeAsync(() => {
-      phoneServiceMock.getCatalogPhones.and.rejectWith(new Error('Network error'));
+      productServiceMock.getCatalogProducts.and.rejectWith(new Error('Network error'));
 
       fixture.detectChanges();
       tick();
@@ -533,16 +533,16 @@ describe('CatalogComponent', () => {
     }));
 
     describe('Brand Filter', () => {
-      it('should filter phones when selecting Apple brand - only Apple phones displayed', fakeAsync(() => {
-        const appleOnly: Phone[] = [mockPhones[0]]; // iPhone 14 Pro
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: appleOnly, total: 1 });
+      it('should filter products when selecting Apple brand - only Apple phones displayed', fakeAsync(() => {
+        const appleOnly: Phone[] = [mockProducts[0]]; // iPhone 14 Pro
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: appleOnly, total: 1 });
 
         component.selectedBrandId = 'brand-1';
         component.onFilterChange();
         tick();
 
-        expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
       }));
 
@@ -559,54 +559,54 @@ describe('CatalogComponent', () => {
         component.onFilterChange();
         tick();
 
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 2 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 2 });
         component.selectedBrandId = null;
         component.onFilterChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.brandId).toBeUndefined();
       }));
     });
 
     describe('Condition Multi-Select Filter', () => {
-      it('should filter phones when selecting "new" and "refurbished" conditions', fakeAsync(() => {
-        component.selectedConditions = [PhoneCondition.NEW, PhoneCondition.REFURBISHED];
+      it('should filter products when selecting "new" and "refurbished" conditions', fakeAsync(() => {
+        component.selectedConditions = [ProductCondition.NEW, ProductCondition.REFURBISHED];
         component.onFilterChange();
         tick();
 
-        expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
-        expect(lastCallArgs[1]?.conditions).toEqual([PhoneCondition.NEW, PhoneCondition.REFURBISHED]);
+        expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
+        expect(lastCallArgs[1]?.conditions).toEqual([ProductCondition.NEW, ProductCondition.REFURBISHED]);
       }));
 
       it('should have all three condition options available', () => {
         expect(component.conditionOptions.length).toBe(3);
         expect(component.conditionOptions.map(c => c.value)).toEqual([
-          PhoneCondition.NEW,
-          PhoneCondition.USED,
-          PhoneCondition.REFURBISHED
+          ProductCondition.NEW,
+          ProductCondition.USED,
+          ProductCondition.REFURBISHED
         ]);
       });
 
       it('should show only matching conditions when single condition selected', fakeAsync(() => {
-        component.selectedConditions = [PhoneCondition.USED];
+        component.selectedConditions = [ProductCondition.USED];
         component.onFilterChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
-        expect(lastCallArgs[1]?.conditions).toEqual([PhoneCondition.USED]);
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
+        expect(lastCallArgs[1]?.conditions).toEqual([ProductCondition.USED]);
       }));
     });
 
     describe('Storage Filter', () => {
-      it('should filter phones when selecting 256GB storage', fakeAsync(() => {
+      it('should filter products when selecting 256GB storage', fakeAsync(() => {
         component.selectedStorageValues = [256];
         component.onFilterChange();
         tick();
 
-        expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.storageGbOptions).toEqual([256]);
       }));
 
@@ -615,7 +615,7 @@ describe('CatalogComponent', () => {
         component.onFilterChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.storageGbOptions).toEqual([128, 256]);
       }));
 
@@ -632,8 +632,8 @@ describe('CatalogComponent', () => {
         component.onPriceRangeChange();
         tick();
 
-        expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.minPrice).toBe(200);
         expect(lastCallArgs[1]?.maxPrice).toBe(800);
       }));
@@ -648,7 +648,7 @@ describe('CatalogComponent', () => {
         component.onPriceRangeChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.minPrice).toBeUndefined();
         expect(lastCallArgs[1]?.maxPrice).toBeUndefined();
       }));
@@ -657,26 +657,26 @@ describe('CatalogComponent', () => {
     describe('AND Logic for Multiple Filters', () => {
       it('should combine brand AND condition filters', fakeAsync(() => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.onFilterChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
-        expect(lastCallArgs[1]?.conditions).toEqual([PhoneCondition.NEW]);
+        expect(lastCallArgs[1]?.conditions).toEqual([ProductCondition.NEW]);
       }));
 
       it('should combine brand AND condition AND storage AND price filters', fakeAsync(() => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.selectedStorageValues = [256];
         component.priceRange = [500, 1000];
         component.onFilterChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
-        expect(lastCallArgs[1]?.conditions).toEqual([PhoneCondition.NEW]);
+        expect(lastCallArgs[1]?.conditions).toEqual([ProductCondition.NEW]);
         expect(lastCallArgs[1]?.storageGbOptions).toEqual([256]);
         expect(lastCallArgs[1]?.minPrice).toBe(500);
         expect(lastCallArgs[1]?.maxPrice).toBe(1000);
@@ -693,7 +693,7 @@ describe('CatalogComponent', () => {
       });
 
       it('should show condition filter chips for each selected condition', () => {
-        component.selectedConditions = [PhoneCondition.NEW, PhoneCondition.REFURBISHED];
+        component.selectedConditions = [ProductCondition.NEW, ProductCondition.REFURBISHED];
         const filters = component.activeFilters();
         const conditionFilters = filters.filter(f => f.type === 'condition');
         expect(conditionFilters.length).toBe(2);
@@ -729,7 +729,7 @@ describe('CatalogComponent', () => {
       it('should reset all filters when Clear All Filters is clicked', fakeAsync(() => {
         // Set multiple filters
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.selectedStorageValues = [256];
         component.priceRange = [200, 800];
         component.searchQuery = 'iPhone';
@@ -746,13 +746,13 @@ describe('CatalogComponent', () => {
       }));
 
       it('should reload phones after clearing filters', fakeAsync(() => {
-        const initialCallCount = phoneServiceMock.getCatalogPhones.calls.count();
+        const initialCallCount = productServiceMock.getCatalogProducts.calls.count();
 
         component.selectedBrandId = 'brand-1';
         component.clearFilters();
         tick();
 
-        expect(phoneServiceMock.getCatalogPhones.calls.count()).toBeGreaterThan(initialCallCount);
+        expect(productServiceMock.getCatalogProducts.calls.count()).toBeGreaterThan(initialCallCount);
       }));
 
       it('should show Clear All button only when filters are active', () => {
@@ -781,13 +781,13 @@ describe('CatalogComponent', () => {
       }));
 
       it('should remove single condition when chip is removed', fakeAsync(() => {
-        component.selectedConditions = [PhoneCondition.NEW, PhoneCondition.REFURBISHED];
-        const filter = { type: 'condition' as const, label: 'Condition: New', value: PhoneCondition.NEW };
+        component.selectedConditions = [ProductCondition.NEW, ProductCondition.REFURBISHED];
+        const filter = { type: 'condition' as const, label: 'Condition: New', value: ProductCondition.NEW };
 
         component.removeFilter(filter);
         tick();
 
-        expect(component.selectedConditions).toEqual([PhoneCondition.REFURBISHED]);
+        expect(component.selectedConditions).toEqual([ProductCondition.REFURBISHED]);
       }));
 
       it('should remove single storage option when chip is removed', fakeAsync(() => {
@@ -819,7 +819,7 @@ describe('CatalogComponent', () => {
       });
 
       it('should build query params with condition filter', () => {
-        component.selectedConditions = [PhoneCondition.NEW, PhoneCondition.USED];
+        component.selectedConditions = [ProductCondition.NEW, ProductCondition.USED];
         const params = component['buildQueryParams']();
         expect(params['condition']).toBe('new,used');
       });
@@ -873,7 +873,7 @@ describe('CatalogComponent', () => {
         component.onFilterChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[1]?.search).toBe('Pro');
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
       }));
@@ -891,7 +891,7 @@ describe('CatalogComponent', () => {
 
       it('should reset to first page when condition filter changes', fakeAsync(() => {
         component.first = 24;
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.onFilterChange();
         tick();
 
@@ -922,7 +922,7 @@ describe('CatalogComponent', () => {
       });
 
       it('should load phones with created_at descending sort by default', fakeAsync(() => {
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].sortField).toBe('created_at');
         expect(lastCallArgs[0].sortOrder).toBe(-1);
       }));
@@ -950,7 +950,7 @@ describe('CatalogComponent', () => {
         component.onSortChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].sortField).toBe('selling_price');
         expect(lastCallArgs[0].sortOrder).toBe(1);
       }));
@@ -971,7 +971,7 @@ describe('CatalogComponent', () => {
         component.onSortChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].sortField).toBe('selling_price');
         expect(lastCallArgs[0].sortOrder).toBe(-1);
       }));
@@ -985,23 +985,23 @@ describe('CatalogComponent', () => {
         component.onSortChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].sortField).toBe('selling_price');
         expect(lastCallArgs[0].sortOrder).toBe(1);
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
       }));
 
       it('should apply sorting together with condition filter', fakeAsync(() => {
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         const priceDescSort = component.sortOptions.find(s => s.value === 'price_desc')!;
         component.selectedSort = priceDescSort;
         component.onSortChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].sortField).toBe('selling_price');
         expect(lastCallArgs[0].sortOrder).toBe(-1);
-        expect(lastCallArgs[1]?.conditions).toEqual([PhoneCondition.NEW]);
+        expect(lastCallArgs[1]?.conditions).toEqual([ProductCondition.NEW]);
       }));
 
       it('should apply sorting together with price range filter', fakeAsync(() => {
@@ -1011,7 +1011,7 @@ describe('CatalogComponent', () => {
         component.onSortChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].sortField).toBe('created_at');
         expect(lastCallArgs[0].sortOrder).toBe(-1);
         expect(lastCallArgs[1]?.minPrice).toBe(200);
@@ -1020,7 +1020,7 @@ describe('CatalogComponent', () => {
 
       it('should apply sorting together with all active filters combined', fakeAsync(() => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW, PhoneCondition.REFURBISHED];
+        component.selectedConditions = [ProductCondition.NEW, ProductCondition.REFURBISHED];
         component.selectedStorageValues = [128, 256];
         component.priceRange = [500, 1000];
         component.searchQuery = 'Pro';
@@ -1029,13 +1029,13 @@ describe('CatalogComponent', () => {
         component.onSortChange();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         // Verify sort
         expect(lastCallArgs[0].sortField).toBe('selling_price');
         expect(lastCallArgs[0].sortOrder).toBe(1);
         // Verify filters still applied
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
-        expect(lastCallArgs[1]?.conditions).toEqual([PhoneCondition.NEW, PhoneCondition.REFURBISHED]);
+        expect(lastCallArgs[1]?.conditions).toEqual([ProductCondition.NEW, ProductCondition.REFURBISHED]);
         expect(lastCallArgs[1]?.storageGbOptions).toEqual([128, 256]);
         expect(lastCallArgs[1]?.minPrice).toBe(500);
         expect(lastCallArgs[1]?.maxPrice).toBe(1000);
@@ -1136,21 +1136,21 @@ describe('CatalogComponent', () => {
       tick();
     }));
 
-    it('should filter phones when typing "iPhone" - only matching phones displayed', fakeAsync(() => {
-      const iphoneOnly: Phone[] = [mockPhones[0]]; // iPhone 14 Pro
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: iphoneOnly, total: 1 });
+    it('should filter products when typing "iPhone" - only matching phones displayed', fakeAsync(() => {
+      const iphoneOnly: Phone[] = [mockProducts[0]]; // iPhone 14 Pro
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: iphoneOnly, total: 1 });
 
       component.searchQuery = 'iPhone';
       component.onSearchInput({ target: { value: 'iPhone' } } as unknown as Event);
       tick(300); // Wait for debounce
 
-      expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-      const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+      expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+      const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
       expect(lastCallArgs[1]?.search).toBe('iPhone');
     }));
 
     it('should debounce search queries by at least 300ms', fakeAsync(() => {
-      const initialCallCount = phoneServiceMock.getCatalogPhones.calls.count();
+      const initialCallCount = productServiceMock.getCatalogProducts.calls.count();
 
       // Type multiple characters quickly
       component.onSearchInput({ target: { value: 'i' } } as unknown as Event);
@@ -1162,17 +1162,17 @@ describe('CatalogComponent', () => {
 
       // At this point, 300ms total have passed but debounce resets on each input
       // So no new API call should have been made yet
-      expect(phoneServiceMock.getCatalogPhones.calls.count()).toBe(initialCallCount);
+      expect(productServiceMock.getCatalogProducts.calls.count()).toBe(initialCallCount);
 
       // Wait for the debounce to complete
       tick(300);
 
       // Now one additional call should have been made
-      expect(phoneServiceMock.getCatalogPhones.calls.count()).toBe(initialCallCount + 1);
+      expect(productServiceMock.getCatalogProducts.calls.count()).toBe(initialCallCount + 1);
     }));
 
-    it('should display "No phones found" message when search returns no results', fakeAsync(() => {
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: [], total: 0 });
+    it('should display "No products found" message when search returns no results', fakeAsync(() => {
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: [], total: 0 });
 
       component.searchQuery = 'nonexistent';
       component.onSearchInput({ target: { value: 'nonexistent' } } as unknown as Event);
@@ -1180,11 +1180,11 @@ describe('CatalogComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.textContent).toContain('No phones found');
+      expect(compiled.textContent).toContain('No products found');
     }));
 
     it('should show clear filters suggestion when no results with active search', fakeAsync(() => {
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: [], total: 0 });
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: [], total: 0 });
 
       component.searchQuery = 'nonexistent';
       component.onSearchInput({ target: { value: 'nonexistent' } } as unknown as Event);
@@ -1192,7 +1192,7 @@ describe('CatalogComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.textContent).toContain('No phones match your current filters');
+      expect(compiled.textContent).toContain('No products match your current filters');
       expect(compiled.querySelector('p-button[icon="pi pi-filter-slash"]')).toBeTruthy();
     }));
 
@@ -1203,25 +1203,25 @@ describe('CatalogComponent', () => {
       tick(300);
 
       // Then clear the search
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 2 });
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 2 });
       component.searchQuery = '';
       component.onSearchInput({ target: { value: '' } } as unknown as Event);
       tick(300);
 
-      const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+      const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
       expect(lastCallArgs[1]?.search).toBeUndefined();
     }));
 
     it('should perform case-insensitive search - "samsung" matches "Samsung"', fakeAsync(() => {
-      const samsungOnly: Phone[] = [mockPhones[1]]; // Galaxy S24
-      phoneServiceMock.getCatalogPhones.and.resolveTo({ data: samsungOnly, total: 1 });
+      const samsungOnly: Phone[] = [mockProducts[1]]; // Galaxy S24
+      productServiceMock.getCatalogProducts.and.resolveTo({ data: samsungOnly, total: 1 });
 
       component.searchQuery = 'samsung'; // lowercase
       component.onSearchInput({ target: { value: 'samsung' } } as unknown as Event);
       tick(300);
 
-      expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
-      const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+      expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
+      const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
       expect(lastCallArgs[1]?.search).toBe('samsung');
       // The service handles case-insensitivity with ilike
     }));
@@ -1251,7 +1251,7 @@ describe('CatalogComponent', () => {
       tick();
 
       expect(component.searchQuery).toBe('');
-      expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
+      expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
     }));
 
     it('should reset pagination to first page when search query changes', fakeAsync(() => {
@@ -1270,7 +1270,7 @@ describe('CatalogComponent', () => {
       tick(300); // Wait for debounce
 
       expect(component.searchQuery).toBe('');
-      expect(phoneServiceMock.getCatalogPhones).toHaveBeenCalled();
+      expect(productServiceMock.getCatalogProducts).toHaveBeenCalled();
     }));
   });
 
@@ -1284,18 +1284,18 @@ describe('CatalogComponent', () => {
       it('should display only the first page of results when catalog loads with more phones than page size', fakeAsync(() => {
         // Mock 30 phones but return only first 12 (page 1)
         const page1Phones = Array(12).fill(null).map((_, i) => ({
-          ...mockPhones[0],
+          ...mockProducts[0],
           id: `phone-${i}`,
           model: `Phone Model ${i}`
         }));
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: page1Phones, total: 30 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: page1Phones, total: 30 });
 
         component.first = 0;
         component.pageSize = 12;
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        expect(component.phones().length).toBe(12);
+        expect(component.products().length).toBe(12);
         expect(component.totalRecords()).toBe(30);
         expect(component.first).toBe(0);
       }));
@@ -1306,18 +1306,18 @@ describe('CatalogComponent', () => {
       });
 
       it('should request first page with correct range (first=0, rows=12)', fakeAsync(() => {
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(0);
         expect(lastCallArgs[0].rows).toBe(12);
       }));
 
       it('should hide paginator when totalRecords <= pageSize', fakeAsync(() => {
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 2 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 2 });
 
-        component.loadPhones();
+        component.loadProducts();
         tick();
         fixture.detectChanges();
 
@@ -1331,13 +1331,13 @@ describe('CatalogComponent', () => {
 
       it('should show paginator when totalRecords > pageSize', fakeAsync(() => {
         const manyPhones = Array(12).fill(null).map((_, i) => ({
-          ...mockPhones[0],
+          ...mockProducts[0],
           id: `phone-${i}`,
           model: `Phone Model ${i}`
         }));
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: manyPhones, total: 30 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: manyPhones, total: 30 });
 
-        component.loadPhones();
+        component.loadProducts();
         tick();
         fixture.detectChanges();
 
@@ -1356,7 +1356,7 @@ describe('CatalogComponent', () => {
         tick();
 
         expect(component.first).toBe(12);
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(12);
         expect(lastCallArgs[0].rows).toBe(12);
       }));
@@ -1366,12 +1366,12 @@ describe('CatalogComponent', () => {
         tick();
 
         expect(component.first).toBe(24);
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(24);
       }));
 
-      it('should call loadPhones after page change', fakeAsync(() => {
-        const loadSpy = spyOn(component, 'loadPhones').and.callThrough();
+      it('should call loadProducts after page change', fakeAsync(() => {
+        const loadSpy = spyOn(component, 'loadProducts').and.callThrough();
 
         component.onPageChange({ first: 12, rows: 12, page: 1 });
 
@@ -1389,9 +1389,9 @@ describe('CatalogComponent', () => {
 
     describe('AC3: Total Record Count and Current Page Indicator', () => {
       it('should update totalRecords signal from API response', fakeAsync(() => {
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 150 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 150 });
 
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
         expect(component.totalRecords()).toBe(150);
@@ -1399,13 +1399,13 @@ describe('CatalogComponent', () => {
 
       it('should pass totalRecords to paginator component', fakeAsync(() => {
         const manyPhones = Array(12).fill(null).map((_, i) => ({
-          ...mockPhones[0],
+          ...mockProducts[0],
           id: `phone-${i}`,
           model: `Phone Model ${i}`
         }));
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: manyPhones, total: 100 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: manyPhones, total: 100 });
 
-        component.loadPhones();
+        component.loadProducts();
         tick();
         fixture.detectChanges();
 
@@ -1442,10 +1442,10 @@ describe('CatalogComponent', () => {
       it('should only fetch current page data, not entire dataset', fakeAsync(() => {
         component.first = 0;
         component.pageSize = 12;
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(0);
         expect(lastCallArgs[0].rows).toBe(12);
         // Service uses range(first, first + rows - 1) = range(0, 11)
@@ -1454,23 +1454,23 @@ describe('CatalogComponent', () => {
       it('should request correct range for page 2 with pageSize 24', fakeAsync(() => {
         component.pageSize = 24;
         component.first = 24;
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(24);
         expect(lastCallArgs[0].rows).toBe(24);
         // Service uses range(24, 24 + 24 - 1) = range(24, 47)
       }));
 
       it('should receive exact count from Supabase count:exact option', fakeAsync(() => {
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 150 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 150 });
 
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
         expect(component.totalRecords()).toBe(150);
-        expect(component.phones().length).toBe(2); // Only current page data
+        expect(component.products().length).toBe(2); // Only current page data
       }));
     });
 
@@ -1495,7 +1495,7 @@ describe('CatalogComponent', () => {
 
       it('should reset to page 1 when condition filter changes', fakeAsync(() => {
         component.first = 24;
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.onFilterChange();
         tick();
 
@@ -1533,7 +1533,7 @@ describe('CatalogComponent', () => {
       it('should reset to page 1 when clearing all filters', fakeAsync(() => {
         component.first = 24;
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.searchQuery = 'test';
 
         component.clearFilters();
@@ -1630,10 +1630,10 @@ describe('CatalogComponent', () => {
         component.selectedBrandId = 'brand-1';
         component.first = 12;
         component.pageSize = 12;
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(12);
         expect(lastCallArgs[1]?.brandId).toBe('brand-1');
       }));
@@ -1641,10 +1641,10 @@ describe('CatalogComponent', () => {
       it('should apply pagination with search filter', fakeAsync(() => {
         component.searchQuery = 'iPhone';
         component.first = 12;
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(12);
         expect(lastCallArgs[1]?.search).toBe('iPhone');
       }));
@@ -1653,10 +1653,10 @@ describe('CatalogComponent', () => {
         const priceSort = component.sortOptions.find(s => s.value === 'price_asc')!;
         component.selectedSort = priceSort;
         component.first = 24;
-        component.loadPhones();
+        component.loadProducts();
         tick();
 
-        const lastCallArgs = phoneServiceMock.getCatalogPhones.calls.mostRecent().args;
+        const lastCallArgs = productServiceMock.getCatalogProducts.calls.mostRecent().args;
         expect(lastCallArgs[0].first).toBe(24);
         expect(lastCallArgs[0].sortField).toBe('selling_price');
         expect(lastCallArgs[0].sortOrder).toBe(1);
@@ -1665,7 +1665,7 @@ describe('CatalogComponent', () => {
 
     describe('Error Handling During Pagination', () => {
       it('should show error toast when page load fails', fakeAsync(() => {
-        phoneServiceMock.getCatalogPhones.and.rejectWith(new Error('Network error'));
+        productServiceMock.getCatalogProducts.and.rejectWith(new Error('Network error'));
 
         component.onPageChange({ first: 12, rows: 12, page: 1 });
         tick();
@@ -1674,7 +1674,7 @@ describe('CatalogComponent', () => {
       }));
 
       it('should set loading to false even after error', fakeAsync(() => {
-        phoneServiceMock.getCatalogPhones.and.rejectWith(new Error('Network error'));
+        productServiceMock.getCatalogProducts.and.rejectWith(new Error('Network error'));
 
         component.onPageChange({ first: 12, rows: 12, page: 1 });
         tick();
@@ -1686,9 +1686,9 @@ describe('CatalogComponent', () => {
     describe('Loading State During Pagination', () => {
       it('should set loading to true when changing pages', fakeAsync(() => {
         let loadingDuringCall = false;
-        phoneServiceMock.getCatalogPhones.and.callFake(() => {
+        productServiceMock.getCatalogProducts.and.callFake(() => {
           loadingDuringCall = component.loading();
-          return Promise.resolve({ data: mockPhones, total: 2 });
+          return Promise.resolve({ data: mockProducts, total: 2 });
         });
 
         component.onPageChange({ first: 12, rows: 12, page: 1 });
@@ -1698,7 +1698,7 @@ describe('CatalogComponent', () => {
       }));
 
       it('should set loading to false after page data loads', fakeAsync(() => {
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: mockPhones, total: 2 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: mockProducts, total: 2 });
 
         component.onPageChange({ first: 12, rows: 12, page: 1 });
         tick();
@@ -1724,13 +1724,13 @@ describe('CatalogComponent', () => {
     describe('Paginator Accessibility', () => {
       it('should have navigation role on paginator container', fakeAsync(() => {
         const manyPhones = Array(12).fill(null).map((_, i) => ({
-          ...mockPhones[0],
+          ...mockProducts[0],
           id: `phone-${i}`,
           model: `Phone Model ${i}`
         }));
-        phoneServiceMock.getCatalogPhones.and.resolveTo({ data: manyPhones, total: 30 });
+        productServiceMock.getCatalogProducts.and.resolveTo({ data: manyPhones, total: 30 });
 
-        component.loadPhones();
+        component.loadProducts();
         tick();
         fixture.detectChanges();
 
@@ -1756,14 +1756,14 @@ describe('CatalogComponent', () => {
       }));
 
       it('should update URL with condition filter as ?condition=new', fakeAsync(() => {
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         const params = component['buildQueryParams']();
 
         expect(params['condition']).toBe('new');
       }));
 
       it('should update URL with multiple conditions as ?condition=new,used', fakeAsync(() => {
-        component.selectedConditions = [PhoneCondition.NEW, PhoneCondition.USED];
+        component.selectedConditions = [ProductCondition.NEW, ProductCondition.USED];
         const params = component['buildQueryParams']();
 
         expect(params['condition']).toBe('new,used');
@@ -1771,7 +1771,7 @@ describe('CatalogComponent', () => {
 
       it('should update URL with combined filters like ?brand=Apple&condition=new', fakeAsync(() => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         const params = component['buildQueryParams']();
 
         expect(params['brand']).toBe('brand-1');
@@ -1809,12 +1809,12 @@ describe('CatalogComponent', () => {
 
       it('should apply condition filter from URL params on init', () => {
         component['applyParams']({ condition: 'new' });
-        expect(component.selectedConditions).toEqual([PhoneCondition.NEW]);
+        expect(component.selectedConditions).toEqual([ProductCondition.NEW]);
       });
 
       it('should apply multiple conditions from URL params', () => {
         component['applyParams']({ condition: 'new,used' });
-        expect(component.selectedConditions).toEqual([PhoneCondition.NEW, PhoneCondition.USED]);
+        expect(component.selectedConditions).toEqual([ProductCondition.NEW, ProductCondition.USED]);
       });
 
       it('should apply search from URL params on init', () => {
@@ -1843,7 +1843,7 @@ describe('CatalogComponent', () => {
         });
 
         expect(component.selectedBrandId).toBe('brand-1');
-        expect(component.selectedConditions).toEqual([PhoneCondition.NEW, PhoneCondition.REFURBISHED]);
+        expect(component.selectedConditions).toEqual([ProductCondition.NEW, ProductCondition.REFURBISHED]);
         expect(component.selectedStorageValues).toEqual([128]);
         expect(component.priceRange).toEqual([300, 900]);
         expect(component.searchQuery).toBe('Pro');
@@ -1851,7 +1851,7 @@ describe('CatalogComponent', () => {
 
       it('should ignore invalid condition values from URL', () => {
         component['applyParams']({ condition: 'invalid,new' });
-        expect(component.selectedConditions).toEqual([PhoneCondition.NEW]);
+        expect(component.selectedConditions).toEqual([ProductCondition.NEW]);
       });
 
       it('should ignore non-numeric storage values from URL', () => {
@@ -1884,7 +1884,7 @@ describe('CatalogComponent', () => {
 
       it('should restore empty filters when navigating back to unfiltered state', () => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component['isInitializing'] = false;
 
         // Simulate back to no filters
@@ -1906,12 +1906,12 @@ describe('CatalogComponent', () => {
         // State 2: condition filter only (back navigation)
         component['applyParams']({ condition: 'new' });
         expect(component.selectedBrandId).toBeNull();
-        expect(component.selectedConditions).toEqual([PhoneCondition.NEW]);
+        expect(component.selectedConditions).toEqual([ProductCondition.NEW]);
 
         // State 3: both filters (forward navigation)
         component['applyParams']({ brand: 'brand-2', condition: 'used' });
         expect(component.selectedBrandId).toBe('brand-2');
-        expect(component.selectedConditions).toEqual([PhoneCondition.USED]);
+        expect(component.selectedConditions).toEqual([ProductCondition.USED]);
       });
     });
 
@@ -2007,7 +2007,7 @@ describe('CatalogComponent', () => {
     describe('Bidirectional Sync: URL <-> UI State', () => {
       it('should sync URL to UI when filters applied programmatically', fakeAsync(() => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.priceRange = [200, 800];
         component.selectedSort = component.sortOptions.find(s => s.value === 'price_asc')!;
         component.first = 24;
@@ -2038,7 +2038,7 @@ describe('CatalogComponent', () => {
         });
 
         expect(component.selectedBrandId).toBe('brand-1');
-        expect(component.selectedConditions).toEqual([PhoneCondition.NEW, PhoneCondition.USED]);
+        expect(component.selectedConditions).toEqual([ProductCondition.NEW, ProductCondition.USED]);
         expect(component.selectedStorageValues).toEqual([256, 512]);
         expect(component.priceRange[0]).toBe(300);
         expect(component.priceRange[1]).toBe(1200);
@@ -2054,7 +2054,7 @@ describe('CatalogComponent', () => {
         component.onFilterChange();
         tick();
 
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.onFilterChange();
         tick();
 
@@ -2117,7 +2117,7 @@ describe('CatalogComponent', () => {
       });
 
       it('should not trigger API call during initialization phase', fakeAsync(() => {
-        const loadSpy = spyOn(component, 'loadPhones');
+        const loadSpy = spyOn(component, 'loadProducts');
         component['isInitializing'] = true;
 
         component.onFilterChange();
@@ -2171,7 +2171,7 @@ describe('CatalogComponent', () => {
 
       it('should produce reproducible URL from same filter state', () => {
         component.selectedBrandId = 'brand-1';
-        component.selectedConditions = [PhoneCondition.NEW];
+        component.selectedConditions = [ProductCondition.NEW];
         component.selectedStorageValues = [128];
 
         const params1 = component['buildQueryParams']();

@@ -12,7 +12,7 @@ export type RefundStatus = 'pending' | 'completed' | 'cancelled';
 export interface RefundItem {
   id: string;
   originalSaleId: string | null;
-  phoneId: string | null;
+  productId: string | null;
   itemName: string;
   quantity: number;
   unitPrice: number;
@@ -21,7 +21,7 @@ export interface RefundItem {
   originalUnitPrice?: number | null;
   isCustomPrice?: boolean;
   priceDifference?: number;
-  phoneModel?: string | null;
+  productModel?: string | null;
   brandName?: string | null;
 }
 
@@ -104,7 +104,7 @@ export interface ProcessRefundResponse {
     quantity: number;
     unitPrice: number;
     total: number;
-    phoneId: string | null;
+    productId: string | null;
     inventoryRestored: boolean;
   }>;
   error?: string;
@@ -116,13 +116,13 @@ export interface ProcessRefundResponse {
 export interface ReceiptItemForRefund {
   id: string;
   saleId: string | null;
-  phoneId: string | null;
+  productId: string | null;
   itemName: string;
   quantity: number;
   unitPrice: number;
   total: number;
-  phoneStatus: string | null;
-  phoneModel: string | null;
+  productStatus: string | null;
+  productModel: string | null;
   brandName: string | null;
   canRestoreInventory: boolean;
 }
@@ -225,7 +225,7 @@ export interface PartialRefundItemResponse {
   originalUnitPrice: number;
   returnPrice: number;
   total: number;
-  phoneId: string | null;
+  productId: string | null;
   inventoryRestored: boolean;
   isCustomPrice: boolean;
   priceDifference: number;
@@ -259,13 +259,13 @@ export interface ProcessPartialRefundResponse {
 export interface PartialRefundableItem {
   id: string;
   saleId: string | null;
-  phoneId: string | null;
+  productId: string | null;
   itemName: string;
   quantity: number;
   unitPrice: number;
   total: number;
-  phoneStatus: string | null;
-  phoneModel: string | null;
+  productStatus: string | null;
+  productModel: string | null;
   brandName: string | null;
   canRestoreInventory: boolean;
   alreadyRefunded: boolean;

@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { PhoneStatus } from '../enums';
-import { DateRangeFilterDto, RecentPhoneDto } from '../dto/dashboard.dto';
+import { ProductStatus } from '../enums';
+import { DateRangeFilterDto, RecentProductDto } from '../dto/dashboard.dto';
 
 /**
  * Dashboard Repository
@@ -13,9 +13,9 @@ export class DashboardRepository {
 
   async getAvailableStockCount(): Promise<number> {
     const { count, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('*', { count: 'exact', head: true })
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) throw error;
     return count || 0;
@@ -23,9 +23,9 @@ export class DashboardRepository {
 
   async getStockValue(): Promise<number> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('cost_price')
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) throw error;
     return data?.reduce((sum, p) => sum + (p.cost_price || 0), 0) || 0;
@@ -33,9 +33,9 @@ export class DashboardRepository {
 
   async getPotentialProfit(): Promise<number> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('selling_price, cost_price')
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) throw error;
     return data?.reduce(
@@ -139,17 +139,17 @@ export class DashboardRepository {
 
   async getStockByBrand(): Promise<{ brandId: string; brandName: string; count: number }[]> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('brand_id, brand:brands(id, name)')
-      .eq('status', PhoneStatus.AVAILABLE);
+      .eq('status', ProductStatus.AVAILABLE);
 
     if (error) throw error;
 
     const brandMap = new Map<string, { brandName: string; count: number }>();
 
-    (data || []).forEach(phone => {
-      const brand = phone.brand as { id: string; name: string } | null;
-      const brandId = phone.brand_id as string;
+    (data || []).forEach(product => {
+      const brand = product.brand as { id: string; name: string } | null;
+      const brandId = product.brand_id as string;
       const brandName = brand?.name || 'Unknown';
 
       if (brandMap.has(brandId)) {
@@ -164,24 +164,24 @@ export class DashboardRepository {
       .sort((a, b) => b.count - a.count);
   }
 
-  async getRecentlyAddedPhones(limit: number = 5): Promise<RecentPhoneDto[]> {
+  async getRecentlyAddedProducts(limit: number = 5): Promise<RecentProductDto[]> {
     const { data, error } = await this.supabase
-      .from('phones')
+      .from('products')
       .select('id, model, condition, selling_price, created_at, brand:brands(name)')
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
 
-    return (data || []).map(phone => {
-      const brand = phone.brand as { name: string } | null;
+    return (data || []).map(product => {
+      const brand = product.brand as { name: string } | null;
       return {
-        id: phone.id as string,
+        id: product.id as string,
         brandName: brand?.name || 'Unknown',
-        model: phone.model as string,
-        condition: phone.condition as string,
-        sellingPrice: phone.selling_price as number,
-        createdAt: phone.created_at as string,
+        model: product.model as string,
+        condition: product.condition as string,
+        sellingPrice: product.selling_price as number,
+        createdAt: product.created_at as string,
       };
     });
   }

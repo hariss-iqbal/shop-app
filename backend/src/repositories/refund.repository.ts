@@ -43,7 +43,7 @@ export class RefundRepository {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -105,7 +105,7 @@ export class RefundRepository {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -138,7 +138,7 @@ export class RefundRepository {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -171,7 +171,7 @@ export class RefundRepository {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -400,7 +400,7 @@ export class RefundRepository {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,
@@ -512,7 +512,7 @@ export class RefundRepository {
         items:refund_items(
           id,
           original_sale_id,
-          phone_id,
+          product_id,
           item_name,
           quantity,
           unit_price,

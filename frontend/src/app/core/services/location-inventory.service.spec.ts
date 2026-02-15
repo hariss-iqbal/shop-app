@@ -94,15 +94,15 @@ describe('LocationInventoryService', () => {
     });
   });
 
-  describe('getInventoryByPhone', () => {
+  describe('getInventoryByProduct', () => {
     beforeEach(() => {
       mockQueryBuilder.eq.and.returnValue(
         Promise.resolve({ data: [mockInventoryData], error: null })
       );
     });
 
-    it('should return inventory for a phone across locations', async () => {
-      const result = await service.getInventoryByPhone('phone-456');
+    it('should return inventory for a product across locations', async () => {
+      const result = await service.getInventoryByProduct('phone-456');
 
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('phone_id', 'phone-456');
       expect(result.length).toBe(1);
@@ -131,8 +131,8 @@ describe('LocationInventoryService', () => {
     });
   });
 
-  describe('assignPhoneToLocation', () => {
-    it('should assign phone to location via RPC', async () => {
+  describe('assignProductToLocation', () => {
+    it('should assign product to location via RPC', async () => {
       (supabaseServiceSpy.rpc as jasmine.Spy).and.returnValue(
         Promise.resolve({ data: { success: true }, error: null }) as any
       );
@@ -141,15 +141,15 @@ describe('LocationInventoryService', () => {
       );
 
       const request = {
-        phoneId: 'phone-456',
+        productId: 'phone-456',
         locationId: 'loc-789',
         quantity: 5
       };
 
-      await service.assignPhoneToLocation(request);
+      await service.assignProductToLocation(request);
 
-      expect(supabaseServiceSpy.rpc).toHaveBeenCalledWith('assign_phone_to_location', {
-        p_phone_id: 'phone-456',
+      expect(supabaseServiceSpy.rpc).toHaveBeenCalledWith('assign_product_to_location', {
+        p_product_id: 'phone-456',
         p_location_id: 'loc-789',
         p_quantity: 5
       });
@@ -163,13 +163,13 @@ describe('LocationInventoryService', () => {
         Promise.resolve({ data: [mockInventoryData], error: null })
       );
 
-      await service.assignPhoneToLocation({
-        phoneId: 'phone-456',
+      await service.assignProductToLocation({
+        productId: 'phone-456',
         locationId: 'loc-789'
       });
 
-      expect(supabaseServiceSpy.rpc).toHaveBeenCalledWith('assign_phone_to_location', {
-        p_phone_id: 'phone-456',
+      expect(supabaseServiceSpy.rpc).toHaveBeenCalledWith('assign_product_to_location', {
+        p_product_id: 'phone-456',
         p_location_id: 'loc-789',
         p_quantity: 1
       });

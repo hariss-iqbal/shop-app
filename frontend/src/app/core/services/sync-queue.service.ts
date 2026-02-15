@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Injectable, signal, computed, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval } from 'rxjs';
 import { OfflineStorageService } from './offline-storage.service';
@@ -26,9 +26,6 @@ import {
   providedIn: 'root'
 })
 export class SyncQueueService {
-  private readonly offlineStorage = inject(OfflineStorageService);
-  private readonly networkStatus = inject(NetworkStatusService);
-  private readonly destroyRef = inject(DestroyRef);
 
   // Reactive state
   private readonly _pendingCount = signal(0);
@@ -66,7 +63,11 @@ export class SyncQueueService {
     lastSyncError: this._lastSyncError()
   }));
 
-  constructor() {
+  constructor(
+    private readonly offlineStorage: OfflineStorageService,
+    private readonly networkStatus: NetworkStatusService,
+    private readonly destroyRef: DestroyRef
+  ) {
     this.initializeService();
   }
 
@@ -371,7 +372,7 @@ export class SyncQueueService {
 
     if (item.operationType === 'CREATE_SALE') {
       const payload = item.payload as OfflineSalePayload;
-      displayName = `${payload.phoneDetails.brandName} ${payload.phoneDetails.model}`;
+      displayName = `${payload.productDetails.brandName} ${payload.productDetails.model}`;
       amount = payload.salePrice;
       customerName = payload.buyerName;
       receiptNumber = payload.localReceiptNumber;

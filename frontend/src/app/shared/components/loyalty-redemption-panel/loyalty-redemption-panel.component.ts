@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -42,7 +42,7 @@ import { LoyaltyTier, getLoyaltyTierSeverity } from '../../../enums';
   styleUrls: ['./loyalty-redemption-panel.component.scss']
 })
 export class LoyaltyRedemptionPanelComponent implements OnChanges {
-  private loyaltyService = inject(LoyaltyService);
+  constructor(private loyaltyService: LoyaltyService) { }
 
   @Input() customerId: string | null = null;
   @Input() purchaseAmount: number = 0;

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   PaymentMethod,
   PaymentMethodLabels,
@@ -25,7 +25,7 @@ import { CurrencyService } from './currency.service';
   providedIn: 'root'
 })
 export class PaymentService {
-  private currencyService = inject(CurrencyService);
+  constructor(private currencyService: CurrencyService) { }
 
   /**
    * Get all available payment methods

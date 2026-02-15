@@ -1,9 +1,10 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { jsPDF } from 'jspdf';
 import { environment } from '../../../environments/environment';
 import { CartItem, CartSummary, CustomerInfo, ReceiptData, ReceiptItem, Sale, StoreConfig, WhatsAppReceiptMessage } from '../../models/sale.model';
 import { ReceiptSequenceService } from '../../core/services/receipt-sequence.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { ShopDetailsService } from '../../core/services/shop-details.service';
 import { GenerateReceiptNumberResponse } from '../../models/receipt-sequence.model';
 import { PaymentSummary } from '../../models/payment.model';
 import { PaymentMethod, PaymentMethodLabels } from '../../enums/payment-method.enum';
@@ -12,15 +13,20 @@ import { PaymentMethod, PaymentMethodLabels } from '../../enums/payment-method.e
   providedIn: 'root'
 })
 export class ReceiptService {
-  private readonly receiptSequenceService = inject(ReceiptSequenceService);
-  private readonly currencyService = inject(CurrencyService);
+  constructor(
+    private readonly receiptSequenceService: ReceiptSequenceService,
+    private readonly currencyService: CurrencyService,
+    private readonly shopDetailsService: ShopDetailsService
+  ) { }
 
-  private readonly storeConfig: StoreConfig = {
-    name: environment.businessInfo.name,
-    address: environment.businessInfo.address,
-    phone: environment.businessInfo.phoneDisplay,
-    email: environment.businessInfo.email
-  };
+  private get storeConfig(): StoreConfig {
+    return {
+      name: this.shopDetailsService.shopName(),
+      address: this.shopDetailsService.address(),
+      phone: this.shopDetailsService.phoneDisplay(),
+      email: this.shopDetailsService.email()
+    };
+  }
 
   /**
    * Generate a receipt number using the backend sequence service.
@@ -75,7 +81,8 @@ export class ReceiptService {
       taxRate: item.taxRate,
       taxAmount: item.taxAmount,
       basePrice: item.basePrice,
-      isTaxExempt: item.isTaxExempt
+      isTaxExempt: item.isTaxExempt,
+      imei: item.imei
     }));
 
     const result = await this.generateReceiptNumberAsync(registerId);
@@ -136,7 +143,8 @@ export class ReceiptService {
       taxRate: item.taxRate,
       taxAmount: item.taxAmount,
       basePrice: item.basePrice,
-      isTaxExempt: item.isTaxExempt
+      isTaxExempt: item.isTaxExempt,
+      imei: item.imei
     }));
 
     return {
@@ -168,7 +176,7 @@ export class ReceiptService {
     registerId: string = 'DEFAULT'
   ): Promise<{ receiptData: ReceiptData; logId: string | null }> {
     const receiptItems: ReceiptItem[] = [{
-      name: `${sale.brandName} ${sale.phoneName}`,
+      name: `${sale.brandName} ${sale.productName}`,
       quantity: 1,
       unitPrice: sale.salePrice,
       total: sale.salePrice,
@@ -208,7 +216,7 @@ export class ReceiptService {
    */
   buildReceiptDataFromSale(sale: Sale): ReceiptData {
     const receiptItems: ReceiptItem[] = [{
-      name: `${sale.brandName} ${sale.phoneName}`,
+      name: `${sale.brandName} ${sale.productName}`,
       quantity: 1,
       unitPrice: sale.salePrice,
       total: sale.salePrice,
@@ -244,7 +252,7 @@ export class ReceiptService {
     registerId: string = 'DEFAULT'
   ): Promise<{ receiptData: ReceiptData; logId: string | null }> {
     const receiptItems: ReceiptItem[] = sales.map(sale => ({
-      name: `${sale.brandName} ${sale.phoneName}`,
+      name: `${sale.brandName} ${sale.productName}`,
       quantity: 1,
       unitPrice: sale.salePrice,
       total: sale.salePrice,
@@ -287,7 +295,7 @@ export class ReceiptService {
    */
   buildReceiptDataFromMultipleSales(sales: Sale[]): ReceiptData {
     const receiptItems: ReceiptItem[] = sales.map(sale => ({
-      name: `${sale.brandName} ${sale.phoneName}`,
+      name: `${sale.brandName} ${sale.productName}`,
       quantity: 1,
       unitPrice: sale.salePrice,
       total: sale.salePrice,
@@ -345,12 +353,7 @@ export class ReceiptService {
       <tr>
         <td class="item-description">
           <span class="item-name">${this.escapeHtml(item.name)}</span>
-          ${item.isTaxExempt
-            ? '<span class="tax-exempt-badge">Tax Exempt</span>'
-            : item.taxRate && item.taxRate > 0
-              ? `<span class="tax-info">${item.taxRate}% tax: ${this.formatCurrency(item.taxAmount || 0)}</span>`
-              : ''
-          }
+          ${item.imei ? `<span class="imei-info">IMEI: ${this.escapeHtml(item.imei)}</span>` : ''}
         </td>
         <td class="text-right item-price">${this.formatCurrency(item.unitPrice)}</td>
         <td class="text-right item-qty">${item.quantity}</td>
@@ -369,32 +372,7 @@ export class ReceiptService {
       </div>
     ` : '';
 
-    let taxHtml = '';
-    if (receiptData.taxBreakdown && receiptData.taxBreakdown.length > 0) {
-      taxHtml = receiptData.taxBreakdown.map(taxEntry => {
-        if (taxEntry.taxRate === 0) {
-          return `
-            <div class="totals-row">
-              <span class="totals-label">Tax Exempt (${taxEntry.itemCount} item${taxEntry.itemCount !== 1 ? 's' : ''})</span>
-              <span class="totals-value text-muted">-</span>
-            </div>
-          `;
-        }
-        return `
-          <div class="totals-row">
-            <span class="totals-label">Tax ${taxEntry.taxRate}%</span>
-            <span class="totals-value">${this.formatCurrency(taxEntry.taxAmount)}</span>
-          </div>
-        `;
-      }).join('');
-    } else if (receiptData.taxAmount > 0) {
-      taxHtml = `
-        <div class="totals-row">
-          <span class="totals-label">Tax ${receiptData.taxRate.toFixed(1)}%</span>
-          <span class="totals-value">${this.formatCurrency(receiptData.taxAmount)}</span>
-        </div>
-      `;
-    }
+    const taxHtml = '';
 
     const discountHtml = receiptData.discount ? `
       <div class="totals-row discount-row">
@@ -653,6 +631,13 @@ export class ReceiptService {
     }
 
     .item-name { color: #475569; }
+
+    .imei-info {
+      display: block;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
 
     .tax-exempt-badge {
       font-size: 10px;
@@ -1041,7 +1026,7 @@ export class ReceiptService {
    * Get the store identifier for the current store
    */
   getStoreId(): string {
-    return environment.businessInfo.storeId || 'DEFAULT';
+    return environment.storeId || 'DEFAULT';
   }
 
   /**
@@ -1221,19 +1206,6 @@ export class ReceiptService {
 
       yPos += Math.max(nameLines.length * 4, 6);
 
-      // Tax info
-      if (item.isTaxExempt) {
-        doc.setFontSize(7);
-        doc.setTextColor(59, 130, 246);
-        doc.text('Tax Exempt', margin, yPos);
-        yPos += 4;
-      } else if (item.taxRate && item.taxRate > 0) {
-        doc.setFontSize(7);
-        doc.setTextColor(...secondaryColor);
-        doc.text(`${item.taxRate}% tax: ${this.formatCurrency(item.taxAmount || 0)}`, margin, yPos);
-        yPos += 4;
-      }
-
       doc.setFontSize(9);
       yPos += 2;
     });
@@ -1256,17 +1228,6 @@ export class ReceiptService {
     doc.setFont('helvetica', 'normal');
     doc.text(this.formatCurrency(receiptData.subtotal), pageWidth - margin, yPos, { align: 'right' });
     yPos += 5;
-
-    // Tax
-    if (receiptData.taxAmount > 0) {
-      doc.setTextColor(...secondaryColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`TAX ${receiptData.taxRate.toFixed(1)}%`, totalsX, yPos);
-      doc.setTextColor(...primaryColor);
-      doc.setFont('helvetica', 'normal');
-      doc.text(this.formatCurrency(receiptData.taxAmount), pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
-    }
 
     // Discount
     if (receiptData.discount) {
@@ -1655,12 +1616,24 @@ export class ReceiptService {
       doc.text(nameLines, colX, yPos);
 
       // Add color on a new line with accent color
+      let extraLines = 0;
       if (colorName) {
         const colorY = yPos + (nameLines.length * 4);
         doc.setFontSize(8);
         doc.setTextColor(...accentColor);
         doc.text(`Color: ${colorName}`, colX, colorY);
         doc.setFontSize(9);
+        extraLines++;
+      }
+
+      // Add IMEI on a new line if present
+      if (item.imei) {
+        const imeiY = yPos + (nameLines.length * 4) + (colorName ? 4 : 0);
+        doc.setFontSize(7);
+        doc.setTextColor(...secondaryColor);
+        doc.text(`IMEI: ${item.imei}`, colX, imeiY);
+        doc.setFontSize(9);
+        extraLines++;
       }
 
       colX += colWidths.description;
@@ -1676,7 +1649,7 @@ export class ReceiptService {
       doc.text(this.formatCurrency(item.total), colX + colWidths.amount, yPos, { align: 'right' });
       doc.setFont('helvetica', 'normal');
 
-      const extraHeight = colorName ? 4 : 0;
+      const extraHeight = extraLines * 4;
       yPos += Math.max(nameLines.length * 4, 6) + 2 + extraHeight;
     });
 
@@ -1697,16 +1670,6 @@ export class ReceiptService {
     doc.setFont('helvetica', 'normal');
     doc.text(this.formatCurrency(receiptData.subtotal), pageWidth - margin, yPos, { align: 'right' });
     yPos += 5;
-
-    if (receiptData.taxAmount > 0) {
-      doc.setTextColor(...secondaryColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`TAX ${receiptData.taxRate.toFixed(1)}%`, totalsX, yPos);
-      doc.setTextColor(...primaryColor);
-      doc.setFont('helvetica', 'normal');
-      doc.text(this.formatCurrency(receiptData.taxAmount), pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
-    }
 
     if (receiptData.discount) {
       doc.setTextColor(...greenColor);
@@ -1873,6 +1836,9 @@ export class ReceiptService {
 
     receiptData.items.forEach(item => {
       lines.push(`• ${item.name}`);
+      if (item.imei) {
+        lines.push(`  IMEI: ${item.imei}`);
+      }
       lines.push(`  Qty: ${item.quantity} × ${this.formatCurrency(item.unitPrice)} = ${this.formatCurrency(item.total)}`);
     });
 

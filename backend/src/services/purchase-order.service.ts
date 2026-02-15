@@ -1,11 +1,11 @@
 import { PurchaseOrderRepository } from '../repositories/purchase-order.repository';
 import { PurchaseOrderItemRepository } from '../repositories/purchase-order-item.repository';
-import { PhoneRepository } from '../repositories/phone.repository';
+import { ProductRepository } from '../repositories/product.repository';
 import { BrandRepository } from '../repositories/brand.repository';
 import { PurchaseOrder, PurchaseOrderInsert, PurchaseOrderUpdate, PurchaseOrderWithRelations } from '../entities/purchase-order.entity';
 import { PurchaseOrderItemInsert } from '../entities/purchase-order-item.entity';
-import { PhoneInsert } from '../entities/phone.entity';
-import { PurchaseOrderStatus, PhoneStatus } from '../enums';
+import { ProductInsert } from '../entities/product.entity';
+import { PurchaseOrderStatus, ProductStatus } from '../enums';
 import {
   CreatePurchaseOrderDto,
   UpdatePurchaseOrderDto,
@@ -26,7 +26,7 @@ export class PurchaseOrderService {
   constructor(
     private readonly purchaseOrderRepository: PurchaseOrderRepository,
     private readonly purchaseOrderItemRepository: PurchaseOrderItemRepository,
-    private readonly phoneRepository: PhoneRepository,
+    private readonly productRepository: ProductRepository,
     private readonly brandRepository: BrandRepository
   ) {}
 
@@ -125,16 +125,16 @@ export class PurchaseOrderService {
    * Receive Purchase Order with Inventory Creation (F-023)
    *
    * This workflow:
-   * 1. Validates the PO is pending and has correct number of phone records
+   * 1. Validates the PO is pending and has correct number of product records
    * 2. Resolves brand names to brand IDs (creates brands if they don't exist)
-   * 3. Creates individual phone records for each unit with status='available'
-   * 4. Sets phone's cost_price from PO item's unit_cost
-   * 5. Sets phone's supplier_id from PO's supplier
+   * 3. Creates individual product records for each unit with status='available'
+   * 4. Sets product's cost_price from PO item's unit_cost
+   * 5. Sets product's supplier_id from PO's supplier
    * 6. Updates PO status to 'received'
    *
    * @param id - Purchase Order ID
-   * @param dto - Receiving data with phone records
-   * @returns Updated PO and list of created phone IDs
+   * @param dto - Receiving data with product records
+   * @returns Updated PO and list of created product IDs
    */
   async receiveWithInventory(id: string, dto: ReceivePurchaseOrderDto): Promise<ReceivePurchaseOrderResponseDto> {
     const existing = await this.purchaseOrderRepository.findById(id);
@@ -147,64 +147,64 @@ export class PurchaseOrderService {
     }
 
     const items = existing.items || [];
-    const expectedPhoneCount = items.reduce((sum, item) => sum + item.quantity, 0);
+    const expectedProductCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-    if (dto.phones.length !== expectedPhoneCount) {
+    if (dto.products.length !== expectedProductCount) {
       throw new Error(
-        `Expected ${expectedPhoneCount} phone records but received ${dto.phones.length}. ` +
+        `Expected ${expectedProductCount} product records but received ${dto.products.length}. ` +
         `All items must be received at once.`
       );
     }
 
     const brandCache = new Map<string, string>();
 
-    const phoneInserts: PhoneInsert[] = [];
+    const productInserts: ProductInsert[] = [];
 
-    for (const phoneRecord of dto.phones) {
-      const item = items[phoneRecord.lineItemIndex];
+    for (const productRecord of dto.products) {
+      const item = items[productRecord.lineItemIndex];
       if (!item) {
-        throw new Error(`Invalid line item index: ${phoneRecord.lineItemIndex}`);
+        throw new Error(`Invalid line item index: ${productRecord.lineItemIndex}`);
       }
 
-      let brandId = brandCache.get(phoneRecord.brand.toLowerCase());
+      let brandId = brandCache.get(productRecord.brand.toLowerCase());
       if (!brandId) {
-        let brand = await this.brandRepository.findByName(phoneRecord.brand);
+        let brand = await this.brandRepository.findByName(productRecord.brand);
         if (!brand) {
-          brand = await this.brandRepository.create({ name: phoneRecord.brand.trim() });
+          brand = await this.brandRepository.create({ name: productRecord.brand.trim() });
         }
         brandId = brand.id;
-        brandCache.set(phoneRecord.brand.toLowerCase(), brandId);
+        brandCache.set(productRecord.brand.toLowerCase(), brandId);
       }
 
-      if (phoneRecord.imei) {
-        const existingPhone = await this.phoneRepository.findByImei(phoneRecord.imei);
-        if (existingPhone) {
-          throw new Error(`Phone with IMEI "${phoneRecord.imei}" already exists`);
+      if (productRecord.imei) {
+        const existingProduct = await this.productRepository.findByImei(productRecord.imei);
+        if (existingProduct) {
+          throw new Error(`Product with IMEI "${productRecord.imei}" already exists`);
         }
       }
 
-      const phoneInsert: PhoneInsert = {
+      const productInsert: ProductInsert = {
         brand_id: brandId,
-        model: phoneRecord.model.trim(),
-        color: phoneRecord.color?.trim() || null,
-        imei: phoneRecord.imei?.trim() || null,
-        condition: phoneRecord.condition,
-        battery_health: phoneRecord.batteryHealth || null,
-        storage_gb: phoneRecord.storageGb || null,
-        ram_gb: phoneRecord.ramGb || null,
+        model: productRecord.model.trim(),
+        color: productRecord.color?.trim() || null,
+        imei: productRecord.imei?.trim() || null,
+        condition: productRecord.condition,
+        battery_health: productRecord.batteryHealth || null,
+        storage_gb: productRecord.storageGb || null,
+        ram_gb: productRecord.ramGb || null,
         cost_price: item.unit_cost,
-        selling_price: phoneRecord.sellingPrice,
-        status: PhoneStatus.AVAILABLE,
+        selling_price: productRecord.sellingPrice,
+        status: ProductStatus.AVAILABLE,
         supplier_id: existing.supplier_id,
         purchase_date: existing.order_date,
-        notes: phoneRecord.notes?.trim() || null
+        notes: productRecord.notes?.trim() || null
       };
 
-      phoneInserts.push(phoneInsert);
+      productInserts.push(productInsert);
     }
 
-    const createdPhones = await this.phoneRepository.createMany(phoneInserts);
-    const createdPhoneIds = createdPhones.map(phone => phone.id);
+    const createdProducts = await this.productRepository.createMany(productInserts);
+    const createdProductIds = createdProducts.map(product => product.id);
 
     await this.purchaseOrderRepository.update(id, { status: PurchaseOrderStatus.RECEIVED });
 
@@ -212,8 +212,8 @@ export class PurchaseOrderService {
 
     return {
       purchaseOrder: this.toResponseDto(poWithRelations!),
-      phonesCreated: createdPhones.length,
-      createdPhoneIds
+      productsCreated: createdProducts.length,
+      createdProductIds
     };
   }
 

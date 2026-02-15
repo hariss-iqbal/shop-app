@@ -15,8 +15,8 @@
   aria-label="Complete Sale Dialog"
   styleClass="mark-as-sold-dialog"
 >
-  @if (phone(); as p) {
-    <!-- Phone Summary Card -->
+  @if (product(); as p) {
+    <!-- Product Summary Card -->
     <div class="surface-ground border-round p-3 mb-4">
       <div class="flex align-items-center gap-3">
         @if (p.primaryImageUrl) {
@@ -28,7 +28,7 @@
           />
         } @else {
           <div class="flex align-items-center justify-content-center bg-surface-200 border-round" style="width: 60px; height: 60px;">
-            <i class="pi pi-mobile text-2xl text-color-secondary"></i>
+            <i class="pi pi-box text-2xl text-color-secondary"></i>
           </div>
         }
         <div class="flex-1">

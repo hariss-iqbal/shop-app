@@ -2,7 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { InventoryTransferRepository } from '../repositories/inventory-transfer.repository';
 import { LocationInventoryRepository } from '../repositories/location-inventory.repository';
 import { StoreLocationRepository } from '../repositories/store-location.repository';
-import { InventoryTransferWithRelations, InventoryTransferItemWithPhone } from '../entities/inventory-transfer.entity';
+import { InventoryTransferWithRelations, InventoryTransferItemWithProduct } from '../entities/inventory-transfer.entity';
 import { InventoryTransferStatus } from '../enums';
 import {
   InitiateTransferDto,
@@ -73,7 +73,7 @@ export class InventoryTransferService {
       p_source_location_id: dto.sourceLocationId,
       p_destination_location_id: dto.destinationLocationId,
       p_items: dto.items.map(item => ({
-        phone_id: item.phoneId,
+        product_id: item.productId,
         quantity: item.quantity,
         notes: item.notes || null
       })),
@@ -209,20 +209,20 @@ export class InventoryTransferService {
     };
   }
 
-  private toItemResponseDto(item: InventoryTransferItemWithPhone): InventoryTransferItemResponseDto {
+  private toItemResponseDto(item: InventoryTransferItemWithProduct): InventoryTransferItemResponseDto {
     return {
       id: item.id,
       transferId: item.transfer_id,
-      phoneId: item.phone_id,
+      productId: item.product_id,
       quantity: item.quantity,
       notes: item.notes,
       createdAt: item.created_at,
-      phone: item.phone ? {
-        id: item.phone.id,
-        model: item.phone.model,
-        condition: item.phone.condition,
-        brandId: item.phone.brand?.id || '',
-        brandName: item.phone.brand?.name || ''
+      product: item.product ? {
+        id: item.product.id,
+        model: item.product.model,
+        condition: item.product.condition,
+        brandId: item.product.brand?.id || '',
+        brandName: item.product.brand?.name || ''
       } : undefined
     };
   }

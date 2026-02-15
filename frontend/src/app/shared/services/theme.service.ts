@@ -1,4 +1,4 @@
-import { Injectable, signal, effect, PLATFORM_ID, inject } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID, effect, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ThemeMode } from '../../enums/theme-mode.enum';
 
@@ -19,12 +19,13 @@ const themeColors: Record<ThemeMode, string> = {
   providedIn: 'root'
 })
 export class ThemeService {
-  private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   readonly currentTheme = signal<ThemeMode>(this.resolveInitialTheme());
 
-  constructor() {
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
     effect(() => {
       const theme = this.currentTheme();
       this.applyTheme(theme);

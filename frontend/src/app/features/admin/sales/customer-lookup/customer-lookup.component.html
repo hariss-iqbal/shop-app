@@ -246,7 +246,7 @@
                 </th>
                 <th style="width: 15%">Receipt #</th>
                 <th pSortableColumn="brandName" style="width: 25%">
-                  Phone
+                  Product
                   <p-sortIcon field="brandName" />
                 </th>
                 <th pSortableColumn="salePrice" style="width: 15%">
@@ -266,10 +266,10 @@
                 </td>
                 <td>
                   <a
-                    [routerLink]="['/admin/inventory', sale.phoneId, 'edit']"
+                    [routerLink]="['/admin/inventory', sale.productId, 'edit']"
                     class="font-medium text-primary no-underline hover:underline cursor-pointer"
                   >
-                    {{ sale.brandName }} {{ sale.phoneName }}
+                    {{ sale.brandName }} {{ sale.productName }}
                   </a>
                 </td>
                 <td>

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import NodeCache from 'node-cache';
-import { PhoneSpecSuggestion, FetchPhoneSpecsResponseDto } from '../dto/phone.dto';
+import { ProductSpecSuggestion, FetchProductSpecsResponseDto } from '../dto/product.dto';
 
 /**
  * Phone Specs Scraper Service
@@ -31,11 +31,11 @@ export class PhoneSpecsScraperService {
   /**
    * Fetch phone specifications from GSMArena
    */
-  async fetchSpecs(brand: string, model: string): Promise<FetchPhoneSpecsResponseDto> {
+  async fetchSpecs(brand: string, model: string): Promise<FetchProductSpecsResponseDto> {
     try {
       // Check cache first
       const cacheKey = `${brand.toLowerCase()}_${model.toLowerCase()}`;
-      const cached = this.cache.get<PhoneSpecSuggestion>(cacheKey);
+      const cached = this.cache.get<ProductSpecSuggestion>(cacheKey);
 
       if (cached) {
         console.log(`[PhoneSpecsScraper] Cache hit for ${brand} ${model}`);
@@ -69,13 +69,13 @@ export class PhoneSpecsScraperService {
         };
       }
 
-      const phoneUrl = bestMatch.url;
+      const sourceUrl = bestMatch.url;
       const phoneName = bestMatch.name;
 
-      console.log(`[PhoneSpecsScraper] Found exact match: ${phoneName} at ${phoneUrl}`);
+      console.log(`[PhoneSpecsScraper] Found exact match: ${phoneName} at ${sourceUrl}`);
 
       // Step 3: Scrape phone specifications page
-      const specs = await this.scrapePhoneSpecs(phoneUrl);
+      const specs = await this.scrapePhoneSpecs(sourceUrl);
 
       if (!specs) {
         return {
@@ -84,6 +84,9 @@ export class PhoneSpecsScraperService {
         };
       }
 
+      // Extract canonical model name by stripping brand prefix
+      specs.modelName = this.extractModelName(phoneName, brand);
+
       // Cache the result
       this.cache.set(cacheKey, specs);
 
@@ -91,7 +94,7 @@ export class PhoneSpecsScraperService {
         success: true,
         data: specs,
         source: 'gsmarena',
-        phoneUrl
+        sourceUrl
       };
 
     } catch (error) {
@@ -304,10 +307,10 @@ export class PhoneSpecsScraperService {
   /**
    * Scrape phone specifications from phone detail page
    */
-  private async scrapePhoneSpecs(phoneUrl: string): Promise<PhoneSpecSuggestion | null> {
+  private async scrapePhoneSpecs(sourceUrl: string): Promise<ProductSpecSuggestion | null> {
     await this.respectRateLimit();
 
-    const response = await axios.get(phoneUrl, {
+    const response = await axios.get(sourceUrl, {
       headers: {
         'User-Agent': this.USER_AGENT,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -465,6 +468,22 @@ export class PhoneSpecsScraperService {
     });
 
     return Array.from(colorSet).slice(0, 20); // Limit to 20 colors max
+  }
+
+  /**
+   * Extract model name from the full GSMArena phone name by stripping the brand prefix.
+   * E.g., "Samsung Galaxy S24 Ultra" with brand "Samsung" → "Galaxy S24 Ultra"
+   *       "Apple iPhone 16 Pro Max" with brand "Apple" → "iPhone 16 Pro Max"
+   */
+  private extractModelName(fullName: string, brand: string): string {
+    const brandLower = brand.toLowerCase().trim();
+    const nameLower = fullName.toLowerCase().trim();
+
+    if (nameLower.startsWith(brandLower)) {
+      return fullName.substring(brand.trim().length).trim();
+    }
+
+    return fullName.trim();
   }
 
   /**

@@ -5,8 +5,9 @@ import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 
 import { Refund, RefundReceiptData } from '../../../../models/refund.model';
-import { environment } from '../../../../../environments/environment';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
+import { CurrencyService } from '../../../../core/services/currency.service';
+import { ShopDetailsService } from '../../../../core/services/shop-details.service';
 
 @Component({
   selector: 'app-print-refund-receipt-dialog',
@@ -27,13 +28,20 @@ export class PrintRefundReceiptDialogComponent implements OnChanges {
 
   @Output() visibleChange = new EventEmitter<boolean>();
 
+  constructor(
+    private currencyService: CurrencyService,
+    private shopDetailsService: ShopDetailsService
+  ) { }
+
   receiptData: RefundReceiptData | null = null;
-  storeConfig = {
-    name: environment.businessInfo.name,
-    address: environment.businessInfo.address,
-    phone: environment.businessInfo.phoneDisplay,
-    email: environment.businessInfo.email
-  };
+  get storeConfig() {
+    return {
+      name: this.shopDetailsService.shopName(),
+      address: this.shopDetailsService.address(),
+      phone: this.shopDetailsService.phoneDisplay(),
+      email: this.shopDetailsService.email()
+    };
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['refund'] && this.refund) {
@@ -177,7 +185,7 @@ export class PrintRefundReceiptDialogComponent implements OnChanges {
   private generatePrintHtml(): string {
     if (!this.receiptData) return '';
 
-    const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+    const formatCurrency = (amount: number) => this.currencyService.format(amount, { minDecimals: 2, maxDecimals: 2 });
 
     let html = `
       <div class="text-center mb-3">

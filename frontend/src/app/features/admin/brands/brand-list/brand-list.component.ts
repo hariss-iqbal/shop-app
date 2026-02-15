@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, AfterViewChecked, QueryList, ViewChildren, ElementRef } from '@angular/core';
+import { Component, OnInit, signal, AfterViewChecked, QueryList, ViewChildren, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -42,10 +42,12 @@ interface EditableBrand extends Brand {
   templateUrl: './brand-list.component.html'
 })
 export class BrandListComponent implements OnInit, AfterViewChecked {
-  private brandService = inject(BrandService);
-  private toastService = inject(ToastService);
-  private confirmService = inject(ConfirmDialogService);
-  private focusService = inject(FocusManagementService);
+  constructor(
+    private brandService: BrandService,
+    private toastService: ToastService,
+    private confirmService: ConfirmDialogService,
+    private focusService: FocusManagementService
+  ) { }
 
   @ViewChildren('editInput') editInputs!: QueryList<ElementRef<HTMLInputElement>>;
 

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject, PLATFORM_ID, OnDestroy } from '@angular/core';
+import { Inject, Injectable, OnDestroy, PLATFORM_ID, computed, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 /**
@@ -37,7 +37,6 @@ export interface ViewportInfo {
   providedIn: 'root'
 })
 export class ViewportService implements OnDestroy {
-  private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   private width = signal(this.getInitialWidth());
@@ -91,7 +90,9 @@ export class ViewportService implements OnDestroy {
     hasCamera: this.hasCamera()
   }));
 
-  constructor() {
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
     if (this.isBrowser) {
       this.initViewportListener();
       this.detectCameraSupport();

@@ -102,6 +102,34 @@ nav[aria-label="Mobile navigation"] a:hover {
   padding: 0 4px;
 }
 
+/* WhatsApp FAB */
+.whatsapp-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+  z-index: 100;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.whatsapp-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.5);
+}
+
+.whatsapp-fab i {
+  font-size: 1.75rem;
+}
+
 /* Dark Theme Adjustments */
 :host-context(.dark-theme) {
   nav[aria-label="Main navigation"] a:hover,
@@ -129,5 +157,9 @@ nav[aria-label="Mobile navigation"] a:hover {
 
   .social-icon:hover i {
     color: white;
+  }
+
+  .whatsapp-fab {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   }
 }

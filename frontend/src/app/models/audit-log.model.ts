@@ -18,10 +18,10 @@ export type AuditEventType =
   // Inventory events
   | 'inventory_deducted'
   | 'inventory_restored'
-  | 'phone_status_changed'
-  | 'phone_created'
-  | 'phone_updated'
-  | 'phone_deleted'
+  | 'product_status_changed'
+  | 'product_created'
+  | 'product_updated'
+  | 'product_deleted'
   // User/Permission events
   | 'user_role_assigned'
   | 'user_role_changed'
@@ -119,7 +119,7 @@ export const EVENT_TYPE_GROUPS: EventTypeGroup[] = [
   {
     category: 'inventory',
     label: 'Inventory',
-    eventTypes: ['inventory_deducted', 'inventory_restored', 'phone_status_changed', 'phone_created', 'phone_updated', 'phone_deleted']
+    eventTypes: ['inventory_deducted', 'inventory_restored', 'product_status_changed', 'product_created', 'product_updated', 'product_deleted']
   },
   {
     category: 'users',
@@ -156,10 +156,10 @@ export function getEventTypeLabel(eventType: AuditEventType): string {
     // Inventory
     inventory_deducted: 'Inventory Deducted',
     inventory_restored: 'Inventory Restored',
-    phone_status_changed: 'Phone Status Changed',
-    phone_created: 'Phone Created',
-    phone_updated: 'Phone Updated',
-    phone_deleted: 'Phone Deleted',
+    product_status_changed: 'Product Status Changed',
+    product_created: 'Product Created',
+    product_updated: 'Product Updated',
+    product_deleted: 'Product Deleted',
     // Users
     user_role_assigned: 'User Role Assigned',
     user_role_changed: 'User Role Changed',
@@ -196,10 +196,10 @@ export function getEventTypeSeverity(eventType: AuditEventType): 'info' | 'succe
     // Inventory - info
     inventory_deducted: 'info',
     inventory_restored: 'info',
-    phone_status_changed: 'info',
-    phone_created: 'success',
-    phone_updated: 'info',
-    phone_deleted: 'danger',
+    product_status_changed: 'info',
+    product_created: 'success',
+    product_updated: 'info',
+    product_deleted: 'danger',
     // Users - warn
     user_role_assigned: 'success',
     user_role_changed: 'warn',
@@ -236,10 +236,10 @@ export function getEventTypeIcon(eventType: AuditEventType): string {
     // Inventory
     inventory_deducted: 'pi pi-minus-circle',
     inventory_restored: 'pi pi-plus-circle',
-    phone_status_changed: 'pi pi-sync',
-    phone_created: 'pi pi-mobile',
-    phone_updated: 'pi pi-pencil',
-    phone_deleted: 'pi pi-trash',
+    product_status_changed: 'pi pi-sync',
+    product_created: 'pi pi-box',
+    product_updated: 'pi pi-pencil',
+    product_deleted: 'pi pi-trash',
     // Users
     user_role_assigned: 'pi pi-user-plus',
     user_role_changed: 'pi pi-user-edit',

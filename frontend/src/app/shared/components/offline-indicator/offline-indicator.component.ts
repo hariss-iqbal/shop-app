@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TagModule } from 'primeng/tag';
@@ -36,9 +36,11 @@ import { SyncSchedulerService } from '../../../core/services/sync-scheduler.serv
   styleUrls: ['./offline-indicator.component.scss']
 })
 export class OfflineIndicatorComponent {
-  private readonly networkStatus = inject(NetworkStatusService);
-  private readonly syncQueue = inject(SyncQueueService);
-  private readonly syncScheduler = inject(SyncSchedulerService);
+  constructor(
+    private readonly networkStatus: NetworkStatusService,
+    private readonly syncQueue: SyncQueueService,
+    private readonly syncScheduler: SyncSchedulerService
+  ) { }
 
   readonly isOnline = this.networkStatus.isOnline;
   readonly isOffline = this.networkStatus.isOffline;

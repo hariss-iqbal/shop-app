@@ -1,8 +1,7 @@
-import { Component, inject, input, output, computed, OnChanges, SimpleChanges, signal } from '@angular/core';
+import { Component, input, output, computed, OnChanges, SimpleChanges, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
 import { DividerModule } from 'primeng/divider';
 import { SharedModule } from 'primeng/api';
@@ -28,7 +27,6 @@ import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
     AppCurrencyPipe,
     DialogModule,
     ButtonModule,
-    CheckboxModule,
     FormsModule,
     DividerModule,
     SharedModule,
@@ -42,11 +40,6 @@ import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
   styleUrls: ['./print-receipt-dialog.component.scss']
 })
 export class PrintReceiptDialogComponent implements OnChanges {
-  private receiptService = inject(ReceiptService);
-  private whatsAppService = inject(WhatsAppService);
-  private emailReceiptService = inject(EmailReceiptService);
-  private focusService = inject(FocusManagementService);
-  private receiptSendLogService = inject(ReceiptSendLogService);
 
   receiptData = input<ReceiptData | null>(null);
   receiptId = input<string | null>(null);
@@ -55,7 +48,6 @@ export class PrintReceiptDialogComponent implements OnChanges {
   whatsAppSent = output<{ phoneNumber: string; receiptNumber: string }>();
   emailSent = output<{ email: string; receiptNumber: string }>();
 
-  showQrCode = true;
   manualPhoneNumber = '';
   manualEmailAddress = '';
   storeConfig: StoreConfig;
@@ -70,7 +62,13 @@ export class PrintReceiptDialogComponent implements OnChanges {
   lastWhatsAppError = signal<string | null>(null);
   lastWhatsAppLink = signal<string | null>(null);
 
-  constructor() {
+  constructor(
+    private receiptService: ReceiptService,
+    private whatsAppService: WhatsAppService,
+    private emailReceiptService: EmailReceiptService,
+    private focusService: FocusManagementService,
+    private receiptSendLogService: ReceiptSendLogService
+  ) {
     this.storeConfig = this.receiptService.getStoreConfig();
   }
 
@@ -79,17 +77,10 @@ export class PrintReceiptDialogComponent implements OnChanges {
     return data ? `Receipt - ${data.receiptNumber}` : 'Print Receipt';
   });
 
-  qrCodeUrl = computed(() => {
-    const data = this.receiptData();
-    if (!data) return '';
-    return this.receiptService.generateQrCodeUrl(data.receiptNumber);
-  });
-
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['visible']) {
       const v = this.visible();
       if (v) {
-        this.showQrCode = true;
         this.showWhatsAppInput.set(false);
         this.showEmailInput.set(false);
         this.manualPhoneNumber = '';
@@ -122,14 +113,14 @@ export class PrintReceiptDialogComponent implements OnChanges {
     const data = this.receiptData();
     if (!data) return;
 
-    this.receiptService.printReceipt(data, { showQrCode: this.showQrCode });
+    this.receiptService.printReceipt(data, { showQrCode: false });
   }
 
   onDownloadPdf(): void {
     const data = this.receiptData();
     if (!data) return;
 
-    this.receiptService.generatePdf(data, { showQrCode: this.showQrCode });
+    this.receiptService.generatePdf(data, { showQrCode: false });
   }
 
   async onSharePdf(): Promise<void> {
@@ -141,10 +132,10 @@ export class PrintReceiptDialogComponent implements OnChanges {
       // Try to share with customer phone if available
       const customerPhone = data.customerPhone;
       if (customerPhone && this.whatsAppService.canSendWhatsApp(customerPhone)) {
-        await this.whatsAppService.shareToWhatsApp(data, customerPhone, { showQrCode: this.showQrCode });
+        await this.whatsAppService.shareToWhatsApp(data, customerPhone, { showQrCode: false });
       } else {
         // Just share the PDF without targeting WhatsApp specifically
-        await this.whatsAppService.sharePdfReceipt(data, { showQrCode: this.showQrCode });
+        await this.whatsAppService.sharePdfReceipt(data, { showQrCode: false });
       }
     } finally {
       this.pdfSharing.set(false);
@@ -190,7 +181,7 @@ export class PrintReceiptDialogComponent implements OnChanges {
 
     this.pdfSharing.set(true);
     try {
-      await this.whatsAppService.shareToWhatsApp(data, this.manualPhoneNumber, { showQrCode: this.showQrCode });
+      await this.whatsAppService.shareToWhatsApp(data, this.manualPhoneNumber, { showQrCode: false });
       this.showWhatsAppInput.set(false);
       this.manualPhoneNumber = '';
     } finally {

@@ -1,14 +1,14 @@
-import { Component, inject, input, output, signal, effect } from '@angular/core';
+import { Component, input, output, signal, effect } from '@angular/core';
 import { MenuModule } from 'primeng/menu';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 
-import { PhoneService } from '../../../../core/services/phone.service';
+import { ProductService } from '../../../../core/services/product.service';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { Phone } from '../../../../models/phone.model';
-import { PhoneStatus, PhoneStatusLabels, PhoneStatusColors } from '../../../../enums/phone-status.enum';
+import { Product } from '../../../../models/product.model';
+import { ProductStatus, ProductStatusLabels, ProductStatusColors } from '../../../../enums/product-status.enum';
 
 @Component({
   selector: 'app-inventory-status-actions',
@@ -21,57 +21,58 @@ import { PhoneStatus, PhoneStatusLabels, PhoneStatusColors } from '../../../../e
   templateUrl: './inventory-status-actions.component.html'
 })
 export class InventoryStatusActionsComponent {
-  private phoneService = inject(PhoneService);
-  private toastService = inject(ToastService);
 
-  phone = input.required<Phone>();
+  product = input.required<Product>();
   statusChanged = output<void>();
-  markAsSoldRequested = output<Phone>();
-  printLabelRequested = output<Phone>();
+  markAsSoldRequested = output<Product>();
+  printLabelRequested = output<Product>();
 
   updating = signal(false);
   menuItems = signal<MenuItem[]>([]);
 
-  constructor() {
+  constructor(
+    private productService: ProductService,
+    private toastService: ToastService
+  ) {
     effect(() => {
-      const currentPhone = this.phone();
-      this.buildMenuItems(currentPhone);
+      const currentProduct = this.product();
+      this.buildMenuItems(currentProduct);
     });
   }
 
-  getStatusLabel(status: PhoneStatus): string {
-    return PhoneStatusLabels[status];
+  getStatusLabel(status: ProductStatus): string {
+    return ProductStatusLabels[status];
   }
 
-  getStatusSeverity(status: PhoneStatus): 'success' | 'danger' | 'warn' | 'info' | 'secondary' | 'contrast' | undefined {
+  getStatusSeverity(status: ProductStatus): 'success' | 'danger' | 'warn' | 'info' | 'secondary' | 'contrast' | undefined {
     const colorMap: Record<string, 'success' | 'danger' | 'warn'> = {
       success: 'success',
       danger: 'danger',
       warning: 'warn'
     };
-    return colorMap[PhoneStatusColors[status]];
+    return colorMap[ProductStatusColors[status]];
   }
 
-  private buildMenuItems(currentPhone: Phone): void {
+  private buildMenuItems(currentProduct: Product): void {
     const items: MenuItem[] = [];
 
-    if (currentPhone.status !== PhoneStatus.AVAILABLE) {
+    if (currentProduct.status !== ProductStatus.AVAILABLE) {
       items.push({
         label: 'Mark as Available',
         icon: 'pi pi-check-circle',
-        command: () => this.onQuickStatusChange(PhoneStatus.AVAILABLE)
+        command: () => this.onQuickStatusChange(ProductStatus.AVAILABLE)
       });
     }
 
-    if (currentPhone.status !== PhoneStatus.RESERVED) {
+    if (currentProduct.status !== ProductStatus.RESERVED) {
       items.push({
         label: 'Mark as Reserved',
         icon: 'pi pi-bookmark',
-        command: () => this.onQuickStatusChange(PhoneStatus.RESERVED)
+        command: () => this.onQuickStatusChange(ProductStatus.RESERVED)
       });
     }
 
-    if (currentPhone.status !== PhoneStatus.SOLD) {
+    if (currentProduct.status !== ProductStatus.SOLD) {
       items.push({
         separator: true
       });
@@ -94,31 +95,31 @@ export class InventoryStatusActionsComponent {
     this.menuItems.set(items);
   }
 
-  private async onQuickStatusChange(newStatus: PhoneStatus): Promise<void> {
-    const currentPhone = this.phone();
+  private async onQuickStatusChange(newStatus: ProductStatus): Promise<void> {
+    const currentProduct = this.product();
     this.updating.set(true);
 
     try {
-      await this.phoneService.updatePhoneStatus(currentPhone.id, newStatus);
-      const statusLabel = PhoneStatusLabels[newStatus];
+      await this.productService.updateProductStatus(currentProduct.id, newStatus);
+      const statusLabel = ProductStatusLabels[newStatus];
       this.toastService.success(
         'Status Updated',
-        `${currentPhone.brandName} ${currentPhone.model} is now ${statusLabel}`
+        `${currentProduct.brandName} ${currentProduct.model} is now ${statusLabel}`
       );
       this.statusChanged.emit();
     } catch (error) {
-      this.toastService.error('Error', 'Failed to update phone status');
-      console.error('Failed to update phone status:', error);
+      this.toastService.error('Error', 'Failed to update product status');
+      console.error('Failed to update product status:', error);
     } finally {
       this.updating.set(false);
     }
   }
 
   private onMarkAsSold(): void {
-    this.markAsSoldRequested.emit(this.phone());
+    this.markAsSoldRequested.emit(this.product());
   }
 
   private onPrintLabel(): void {
-    this.printLabelRequested.emit(this.phone());
+    this.printLabelRequested.emit(this.product());
   }
 }

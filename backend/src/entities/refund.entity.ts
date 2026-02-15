@@ -83,7 +83,7 @@ export interface RefundItem {
   id: string;
   refund_id: string;
   original_sale_id: string | null;
-  phone_id: string | null;
+  product_id: string | null;
   item_name: string;
   quantity: number;
   unit_price: number;
@@ -99,7 +99,7 @@ export interface RefundItemInsert {
   id?: string;
   refund_id: string;
   original_sale_id?: string | null;
-  phone_id?: string | null;
+  product_id?: string | null;
   item_name: string;
   quantity?: number;
   unit_price: number;
@@ -136,7 +136,7 @@ export interface ProcessRefundResult {
     quantity: number;
     unitPrice: number;
     total: number;
-    phoneId: string | null;
+    productId: string | null;
     inventoryRestored: boolean;
   }>;
   error?: string;
@@ -161,13 +161,13 @@ export interface CheckReceiptRefundableResult {
   items?: Array<{
     id: string;
     saleId: string | null;
-    phoneId: string | null;
+    productId: string | null;
     itemName: string;
     quantity: number;
     unitPrice: number;
     total: number;
-    phoneStatus: string | null;
-    phoneModel: string | null;
+    productStatus: string | null;
+    productModel: string | null;
     brandName: string | null;
     canRestoreInventory: boolean;
   }>;
@@ -196,13 +196,13 @@ export interface GetRefundByReceiptResult {
     items: Array<{
       id: string;
       originalSaleId: string | null;
-      phoneId: string | null;
+      productId: string | null;
       itemName: string;
       quantity: number;
       unitPrice: number;
       total: number;
       inventoryRestored: boolean;
-      phoneModel: string | null;
+      productModel: string | null;
       brandName: string | null;
     }>;
   };
@@ -244,13 +244,13 @@ export interface CheckPartialRefundableResult {
   items?: Array<{
     id: string;
     saleId: string | null;
-    phoneId: string | null;
+    productId: string | null;
     itemName: string;
     quantity: number;
     unitPrice: number;
     total: number;
-    phoneStatus: string | null;
-    phoneModel: string | null;
+    productStatus: string | null;
+    productModel: string | null;
     brandName: string | null;
     canRestoreInventory: boolean;
     alreadyRefunded: boolean;
@@ -279,7 +279,7 @@ export interface ProcessPartialRefundResult {
     originalUnitPrice: number;
     returnPrice: number;
     total: number;
-    phoneId: string | null;
+    productId: string | null;
     inventoryRestored: boolean;
     isCustomPrice: boolean;
     priceDifference: number;

@@ -33,6 +33,8 @@ export interface ShopDetails {
   currencySymbol: string;
   currencyDecimals: number;
   logoUrl: string | null;
+  sidebarItemOrder: string[] | null;
+  defaultLandingRoute: string | null;
   createdAt: string;
   updatedAt: string | null;
 }
@@ -60,4 +62,6 @@ export interface UpsertShopDetailsRequest {
   currencySymbol?: string;
   currencyDecimals?: number;
   logoUrl?: string | null;
+  sidebarItemOrder?: string[] | null;
+  defaultLandingRoute?: string | null;
 }

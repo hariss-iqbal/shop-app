@@ -1,0 +1,42 @@
+<p-dialog
+  header="Enter IMEI Number"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  (onHide)="onDialogHide()"
+  [modal]="true"
+  [style]="{ width: '400px' }"
+  [breakpoints]="{ '500px': '95vw' }"
+>
+  <div class="flex flex-column gap-3">
+    <p class="text-color-secondary m-0">
+      Enter the IMEI number for <strong>{{ product()?.brandName }} {{ product()?.model }}</strong>
+    </p>
+    <p class="text-sm text-color-secondary m-0">
+      Dial *#06# on the phone to find the IMEI, or scan the barcode.
+    </p>
+    <div class="flex gap-2">
+      <input pInputText [(ngModel)]="imeiValue" placeholder="Enter IMEI (15 digits)" class="flex-1"
+        maxlength="20" (keydown.enter)="onSave()" />
+      <app-barcode-scanner
+        buttonIcon="pi pi-camera"
+        [showLabel]="false"
+        buttonSeverity="secondary"
+        [buttonOutlined]="true"
+        dialogHeader="Scan IMEI Barcode"
+        [closeOnScan]="true"
+        (scanned)="onBarcodeScan($event)"
+      />
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-between w-full">
+      <p-button
+        [label]="skipConfirming ? 'Confirm Skip' : 'Skip'"
+        [severity]="skipConfirming ? 'danger' : 'secondary'"
+        [text]="!skipConfirming"
+        (onClick)="onSkip()"
+      />
+      <p-button label="Save & Continue" icon="pi pi-check" [loading]="saving()" (onClick)="onSave()" [disabled]="!imeiValue.trim()" />
+    </div>
+  </ng-template>
+</p-dialog>

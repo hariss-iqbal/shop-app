@@ -1,11 +1,83 @@
+.catalog-container {
+  width: 100%;
+}
+
+.catalog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.catalog-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.catalog-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.catalog-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.filter-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1rem;
 }
-.catalog-container {
-  width: 100%;
-  padding: 0 1rem;
+
+.featured-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.3);
 }
 .sale-badge {
   position: absolute;
@@ -33,19 +105,7 @@
   z-index: 10;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
-.top-seller-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: white;
-  font-weight: 700;
-  font-size: 0.75rem;
-  padding: 4px 10px;
-  border-radius: 4px;
-  z-index: 10;
-  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
-}
+
 .original-price {
   text-decoration: line-through;
   opacity: 0.7;
@@ -53,11 +113,6 @@
 .discount-price {
   color: var(--p-red-500);
   font-weight: 700;
-}
-.section-header {
-  border-bottom: 2px solid var(--p-primary-500);
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
 }
 .section-icon {
   width: 48px;
@@ -67,4 +122,14 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
+}
+
+@media (max-width: 991px) {
+  .catalog-layout {
+    flex-direction: column;
+  }
+
+  .catalog-sidebar {
+    display: none;
+  }
 }

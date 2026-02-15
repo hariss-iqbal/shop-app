@@ -46,10 +46,10 @@ export interface UpdateCustomerRequest {
 
 export interface CustomerSaleHistoryItem {
   id: string;
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
-  phoneName: string;
+  productName: string;
   brandName: string;
 }
 

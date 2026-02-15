@@ -6,14 +6,14 @@
 
 export interface LocationInventory {
   id: string;
-  phoneId: string;
+  productId: string;
   locationId: string;
   quantity: number;
   minStockLevel: number | null;
   maxStockLevel: number | null;
   createdAt: string;
   updatedAt: string | null;
-  phone?: {
+  product?: {
     id: string;
     model: string;
     status: string;
@@ -30,8 +30,8 @@ export interface LocationInventory {
   };
 }
 
-export interface AssignPhoneToLocationRequest {
-  phoneId: string;
+export interface AssignProductToLocationRequest {
+  productId: string;
   locationId: string;
   quantity?: number;
 }
@@ -57,6 +57,6 @@ export interface LocationInventoryStats {
 
 export interface LocationInventoryFilter {
   locationId?: string;
-  phoneId?: string;
+  productId?: string;
   lowStockOnly?: boolean;
 }

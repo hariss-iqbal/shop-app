@@ -29,10 +29,10 @@ export class EmailReceiptService {
     storeConfig?: StoreConfigDto
   ) {
     this.storeConfig = storeConfig || {
-      name: 'Phone Shop',
-      address: '123 Mobile Street, Tech City',
-      phone: '+1 234 567 890',
-      email: 'info@phoneshop.com',
+      name: 'Sprint Mobiles',
+      address: 'Shop G7, Fazal Trade Center, Lahore',
+      phone: '+923214495590',
+      email: '',
       siteUrl: 'http://localhost:4200'
     };
   }
@@ -380,11 +380,11 @@ export class EmailReceiptService {
    */
   private generateEmailHtml(data: EmailReceiptTemplateDataDto): string {
     const formatCurrency = (value: number): string => {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('en-PK', {
         style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        currency: 'PKR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
       }).format(value);
     };
 

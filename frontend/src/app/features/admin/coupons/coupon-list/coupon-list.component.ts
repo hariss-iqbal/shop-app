@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -19,6 +19,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TextareaModule } from 'primeng/textarea';
 
 import { CouponService } from '../../../../core/services/coupon.service';
+import { CurrencyService } from '../../../../core/services/currency.service';
 import {
   Coupon,
   CouponSummary,
@@ -66,9 +67,12 @@ import {
   styleUrls: ['./coupon-list.component.scss']
 })
 export class CouponListComponent implements OnInit {
-  private couponService = inject(CouponService);
-  private confirmationService = inject(ConfirmationService);
-  private messageService = inject(MessageService);
+  constructor(
+    private couponService: CouponService,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService,
+    private currencyService: CurrencyService
+  ) { }
 
   coupons = signal<Coupon[]>([]);
   summary = signal<CouponSummary | null>(null);
@@ -308,7 +312,7 @@ export class CouponListComponent implements OnInit {
   }
 
   formatDiscount(coupon: Coupon): string {
-    return formatDiscountValue(coupon.discountType, coupon.discountValue);
+    return formatDiscountValue(coupon.discountType, coupon.discountValue, this.currencyService.symbol);
   }
 
   formatDate(dateStr: string): string {

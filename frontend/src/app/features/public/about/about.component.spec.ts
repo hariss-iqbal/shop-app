@@ -212,7 +212,7 @@ describe('AboutComponent', () => {
       });
 
       it('should have browse catalog button', () => {
-        const catalogLink = fixture.nativeElement.querySelector('a[routerLink="/catalog"]');
+        const catalogLink = fixture.nativeElement.querySelector('a[routerLink="/"]');
         expect(catalogLink).toBeTruthy();
       });
 

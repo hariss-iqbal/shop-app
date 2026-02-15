@@ -25,8 +25,8 @@
               [(ngModel)]="searchQuery"
               name="search"
               class="w-full border-round-xl"
-              placeholder="Search phones..."
-              aria-label="Search phones"
+              placeholder="Search products..."
+              aria-label="Search products"
             />
           </p-iconfield>
         </form>
@@ -41,13 +41,6 @@
            role="menuitem"
            aria-label="Home page">
           Home
-        </a>
-        <a routerLink="/catalog"
-           routerLinkActive="text-primary font-semibold"
-           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
-           role="menuitem"
-           aria-label="Browse phone catalog">
-          Catalog
         </a>
         <a routerLink="/about"
            routerLinkActive="text-primary font-semibold"
@@ -79,13 +72,13 @@
           [ariaLabel]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
         />
         <!-- Compare Button -->
-        <a routerLink="/compare" class="no-underline relative" aria-label="Compare phones">
+        <a routerLink="/compare" class="no-underline relative" aria-label="Compare products">
           <p-button
             icon="pi pi-arrows-h"
             [text]="true"
             [rounded]="true"
             severity="secondary"
-            pTooltip="Compare phones"
+            pTooltip="Compare products"
             tooltipPosition="bottom"
           />
           @if (comparisonService.count() > 0) {
@@ -121,7 +114,7 @@
             [text]="true"
             [rounded]="true"
             severity="secondary"
-            ariaLabel="Compare phones"
+            ariaLabel="Compare products"
           />
           @if (comparisonService.count() > 0) {
             <span class="comparison-badge">{{ comparisonService.count() }}</span>
@@ -150,8 +143,8 @@
               [(ngModel)]="searchQuery"
               name="mobileSearch"
               class="w-full"
-              placeholder="Search phones..."
-              aria-label="Search phones"
+              placeholder="Search products..."
+              aria-label="Search products"
             />
           </p-iconfield>
         </form>
@@ -183,15 +176,6 @@
          aria-label="Home page">
         <i class="pi pi-home text-xl" aria-hidden="true"></i>
         <span class="font-medium">Home</span>
-      </a>
-      <a routerLink="/catalog"
-         routerLinkActive="bg-primary-100 text-primary"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
-         (click)="closeMobileMenu()"
-         role="menuitem"
-         aria-label="Browse phone catalog">
-        <i class="pi pi-th-large text-xl" aria-hidden="true"></i>
-        <span class="font-medium">Catalog</span>
       </a>
       <a routerLink="/about"
          routerLinkActive="bg-primary-100 text-primary"
@@ -256,7 +240,7 @@
             <span class="font-bold text-xl text-color">{{ shopName() }}</span>
           </div>
           <p class="text-color-secondary line-height-3 mt-0 mb-4">
-            Your trusted destination for quality mobile phones. We offer new, used, and open box
+            Your trusted destination for quality mobile products. We offer new, used, and open box
             devices at competitive prices with a 30-day quality guarantee.
           </p>
           <!-- Social Media Icons -->
@@ -302,9 +286,9 @@
                 </a>
               </li>
               <li class="mb-2">
-                <a routerLink="/catalog"
+                <a routerLink="/"
                    class="footer-link"
-                   aria-label="Browse phone catalog">
+                   aria-label="Browse product catalog">
                   Catalog
                 </a>
               </li>
@@ -417,6 +401,13 @@
       </div>
     </div>
   </footer>
+
+  <!-- WhatsApp FAB -->
+  @if (whatsappNumber()) {
+    <a class="whatsapp-fab" [href]="'https://wa.me/' + whatsappNumber()" target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
+      <i class="pi pi-whatsapp"></i>
+    </a>
+  }
 
   <!-- Back to Top Button -->
   <app-back-to-top />

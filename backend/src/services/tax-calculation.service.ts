@@ -1,6 +1,6 @@
 /**
  * Tax Calculation Service
- * Handles all tax calculations for the phone shop
+ * Handles all tax calculations for the shop
  * Feature: F-012 Tax Calculation and Compliance
  */
 
@@ -149,10 +149,10 @@ export class TaxCalculationService {
   }
 
   /**
-   * Calculate tax for a single item given phone data
-   * Convenience method that takes phone properties directly
+   * Calculate tax for a single item given product data
+   * Convenience method that takes product properties directly
    */
-  calculatePhoneTax(
+  calculateProductTax(
     sellingPrice: number,
     taxRate: number,
     isTaxInclusive: boolean,

@@ -7,7 +7,7 @@ import { InventoryTransferStatus } from '../enums';
  */
 
 export interface TransferItemDto {
-  phoneId: string;
+  productId: string;
   quantity: number;
   notes?: string | null;
 }
@@ -26,11 +26,11 @@ export interface UpdateTransferDto {
 export interface InventoryTransferItemResponseDto {
   id: string;
   transferId: string;
-  phoneId: string;
+  productId: string;
   quantity: number;
   notes: string | null;
   createdAt: string;
-  phone?: {
+  product?: {
     id: string;
     model: string;
     condition: string;

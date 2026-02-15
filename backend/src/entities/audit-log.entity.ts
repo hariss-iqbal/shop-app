@@ -20,10 +20,10 @@ export type AuditEventType =
   // Inventory events
   | 'inventory_deducted'
   | 'inventory_restored'
-  | 'phone_status_changed'
-  | 'phone_created'
-  | 'phone_updated'
-  | 'phone_deleted'
+  | 'product_status_changed'
+  | 'product_created'
+  | 'product_updated'
+  | 'product_deleted'
   // User/Permission events
   | 'user_role_assigned'
   | 'user_role_changed'
@@ -102,7 +102,7 @@ export interface AuditLogWithDescription extends AuditLog {
 export interface SaleAuditInput {
   eventType: AuditEventType;
   saleId: string;
-  phoneId: string;
+  productId: string;
   amount: number;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -149,7 +149,7 @@ export interface PermissionChangeAuditInput {
  */
 export interface InventoryAuditInput {
   eventType: AuditEventType;
-  phoneId: string;
+  productId: string;
   previousStatus: string;
   newStatus: string;
   saleId?: string | null;

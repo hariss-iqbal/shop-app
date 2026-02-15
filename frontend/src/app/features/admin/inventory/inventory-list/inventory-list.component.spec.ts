@@ -5,27 +5,28 @@ import { TableLazyLoadEvent } from 'primeng/table';
 import { provideRouter } from '@angular/router';
 
 import { InventoryListComponent } from './inventory-list.component';
-import { PhoneService } from '../../../../core/services/phone.service';
+import { ProductService } from '../../../../core/services/product.service';
 import { SupabaseService } from '../../../../core/services/supabase.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirmation.service';
 import { CsvExportService } from '../../../../shared/services/csv-export.service';
-import { Phone } from '../../../../models/phone.model';
-import { PhoneStatus } from '../../../../enums/phone-status.enum';
-import { PhoneCondition } from '../../../../enums/phone-condition.enum';
+import { Product } from '../../../../models/product.model';
+import { ProductStatus } from '../../../../enums/product-status.enum';
+import { ProductCondition } from '../../../../enums/product-condition.enum';
+import { ProductType } from '../../../../enums/product-type.enum';
 
 describe('InventoryListComponent', () => {
   let component: InventoryListComponent;
   let fixture: ComponentFixture<InventoryListComponent>;
-  let mockPhoneService: jasmine.SpyObj<PhoneService>;
+  let mockProductService: jasmine.SpyObj<ProductService>;
   let mockToastService: jasmine.SpyObj<ToastService>;
   let mockConfirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
   let mockCsvExportService: jasmine.SpyObj<CsvExportService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockSupabaseService: any;
 
-  const mockPhone: Phone = {
-    id: 'phone-1',
+  const mockProduct: Product = {
+    id: 'product-1',
     brandId: 'brand-1',
     brandName: 'Apple',
     brandLogoUrl: 'https://example.com/apple.png',
@@ -34,13 +35,13 @@ describe('InventoryListComponent', () => {
     storageGb: 256,
     ramGb: 8,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: '123456789012345',
     costPrice: 900,
     sellingPrice: 1200,
     profitMargin: 25,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: '2024-01-15',
     supplierId: 'supplier-1',
     supplierName: 'Test Supplier',
@@ -53,28 +54,28 @@ describe('InventoryListComponent', () => {
     isTaxExempt: false
   };
 
-  const mockPhones: Phone[] = [
-    mockPhone,
+  const mockProducts: Product[] = [
+    mockProduct,
     {
-      ...mockPhone,
-      id: 'phone-2',
+      ...mockProduct,
+      id: 'product-2',
       model: 'iPhone 14',
-      status: PhoneStatus.SOLD
+      status: ProductStatus.SOLD
     },
     {
-      ...mockPhone,
-      id: 'phone-3',
+      ...mockProduct,
+      id: 'product-3',
       model: 'iPhone 13',
-      status: PhoneStatus.RESERVED
+      status: ProductStatus.RESERVED
     }
   ];
 
   beforeEach(async () => {
-    mockPhoneService = jasmine.createSpyObj('PhoneService', [
-      'getPhones',
-      'deletePhone',
-      'deletePhones',
-      'updatePhoneStatus',
+    mockProductService = jasmine.createSpyObj('ProductService', [
+      'getProducts',
+      'deleteProduct',
+      'deleteProducts',
+      'updateProductStatus',
       'updatePhonesStatus',
       'getExportPhones'
     ]);
@@ -100,8 +101,8 @@ describe('InventoryListComponent', () => {
       }
     };
 
-    mockPhoneService.getPhones.and.returnValue(Promise.resolve({
-      data: mockPhones,
+    mockProductService.getProducts.and.returnValue(Promise.resolve({
+      data: mockProducts,
       total: 3
     }));
 
@@ -112,7 +113,7 @@ describe('InventoryListComponent', () => {
       ],
       providers: [
         provideRouter([]),
-        { provide: PhoneService, useValue: mockPhoneService },
+        { provide: ProductService, useValue: mockProductService },
         { provide: SupabaseService, useValue: mockSupabaseService },
         { provide: ToastService, useValue: mockToastService },
         { provide: ConfirmDialogService, useValue: mockConfirmDialogService },
@@ -131,8 +132,8 @@ describe('InventoryListComponent', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should initialize with empty phones array', () => {
-      expect(component.phones()).toEqual([]);
+    it('should initialize with empty products array', () => {
+      expect(component.products()).toEqual([]);
     });
 
     it('should initialize with zero total records', () => {
@@ -143,8 +144,8 @@ describe('InventoryListComponent', () => {
       expect(component.loading()).toBe(false);
     });
 
-    it('should initialize with empty selected phones', () => {
-      expect(component.selectedPhones()).toEqual([]);
+    it('should initialize with empty selected products', () => {
+      expect(component.selectedProducts()).toEqual([]);
     });
 
     it('should initialize with empty global filter', () => {
@@ -152,8 +153,8 @@ describe('InventoryListComponent', () => {
     });
   });
 
-  describe('loadPhones', () => {
-    it('should load phones on lazy load event', fakeAsync(() => {
+  describe('loadProducts', () => {
+    it('should load products on lazy load event', fakeAsync(() => {
       const event: TableLazyLoadEvent = {
         first: 0,
         rows: 10,
@@ -161,24 +162,24 @@ describe('InventoryListComponent', () => {
         sortOrder: 1
       };
 
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      expect(mockPhoneService.getPhones).toHaveBeenCalledWith({
+      expect(mockProductService.getProducts).toHaveBeenCalledWith({
         first: 0,
         rows: 10,
         sortField: 'model',
         sortOrder: 1,
         globalFilter: undefined
       });
-      expect(component.phones()).toEqual(mockPhones);
+      expect(component.products()).toEqual(mockProducts);
       expect(component.totalRecords()).toBe(3);
     }));
 
     it('should set loading state during data fetch', fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
 
-      component.loadPhones(event);
+      component.loadProducts(event);
       expect(component.loading()).toBe(true);
 
       tick();
@@ -189,31 +190,31 @@ describe('InventoryListComponent', () => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
       component.globalFilter = 'iPhone';
 
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      expect(mockPhoneService.getPhones).toHaveBeenCalledWith(
+      expect(mockProductService.getProducts).toHaveBeenCalledWith(
         jasmine.objectContaining({ globalFilter: 'iPhone' })
       );
     }));
 
     it('should show error toast on load failure', fakeAsync(() => {
-      mockPhoneService.getPhones.and.returnValue(Promise.reject(new Error('Load failed')));
+      mockProductService.getProducts.and.returnValue(Promise.reject(new Error('Load failed')));
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
 
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      expect(mockToastService.error).toHaveBeenCalledWith('Error', 'Failed to load phones');
+      expect(mockToastService.error).toHaveBeenCalledWith('Error', 'Failed to load products');
     }));
 
     it('should handle default values for undefined event properties', fakeAsync(() => {
       const event: TableLazyLoadEvent = {};
 
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      expect(mockPhoneService.getPhones).toHaveBeenCalledWith(
+      expect(mockProductService.getProducts).toHaveBeenCalledWith(
         jasmine.objectContaining({
           first: 0,
           rows: 10
@@ -225,41 +226,41 @@ describe('InventoryListComponent', () => {
   describe('onSearch', () => {
     it('should debounce search input', fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      mockPhoneService.getPhones.calls.reset();
+      mockProductService.getProducts.calls.reset();
       component.globalFilter = 'Apple';
 
       component.onSearch();
       tick(100);
-      expect(mockPhoneService.getPhones).not.toHaveBeenCalled();
+      expect(mockProductService.getProducts).not.toHaveBeenCalled();
 
       tick(200);
-      expect(mockPhoneService.getPhones).toHaveBeenCalledTimes(1);
+      expect(mockProductService.getProducts).toHaveBeenCalledTimes(1);
     }));
 
     it('should reset to first page on search', fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 20, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      mockPhoneService.getPhones.calls.reset();
+      mockProductService.getProducts.calls.reset();
       component.globalFilter = 'iPhone';
       component.onSearch();
       tick(300);
 
-      expect(mockPhoneService.getPhones).toHaveBeenCalledWith(
+      expect(mockProductService.getProducts).toHaveBeenCalledWith(
         jasmine.objectContaining({ first: 0 })
       );
     }));
 
     it('should cancel previous search timeout', fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      mockPhoneService.getPhones.calls.reset();
+      mockProductService.getProducts.calls.reset();
 
       component.globalFilter = 'Apple';
       component.onSearch();
@@ -269,8 +270,8 @@ describe('InventoryListComponent', () => {
       component.onSearch();
       tick(300);
 
-      expect(mockPhoneService.getPhones).toHaveBeenCalledTimes(1);
-      expect(mockPhoneService.getPhones).toHaveBeenCalledWith(
+      expect(mockProductService.getProducts).toHaveBeenCalledTimes(1);
+      expect(mockProductService.getProducts).toHaveBeenCalledWith(
         jasmine.objectContaining({ globalFilter: 'Samsung' })
       );
     }));
@@ -279,64 +280,64 @@ describe('InventoryListComponent', () => {
   describe('onDelete', () => {
     it('should confirm deletion before deleting', fakeAsync(() => {
       mockConfirmDialogService.confirmDelete.and.returnValue(Promise.resolve(true));
-      mockPhoneService.deletePhone.and.returnValue(Promise.resolve());
+      mockProductService.deletePhone.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      component.onDelete(mockPhone);
+      component.onDelete(mockProduct);
       tick();
 
       expect(mockConfirmDialogService.confirmDelete).toHaveBeenCalledWith(
-        'phone',
+        'product',
         'Apple iPhone 15 Pro (IMEI: 123456789012345)'
       );
     }));
 
-    it('should delete phone and show success toast on confirmation', fakeAsync(() => {
+    it('should delete product and show success toast on confirmation', fakeAsync(() => {
       mockConfirmDialogService.confirmDelete.and.returnValue(Promise.resolve(true));
-      mockPhoneService.deletePhone.and.returnValue(Promise.resolve());
+      mockProductService.deletePhone.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      component.onDelete(mockPhone);
+      component.onDelete(mockProduct);
       tick();
 
-      expect(mockPhoneService.deletePhone).toHaveBeenCalledWith('phone-1');
+      expect(mockProductService.deleteProduct).toHaveBeenCalledWith('product-1');
       expect(mockToastService.success).toHaveBeenCalledWith(
         'Deleted',
         'Apple iPhone 15 Pro has been deleted'
       );
     }));
 
-    it('should not delete phone when confirmation is cancelled', fakeAsync(() => {
+    it('should not delete product when confirmation is cancelled', fakeAsync(() => {
       mockConfirmDialogService.confirmDelete.and.returnValue(Promise.resolve(false));
 
-      component.onDelete(mockPhone);
+      component.onDelete(mockProduct);
       tick();
 
-      expect(mockPhoneService.deletePhone).not.toHaveBeenCalled();
+      expect(mockProductService.deleteProduct).not.toHaveBeenCalled();
     }));
 
     it('should show error toast on delete failure', async () => {
       mockConfirmDialogService.confirmDelete.and.returnValue(Promise.resolve(true));
-      mockPhoneService.deletePhone.and.returnValue(Promise.reject(new Error('Delete failed')));
+      mockProductService.deletePhone.and.returnValue(Promise.reject(new Error('Delete failed')));
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      await component.loadPhones(event);
+      await component.loadProducts(event);
 
-      await component.onDelete(mockPhone);
+      await component.onDelete(mockProduct);
 
-      expect(mockToastService.error).toHaveBeenCalledWith('Error', 'Failed to delete phone');
+      expect(mockToastService.error).toHaveBeenCalledWith('Error', 'Failed to delete product');
     });
   });
 
   describe('onBulkDelete', () => {
-    it('should do nothing if no phones selected', fakeAsync(() => {
-      component.selectedPhones.set([]);
+    it('should do nothing if no products selected', fakeAsync(() => {
+      component.selectedProducts.set([]);
 
       component.onBulkDelete();
       tick();
@@ -346,57 +347,57 @@ describe('InventoryListComponent', () => {
 
     it('should confirm bulk deletion', fakeAsync(() => {
       mockConfirmDialogService.confirmBulkDelete.and.returnValue(Promise.resolve(true));
-      mockPhoneService.deletePhones.and.returnValue(Promise.resolve());
+      mockProductService.deleteProducts.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      component.selectedPhones.set([mockPhones[0], mockPhones[1]]);
+      component.selectedProducts.set([mockProducts[0], mockProducts[1]]);
 
       component.onBulkDelete();
       tick();
 
-      expect(mockConfirmDialogService.confirmBulkDelete).toHaveBeenCalledWith('phone', 2);
+      expect(mockConfirmDialogService.confirmBulkDelete).toHaveBeenCalledWith('product', 2);
     }));
 
-    it('should delete selected phones and show success toast', fakeAsync(() => {
+    it('should delete selected products and show success toast', fakeAsync(() => {
       mockConfirmDialogService.confirmBulkDelete.and.returnValue(Promise.resolve(true));
-      mockPhoneService.deletePhones.and.returnValue(Promise.resolve());
+      mockProductService.deleteProducts.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      component.selectedPhones.set([mockPhones[0], mockPhones[1]]);
+      component.selectedProducts.set([mockProducts[0], mockProducts[1]]);
 
       component.onBulkDelete();
       tick();
 
-      expect(mockPhoneService.deletePhones).toHaveBeenCalledWith(['phone-1', 'phone-2']);
-      expect(mockToastService.success).toHaveBeenCalledWith('Deleted', '2 phone(s) have been deleted');
+      expect(mockProductService.deleteProducts).toHaveBeenCalledWith(['product-1', 'product-2']);
+      expect(mockToastService.success).toHaveBeenCalledWith('Deleted', '2 product(s) have been deleted');
     }));
 
     it('should clear selection after bulk delete', fakeAsync(() => {
       mockConfirmDialogService.confirmBulkDelete.and.returnValue(Promise.resolve(true));
-      mockPhoneService.deletePhones.and.returnValue(Promise.resolve());
+      mockProductService.deleteProducts.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      component.selectedPhones.set([mockPhones[0]]);
+      component.selectedProducts.set([mockProducts[0]]);
 
       component.onBulkDelete();
       tick();
 
-      expect(component.selectedPhones()).toEqual([]);
+      expect(component.selectedProducts()).toEqual([]);
     }));
   });
 
   describe('onBulkMarkAsSold', () => {
-    it('should do nothing if no phones selected', fakeAsync(() => {
-      component.selectedPhones.set([]);
+    it('should do nothing if no products selected', fakeAsync(() => {
+      component.selectedProducts.set([]);
 
       component.onBulkMarkAsSold();
       tick();
@@ -404,58 +405,58 @@ describe('InventoryListComponent', () => {
       expect(mockConfirmDialogService.confirmBulkAction).not.toHaveBeenCalled();
     }));
 
-    it('should warn if no available phones selected', fakeAsync(() => {
-      const soldPhone = { ...mockPhone, id: 'sold-1', status: PhoneStatus.SOLD };
-      component.selectedPhones.set([soldPhone]);
+    it('should warn if no available products selected', fakeAsync(() => {
+      const soldPhone = { ...mockProduct, id: 'sold-1', status: ProductStatus.SOLD };
+      component.selectedProducts.set([soldPhone]);
 
       component.onBulkMarkAsSold();
       tick();
 
       expect(mockToastService.warn).toHaveBeenCalledWith(
         'Warning',
-        'No available phones selected to mark as sold'
+        'No available products selected to mark as sold'
       );
     }));
 
-    it('should only mark available phones as sold', fakeAsync(() => {
+    it('should only mark available products as sold', fakeAsync(() => {
       mockConfirmDialogService.confirmBulkAction.and.returnValue(Promise.resolve(true));
-      mockPhoneService.updatePhonesStatus.and.returnValue(Promise.resolve());
+      mockProductService.updatePhonesStatus.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      const availablePhone = { ...mockPhone, id: 'avail-1', status: PhoneStatus.AVAILABLE };
-      const soldPhone = { ...mockPhone, id: 'sold-1', status: PhoneStatus.SOLD };
-      component.selectedPhones.set([availablePhone, soldPhone]);
+      const availablePhone = { ...mockProduct, id: 'avail-1', status: ProductStatus.AVAILABLE };
+      const soldPhone = { ...mockProduct, id: 'sold-1', status: ProductStatus.SOLD };
+      component.selectedProducts.set([availablePhone, soldPhone]);
 
       component.onBulkMarkAsSold();
       tick();
 
-      expect(mockPhoneService.updatePhonesStatus).toHaveBeenCalledWith(
+      expect(mockProductService.updatePhonesStatus).toHaveBeenCalledWith(
         ['avail-1'],
-        PhoneStatus.SOLD
+        ProductStatus.SOLD
       );
     }));
 
     it('should show confirmation dialog with correct count', fakeAsync(() => {
       mockConfirmDialogService.confirmBulkAction.and.returnValue(Promise.resolve(true));
-      mockPhoneService.updatePhonesStatus.and.returnValue(Promise.resolve());
+      mockProductService.updatePhonesStatus.and.returnValue(Promise.resolve());
 
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      const phone1 = { ...mockPhone, id: 'avail-1', status: PhoneStatus.AVAILABLE };
-      const phone2 = { ...mockPhone, id: 'avail-2', status: PhoneStatus.AVAILABLE };
-      component.selectedPhones.set([phone1, phone2]);
+      const product1 = { ...mockProduct, id: 'avail-1', status: ProductStatus.AVAILABLE };
+      const product2 = { ...mockProduct, id: 'avail-2', status: ProductStatus.AVAILABLE };
+      component.selectedProducts.set([product1, product2]);
 
       component.onBulkMarkAsSold();
       tick();
 
       expect(mockConfirmDialogService.confirmBulkAction).toHaveBeenCalledWith(
         'Mark as Sold',
-        'phone',
+        'product',
         2
       );
     }));
@@ -463,26 +464,26 @@ describe('InventoryListComponent', () => {
 
   describe('onEdit', () => {
     it('should navigate to edit route', () => {
-      component.onEdit(mockPhone);
+      component.onEdit(mockProduct);
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory', 'phone-1', 'edit']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/admin/inventory', 'product-1', 'edit']);
     });
   });
 
   describe('onMarkAsSold', () => {
     it('should open mark as sold dialog', () => {
-      component.onMarkAsSold(mockPhone);
+      component.onMarkAsSold(mockProduct);
 
-      expect(component.markAsSoldPhone()).toBe(mockPhone);
+      expect(component.markAsSoldProduct()).toBe(mockProduct);
       expect(component.markAsSoldDialogVisible()).toBe(true);
     });
   });
 
   describe('onPrintLabel', () => {
     it('should open print label dialog', () => {
-      component.onPrintLabel(mockPhone);
+      component.onPrintLabel(mockProduct);
 
-      expect(component.printLabelPhone()).toBe(mockPhone);
+      expect(component.printLabelProduct()).toBe(mockProduct);
       expect(component.printLabelDialogVisible()).toBe(true);
     });
   });
@@ -490,43 +491,43 @@ describe('InventoryListComponent', () => {
   describe('onSaleSaved', () => {
     it('should clear selection and refresh table', fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      component.selectedPhones.set([mockPhone]);
-      mockPhoneService.getPhones.calls.reset();
+      component.selectedProducts.set([mockProduct]);
+      mockProductService.getProducts.calls.reset();
 
       component.onSaleSaved();
       tick();
 
-      expect(component.selectedPhones()).toEqual([]);
-      expect(mockPhoneService.getPhones).toHaveBeenCalled();
+      expect(component.selectedProducts()).toEqual([]);
+      expect(mockProductService.getProducts).toHaveBeenCalled();
     }));
   });
 
   describe('onStatusChanged', () => {
     it('should refresh table', fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
 
-      mockPhoneService.getPhones.calls.reset();
+      mockProductService.getProducts.calls.reset();
 
       component.onStatusChanged();
       tick();
 
-      expect(mockPhoneService.getPhones).toHaveBeenCalled();
+      expect(mockProductService.getProducts).toHaveBeenCalled();
     }));
   });
 
   describe('onExportCsv', () => {
-    it('should export phones to CSV', fakeAsync(() => {
-      mockPhoneService.getExportPhones.and.returnValue(Promise.resolve(mockPhones));
+    it('should export products to CSV', fakeAsync(() => {
+      mockProductService.getExportPhones.and.returnValue(Promise.resolve(mockProducts));
 
       component.onExportCsv();
       tick();
 
-      expect(mockPhoneService.getExportPhones).toHaveBeenCalledWith(undefined);
+      expect(mockProductService.getExportPhones).toHaveBeenCalledWith(undefined);
       expect(mockCsvExportService.exportToCsv).toHaveBeenCalled();
       expect(mockToastService.success).toHaveBeenCalledWith(
         'Export Complete',
@@ -535,27 +536,27 @@ describe('InventoryListComponent', () => {
     }));
 
     it('should pass global filter to export', fakeAsync(() => {
-      mockPhoneService.getExportPhones.and.returnValue(Promise.resolve(mockPhones));
+      mockProductService.getExportPhones.and.returnValue(Promise.resolve(mockProducts));
       component.globalFilter = 'Apple';
 
       component.onExportCsv();
       tick();
 
-      expect(mockPhoneService.getExportPhones).toHaveBeenCalledWith('Apple');
+      expect(mockProductService.getExportPhones).toHaveBeenCalledWith('Apple');
     }));
 
-    it('should warn if no phones to export', fakeAsync(() => {
-      mockPhoneService.getExportPhones.and.returnValue(Promise.resolve([]));
+    it('should warn if no products to export', fakeAsync(() => {
+      mockProductService.getExportPhones.and.returnValue(Promise.resolve([]));
 
       component.onExportCsv();
       tick();
 
       expect(mockCsvExportService.exportToCsv).not.toHaveBeenCalled();
-      expect(mockToastService.warn).toHaveBeenCalledWith('No Data', 'No phones to export');
+      expect(mockToastService.warn).toHaveBeenCalledWith('No Data', 'No products to export');
     }));
 
     it('should show error toast on export failure', fakeAsync(() => {
-      mockPhoneService.getExportPhones.and.returnValue(Promise.reject(new Error('Export failed')));
+      mockProductService.getExportPhones.and.returnValue(Promise.reject(new Error('Export failed')));
 
       component.onExportCsv();
       tick();
@@ -570,15 +571,15 @@ describe('InventoryListComponent', () => {
   describe('helper methods', () => {
     describe('getConditionLabel', () => {
       it('should return correct label for NEW condition', () => {
-        expect(component.getConditionLabel(PhoneCondition.NEW)).toBe('New');
+        expect(component.getConditionLabel(ProductCondition.NEW)).toBe('New');
       });
 
       it('should return correct label for USED condition', () => {
-        expect(component.getConditionLabel(PhoneCondition.USED)).toBe('Used');
+        expect(component.getConditionLabel(ProductCondition.USED)).toBe('Used');
       });
 
       it('should return correct label for REFURBISHED condition', () => {
-        expect(component.getConditionLabel(PhoneCondition.REFURBISHED)).toBe('Refurbished');
+        expect(component.getConditionLabel(ProductCondition.REFURBISHED)).toBe('Refurbished');
       });
 
       it('should return original value for unknown condition', () => {
@@ -630,7 +631,7 @@ describe('InventoryListComponent', () => {
   describe('template rendering', () => {
     beforeEach(fakeAsync(() => {
       const event: TableLazyLoadEvent = { first: 0, rows: 10 };
-      component.loadPhones(event);
+      component.loadProducts(event);
       tick();
       fixture.detectChanges();
     }));
@@ -640,7 +641,7 @@ describe('InventoryListComponent', () => {
       expect(compiled.querySelector('h1')?.textContent).toContain('Inventory');
     });
 
-    it('should render add phone button', () => {
+    it('should render add product button', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const addButton = compiled.querySelector('p-button[routerLink="/admin/inventory/new"]');
       expect(addButton).toBeTruthy();
@@ -664,8 +665,8 @@ describe('InventoryListComponent', () => {
       expect(compiled.querySelector('p-table')).toBeTruthy();
     });
 
-    it('should show bulk action buttons when phones are selected', fakeAsync(() => {
-      component.selectedPhones.set([mockPhone]);
+    it('should show bulk action buttons when products are selected', fakeAsync(() => {
+      component.selectedProducts.set([mockProduct]);
       fixture.detectChanges();
       tick();
 

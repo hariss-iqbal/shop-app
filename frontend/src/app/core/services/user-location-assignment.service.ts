@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   UserLocationAssignment,
@@ -17,7 +17,7 @@ import {
   providedIn: 'root'
 })
 export class UserLocationAssignmentService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   private _userLocations = signal<UserLocationDetail[]>([]);
   private _canViewAllLocations = signal<boolean>(false);

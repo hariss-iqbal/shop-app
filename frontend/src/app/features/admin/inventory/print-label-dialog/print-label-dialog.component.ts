@@ -1,4 +1,4 @@
-import { Component, inject, input, output, computed, OnChanges, SimpleChanges, ElementRef, viewChild } from '@angular/core';
+import { Component, input, output, computed, OnChanges, SimpleChanges, ElementRef, viewChild } from '@angular/core';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -8,8 +8,8 @@ import { TagModule } from 'primeng/tag';
 import { DividerModule } from 'primeng/divider';
 import { SharedModule } from 'primeng/api';
 
-import { Phone } from '../../../../models/phone.model';
-import { PhoneCondition, PhoneConditionLabels } from '../../../../enums/phone-condition.enum';
+import { Product } from '../../../../models/product.model';
+import { ProductCondition, ProductConditionLabels } from '../../../../enums/product-condition.enum';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { CurrencyService } from '../../../../core/services/currency.service';
 import { environment } from '../../../../../environments/environment';
@@ -30,10 +30,12 @@ import { environment } from '../../../../../environments/environment';
   styleUrls: ['./print-label-dialog.component.scss']
 })
 export class PrintLabelDialogComponent implements OnChanges {
-  private focusService = inject(FocusManagementService);
-  private currencyService = inject(CurrencyService);
+  constructor(
+    private focusService: FocusManagementService,
+    private currencyService: CurrencyService
+  ) { }
 
-  phone = input<Phone | null>(null);
+  product = input<Product | null>(null);
   visible = input<boolean>(false);
   visibleChange = output<boolean>();
 
@@ -42,14 +44,14 @@ export class PrintLabelDialogComponent implements OnChanges {
   showQrCode = true;
 
   dialogHeader = computed(() => {
-    const p = this.phone();
+    const p = this.product();
     return p ? `Print Label - ${p.brandName} ${p.model}` : 'Print Label';
   });
 
   qrCodeUrl = computed(() => {
-    const p = this.phone();
+    const p = this.product();
     if (!p) return '';
-    const detailUrl = `${environment.siteUrl}/phone/${p.id}`;
+    const detailUrl = `${environment.siteUrl}/product/${p.id}`;
     const encoded = encodeURIComponent(detailUrl);
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}`;
   });
@@ -71,8 +73,8 @@ export class PrintLabelDialogComponent implements OnChanges {
     this.focusService.restoreFocus();
   }
 
-  getConditionLabel(condition: PhoneCondition): string {
-    return PhoneConditionLabels[condition];
+  getConditionLabel(condition: ProductCondition): string {
+    return ProductConditionLabels[condition];
   }
 
   onVisibleChange(value: boolean): void {
@@ -84,7 +86,7 @@ export class PrintLabelDialogComponent implements OnChanges {
   }
 
   onPrint(): void {
-    const p = this.phone();
+    const p = this.product();
     if (!p) return;
 
     const labelEl = this.labelContent()?.nativeElement;
@@ -96,7 +98,7 @@ export class PrintLabelDialogComponent implements OnChanges {
     const conditionLabel = this.getConditionLabel(p.condition);
     const formattedPrice = this.currencyService.format(p.sellingPrice, { minDecimals: 0, maxDecimals: 0 });
 
-    const detailUrl = `${environment.siteUrl}/phone/${p.id}`;
+    const detailUrl = `${environment.siteUrl}/product/${p.id}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(detailUrl)}`;
 
     const storageHtml = p.storageGb

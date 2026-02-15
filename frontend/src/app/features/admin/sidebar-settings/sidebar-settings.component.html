@@ -1,0 +1,70 @@
+<div class="flex flex-column gap-4">
+  <!-- Header -->
+  <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-900 m-0">Sidebar Settings</h1>
+      <p class="text-color-secondary mt-1 mb-0">Customize the sidebar menu order and default landing page</p>
+    </div>
+    <div class="flex gap-2">
+      <p-button
+        label="Reset to Default"
+        icon="pi pi-undo"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="resetToDefault()"
+      />
+      <p-button
+        label="Save"
+        icon="pi pi-check"
+        [loading]="saving()"
+        (onClick)="save()"
+      />
+    </div>
+  </div>
+
+  <!-- Default Landing Page -->
+  <p-card>
+    <div class="flex flex-column gap-2">
+      <label class="font-semibold text-900" for="defaultRoute">Default Landing Page</label>
+      <p class="text-color-secondary text-sm m-0">The page users see when they first log in or navigate to /admin</p>
+      <p-select
+        id="defaultRoute"
+        [(ngModel)]="defaultRoute"
+        [options]="routeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select default page"
+        styleClass="w-full md:w-20rem"
+      />
+    </div>
+  </p-card>
+
+  <!-- Sidebar Order -->
+  <p-card>
+    <div class="flex flex-column gap-2 mb-3">
+      <label class="font-semibold text-900">Menu Item Order</label>
+      <p class="text-color-secondary text-sm m-0">Drag and drop items to reorder the sidebar menu. This order applies to all users.</p>
+    </div>
+
+    @if (loading()) {
+      <div class="flex justify-content-center py-4">
+        <i class="pi pi-spin pi-spinner text-2xl text-color-secondary"></i>
+      </div>
+    } @else {
+      <p-orderList
+        [value]="sidebarItems"
+        (onReorder)="onReorder()"
+        [dragdrop]="true"
+        [stripedRows]="true"
+        filterBy="label"
+        filterPlaceholder="Filter items">
+        <ng-template #item let-item>
+          <div class="flex align-items-center gap-3 py-1">
+            <i [class]="item.icon + ' text-color-secondary'" style="font-size: 1.1rem; width: 1.5rem; text-align: center;"></i>
+            <span class="font-medium text-900">{{ item.label }}</span>
+          </div>
+        </ng-template>
+      </p-orderList>
+    }
+  </p-card>
+</div>

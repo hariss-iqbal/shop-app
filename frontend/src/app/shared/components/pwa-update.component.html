@@ -2,7 +2,7 @@
   <div class="pwa-banner" role="alert" aria-live="assertive">
     <div class="pwa-banner-content">
       <i class="pi pi-sync pwa-banner-icon update-icon"></i>
-      <span class="pwa-banner-text">A new version of Spring Mobiles is available!</span>
+      <span class="pwa-banner-text">A new version of {{ shopName() || 'the app' }} is available!</span>
       <div class="pwa-banner-actions">
         <p-button
           label="Update Now"
@@ -30,7 +30,7 @@
   <div class="pwa-banner" role="banner">
     <div class="pwa-banner-content">
       <i class="pi pi-mobile pwa-banner-icon install-icon"></i>
-      <span class="pwa-banner-text">Install Spring Mobiles for quick access and offline browsing</span>
+      <span class="pwa-banner-text">Install {{ shopName() || 'the app' }} for quick access and offline browsing</span>
       <div class="pwa-banner-actions">
         <p-button
           label="Install"

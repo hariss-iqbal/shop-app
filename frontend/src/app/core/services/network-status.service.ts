@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, NgZone, inject, DestroyRef } from '@angular/core';
+import { Injectable, signal, computed, NgZone, DestroyRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { fromEvent, merge } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,9 +7,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   providedIn: 'root'
 })
 export class NetworkStatusService {
-  private readonly router = inject(Router);
-  private readonly ngZone = inject(NgZone);
-  private readonly destroyRef = inject(DestroyRef);
 
   private readonly _isOnline = signal(navigator.onLine);
   private consecutiveFailures = 0;
@@ -18,7 +15,11 @@ export class NetworkStatusService {
   readonly isOnline = this._isOnline.asReadonly();
   readonly isOffline = computed(() => !this._isOnline());
 
-  constructor() {
+  constructor(
+    private readonly router: Router,
+    private readonly ngZone: NgZone,
+    private readonly destroyRef: DestroyRef
+  ) {
     this.listenToNetworkEvents();
   }
 

@@ -1,7 +1,8 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { SyncQueueService } from './sync-queue.service';
 import { OfflineStorageService } from './offline-storage.service';
 import { SyncSchedulerService } from './sync-scheduler.service';
+import { CurrencyService } from './currency.service';
 import {
   SyncQueueItem,
   SyncResolutionAction,
@@ -21,9 +22,12 @@ import {
   providedIn: 'root'
 })
 export class ConflictResolutionService {
-  private readonly syncQueue = inject(SyncQueueService);
-  private readonly offlineStorage = inject(OfflineStorageService);
-  private readonly syncScheduler = inject(SyncSchedulerService);
+  constructor(
+    private readonly syncQueue: SyncQueueService,
+    private readonly offlineStorage: OfflineStorageService,
+    private readonly syncScheduler: SyncSchedulerService,
+    private readonly currencyService: CurrencyService
+  ) { }
 
   private readonly _isResolving = signal(false);
   private readonly _currentConflict = signal<SyncQueueItem | null>(null);
@@ -127,7 +131,7 @@ export class ConflictResolutionService {
     // If this was a sale, restore the phone status in cache
     if (item.operationType === 'CREATE_SALE') {
       const payload = item.payload as OfflineSalePayload;
-      await this.offlineStorage.updateCachedPhoneStatus(payload.phoneId, 'available');
+      await this.offlineStorage.updateCachedProductStatus(payload.productId, 'available');
     }
 
     return {
@@ -337,16 +341,16 @@ export class ConflictResolutionService {
 
     if (item.operationType === 'CREATE_SALE') {
       const payload = item.payload as OfflineSalePayload;
-      localSummary = `${payload.phoneDetails.brandName} ${payload.phoneDetails.model} - $${payload.salePrice}`;
+      localSummary = `${payload.productDetails.brandName} ${payload.productDetails.model} - ${this.currencyService.format(payload.salePrice)}`;
 
       switch (conflictData.conflictType) {
-        case 'PHONE_ALREADY_SOLD':
-          title = 'Phone Already Sold';
-          description = 'This phone was sold by another user while you were offline.';
+        case 'PRODUCT_ALREADY_SOLD':
+          title = 'Product Already Sold';
+          description = 'This product was sold by another user while you were offline.';
           break;
-        case 'PHONE_NOT_AVAILABLE':
-          title = 'Phone Not Available';
-          description = 'This phone is no longer available in the inventory.';
+        case 'PRODUCT_NOT_AVAILABLE':
+          title = 'Product Not Available';
+          description = 'This product is no longer available in the inventory.';
           break;
         case 'RECEIPT_NUMBER_EXISTS':
           title = 'Receipt Number Conflict';

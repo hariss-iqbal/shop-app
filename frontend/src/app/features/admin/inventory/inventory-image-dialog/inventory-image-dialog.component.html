@@ -1,0 +1,77 @@
+<p-dialog
+  [header]="dialogHeader()"
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  [modal]="true"
+  [maximizable]="true"
+  [breakpoints]="{ '768px': '100vw' }"
+  [style]="{ width: '600px' }"
+  [contentStyle]="{ 'padding-bottom': '80px' }"
+>
+  @if (loading()) {
+    <div class="flex align-items-center justify-content-center py-6">
+      <p-progressSpinner strokeWidth="4" />
+    </div>
+  } @else {
+    <!-- Image count + Add button -->
+    <div class="flex align-items-center justify-content-between mb-3">
+      <span class="text-color-secondary text-sm">
+        {{ images().length - markedForDeletion().size }} image(s) &bull; {{ newFiles().length }} pending upload
+      </span>
+      <label class="p-button p-button-outlined p-button-sm cursor-pointer">
+        <i class="pi pi-camera mr-2"></i> Add Photos
+        <input type="file" accept="image/jpeg,image/png,image/webp"
+          multiple (change)="onFilesSelected($event)" class="hidden" />
+      </label>
+    </div>
+
+    <!-- Responsive Image Grid -->
+    <div class="grid">
+      @for (image of images(); track image.id) {
+        <div class="col-6 sm:col-4 md:col-3 p-1">
+          <div class="relative border-round overflow-hidden"
+               [class.image-marked-delete]="isMarkedForDeletion(image.id)"
+               style="aspect-ratio: 1;">
+            <img [src]="getThumbUrl(image.imageUrl)" class="w-full h-full" style="object-fit: cover;" />
+            <button class="delete-badge" (click)="toggleDeletion(image.id)"
+                    [attr.aria-label]="isMarkedForDeletion(image.id) ? 'Undo remove' : 'Remove image'">
+              <i [class]="isMarkedForDeletion(image.id) ? 'pi pi-undo' : 'pi pi-times'"></i>
+            </button>
+            @if (image.isPrimary) {
+              <span class="primary-badge">Primary</span>
+            }
+          </div>
+        </div>
+      }
+      @for (item of newFiles(); track $index) {
+        <div class="col-6 sm:col-4 md:col-3 p-1">
+          <div class="relative border-round overflow-hidden border-2 border-dashed border-primary"
+               style="aspect-ratio: 1;">
+            <img [src]="item.preview" class="w-full h-full" style="object-fit: cover;" />
+            <button class="delete-badge" (click)="removeNewFile($index)">
+              <i class="pi pi-times"></i>
+            </button>
+            <span class="new-badge">New</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (images().length === 0 && newFiles().length === 0) {
+      <div class="text-center py-6">
+        <i class="pi pi-images text-5xl text-300 mb-3" style="display: block;"></i>
+        <p class="text-600">No images yet. Tap "Add Photos" to get started.</p>
+      </div>
+    }
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex gap-2 w-full">
+      <p-button label="Cancel" severity="secondary" [outlined]="true" styleClass="flex-1"
+        (onClick)="onCancel()" [disabled]="saving()" />
+      <p-button label="Save Changes" icon="pi pi-check" styleClass="flex-1"
+        [loading]="saving()" (onClick)="onSave()"
+        [disabled]="!hasChanges()" />
+    </div>
+  </ng-template>
+</p-dialog>

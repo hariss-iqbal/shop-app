@@ -79,8 +79,7 @@ export class PaymentController {
     return [
       { value: PaymentMethod.CASH, label: 'Cash' },
       { value: PaymentMethod.CARD, label: 'Card' },
-      { value: PaymentMethod.UPI, label: 'UPI' },
-      { value: PaymentMethod.OTHER, label: 'Other' }
+      { value: PaymentMethod.BANK_TRANSFER, label: 'Bank Transfer' }
     ];
   }
 

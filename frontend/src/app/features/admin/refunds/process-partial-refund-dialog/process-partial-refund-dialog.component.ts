@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnChanges, SimpleChanges, computed } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChanges, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
@@ -24,6 +24,7 @@ import {
   Refund
 } from '../../../../models/refund.model';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
+import { CurrencyService } from '../../../../core/services/currency.service';
 
 interface RefundItemSelection extends PartialRefundableItem {
   selected: boolean;
@@ -55,8 +56,11 @@ interface RefundItemSelection extends PartialRefundableItem {
   templateUrl: './process-partial-refund-dialog.component.html'
 })
 export class ProcessPartialRefundDialogComponent implements OnChanges {
-  private refundService = inject(RefundService);
-  private toastService = inject(ToastService);
+  constructor(
+    private refundService: RefundService,
+    private toastService: ToastService,
+    private currencyService: CurrencyService
+  ) { }
 
   @Input() visible = false;
   @Input() receiptId: string | null = null;
@@ -135,7 +139,7 @@ export class ProcessPartialRefundDialogComponent implements OnChanges {
     const diff = item.returnPrice - item.unitPrice;
     if (diff === 0) return '';
     const sign = diff > 0 ? '+' : '';
-    return `${sign}$${Math.abs(diff).toFixed(2)}`;
+    return `${sign}${this.currencyService.symbol}${Math.abs(diff).toFixed(2)}`;
   }
 
   ngOnChanges(changes: SimpleChanges): void {

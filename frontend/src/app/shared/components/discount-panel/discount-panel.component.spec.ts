@@ -5,6 +5,7 @@ import { CouponService } from '../../../core/services/coupon.service';
 import { DiscountType, CouponStatus } from '../../../enums';
 import { CouponValidationResponse, DiscountConfig } from '../../../models/coupon.model';
 
+
 describe('DiscountPanelComponent', () => {
   let component: DiscountPanelComponent;
   let fixture: ComponentFixture<DiscountPanelComponent>;
@@ -339,7 +340,7 @@ describe('DiscountPanelComponent', () => {
     it('should format fixed amount discount', () => {
       const result = component.formatDiscountValue(DiscountType.FIXED_AMOUNT, 50);
       expect(result).toContain('50');
-      expect(result).toContain('$');
+      expect(result).toContain('Rs.');
     });
   });
 });

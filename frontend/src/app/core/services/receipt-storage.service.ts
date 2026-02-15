@@ -1,5 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
+import { CurrencyService } from './currency.service';
 import {
   StoredReceipt,
   StoredReceiptItem,
@@ -19,7 +20,10 @@ import {
   providedIn: 'root'
 })
 export class ReceiptStorageService {
-  private supabase = inject(SupabaseService);
+  constructor(
+    private supabase: SupabaseService,
+    private currencyService: CurrencyService
+  ) { }
 
   async getReceipts(filter?: ReceiptFilter): Promise<ReceiptListResponse> {
     const limit = filter?.limit || 20;
@@ -462,7 +466,7 @@ export class ReceiptStorageService {
 
       if (includeItems) {
         const itemsStr = receipt.items
-          .map(item => `${item.itemName} (Qty: ${item.quantity}, $${item.total.toFixed(2)})`)
+          .map(item => `${item.itemName} (Qty: ${item.quantity}, ${this.currencyService.format(item.total, { minDecimals: 2, maxDecimals: 2 })})`)
           .join('; ');
         row.push(this.escapeCsvField(itemsStr));
       }

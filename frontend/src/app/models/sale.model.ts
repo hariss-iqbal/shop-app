@@ -3,14 +3,14 @@ import { PaymentSummary, PaymentDetail } from './payment.model';
 
 /**
  * Sale Model
- * Records a completed phone sale
+ * Records a completed product sale
  * Feature: F-018 Payment Method Integration
  */
 export interface Sale {
   id: string;
-  phoneId: string;
+  productId: string;
   brandName: string;
-  phoneName: string;
+  productName: string;
   saleDate: string;
   salePrice: number;
   costPrice: number;
@@ -41,7 +41,7 @@ export interface Sale {
 }
 
 export interface CreateSaleRequest {
-  phoneId: string;
+  productId: string;
   saleDate: string;
   salePrice: number;
   buyerName?: string | null;
@@ -85,7 +85,7 @@ export interface SaleSummary {
 }
 
 export interface MarkAsSoldRequest {
-  phoneId: string;
+  productId: string;
   salePrice: number;
   saleDate: string;
   buyerName?: string | null;
@@ -101,10 +101,10 @@ export interface MarkAsSoldRequest {
 }
 
 /**
- * Cart Item - represents a phone item in the sales cart
+ * Cart Item - represents a product item in the sales cart
  */
 export interface CartItem {
-  phoneId: string;
+  productId: string;
   brandName: string;
   model: string;
   storageGb: number | null;
@@ -174,7 +174,7 @@ export interface AppliedDiscountInfo {
  */
 export interface CompleteSaleTransactionRequest {
   items: Array<{
-    phoneId: string;
+    productId: string;
     salePrice: number;
   }>;
   customerInfo: CustomerInfo;
@@ -204,6 +204,8 @@ export interface ReceiptItem {
   basePrice: number;
   /** Whether this item is tax exempt */
   isTaxExempt: boolean;
+  /** IMEI number for phone products */
+  imei?: string | null;
 }
 
 /**
@@ -542,10 +544,10 @@ export interface ResendReceiptResponse {
 }
 
 /**
- * Phone Status - inventory status
+ * Product Status - inventory status
  * Feature: F-008 Automatic Inventory Deduction
  */
-export type PhoneStatus = 'available' | 'sold' | 'reserved';
+export type ProductStatusType = 'available' | 'sold' | 'reserved';
 
 /**
  * Inventory Availability Check Result
@@ -555,17 +557,17 @@ export interface InventoryAvailabilityResult {
   allAvailable: boolean;
   hasWarnings: boolean;
   allowOversell: boolean;
-  phones: Array<{
-    phoneId: string;
+  products: Array<{
+    productId: string;
     model: string;
     brandName: string;
-    status: PhoneStatus;
+    status: ProductStatusType;
     available: boolean;
     warning?: string;
     error?: string;
   }>;
   warnings: Array<{
-    phoneId: string;
+    productId: string;
     message: string;
   }>;
 }
@@ -577,9 +579,9 @@ export interface InventoryAvailabilityResult {
 export interface SaleWithInventoryDeductionResponse {
   success: boolean;
   sale?: Sale;
-  phoneId: string;
-  previousStatus?: PhoneStatus;
-  newStatus?: PhoneStatus;
+  productId: string;
+  previousStatus?: ProductStatusType;
+  newStatus?: ProductStatusType;
   warning?: string | null;
   inventoryDeducted: boolean;
   error?: string;
@@ -595,7 +597,7 @@ export interface BatchSaleWithInventoryDeductionResponse {
   processedItems: number;
   sales?: Sale[];
   warnings?: Array<{
-    phoneId: string;
+    productId: string;
     warning: string;
   }>;
   inventoryDeducted: boolean;
@@ -609,9 +611,9 @@ export interface BatchSaleWithInventoryDeductionResponse {
 export interface InventoryDeductionLog {
   id: string;
   saleId: string | null;
-  phoneId: string;
-  previousStatus: PhoneStatus;
-  newStatus: PhoneStatus;
+  productId: string;
+  previousStatus: ProductStatusType;
+  newStatus: ProductStatusType;
   deductedAt: string;
   deductedBy: string | null;
   notes: string | null;

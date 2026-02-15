@@ -9,10 +9,11 @@ import { InputSanitizationService } from '../../../../core/services/input-saniti
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { SupabaseService } from '../../../../core/services/supabase.service';
-import { Phone } from '../../../../models/phone.model';
+import { Product } from '../../../../models/product.model';
 import { CustomerWithStats } from '../../../../models/customer.model';
-import { PhoneStatus } from '../../../../enums/phone-status.enum';
-import { PhoneCondition } from '../../../../enums/phone-condition.enum';
+import { ProductStatus } from '../../../../enums/product-status.enum';
+import { ProductCondition } from '../../../../enums/product-condition.enum';
+import { ProductType } from '../../../../enums/product-type.enum';
 
 @Component({
   selector: 'app-test-host',
@@ -56,13 +57,13 @@ describe('MarkAsSoldDialogComponent', () => {
     storageGb: 256,
     ramGb: 8,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: '123456789012345',
     costPrice: 900,
     sellingPrice: 1200,
     profitMargin: 25,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: '2024-01-15',
     supplierId: 'supplier-1',
     supplierName: 'Test Supplier',
@@ -905,13 +906,13 @@ describe('MarkAsSoldDialogComponent with TestHost', () => {
     storageGb: 256,
     ramGb: 8,
     color: 'Space Black',
-    condition: PhoneCondition.NEW,
+    condition: ProductCondition.NEW,
     batteryHealth: null,
     imei: null,
     costPrice: 900,
     sellingPrice: 1200,
     profitMargin: 25,
-    status: PhoneStatus.AVAILABLE,
+    status: ProductStatus.AVAILABLE,
     purchaseDate: null,
     supplierId: null,
     supplierName: null,

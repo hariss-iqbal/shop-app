@@ -31,7 +31,7 @@ export interface StockByBrandDto {
   count: number;
 }
 
-export interface RecentPhoneDto {
+export interface RecentProductDto {
   id: string;
   brandName: string;
   model: string;

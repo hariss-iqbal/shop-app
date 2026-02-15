@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -23,9 +23,11 @@ import { ToastService } from '../../../shared/services/toast.service';
   templateUrl: './shop-details-form.component.html'
 })
 export class ShopDetailsFormComponent implements OnInit {
-  private fb = inject(FormBuilder);
-  private shopDetailsService = inject(ShopDetailsService);
-  private toastService = inject(ToastService);
+  constructor(
+    private fb: FormBuilder,
+    private shopDetailsService: ShopDetailsService,
+    private toastService: ToastService
+  ) { }
 
   loading = signal(true);
   saving = signal(false);
@@ -38,7 +40,7 @@ export class ShopDetailsFormComponent implements OnInit {
 
   private initForm(): void {
     this.form = this.fb.group({
-      shopName: ['Spring Mobiles', Validators.required],
+      shopName: ['', Validators.required],
       tagline: [''],
       description: [''],
       address: [''],
@@ -54,9 +56,9 @@ export class ShopDetailsFormComponent implements OnInit {
       instagramUrl: [''],
       twitterUrl: [''],
       websiteUrl: [''],
-      currencyCode: ['PKR'],
-      currencyLocale: ['en-PK'],
-      currencySymbol: ['Rs.'],
+      currencyCode: [''],
+      currencyLocale: [''],
+      currencySymbol: [''],
       currencyDecimals: [0],
       logoUrl: ['']
     });

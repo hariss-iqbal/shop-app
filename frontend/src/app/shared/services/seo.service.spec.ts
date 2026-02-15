@@ -271,19 +271,19 @@ describe('SeoService', () => {
     });
   });
 
-  describe('Phone detail page SEO', () => {
-    it('should set correct meta tags for a phone detail page', () => {
+  describe('Product detail page SEO', () => {
+    it('should set correct meta tags for a product detail page', () => {
       metaService.getTag.and.returnValue(null);
 
-      const phoneConfig: SeoConfig = {
+      const productConfig: SeoConfig = {
         title: 'Apple iPhone 15 Pro 256GB',
         description: 'Buy Apple iPhone 15 Pro 256GB - New condition for $1,200. Browse specs, images, and inquire via WhatsApp.',
-        url: '/phone/phone-123',
+        url: '/product/product-123',
         image: 'https://example.com/iphone15.jpg',
         type: 'product'
       };
 
-      service.updateMetaTags(phoneConfig);
+      service.updateMetaTags(productConfig);
 
       expect(titleService.setTitle).toHaveBeenCalledWith('Apple iPhone 15 Pro 256GB | Phone Shop');
       expect(metaService.addTag).toHaveBeenCalledWith({

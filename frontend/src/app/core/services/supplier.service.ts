@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   Supplier,
@@ -13,7 +13,7 @@ import { PurchaseOrderStatus } from '../../enums';
   providedIn: 'root'
 })
 export class SupplierService {
-  private supabase = inject(SupabaseService);
+  constructor(private supabase: SupabaseService) { }
 
   async getSuppliers(): Promise<SupplierListResponse> {
     const { data, error, count } = await this.supabase

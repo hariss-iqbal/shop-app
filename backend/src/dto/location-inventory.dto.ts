@@ -4,8 +4,8 @@
  * Feature: F-024 Multi-Location Inventory Support
  */
 
-export interface AssignPhoneToLocationDto {
-  phoneId: string;
+export interface AssignProductToLocationDto {
+  productId: string;
   locationId: string;
   quantity?: number;
 }
@@ -18,14 +18,14 @@ export interface UpdateLocationInventoryDto {
 
 export interface LocationInventoryResponseDto {
   id: string;
-  phoneId: string;
+  productId: string;
   locationId: string;
   quantity: number;
   minStockLevel: number | null;
   maxStockLevel: number | null;
   createdAt: string;
   updatedAt: string | null;
-  phone?: {
+  product?: {
     id: string;
     model: string;
     status: string;
@@ -57,6 +57,6 @@ export interface LocationInventoryStatsDto {
 
 export interface LocationInventoryFilterDto {
   locationId?: string;
-  phoneId?: string;
+  productId?: string;
   lowStockOnly?: boolean;
 }

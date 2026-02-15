@@ -174,7 +174,7 @@ describe('InventoryTransferService', () => {
       const request = {
         sourceLocationId: 'loc-1',
         destinationLocationId: 'loc-2',
-        items: [{ phoneId: 'phone-456', quantity: 3, notes: null }],
+        items: [{ productId: 'phone-456', quantity: 3, notes: null }],
         notes: 'Test'
       };
 
@@ -201,7 +201,7 @@ describe('InventoryTransferService', () => {
       const result = await service.initiateTransfer({
         sourceLocationId: 'loc-1',
         destinationLocationId: 'loc-2',
-        items: [{ phoneId: 'phone-456', quantity: 100, notes: null }],
+        items: [{ productId: 'phone-456', quantity: 100, notes: null }],
         notes: null
       });
 

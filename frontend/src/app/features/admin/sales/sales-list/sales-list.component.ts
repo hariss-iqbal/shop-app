@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
@@ -40,12 +40,14 @@ import { PrintReceiptDialogComponent } from '../print-receipt-dialog/print-recei
   templateUrl: './sales-list.component.html'
 })
 export class SalesListComponent implements OnInit {
-  private saleService = inject(SaleService);
-  private toastService = inject(ToastService);
-  private csvExportService = inject(CsvExportService);
-  private receiptService = inject(ReceiptService);
-  private whatsAppService = inject(WhatsAppService);
-  private router = inject(Router);
+  constructor(
+    private saleService: SaleService,
+    private toastService: ToastService,
+    private csvExportService: CsvExportService,
+    private receiptService: ReceiptService,
+    private whatsAppService: WhatsAppService,
+    private router: Router
+  ) { }
 
   sales = signal<Sale[]>([]);
   summary = signal<SaleSummary | null>(null);
@@ -96,8 +98,8 @@ export class SalesListComponent implements OnInit {
     this.loadData();
   }
 
-  onViewPhone(sale: Sale): void {
-    this.router.navigate(['/admin/inventory', sale.phoneId, 'edit']);
+  onViewProduct(sale: Sale): void {
+    this.router.navigate(['/admin/inventory', sale.productId, 'edit']);
   }
 
   onPrintReceipt(sale: Sale): void {
@@ -115,7 +117,7 @@ export class SalesListComponent implements OnInit {
   onExportCsv(): void {
     const columns: CsvColumn<Sale>[] = [
       { header: 'Brand', field: 'brandName' },
-      { header: 'Model', field: 'phoneName' },
+      { header: 'Model', field: 'productName' },
       { header: 'Sale Price', field: 'salePrice' },
       { header: 'Cost Price', field: 'costPrice' },
       { header: 'Profit', field: 'profit' },

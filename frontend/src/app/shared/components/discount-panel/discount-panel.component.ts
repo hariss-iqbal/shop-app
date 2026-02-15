@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -13,6 +13,7 @@ import { MessageModule } from 'primeng/message';
 import { DividerModule } from 'primeng/divider';
 
 import { CouponService } from '../../../core/services/coupon.service';
+import { CurrencyService } from '../../../core/services/currency.service';
 import {
   CouponValidationResponse,
   DiscountConfig
@@ -69,7 +70,10 @@ export class DiscountPanelComponent implements OnInit {
   @Output() discountApplied = new EventEmitter<DiscountAppliedEvent>();
   @Output() discountRemoved = new EventEmitter<void>();
 
-  private couponService = inject(CouponService);
+  constructor(
+    private couponService: CouponService,
+    private currencyService: CurrencyService
+  ) { }
 
   expanded = signal(false);
   mode = signal<'coupon' | 'manual'>('coupon');
@@ -258,6 +262,6 @@ export class DiscountPanelComponent implements OnInit {
   }
 
   formatDiscountValue(type: DiscountType, value: number): string {
-    return formatDiscountValue(type, value);
+    return formatDiscountValue(type, value, this.currencyService.symbol);
   }
 }

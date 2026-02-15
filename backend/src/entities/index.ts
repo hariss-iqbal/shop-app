@@ -1,6 +1,6 @@
 export * from './brand.entity';
-export * from './phone.entity';
-export * from './phone-image.entity';
+export * from './product.entity';
+export * from './product-image.entity';
 export * from './supplier.entity';
 export * from './purchase-order.entity';
 export * from './purchase-order-item.entity';
@@ -29,3 +29,4 @@ export * from './store-location.entity';
 export * from './location-inventory.entity';
 export * from './inventory-transfer.entity';
 export * from './user-location-assignment.entity';
+export { ShopDetails, ShopDetailsInsert, ShopDetailsUpdate, OpeningHoursEntry } from './shop-details.entity';

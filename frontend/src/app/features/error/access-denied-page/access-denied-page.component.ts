@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -22,8 +22,10 @@ import { getRoleDisplayName, getRoleSeverity, UserRole } from '../../../enums/us
   styleUrls: ['./access-denied-page.component.scss']
 })
 export class AccessDeniedPageComponent {
-  authService = inject(SupabaseAuthService);
-  private router = inject(Router);
+  constructor(
+    public authService: SupabaseAuthService,
+    private router: Router
+  ) { }
 
   isLoggingOut = false;
 

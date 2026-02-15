@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, DestroyRef, NgZone } from '@angular/core';
+import { Injectable, signal, DestroyRef, NgZone } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent, merge, timer, Subject } from 'rxjs';
 import { debounceTime, filter, switchMap } from 'rxjs/operators';
@@ -27,12 +27,6 @@ import {
   providedIn: 'root'
 })
 export class SyncSchedulerService {
-  private readonly syncQueue = inject(SyncQueueService);
-  private readonly offlineStorage = inject(OfflineStorageService);
-  private readonly networkStatus = inject(NetworkStatusService);
-  private readonly supabase = inject(SupabaseService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly ngZone = inject(NgZone);
 
   private config: OfflineSyncConfig = DEFAULT_OFFLINE_SYNC_CONFIG;
   private syncInProgress = false;
@@ -46,7 +40,14 @@ export class SyncSchedulerService {
   readonly syncResults = this._syncResults.asReadonly();
   readonly isSyncing = this.syncQueue.isSyncing;
 
-  constructor() {
+  constructor(
+    private readonly syncQueue: SyncQueueService,
+    private readonly offlineStorage: OfflineStorageService,
+    private readonly networkStatus: NetworkStatusService,
+    private readonly supabase: SupabaseService,
+    private readonly destroyRef: DestroyRef,
+    private readonly ngZone: NgZone
+  ) {
     this.initializeScheduler();
   }
 
@@ -284,36 +285,36 @@ export class SyncSchedulerService {
   }> {
     const payload = item.payload as OfflineSalePayload;
 
-    // Check if phone is still available
-    const { data: phoneCheck, error: phoneError } = await this.supabase
-      .from('phones')
+    // Check if product is still available
+    const { data: productCheck, error: productError } = await this.supabase
+      .from('products')
       .select('id, status')
-      .eq('id', payload.phoneId)
+      .eq('id', payload.productId)
       .single();
 
-    if (phoneError || !phoneCheck) {
+    if (productError || !productCheck) {
       await this.syncQueue.markAsConflict(
         item.id,
-        'PHONE_NOT_AVAILABLE',
-        'The phone no longer exists in the system',
+        'PRODUCT_NOT_AVAILABLE',
+        'The product no longer exists in the system',
         null
       );
       return { success: false, isConflict: true };
     }
 
-    if (phoneCheck.status !== 'available') {
+    if (productCheck.status !== 'available') {
       await this.syncQueue.markAsConflict(
         item.id,
-        'PHONE_ALREADY_SOLD',
-        `The phone has already been marked as ${phoneCheck.status}`,
-        phoneCheck
+        'PRODUCT_ALREADY_SOLD',
+        `The product has already been marked as ${productCheck.status}`,
+        productCheck
       );
       return { success: false, isConflict: true };
     }
 
     // Process the sale using RPC
     const { data, error } = await this.supabase.rpc('complete_sale_with_inventory_deduction', {
-      p_phone_id: payload.phoneId,
+      p_product_id: payload.productId,
       p_sale_date: payload.saleDate,
       p_sale_price: payload.salePrice,
       p_buyer_name: payload.buyerName,
@@ -327,7 +328,7 @@ export class SyncSchedulerService {
       if (error.message.includes('already sold') || error.message.includes('not available')) {
         await this.syncQueue.markAsConflict(
           item.id,
-          'PHONE_ALREADY_SOLD',
+          'PRODUCT_ALREADY_SOLD',
           error.message,
           null
         );

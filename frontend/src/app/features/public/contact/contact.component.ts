@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, PLATFORM_ID } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -15,7 +15,6 @@ import { RecaptchaService } from '../../../core/services/recaptcha.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
-import { environment } from '../../../../environments/environment';
 import { CONTACT_MESSAGE_CONSTRAINTS } from '../../../constants/validation.constants';
 
 @Component({
@@ -35,15 +34,17 @@ import { CONTACT_MESSAGE_CONSTRAINTS } from '../../../constants/validation.const
   styleUrl: './contact.component.scss'
 })
 export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
-  private fb = inject(FormBuilder);
-  private sanitizer = inject(DomSanitizer);
-  private contactMessageService = inject(ContactMessageService);
-  private spamPreventionService = inject(SpamPreventionService);
-  private recaptchaService = inject(RecaptchaService);
-  private toastService = inject(ToastService);
-  private seoService = inject(SeoService);
-  private platformId = inject(PLATFORM_ID);
-  private shopDetailsService = inject(ShopDetailsService);
+  constructor(
+    private fb: FormBuilder,
+    private sanitizer: DomSanitizer,
+    private contactMessageService: ContactMessageService,
+    private spamPreventionService: SpamPreventionService,
+    private recaptchaService: RecaptchaService,
+    private toastService: ToastService,
+    private seoService: SeoService,
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private shopDetailsService: ShopDetailsService
+  ) { }
 
   @ViewChild('mapContainer') mapContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('mapIframe') mapIframe?: ElementRef<HTMLIFrameElement>;
@@ -59,31 +60,26 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapObserver: IntersectionObserver | null = null;
   private mapLoadTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  readonly businessInfo = environment.businessInfo;
-
   /** Validation constraints for contact form fields (F-058: Input Sanitization) */
   readonly constraints = CONTACT_MESSAGE_CONSTRAINTS;
 
-  phoneDisplay = computed(() => this.shopDetailsService.cachedDetails()?.phoneDisplay ?? this.businessInfo.phoneDisplay);
-  phoneLink = computed(() => this.shopDetailsService.cachedDetails()?.phoneLink ?? this.businessInfo.phoneLink);
-  emailAddress = computed(() => this.shopDetailsService.cachedDetails()?.email ?? this.businessInfo.email);
+  phoneDisplay = this.shopDetailsService.phoneDisplay;
+  phoneLink = this.shopDetailsService.phoneLink;
+  emailAddress = this.shopDetailsService.email;
   whatsappUrl = computed(() => {
-    const num = this.shopDetailsService.cachedDetails()?.whatsappNumber ?? environment.whatsapp.phoneNumber;
-    return `https://wa.me/${num}`;
+    const num = this.shopDetailsService.whatsappNumber();
+    return num ? `https://wa.me/${num}` : '#';
   });
-  businessAddress = computed(() => this.shopDetailsService.cachedDetails()?.address ?? this.businessInfo.address);
-  businessHoursWeekday = computed(() => this.shopDetailsService.cachedDetails()?.weekdayHours ?? this.businessInfo.hours.weekdays);
-  businessHoursWeekend = computed(() => this.shopDetailsService.cachedDetails()?.weekendHours ?? this.businessInfo.hours.weekend);
+  businessAddress = this.shopDetailsService.address;
+  businessHoursWeekday = this.shopDetailsService.weekdayHours;
+  businessHoursWeekend = this.shopDetailsService.weekendHours;
   mapEmbedUrl = computed(() => {
-    const url = this.shopDetailsService.cachedDetails()?.mapEmbedUrl ?? this.businessInfo.mapEmbedUrl;
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    const url = this.shopDetailsService.mapEmbedUrl();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
   });
-  mapSearchUrlComputed = computed(() => this.shopDetailsService.cachedDetails()?.mapSearchUrl ?? this.businessInfo.mapSearchUrl);
+  mapSearchUrlComputed = this.shopDetailsService.mapSearchUrl;
 
-  hasEmail = computed(() => {
-    const details = this.shopDetailsService.cachedDetails();
-    return !!details?.email;
-  });
+  hasEmail = this.shopDetailsService.hasEmail;
 
   contactForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(this.constraints.NAME_MAX)]],
@@ -94,11 +90,11 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
     website: ['']
   });
 
-
   ngOnInit(): void {
+    const name = this.shopDetailsService.shopName() || 'us';
     this.seoService.updateMetaTags({
       title: 'Contact Us',
-      description: 'Get in touch with Spring Mobiles. Send us a message for inquiries about our phones, pricing, or any questions you may have.',
+      description: `Get in touch with ${name}. Send us a message for inquiries about our phones, pricing, or any questions you may have.`,
       url: '/contact'
     });
 

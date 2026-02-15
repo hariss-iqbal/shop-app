@@ -51,11 +51,11 @@ describe('Application Routes', () => {
       expect(catalogRoute?.loadComponent).toBeDefined();
     });
 
-    it('should have phone detail route with :id parameter', () => {
+    it('should have product detail route with :id parameter', () => {
       const rootRoute = routes.find(r => r.path === '');
-      const phoneDetailRoute = rootRoute?.children?.find(r => r.path === 'phone/:id');
-      expect(phoneDetailRoute).toBeDefined();
-      expect(phoneDetailRoute?.loadComponent).toBeDefined();
+      const productDetailRoute = rootRoute?.children?.find(r => r.path === 'product/:id');
+      expect(productDetailRoute).toBeDefined();
+      expect(productDetailRoute?.loadComponent).toBeDefined();
     });
 
     it('should have contact route', () => {
@@ -241,10 +241,10 @@ describe('Application Routes', () => {
       expect(catalogRoute?.loadComponent).toBeDefined();
     });
 
-    it('AC: Given route configuration, navigating to "/phone/:id" should load PhoneDetailComponent', () => {
+    it('AC: Given route configuration, navigating to "/product/:id" should load ProductDetailComponent', () => {
       const rootRoute = routes.find(r => r.path === '');
-      const phoneDetailRoute = rootRoute?.children?.find(r => r.path === 'phone/:id');
-      expect(phoneDetailRoute?.loadComponent).toBeDefined();
+      const productDetailRoute = rootRoute?.children?.find(r => r.path === 'product/:id');
+      expect(productDetailRoute?.loadComponent).toBeDefined();
     });
 
     it('AC: Given /admin route, navigating should redirect to /admin/dashboard', () => {

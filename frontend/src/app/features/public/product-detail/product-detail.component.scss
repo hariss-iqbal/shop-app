@@ -1,0 +1,414 @@
+.product-detail-container {
+  padding-bottom: 100px;
+}
+
+@media (min-width: 992px) {
+  .product-detail-container {
+    padding-bottom: 0;
+  }
+}
+
+.gallery-container {
+  position: sticky;
+  top: 1rem;
+}
+
+.gallery-main-image-wrapper {
+  position: relative;
+}
+
+.gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 2;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+  }
+
+  i {
+    font-size: 1.25rem;
+  }
+}
+
+.gallery-nav-prev {
+  left: 0.5rem;
+}
+
+.gallery-nav-next {
+  right: 0.5rem;
+}
+
+.gallery-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-300);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: var(--primary-300);
+  }
+}
+
+.gallery-indicator-active {
+  background: var(--primary-500);
+}
+
+// Loading state
+.gallery-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.gallery-img-hidden {
+  opacity: 0 !important;
+  transition: none !important;
+}
+
+// Slide animation for image transitions
+.gallery-main-img {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-from-left {
+  animation: slideFromLeft 0.3s ease;
+}
+
+.slide-from-right {
+  animation: slideFromRight 0.3s ease;
+}
+
+@keyframes slideFromLeft {
+  0% {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideFromRight {
+  0% {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// Thumbnails - horizontal scroll strip
+.gallery-thumbs-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+
+  // Hide scrollbar but keep functionality
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.gallery-thumbnail {
+  width: 80px;
+  height: 60px;
+  min-width: 80px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  background: var(--surface-100);
+}
+
+.gallery-thumbnail:hover {
+  border-color: var(--primary-500);
+}
+
+.gallery-thumbnail-active {
+  border-color: var(--primary-500);
+}
+
+// Image counter badge
+.gallery-counter {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 2;
+  pointer-events: none;
+}
+
+// Fullscreen button
+.gallery-fullscreen-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 2;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+  }
+
+  i {
+    font-size: 1rem;
+  }
+}
+
+// Fullscreen overlay
+.gallery-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.gallery-fullscreen-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-fs-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  i {
+    font-size: 1.25rem;
+  }
+}
+
+.gallery-fs-counter {
+  position: absolute;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  z-index: 3;
+  opacity: 0.8;
+}
+
+.gallery-fs-image-wrapper {
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-fs-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  user-select: none;
+}
+
+.gallery-fs-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  i {
+    font-size: 1.5rem;
+  }
+}
+
+.gallery-fs-nav-prev {
+  left: 1rem;
+}
+
+.gallery-fs-nav-next {
+  right: 1rem;
+}
+
+.gallery-fs-thumbs {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 3;
+  overflow-x: auto;
+  max-width: 90vw;
+  padding: 0.5rem;
+}
+
+.gallery-fs-thumb {
+  width: 60px;
+  height: 45px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.gallery-fs-thumb-active {
+  border-color: white;
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.product-info {
+  position: sticky;
+  top: 1rem;
+}
+
+.price-section {
+  border: 1px solid var(--surface-200);
+}
+
+.battery-section {
+  border: 1px solid var(--surface-200);
+}
+
+:host ::ng-deep .p-progressbar.battery-excellent .p-progressbar-value {
+  background: linear-gradient(90deg, var(--green-500) 0%, var(--green-400) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-good .p-progressbar-value {
+  background: linear-gradient(90deg, var(--green-400) 0%, var(--green-300) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-fair .p-progressbar-value {
+  background: linear-gradient(90deg, var(--yellow-500) 0%, var(--yellow-400) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-poor .p-progressbar-value {
+  background: linear-gradient(90deg, var(--orange-500) 0%, var(--orange-400) 100%);
+}
+
+:host ::ng-deep .p-progressbar.battery-critical .p-progressbar-value {
+  background: linear-gradient(90deg, var(--red-500) 0%, var(--red-400) 100%);
+}
+
+.sticky-mobile-bar {
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.condition-new {
+  background: var(--green-100);
+  color: var(--green-700);
+}
+
+.condition-open-box {
+  background: var(--blue-100);
+  color: var(--blue-700);
+}
+
+.condition-used {
+  background: var(--yellow-100);
+  color: var(--yellow-700);
+}

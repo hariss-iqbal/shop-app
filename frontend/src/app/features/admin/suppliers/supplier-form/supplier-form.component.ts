@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -47,13 +47,15 @@ import { SUPPLIER_CONSTRAINTS } from '../../../../constants/validation.constants
   templateUrl: './supplier-form.component.html'
 })
 export class SupplierFormComponent implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
-  private readonly supplierService = inject(SupplierService);
-  private readonly sanitizer = inject(InputSanitizationService);
-  readonly loading = inject(LoadingService);
+  constructor(
+    private readonly fb: FormBuilder,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly toast: ToastService,
+    private readonly supplierService: SupplierService,
+    private readonly sanitizer: InputSanitizationService,
+    public readonly loading: LoadingService
+  ) { }
 
   readonly isEditMode = signal(false);
   readonly pageLoading = signal(false);
