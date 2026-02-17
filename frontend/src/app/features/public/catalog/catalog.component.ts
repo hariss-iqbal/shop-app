@@ -40,27 +40,12 @@ import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
 import { CurrencyService } from '../../../core/services/currency.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
 
-type ViewMode = 'grid' | 'list';
-type CatalogSection = 'all' | 'new-arrivals';
-
-interface BrandOption {
-  id: string | null;
-  name: string;
-  logoUrl: string | null;
-}
-
 interface SortOption {
   label: string;
   value: string;
   field: string;
   order: number;
   icon: string;
-}
-
-interface ViewOption {
-  icon: string;
-  value: ViewMode;
-  tooltip: string;
 }
 
 interface ConditionOption {
@@ -77,21 +62,6 @@ interface ActiveFilter {
   type: 'brand' | 'condition' | 'storage' | 'price' | 'search' | 'pta';
   label: string;
   value: string | number | ProductCondition;
-}
-
-interface ProductWithExtras extends Product {
-  isNewArrival: boolean;
-  hasDiscount: boolean;
-  discountPercent: number;
-  originalPrice: number | null;
-  isFeatured: boolean;
-}
-
-interface SectionOption {
-  label: string;
-  value: CatalogSection;
-  icon: string;
-  description: string;
 }
 
 @Component({
@@ -143,7 +113,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   priceMax = signal(1000);
 
   searchQuery = '';
-  selectedBrandId: string | null = null;
+  selectedBrandIds: string[] = [];
   selectedConditions: ProductCondition[] = [];
   selectedStorageValues: number[] = [];
   selectedPtaStatus: PtaStatus | null = null;
@@ -151,31 +121,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   selectedSort: SortOption;
   first = 0;
   pageSize = 12;
-  viewMode: ViewMode = 'grid';
-  currentSection: CatalogSection = 'all';
 
-  skeletonItems = Array(8).fill(0);
-
-  // Section options for AC_REDESIGN_002 & AC_REDESIGN_004
-  sectionOptions: SectionOption[] = [
-    {
-      label: 'All Products',
-      value: 'all',
-      icon: 'pi pi-th-large',
-      description: 'Browse our complete collection of products'
-    },
-    {
-      label: 'New Arrivals',
-      value: 'new-arrivals',
-      icon: 'pi pi-sparkles',
-      description: 'Discover our latest additions - freshly stocked products just for you'
-    }
-  ];
-
-  // Computed property for section info
-  currentSectionInfo = computed(() => {
-    return this.sectionOptions.find(s => s.value === this.currentSection) || null;
-  });
+  skeletonItems = Array(6).fill(0);
 
   // Filter drawer for mobile
   filterDrawerVisible = false;
@@ -188,29 +135,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
   closeFilterDrawer(): void {
     this.filterDrawerVisible = false;
   }
-
-  // Computed extras for list view (grid view uses ProductCardComponent)
-  productsWithExtras = computed((): ProductWithExtras[] => {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    return this.products().map((product) => {
-      const createdAt = new Date(product.createdAt);
-      const isNewArrival = createdAt >= sevenDaysAgo;
-      const hasDiscount = product.profitMargin >= 20;
-      const discountPercent = hasDiscount ? Math.round(product.profitMargin) : 0;
-      const originalPrice = hasDiscount
-        ? Math.round(product.sellingPrice * (1 + discountPercent / 100))
-        : null;
-
-      return { ...product, isNewArrival, hasDiscount, discountPercent, originalPrice, isFeatured: product.isFeatured };
-    });
-  });
-
-  viewOptions: ViewOption[] = [
-    { icon: 'pi pi-th-large', value: 'grid', tooltip: 'Grid View' },
-    { icon: 'pi pi-list', value: 'list', tooltip: 'List View' }
-  ];
 
   sortOptions: SortOption[] = [
     { label: 'Newest First', value: 'newest', field: 'created_at', order: -1, icon: 'pi pi-clock' },
@@ -233,16 +157,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
     { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
   ];
 
-  brandOptions = computed(() => {
-    const allOption: BrandOption = { id: null, name: 'All Brands', logoUrl: null };
-    const brandOpts: BrandOption[] = this.brands().map(b => ({
-      id: b.id,
-      name: b.name,
-      logoUrl: b.logoUrl
-    }));
-    return [allOption, ...brandOpts];
-  });
-
   storageOptions = computed((): StorageOption[] => {
     return this.availableStorageOptions().map(gb => ({
       label: `${gb}GB`,
@@ -261,13 +175,13 @@ export class CatalogComponent implements OnInit, OnDestroy {
       });
     }
 
-    if (this.selectedBrandId) {
-      const brand = this.brands().find(b => b.id === this.selectedBrandId);
+    for (const brandId of this.selectedBrandIds) {
+      const brand = this.brands().find(b => b.id === brandId);
       if (brand) {
         filters.push({
           type: 'brand',
           label: `Brand: ${brand.name}`,
-          value: this.selectedBrandId
+          value: brandId
         });
       }
     }
@@ -388,17 +302,16 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   private applyParams(params: Params): void {
-    // Apply section filter
-    const section = params['section'] as CatalogSection;
-    if (section && ['all', 'new-arrivals'].includes(section)) {
-      this.currentSection = section;
-    } else {
-      this.currentSection = 'all';
-    }
-
+    // Gracefully ignore ?section= param
     this.searchQuery = params['search'] || '';
 
-    this.selectedBrandId = params['brand'] || null;
+    // Support multi-brand from URL: ?brand=id1,id2
+    if (params['brand']) {
+      const brandParam = params['brand'] as string;
+      this.selectedBrandIds = brandParam.split(',').filter(id => id.trim().length > 0);
+    } else {
+      this.selectedBrandIds = [];
+    }
 
     if (params['condition']) {
       const conditions = params['condition'].split(',') as ProductCondition[];
@@ -473,9 +386,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
   private buildQueryParams(): Record<string, string> {
     const params: Record<string, string | null> = {};
 
-    params['section'] = this.currentSection !== 'all' ? this.currentSection : null;
     params['search'] = this.searchQuery || null;
-    params['brand'] = this.selectedBrandId || null;
+    params['brand'] = this.selectedBrandIds.length > 0
+      ? this.selectedBrandIds.join(',')
+      : null;
     params['condition'] = this.selectedConditions.length > 0
       ? this.selectedConditions.join(',')
       : null;
@@ -552,7 +466,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
       const max = this.priceMax();
       const hasPriceFilter = this.priceRange[0] > min || this.priceRange[1] < max;
 
-      // Adjust pagination params based on section
       const paginationParams: CatalogPaginationParams = {
         first: this.first,
         rows: this.pageSize,
@@ -560,17 +473,11 @@ export class CatalogComponent implements OnInit, OnDestroy {
         sortOrder: this.selectedSort.order
       };
 
-      // For "New Arrivals", always sort by newest first
-      if (this.currentSection === 'new-arrivals') {
-        paginationParams.sortField = 'created_at';
-        paginationParams.sortOrder = -1;
-      }
-
       const result = await this.productService.getCatalogProducts(
         paginationParams,
         {
           status: ProductStatus.AVAILABLE,
-          brandId: this.selectedBrandId || undefined,
+          brandIds: this.selectedBrandIds.length > 0 ? this.selectedBrandIds : undefined,
           conditions: this.selectedConditions.length > 0 ? this.selectedConditions : undefined,
           storageGbOptions: this.selectedStorageValues.length > 0 ? this.selectedStorageValues : undefined,
           minPrice: hasPriceFilter ? this.priceRange[0] : undefined,
@@ -580,18 +487,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
         }
       );
 
-      let products = result.data;
-      let total = result.total;
-
-      // Filter products based on section (client-side for now)
-      if (this.currentSection === 'new-arrivals') {
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        products = products.filter(product => new Date(product.createdAt) >= sevenDaysAgo);
-        total = products.length;
-      }
-
-      this.products.set(products);
-      this.totalRecords.set(total);
+      this.products.set(result.data);
+      this.totalRecords.set(result.total);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load products';
       this.toastService.error('Error', message);
@@ -615,7 +512,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     const max = this.priceMax();
     return !!(
       this.searchQuery ||
-      this.selectedBrandId ||
+      this.selectedBrandIds.length > 0 ||
       this.selectedConditions.length > 0 ||
       this.selectedStorageValues.length > 0 ||
       this.selectedPtaStatus ||
@@ -626,7 +523,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.searchQuery = '';
-    this.selectedBrandId = null;
+    this.selectedBrandIds = [];
     this.selectedConditions = [];
     this.selectedStorageValues = [];
     this.selectedPtaStatus = null;
@@ -642,7 +539,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
         this.searchQuery = '';
         break;
       case 'brand':
-        this.selectedBrandId = null;
+        this.selectedBrandIds = this.selectedBrandIds.filter(id => id !== filter.value);
         break;
       case 'condition':
         this.selectedConditions = this.selectedConditions.filter(c => c !== filter.value);
@@ -689,8 +586,17 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.pageSize = event.rows ?? 12;
     this.updateUrlParams();
     this.loadProducts();
-    // Scroll to top of catalog for better UX when navigating pages
     this.scrollToTop();
+  }
+
+  toggleStorageValue(value: number): void {
+    const idx = this.selectedStorageValues.indexOf(value);
+    if (idx >= 0) {
+      this.selectedStorageValues = this.selectedStorageValues.filter(v => v !== value);
+    } else {
+      this.selectedStorageValues = [...this.selectedStorageValues, value];
+    }
+    this.onFilterChange();
   }
 
   private scrollToTop(): void {
@@ -736,63 +642,14 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return this.imageOptimization.getCardImageUrl(url);
   }
 
-  getListOptimizedUrl(url: string): string {
-    return this.imageOptimization.getListImageUrl(url);
-  }
-
-  getListSrcSet(url: string): string {
-    return this.imageOptimization.getListSrcSet(url);
-  }
-
   getConditionLabel(condition: ProductCondition): string {
     return ProductConditionLabels[condition];
   }
 
-  getConditionSeverity(condition: ProductCondition): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-    switch (condition) {
-      case ProductCondition.NEW:
-        return 'success';
-      case ProductCondition.OPEN_BOX:
-        return 'info';
-      case ProductCondition.USED:
-        return 'warn';
-      default:
-        return 'secondary';
-    }
-  }
-
-  // Handle image loading errors - show default placeholder (only once)
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    // Use a default phone image from Unsplash for all phones
     if (!img.src.includes('photo-1695048133142-1a20484d2569')) {
       img.src = 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=400&fit=crop';
-    }
-  }
-
-  // Section switching for AC_REDESIGN_004
-  switchSection(section: CatalogSection): void {
-    if (this.currentSection === section) return;
-
-    this.currentSection = section;
-    this.first = 0;
-
-    // Update sort based on section
-    if (section === 'new-arrivals') {
-      this.selectedSort = this.sortOptions[0]; // Newest First
-    }
-
-    this.updateUrlParams();
-    this.loadProducts();
-  }
-
-  // Get section icon background color
-  getSectionIconBg(): string {
-    switch (this.currentSection) {
-      case 'new-arrivals':
-        return 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-      default:
-        return 'linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%)';
     }
   }
 }

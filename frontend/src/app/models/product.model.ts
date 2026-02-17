@@ -117,11 +117,13 @@ export interface ProductListResponse {
 
 export interface ProductFilter {
   brandId?: string;
+  brandIds?: string[];
   status?: ProductStatus;
   condition?: ProductCondition;
   conditions?: ProductCondition[];
   storageGb?: number;
   storageGbOptions?: number[];
+  ramGb?: number;
   minPrice?: number;
   maxPrice?: number;
   search?: string;

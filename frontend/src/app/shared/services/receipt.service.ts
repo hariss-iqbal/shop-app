@@ -445,6 +445,21 @@ export class ReceiptService {
       </div>
     ` : '';
 
+    const balanceHtml = receiptData.balance && receiptData.balance > 0 ? `
+      <div class="balance-section" style="background: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <p style="margin: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #ef4444;">REMAINING BALANCE</p>
+            <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700; color: #dc2626;">${this.formatCurrency(receiptData.balance)}</p>
+          </div>
+          <div style="background: #fee2e2; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 24px; color: #dc2626;">!</span>
+          </div>
+        </div>
+        <p style="margin: 8px 0 0 0; font-size: 12px; color: #991b1b;">This amount is outstanding and must be paid to complete the transaction.</p>
+      </div>
+    ` : '';
+
     const qrHtml = showQrCode ? `
       <div class="qr-section">
         <img src="${qrCodeUrl}" alt="Receipt QR Code" width="100" height="100" class="qr-image" />
@@ -983,6 +998,7 @@ export class ReceiptService {
     </div>
 
     ${paymentsHtml}
+    ${balanceHtml}
     ${loyaltyHtml}
     ${qrHtml}
 
@@ -1033,7 +1049,7 @@ export class ReceiptService {
    * Generate PDF receipt with professional A4 layout
    */
   generatePdf(receiptData: ReceiptData, options: { showQrCode?: boolean } = {}): void {
-    const { showQrCode = true } = options;
+    const { showQrCode = false } = options;
 
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -1041,329 +1057,15 @@ export class ReceiptService {
       format: 'a4'
     });
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    const contentWidth = pageWidth - (margin * 2);
-
-    let yPos = margin;
-
-    // Colors
-    const primaryColor: [number, number, number] = [15, 23, 42]; // #0f172a
-    const secondaryColor: [number, number, number] = [148, 163, 184]; // #94a3b8
-    const textColor: [number, number, number] = [71, 85, 105]; // #475569
-    const greenColor: [number, number, number] = [22, 163, 74]; // #16a34a
-
-    // Header - Sales Receipt Title
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(28);
-    doc.setTextColor(...primaryColor);
-    doc.text('SALES RECEIPT', margin, yPos);
-    yPos += 8;
-
-    doc.setFontSize(8);
-    doc.setTextColor(...secondaryColor);
-    doc.text('TRANSACTION RECORD', margin, yPos);
-
-    // Receipt Info (right side)
-    const infoX = pageWidth - margin;
-    let infoY = margin;
-    doc.setFontSize(8);
-
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RECEIPT #', infoX - 50, infoY, { align: 'left' });
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...primaryColor);
-    doc.text(receiptData.receiptNumber, infoX, infoY, { align: 'right' });
-    infoY += 5;
-
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DATE', infoX - 50, infoY, { align: 'left' });
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...primaryColor);
-    doc.text(receiptData.transactionDate, infoX, infoY, { align: 'right' });
-    infoY += 5;
-
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TIME', infoX - 50, infoY, { align: 'left' });
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...primaryColor);
-    doc.text(receiptData.transactionTime, infoX, infoY, { align: 'right' });
-
-    yPos += 15;
-
-    // Header divider
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
-
-    // Store Info
-    doc.setFontSize(7);
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FROM', margin, yPos);
-    yPos += 5;
-
-    doc.setFontSize(11);
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text(this.storeConfig.name, margin, yPos);
-    yPos += 5;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...textColor);
-    doc.text(this.storeConfig.address, margin, yPos);
-    yPos += 4;
-    doc.text(`Tel: ${this.storeConfig.phone}`, margin, yPos);
-    yPos += 4;
-    doc.text(this.storeConfig.email, margin, yPos);
-    yPos += 10;
-
-    // Customer Info
-    if (receiptData.customerName || receiptData.customerPhone || receiptData.customerEmail) {
-      doc.setFontSize(7);
-      doc.setTextColor(...secondaryColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text('RECIPIENT', margin, yPos);
-      yPos += 5;
-
-      if (receiptData.customerName) {
-        doc.setFontSize(11);
-        doc.setTextColor(...primaryColor);
-        doc.setFont('helvetica', 'bold');
-        doc.text(receiptData.customerName, margin, yPos);
-        yPos += 5;
-      }
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...textColor);
-      if (receiptData.customerPhone) {
-        doc.text(`Tel: ${receiptData.customerPhone}`, margin, yPos);
-        yPos += 4;
-      }
-      if (receiptData.customerEmail) {
-        doc.text(receiptData.customerEmail, margin, yPos);
-        yPos += 4;
-      }
-      yPos += 6;
-    }
-
-    // Items Table Header
-    const colWidths = {
-      description: contentWidth * 0.45,
-      unitPrice: contentWidth * 0.18,
-      qty: contentWidth * 0.12,
-      amount: contentWidth * 0.25
-    };
-
-    yPos += 5;
-    doc.setFontSize(7);
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'bold');
-
-    let colX = margin;
-    doc.text('DESCRIPTION', colX, yPos);
-    colX += colWidths.description;
-    doc.text('UNIT PRICE', colX + colWidths.unitPrice, yPos, { align: 'right' });
-    colX += colWidths.unitPrice;
-    doc.text('QTY', colX + colWidths.qty, yPos, { align: 'right' });
-    colX += colWidths.qty;
-    doc.text('AMOUNT', colX + colWidths.amount, yPos, { align: 'right' });
-
-    yPos += 2;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 6;
-
-    // Items
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-
-    receiptData.items.forEach(item => {
-      colX = margin;
-
-      doc.setTextColor(...textColor);
-      const nameLines = doc.splitTextToSize(item.name, colWidths.description - 5);
-      doc.text(nameLines, colX, yPos);
-
-      colX += colWidths.description;
-      doc.text(this.formatCurrency(item.unitPrice), colX + colWidths.unitPrice, yPos, { align: 'right' });
-
-      colX += colWidths.unitPrice;
-      doc.text(item.quantity.toString(), colX + colWidths.qty, yPos, { align: 'right' });
-
-      colX += colWidths.qty;
-      doc.setTextColor(...primaryColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text(this.formatCurrency(item.total), colX + colWidths.amount, yPos, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-
-      yPos += Math.max(nameLines.length * 4, 6);
-
-      doc.setFontSize(9);
-      yPos += 2;
-    });
-
-    // Divider before totals
-    yPos += 3;
-    doc.setDrawColor(241, 245, 249);
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
-
-    // Totals (right aligned)
-    const totalsX = pageWidth - margin - 60;
-
-    doc.setFontSize(8);
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SUBTOTAL', totalsX, yPos);
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'normal');
-    doc.text(this.formatCurrency(receiptData.subtotal), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 5;
-
-    // Discount
-    if (receiptData.discount) {
-      doc.setTextColor(...greenColor);
-      doc.setFont('helvetica', 'bold');
-      const discountLabel = receiptData.discount.couponCode
-        ? `DISCOUNT (${receiptData.discount.couponCode})`
-        : 'DISCOUNT';
-      doc.text(discountLabel, totalsX, yPos);
-      doc.text(`-${this.formatCurrency(receiptData.discount.discountAmount)}`, pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
-    }
-
-    // Total divider
-    yPos += 3;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(totalsX - 5, yPos, pageWidth - margin, yPos);
-    yPos += 8;
-
-    // Grand Total
-    doc.setFontSize(9);
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL', totalsX, yPos);
-    doc.setFontSize(18);
-    doc.text(this.formatCurrency(receiptData.finalTotal ?? receiptData.grandTotal), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 8;
-
-    // Savings note
-    if (receiptData.discount) {
-      doc.setFontSize(8);
-      doc.setTextColor(...greenColor);
-      doc.text(`You saved ${this.formatCurrency(receiptData.discount.discountAmount)}!`, pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
-    }
-
-    yPos += 10;
-
-    // Payment Details
-    if (receiptData.payments && receiptData.payments.length > 0) {
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(margin, yPos, contentWidth, 20 + (receiptData.payments.length * 8), 3, 3, 'F');
-
-      yPos += 6;
-      doc.setFontSize(7);
-      doc.setTextColor(...secondaryColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text(receiptData.payments.length > 1 ? 'PAYMENTS' : 'PAYMENT METHOD', margin + 5, yPos);
-      yPos += 6;
-
-      doc.setFontSize(9);
-      receiptData.payments.forEach(payment => {
-        doc.setTextColor(...primaryColor);
-        doc.setFont('helvetica', 'normal');
-        doc.text(this.getPaymentMethodLabel(payment.method), margin + 5, yPos);
-        doc.setFont('helvetica', 'bold');
-        doc.text(this.formatCurrency(payment.amount), pageWidth - margin - 5, yPos, { align: 'right' });
-
-        if (payment.cardLastFour) {
-          doc.setFontSize(7);
-          doc.setTextColor(...secondaryColor);
-          doc.setFont('helvetica', 'normal');
-          doc.text(`****${payment.cardLastFour}`, margin + 5, yPos + 4);
-          yPos += 4;
-        }
-        yPos += 6;
-      });
-      yPos += 8;
-    }
-
-    // QR Code
-    if (showQrCode) {
-      const qrSize = 25;
-      const qrX = (pageWidth - qrSize) / 2;
-
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(qrX - 10, yPos, qrSize + 20, qrSize + 20, 3, 3, 'F');
-
-      // QR code placeholder
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.rect(qrX, yPos + 5, qrSize, qrSize);
-
-      // QR pattern simulation
-      doc.setFillColor(100, 100, 100);
-      const gridStart = qrX + 3;
-      const cellSize = (qrSize - 6) / 7;
-      for (let i = 0; i < 7; i++) {
-        for (let j = 0; j < 7; j++) {
-          if ((i + j) % 2 === 0) {
-            doc.rect(gridStart + i * cellSize, yPos + 8 + j * cellSize, cellSize - 0.5, cellSize - 0.5, 'F');
-          }
-        }
-      }
-
-      yPos += qrSize + 10;
-      doc.setFontSize(7);
-      doc.setTextColor(...secondaryColor);
-      doc.text('Scan to verify receipt', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-    }
-
-    // Footer
-    doc.setDrawColor(241, 245, 249);
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 8;
-
-    doc.setFontSize(7);
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TERMS & NOTES', margin, yPos);
-    yPos += 6;
-
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139);
-    doc.text('This document serves as a final proof of purchase. Please retain for your records.', margin, yPos);
-    yPos += 4;
-    doc.text('Thank you for your business. We appreciate your continued support.', margin, yPos);
-
-    if (receiptData.notes) {
-      yPos += 8;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Note:', margin, yPos);
-      doc.setFont('helvetica', 'normal');
-      const noteLines = doc.splitTextToSize(receiptData.notes, contentWidth);
-      doc.text(noteLines, margin + 10, yPos);
-    }
+    this.drawProfessionalPdfContent(doc, receiptData, showQrCode);
 
     // Save PDF
     const dateForFilename = receiptData.transactionDate.replace(/[^a-zA-Z0-9]/g, '-');
     const filename = `${receiptData.receiptNumber}_${dateForFilename}.pdf`;
     doc.save(filename);
   }
+
+  /** @internal - kept for backward compat, old rendering removed */
 
   /**
    * Generate PDF as Blob for sharing via WhatsApp or Email
@@ -1447,340 +1149,400 @@ export class ReceiptService {
   /**
    * Helper method to draw PDF content (reusable for both save and blob generation)
    */
-  private drawProfessionalPdfContent(doc: jsPDF, receiptData: ReceiptData, showQrCode: boolean, qrImageData?: string | null): void {
+  private drawProfessionalPdfContent(doc: jsPDF, receiptData: ReceiptData, _showQrCode: boolean, _qrImageData?: string | null): void {
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
     const contentWidth = pageWidth - (margin * 2);
-    const halfWidth = contentWidth / 2;
 
     let yPos = margin;
 
-    const primaryColor: [number, number, number] = [15, 23, 42];
-    const secondaryColor: [number, number, number] = [148, 163, 184];
-    const textColor: [number, number, number] = [71, 85, 105];
-    const greenColor: [number, number, number] = [22, 163, 74];
-    const accentColor: [number, number, number] = [59, 130, 246]; // Blue for color highlight
+    const primaryColor: [number, number, number] = [15, 23, 42];    // #0f172a
+    const secondaryColor: [number, number, number] = [148, 163, 184]; // #94a3b8
+    const textColor: [number, number, number] = [71, 85, 105];       // #475569
+    const greenColor: [number, number, number] = [22, 163, 74];      // #16a34a
+    const bgGray: [number, number, number] = [248, 250, 252];        // #f8fafc
+    const darkBg: [number, number, number] = [30, 41, 59];           // #1e293b
 
-    // Header
-    doc.setFont('helvetica', 'normal');
+    // ===== PAYMENT STATUS BADGE =====
+    const isPartialPayment = receiptData.paymentStatus === 'partial_paid' || (receiptData.balance && receiptData.balance > 0);
+    if (isPartialPayment) {
+      doc.setFillColor(255, 247, 237); // orange-50
+      doc.roundedRect(margin, yPos, 42, 6, 3, 3, 'F');
+      doc.setFillColor(249, 115, 22); // orange-500
+      doc.circle(margin + 3.5, yPos + 3, 1, 'F');
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(194, 65, 12); // orange-700
+      doc.text('PARTIAL PAYMENT', margin + 6, yPos + 3.8);
+    } else {
+      doc.setFillColor(236, 253, 245); // emerald-50
+      doc.roundedRect(margin, yPos, 42, 6, 3, 3, 'F');
+      doc.setFillColor(34, 197, 94); // emerald-500
+      doc.circle(margin + 3.5, yPos + 3, 1, 'F');
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(21, 128, 61); // emerald-700
+      doc.text('PAYMENT COMPLETED', margin + 6, yPos + 3.8);
+    }
+    yPos += 12;
+
+    // ===== SALES RECEIPT TITLE =====
     doc.setFontSize(28);
-    doc.setTextColor(...primaryColor);
-    doc.text('SALES RECEIPT', margin, yPos);
-    yPos += 8;
-
-    doc.setFontSize(8);
-    doc.setTextColor(...secondaryColor);
-    doc.text('TRANSACTION RECORD', margin, yPos);
-
-    // Receipt Info (right side)
-    const infoX = pageWidth - margin;
-    let infoY = margin;
-    doc.setFontSize(8);
-
-    doc.setTextColor(...secondaryColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('RECEIPT #', infoX - 50, infoY, { align: 'left' });
-    doc.setFont('helvetica', 'normal');
     doc.setTextColor(...primaryColor);
-    doc.text(receiptData.receiptNumber, infoX, infoY, { align: 'right' });
-    infoY += 5;
-
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DATE', infoX - 50, infoY, { align: 'left' });
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...primaryColor);
-    doc.text(receiptData.transactionDate, infoX, infoY, { align: 'right' });
-    infoY += 5;
-
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TIME', infoX - 50, infoY, { align: 'left' });
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...primaryColor);
-    doc.text(receiptData.transactionTime, infoX, infoY, { align: 'right' });
-
-    yPos += 15;
-
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
+    doc.text('Sales Receipt', margin, yPos);
     yPos += 10;
 
-    // FROM and RECIPIENT side by side
-    const fromX = margin;
-    const toX = margin + halfWidth + 10;
-    const sectionStartY = yPos;
-
-    // FROM (left side)
-    doc.setFontSize(7);
+    // ===== DATE & RECEIPT # =====
+    const metaStartY = yPos;
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('FROM', fromX, yPos);
-
-    let fromY = yPos + 5;
-    doc.setFontSize(11);
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text(this.storeConfig.name, fromX, fromY);
-    fromY += 5;
-
+    doc.text('DATE ISSUED', margin, yPos);
+    yPos += 4;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...textColor);
-    doc.text(this.storeConfig.address, fromX, fromY);
-    fromY += 4;
-    doc.text(`Tel: ${this.storeConfig.phone}`, fromX, fromY);
-    fromY += 4;
-    doc.text(this.storeConfig.email, fromX, fromY);
+    doc.text(receiptData.transactionDate, margin, yPos);
 
-    // TO / RECIPIENT (right side) - if customer info exists
-    let toY = sectionStartY;
+    // Receipt number next to date
+    const receiptNumX = margin + 50;
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...secondaryColor);
+    doc.text('RECEIPT NUMBER', receiptNumX, metaStartY);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...textColor);
+    doc.text(`#${receiptData.receiptNumber}`, receiptNumX, metaStartY + 4);
+
+    // ===== BILL FROM / BILL TO (right side) =====
+    const rightX = margin + contentWidth * 0.6;
+    let rightY = margin;
+
+    // Bill From
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...secondaryColor);
+    doc.text('BILL FROM', rightX, rightY);
+    rightY += 4;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...primaryColor);
+    doc.text(this.storeConfig.name, rightX, rightY);
+    rightY += 4;
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...textColor);
+    doc.text(this.storeConfig.address, rightX, rightY);
+    rightY += 3.5;
+    doc.text(`Tel: ${this.storeConfig.phone}`, rightX, rightY);
+    rightY += 7;
+
+    // Bill To
     if (receiptData.customerName || receiptData.customerPhone || receiptData.customerEmail) {
-      doc.setFontSize(7);
-      doc.setTextColor(...secondaryColor);
+      doc.setFontSize(5.5);
       doc.setFont('helvetica', 'bold');
-      doc.text('TO', toX, toY);
+      doc.setTextColor(...secondaryColor);
+      doc.text('BILL TO', rightX, rightY);
+      rightY += 4;
 
-      toY += 5;
       if (receiptData.customerName) {
-        doc.setFontSize(11);
-        doc.setTextColor(...primaryColor);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.text(receiptData.customerName, toX, toY);
-        toY += 5;
+        doc.setTextColor(...primaryColor);
+        doc.text(receiptData.customerName, rightX, rightY);
+        rightY += 4;
       }
 
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...textColor);
       if (receiptData.customerPhone) {
-        doc.text(`Tel: ${receiptData.customerPhone}`, toX, toY);
-        toY += 4;
+        doc.text(`Tel: ${receiptData.customerPhone}`, rightX, rightY);
+        rightY += 3.5;
       }
       if (receiptData.customerEmail) {
-        doc.text(receiptData.customerEmail, toX, toY);
-        toY += 4;
+        doc.text(receiptData.customerEmail, rightX, rightY);
+        rightY += 3.5;
       }
     }
 
-    // Move yPos to after both sections
-    yPos = Math.max(fromY, toY) + 10;
+    yPos = Math.max(yPos + 8, rightY + 5);
 
-    // Items Table
+    // ===== ITEMS TABLE =====
+    // Table header background
+    doc.setFillColor(...bgGray);
+    doc.rect(margin, yPos, contentWidth, 8, 'F');
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    doc.line(margin, yPos + 8, pageWidth - margin, yPos + 8);
+
     const colWidths = {
-      description: contentWidth * 0.45,
-      unitPrice: contentWidth * 0.18,
+      description: contentWidth * 0.48,
       qty: contentWidth * 0.12,
-      amount: contentWidth * 0.25
+      unitPrice: contentWidth * 0.20,
+      total: contentWidth * 0.20
     };
 
-    yPos += 5;
-    doc.setFontSize(7);
-    doc.setTextColor(...primaryColor);
+    const headerY = yPos + 5.5;
+    doc.setFontSize(5.5);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...secondaryColor);
+    doc.text('DESCRIPTION', margin + 3, headerY);
+    doc.text('QTY', margin + colWidths.description + colWidths.qty / 2, headerY, { align: 'center' });
+    doc.text('UNIT PRICE', margin + colWidths.description + colWidths.qty + colWidths.unitPrice, headerY, { align: 'right' });
+    doc.text('TOTAL', pageWidth - margin - 3, headerY, { align: 'right' });
 
-    let colX = margin;
-    doc.text('DESCRIPTION', colX, yPos);
-    colX += colWidths.description;
-    doc.text('UNIT PRICE', colX + colWidths.unitPrice, yPos, { align: 'right' });
-    colX += colWidths.unitPrice;
-    doc.text('QTY', colX + colWidths.qty, yPos, { align: 'right' });
-    colX += colWidths.qty;
-    doc.text('AMOUNT', colX + colWidths.amount, yPos, { align: 'right' });
+    yPos += 8;
 
-    yPos += 2;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 6;
-
+    // Table rows
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-
     receiptData.items.forEach(item => {
-      colX = margin;
+      yPos += 4;
 
-      // Parse item name to highlight color
-      const colorMatch = item.name.match(/\s+(Black|White|Blue|Red|Green|Gold|Silver|Pink|Purple|Yellow|Orange|Gray|Grey|Space Gray|Midnight|Starlight|Sierra Blue|Alpine Green|Deep Purple|Graphite|Pacific Blue)$/i);
-      let mainName = item.name;
-      let colorName = '';
-
-      if (colorMatch) {
-        mainName = item.name.substring(0, item.name.length - colorMatch[0].length);
-        colorName = colorMatch[1];
-      }
-
-      doc.setTextColor(...textColor);
-      const nameLines = doc.splitTextToSize(mainName, colWidths.description - 5);
-      doc.text(nameLines, colX, yPos);
-
-      // Add color on a new line with accent color
-      let extraLines = 0;
-      if (colorName) {
-        const colorY = yPos + (nameLines.length * 4);
-        doc.setFontSize(8);
-        doc.setTextColor(...accentColor);
-        doc.text(`Color: ${colorName}`, colX, colorY);
-        doc.setFontSize(9);
-        extraLines++;
-      }
-
-      // Add IMEI on a new line if present
-      if (item.imei) {
-        const imeiY = yPos + (nameLines.length * 4) + (colorName ? 4 : 0);
-        doc.setFontSize(7);
-        doc.setTextColor(...secondaryColor);
-        doc.text(`IMEI: ${item.imei}`, colX, imeiY);
-        doc.setFontSize(9);
-        extraLines++;
-      }
-
-      colX += colWidths.description;
-      doc.setTextColor(...textColor);
-      doc.text(this.formatCurrency(item.unitPrice), colX + colWidths.unitPrice, yPos, { align: 'right' });
-
-      colX += colWidths.unitPrice;
-      doc.text(item.quantity.toString(), colX + colWidths.qty, yPos, { align: 'right' });
-
-      colX += colWidths.qty;
-      doc.setTextColor(...primaryColor);
+      // Item name (bold)
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(this.formatCurrency(item.total), colX + colWidths.amount, yPos, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...primaryColor);
+      const nameLines = doc.splitTextToSize(item.name, colWidths.description - 8);
+      doc.text(nameLines, margin + 3, yPos);
 
-      const extraHeight = extraLines * 4;
-      yPos += Math.max(nameLines.length * 4, 6) + 2 + extraHeight;
+      // IMEI sub-line
+      let subY = yPos + (nameLines.length * 4);
+      if (item.imei) {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...secondaryColor);
+        doc.text(`IMEI: ${item.imei}`, margin + 3, subY);
+        subY += 3.5;
+      }
+
+      // QTY
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...textColor);
+      doc.text(item.quantity.toString(), margin + colWidths.description + colWidths.qty / 2, yPos, { align: 'center' });
+
+      // Unit price
+      doc.text(this.formatCurrency(item.unitPrice), margin + colWidths.description + colWidths.qty + colWidths.unitPrice, yPos, { align: 'right' });
+
+      // Total
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...primaryColor);
+      doc.text(this.formatCurrency(item.total), pageWidth - margin - 3, yPos, { align: 'right' });
+
+      const rowHeight = Math.max((nameLines.length * 4) + (item.imei ? 3.5 : 0), 6) + 4;
+      yPos += rowHeight;
+
+      // Row divider
+      doc.setDrawColor(241, 245, 249);
+      doc.setLineWidth(0.2);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
     });
 
-    yPos += 3;
-    doc.setDrawColor(241, 245, 249);
-    doc.setLineWidth(0.3);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += 10;
 
-    // Totals
-    const totalsX = pageWidth - margin - 60;
+    // ===== BOTTOM SECTION: Notes (left) + Totals (right) =====
+    const totalsX = margin + contentWidth * 0.55;
+    const totalsWidth = contentWidth * 0.45;
+    const totalsStartY = yPos;
 
-    doc.setFontSize(8);
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SUBTOTAL', totalsX, yPos);
-    doc.setTextColor(...primaryColor);
+    // --- TOTALS (right side) ---
+    // Subtotal
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...textColor);
+    doc.text('Subtotal', totalsX, yPos);
+    doc.setTextColor(...primaryColor);
+    doc.setFont('helvetica', 'bold');
     doc.text(this.formatCurrency(receiptData.subtotal), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 5;
+    yPos += 6;
 
+    // Discount
     if (receiptData.discount) {
       doc.setTextColor(...greenColor);
-      doc.setFont('helvetica', 'bold');
+      doc.setFont('helvetica', 'normal');
       const discountLabel = receiptData.discount.couponCode
-        ? `DISCOUNT (${receiptData.discount.couponCode})`
-        : 'DISCOUNT';
+        ? `Discount (${receiptData.discount.couponCode})`
+        : 'Discount';
       doc.text(discountLabel, totalsX, yPos);
+      doc.setFont('helvetica', 'bold');
       doc.text(`-${this.formatCurrency(receiptData.discount.discountAmount)}`, pageWidth - margin, yPos, { align: 'right' });
-      yPos += 5;
+      yPos += 6;
     }
 
-    yPos += 3;
-    doc.setDrawColor(...primaryColor);
-    doc.setLineWidth(0.5);
-    doc.line(totalsX - 5, yPos, pageWidth - margin, yPos);
-    yPos += 8;
-
-    doc.setFontSize(9);
+    // Tax
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...textColor);
+    const taxLabel = `Tax (${receiptData.taxRate.toFixed(0)}%)`;
+    doc.text(taxLabel, totalsX, yPos);
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('TOTAL', totalsX, yPos);
-    doc.setFontSize(18);
-    doc.text(this.formatCurrency(receiptData.finalTotal ?? receiptData.grandTotal), pageWidth - margin, yPos, { align: 'right' });
-    yPos += 15;
+    doc.text(this.formatCurrency(receiptData.taxAmount), pageWidth - margin, yPos, { align: 'right' });
+    yPos += 4;
 
-    // QR Code
-    if (showQrCode) {
-      const qrSize = 25;
-      const qrX = (pageWidth - qrSize) / 2;
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(totalsX, yPos, pageWidth - margin, yPos);
+    yPos += 5;
 
-      // Background box
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(qrX - 10, yPos, qrSize + 20, qrSize + 20, 3, 3, 'F');
+    // ===== GRAND TOTAL DARK BLOCK =====
+    const totalBlockHeight = 22;
+    const totalBlockWidth = totalsWidth;
+    const totalBlockX = totalsX;
 
-      if (qrImageData) {
-        // Embed actual QR code image
-        try {
-          doc.addImage(qrImageData, 'PNG', qrX, yPos + 5, qrSize, qrSize);
-        } catch (e) {
-          // Fallback to placeholder if image fails
-          this.drawQrPlaceholder(doc, qrX, yPos + 5, qrSize);
-        }
-      } else {
-        // Draw placeholder pattern
-        this.drawQrPlaceholder(doc, qrX, yPos + 5, qrSize);
-      }
+    // Calculate actual amount paid from payments
+    const actualAmountPaid = receiptData.payments && receiptData.payments.length > 0
+      ? receiptData.payments.reduce((sum, p) => sum + (p.amount || 0), 0)
+      : receiptData.finalTotal ?? receiptData.grandTotal;
+    const billTotal = receiptData.finalTotal ?? receiptData.grandTotal;
+    const showAsPaid = !isPartialPayment;
 
-      yPos += qrSize + 10;
-      doc.setFontSize(7);
+    doc.setFillColor(...darkBg);
+    doc.roundedRect(totalBlockX, yPos, totalBlockWidth, totalBlockHeight, 3, 3, 'F');
+
+    // Label changes based on payment status
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255, 0.7);
+    doc.text(showAsPaid ? 'TOTAL AMOUNT PAID' : 'AMOUNT PAID', totalBlockX + 6, yPos + 7);
+
+    // PKR + Amount - show actual paid amount
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255, 0.8);
+    doc.text('PKR', totalBlockX + 6, yPos + 15);
+
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(
+      this.formatCurrency(showAsPaid ? billTotal : actualAmountPaid),
+      totalBlockX + 18,
+      yPos + 16
+    );
+
+    const totalsEndY = yPos + totalBlockHeight + 5;
+
+    // --- NOTES (left side, drawn at same vertical position as totals) ---
+    let notesY = totalsStartY;
+    const notesMaxWidth = contentWidth * 0.50;
+
+    if (receiptData.notes) {
+      // Dashed border box
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.3);
+      // We'll just draw a simple rounded rect for the notes
+      const noteLines = doc.splitTextToSize(receiptData.notes, notesMaxWidth - 12);
+      const noteBoxHeight = Math.max(noteLines.length * 4 + 14, 20);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.roundedRect(margin, notesY, notesMaxWidth, noteBoxHeight, 3, 3, 'S');
+      doc.setLineDashPattern([], 0);
+
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
       doc.setTextColor(...secondaryColor);
-      doc.text('Scan to verify receipt', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
+      doc.text('CUSTOMER NOTES', margin + 6, notesY + 6);
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...textColor);
+      doc.text(noteLines, margin + 6, notesY + 12);
+      notesY += noteBoxHeight + 5;
     }
 
-    // Footer
+    // Payment details
+    if (receiptData.payments && receiptData.payments.length > 0) {
+      const paymentBoxY = notesY;
+
+      // Calculate box height accounting for cash tendered/change lines
+      let payBoxContentHeight = 0;
+      receiptData.payments.forEach(payment => {
+        payBoxContentHeight += 5;
+        if (payment.cashTendered && payment.cashTendered > payment.amount) {
+          payBoxContentHeight += 4;
+        }
+      });
+      const payBoxHeight = payBoxContentHeight + 12;
+
+      doc.setLineDashPattern([2, 2], 0);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(margin, paymentBoxY, notesMaxWidth, payBoxHeight, 3, 3, 'S');
+      doc.setLineDashPattern([], 0);
+
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...secondaryColor);
+      doc.text(receiptData.payments.length > 1 ? 'PAYMENTS' : 'PAYMENT METHOD', margin + 6, paymentBoxY + 6);
+
+      let payY = paymentBoxY + 11;
+      receiptData.payments.forEach(payment => {
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...textColor);
+        const label = (PaymentMethodLabels as Record<string, string>)[payment.method] || payment.method;
+        doc.text(label, margin + 6, payY);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text(this.formatCurrency(payment.amount), margin + notesMaxWidth - 6, payY, { align: 'right' });
+        payY += 5;
+        // Cash tendered & change details
+        if (payment.cashTendered && payment.cashTendered > payment.amount) {
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 116, 139); // slate-500
+          doc.text(`Tendered: ${this.formatCurrency(payment.cashTendered)}`, margin + 10, payY);
+          const changeAmt = payment.changeGiven ?? (payment.cashTendered - payment.amount);
+          doc.text(`Change: ${this.formatCurrency(changeAmt)}`, margin + notesMaxWidth - 6, payY, { align: 'right' });
+          payY += 4;
+        }
+      });
+      notesY = paymentBoxY + payBoxHeight + 5;
+    }
+
+    yPos = Math.max(totalsEndY, notesY) + 5;
+
+    // ===== REMAINING BALANCE BLOCK =====
+    if (receiptData.balance && receiptData.balance > 0) {
+      const balanceBlockHeight = 16;
+      doc.setFillColor(254, 242, 242); // red-50
+      doc.setDrawColor(239, 68, 68); // red-500
+      doc.setLineWidth(0.5);
+      doc.roundedRect(margin, yPos, contentWidth, balanceBlockHeight, 3, 3, 'FD');
+
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(239, 68, 68);
+      doc.text('REMAINING BALANCE', margin + 6, yPos + 5);
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(220, 38, 38); // red-600
+      doc.text(this.formatCurrency(receiptData.balance), margin + 6, yPos + 12);
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(153, 27, 27); // red-800
+      doc.text('This amount is outstanding', pageWidth - margin - 6, yPos + 10, { align: 'right' });
+
+      yPos += balanceBlockHeight + 5;
+    }
+
+    // ===== FOOTER =====
     doc.setDrawColor(241, 245, 249);
     doc.setLineWidth(0.3);
     doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += 8;
-
-    doc.setFontSize(7);
-    doc.setTextColor(...secondaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TERMS & NOTES', margin, yPos);
-    yPos += 6;
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
-    doc.text('This document serves as a final proof of purchase. Please retain for your records.', margin, yPos);
-    yPos += 4;
-    doc.text('Thank you for your business. We appreciate your continued support.', margin, yPos);
-  }
-
-  /**
-   * Draw a placeholder QR pattern when actual QR code is not available
-   */
-  private drawQrPlaceholder(doc: jsPDF, x: number, y: number, size: number): void {
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.rect(x, y, size, size);
-
-    doc.setFillColor(50, 50, 50);
-    const cellSize = size / 7;
-
-    // Draw corner squares (QR finder patterns)
-    const drawFinderPattern = (startX: number, startY: number) => {
-      // Outer square
-      doc.setFillColor(50, 50, 50);
-      doc.rect(startX, startY, cellSize * 3, cellSize * 3, 'F');
-      // Inner white
-      doc.setFillColor(255, 255, 255);
-      doc.rect(startX + cellSize * 0.5, startY + cellSize * 0.5, cellSize * 2, cellSize * 2, 'F');
-      // Center dot
-      doc.setFillColor(50, 50, 50);
-      doc.rect(startX + cellSize, startY + cellSize, cellSize, cellSize, 'F');
-    };
-
-    drawFinderPattern(x + cellSize * 0.5, y + cellSize * 0.5);
-    drawFinderPattern(x + cellSize * 3.5, y + cellSize * 0.5);
-    drawFinderPattern(x + cellSize * 0.5, y + cellSize * 3.5);
-
-    // Add some random-looking data modules
-    doc.setFillColor(50, 50, 50);
-    const dataPositions = [
-      [4, 4], [5, 4], [4, 5], [6, 5], [5, 6], [4, 3], [6, 3]
-    ];
-    dataPositions.forEach(([col, row]) => {
-      doc.rect(x + col * cellSize, y + row * cellSize, cellSize * 0.8, cellSize * 0.8, 'F');
-    });
+    doc.text('Thank you for your business. This document serves as proof of purchase.', margin, yPos);
   }
 
   private formatDate(date: Date): string {
@@ -1863,6 +1625,12 @@ export class ReceiptService {
     if (receiptData.discount) {
       lines.push(`✨ You saved: ${this.formatCurrency(receiptData.discount.discountAmount)}!`);
     }
+
+    if (receiptData.balance && receiptData.balance > 0) {
+      lines.push('');
+      lines.push(`⚠️ *REMAINING BALANCE: ${this.formatCurrency(receiptData.balance)}*`);
+      lines.push('This amount is outstanding and must be paid.');
+    }
     lines.push('━━━━━━━━━━━━━━━━━━━━━');
 
     if (receiptData.payments && receiptData.payments.length > 0) {
@@ -1874,6 +1642,10 @@ export class ReceiptService {
           paymentLine += ` (****${payment.cardLastFour})`;
         }
         lines.push(paymentLine);
+        if (payment.cashTendered && payment.cashTendered > payment.amount) {
+          const changeAmt = payment.changeGiven ?? (payment.cashTendered - payment.amount);
+          lines.push(`   💵 Tendered: ${this.formatCurrency(payment.cashTendered)} | Change: ${this.formatCurrency(changeAmt)}`);
+        }
       });
       lines.push('━━━━━━━━━━━━━━━━━━━━━');
     }
@@ -1912,7 +1684,11 @@ export class ReceiptService {
   }
 
   generateWhatsAppLink(phoneNumber: string, message: string): string {
-    const cleanedPhone = phoneNumber.replace(/[^\d]/g, '');
+    let cleanedPhone = phoneNumber.replace(/[^\d]/g, '');
+    // Convert Pakistani local format (0xxx) to international format (92xxx)
+    if (cleanedPhone.startsWith('0')) {
+      cleanedPhone = '92' + cleanedPhone.substring(1);
+    }
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanedPhone}?text=${encodedMessage}`;
   }

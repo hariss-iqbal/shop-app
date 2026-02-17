@@ -13,6 +13,11 @@ import {
   SaleWithInventoryDeductionResponse,
   BatchSaleWithInventoryDeductionResponse
 } from '../../models/sale.model';
+import {
+  FollowUpPaymentRequest,
+  FollowUpPaymentResponse,
+  BatchPaymentHistory
+} from '../../models/payment.model';
 
 /**
  * Sale Service
@@ -52,6 +57,10 @@ export class SaleService {
 
     if (filter?.locationId) {
       query = query.eq('location_id', filter.locationId);
+    }
+
+    if (filter?.paymentStatus) {
+      query = query.eq('payment_status', filter.paymentStatus);
     }
 
     query = query.order('sale_date', { ascending: false });
@@ -169,7 +178,7 @@ export class SaleService {
       return {
         success: true,
         sale: saleData ? this.mapToSale(saleData) : undefined,
-        productId: data.phoneId,
+        productId: data.productId,
         previousStatus: data.previousStatus,
         newStatus: data.newStatus,
         warning: data.warning,
@@ -179,7 +188,7 @@ export class SaleService {
 
     return {
       success: data.success,
-      productId: data.phoneId,
+      productId: data.productId,
       inventoryDeducted: data.inventoryDeducted,
       error: data.error
     };
@@ -194,7 +203,7 @@ export class SaleService {
   async completeSaleTransaction(request: CompleteSaleTransactionRequest): Promise<BatchSaleWithInventoryDeductionResponse> {
     const { data, error } = await this.supabase.rpc('complete_batch_sale_with_inventory_deduction', {
       p_items: request.items.map(item => ({
-        phoneId: item.productId,
+        productId: item.productId,
         salePrice: item.salePrice
       })),
       p_sale_date: request.saleDate,
@@ -202,7 +211,9 @@ export class SaleService {
       p_buyer_phone: request.customerInfo.phone?.trim() || null,
       p_buyer_email: request.customerInfo.email?.trim() || null,
       p_notes: request.notes?.trim() || null,
-      p_location_id: request.locationId || null
+      p_location_id: request.locationId || null,
+      p_total_paid: request.totalPaid ?? null,
+      p_grand_total: request.grandTotal ?? null
     });
 
     if (error) {
@@ -341,6 +352,50 @@ export class SaleService {
     return data || [];
   }
 
+  /**
+   * Record a follow-up payment against a batch
+   */
+  async recordFollowUpPayment(request: FollowUpPaymentRequest): Promise<FollowUpPaymentResponse> {
+    const { data, error } = await this.supabase.rpc('record_follow_up_payment', {
+      p_batch_id: request.batchId,
+      p_amount: request.amount,
+      p_payment_method: request.paymentMethod,
+      p_payment_summary: request.paymentSummary,
+      p_notes: request.notes || null
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return {
+      success: data.success,
+      paymentId: data.paymentId,
+      batchId: data.batchId,
+      amountPaid: data.amountPaid,
+      previousBalance: data.previousBalance,
+      newBalance: data.newBalance,
+      paymentStatus: data.paymentStatus,
+      salesUpdated: data.salesUpdated,
+      error: data.error
+    };
+  }
+
+  /**
+   * Get payment history for a batch
+   */
+  async getBatchPaymentHistory(batchId: string): Promise<BatchPaymentHistory> {
+    const { data, error } = await this.supabase.rpc('get_batch_payment_history', {
+      p_batch_id: batchId
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data as BatchPaymentHistory;
+  }
+
   private mapToSale(data: Record<string, unknown>): Sale {
     const product = data['product'] as Record<string, unknown> | null;
     const brand = product ? (product['brand'] as Record<string, unknown> | null) : null;
@@ -375,7 +430,10 @@ export class SaleService {
       isSplitPayment: (data['is_split_payment'] as boolean) ?? false,
       primaryPaymentMethod: (data['primary_payment_method'] as string | null) as PaymentMethod | null,
       locationId: (data['location_id'] as string) || null,
-      locationName: location ? (location['name'] as string) : null
+      locationName: location ? (location['name'] as string) : null,
+      balance: (data['balance'] as number) ?? 0,
+      paymentStatus: (data['payment_status'] as 'paid' | 'partial_paid') ?? 'paid',
+      batchId: (data['batch_id'] as string) || null
     };
   }
 }

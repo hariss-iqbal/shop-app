@@ -162,6 +162,19 @@
             styleClass="w-full md:w-12rem"
           />
         </div>
+        <div class="flex align-items-center gap-2">
+          <label for="paymentStatus" class="font-medium white-space-nowrap">Status:</label>
+          <p-select
+            id="paymentStatus"
+            [(ngModel)]="paymentStatusFilter"
+            [options]="paymentStatusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="All"
+            styleClass="w-full md:w-10rem"
+            (onChange)="onPaymentStatusFilterChange()"
+          />
+        </div>
         @if (hasActiveFilters()) {
           <p-button
             label="Clear Filters"
@@ -213,9 +226,13 @@
               Buyer
               <p-sortIcon field="buyerName" />
             </th>
-            <th pSortableColumn="saleDate" style="width: 14%">
+            <th pSortableColumn="saleDate" style="width: 11%">
               Sale Date
               <p-sortIcon field="saleDate" />
+            </th>
+            <th pSortableColumn="paymentStatus" style="width: 10%">
+              Status
+              <p-sortIcon field="paymentStatus" />
             </th>
             <th style="width: 10%" alignFrozen="right" pFrozenColumn [frozen]="true">Actions</th>
           </tr>
@@ -264,8 +281,32 @@
               }
             </td>
             <td>{{ sale.saleDate | date:'mediumDate' }}</td>
+            <td>
+              <div class="flex flex-column gap-1">
+                @if (sale.paymentStatus === 'partial_paid') {
+                  <p-tag value="Partial Paid" severity="warn" />
+                  @if (sale.balance > 0) {
+                    <span class="text-red-500 text-xs font-semibold">{{ sale.balance | appCurrency:'1.0-0' }}</span>
+                  }
+                } @else {
+                  <p-tag value="Paid" severity="success" />
+                }
+              </div>
+            </td>
             <td alignFrozen="right" pFrozenColumn [frozen]="true">
               <div class="flex align-items-center gap-1">
+                @if (sale.paymentStatus === 'partial_paid' && sale.balance > 0) {
+                  <p-button
+                    icon="pi pi-wallet"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="warn"
+                    size="small"
+                    pTooltip="Record Payment"
+                    tooltipPosition="top"
+                    (onClick)="onRecordFollowUpPayment(sale)"
+                  />
+                }
                 @if (canSendWhatsApp(sale)) {
                   <p-button
                     icon="pi pi-whatsapp"
@@ -328,7 +369,7 @@
                   {{ summary()?.totalProfit || 0 | appCurrency:'1.2-2' }}
                 </span>
               </td>
-              <td class="font-bold" colspan="2">
+              <td class="font-bold" colspan="3">
                 Avg. Margin: {{ summary()?.averageMargin || 0 | number:'1.1-1' }}%
               </td>
               <td></td>
@@ -338,7 +379,7 @@
 
         <ng-template #emptymessage>
           <tr>
-            <td colspan="7" class="text-center p-4">
+            <td colspan="8" class="text-center p-4">
               <div class="flex flex-column align-items-center gap-3">
                 <i class="pi pi-shopping-cart text-4xl text-color-secondary"></i>
                 @if (hasActiveFilters()) {
@@ -366,6 +407,7 @@
               <td><p-skeleton width="55%" /></td>
               <td><p-skeleton width="50%" /></td>
               <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="50%" /></td>
               <td><p-skeleton shape="circle" size="2rem" /></td>
             </tr>
           }
@@ -382,4 +424,12 @@
   [visible]="showReceiptDialog()"
   (visibleChange)="showReceiptDialog.set($event)"
   (whatsAppSent)="onWhatsAppSent($event)"
+/>
+
+<!-- Follow-Up Payment Dialog -->
+<app-follow-up-payment-dialog
+  [visible]="showFollowUpDialog()"
+  [sale]="selectedFollowUpSale()"
+  (visibleChange)="showFollowUpDialog.set($event)"
+  (paymentRecorded)="onFollowUpPaymentRecorded()"
 />

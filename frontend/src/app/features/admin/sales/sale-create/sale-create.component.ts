@@ -31,7 +31,7 @@ import { ConfirmDialogService } from '../../../../shared/services/confirmation.s
 import { ReceiptService } from '../../../../shared/services/receipt.service';
 import { WhatsAppService } from '../../../../shared/services/whatsapp.service';
 import { PaymentMethodSelectorComponent } from '../../../../shared/components/payment-method-selector/payment-method-selector.component';
-import { DiscountPanelComponent, DiscountAppliedEvent } from '../../../../shared/components/discount-panel/discount-panel.component';
+import { DiscountAppliedEvent } from '../../../../shared/components/discount-panel/discount-panel.component';
 import { BarcodeScannerComponent } from '../../../../shared/components/barcode-scanner/barcode-scanner.component';
 import { LoyaltyRedemptionPanelComponent } from '../../../../shared/components/loyalty-redemption-panel/loyalty-redemption-panel.component';
 import { LoyaltyService } from '../../../../core/services/loyalty.service';
@@ -83,7 +83,6 @@ import { ImeiPromptDialogComponent } from '../imei-prompt-dialog/imei-prompt-dia
     PrintReceiptDialogComponent,
     PaymentMethodSelectorComponent,
     CustomerFormDialogComponent,
-    DiscountPanelComponent,
     BarcodeScannerComponent,
     LoyaltyRedemptionPanelComponent,
     ImeiPromptDialogComponent
@@ -130,7 +129,7 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
 
   // Payment state (F-018)
   payments: PaymentDetail[] = [];
-  paymentValidation: SplitPaymentValidation = { isValid: true, totalPaid: 0, amountDue: 0, difference: 0, message: '' };
+  paymentValidation: SplitPaymentValidation = { isValid: true, totalPaid: 0, amountDue: 0, difference: 0, message: '', isFullPayment: true, isPartialPayment: false, balance: 0 };
 
   // Discount state (F-023)
   appliedDiscount: DiscountAppliedEvent | null = null;
@@ -280,41 +279,12 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     this.searchLoading = true;
 
     try {
-      // First, find matching brand IDs
-      const { data: matchingBrands } = await this.supabaseService.client
-        .from('brands')
-        .select('id')
-        .ilike('name', `%${query}%`);
-
-      const brandIds = matchingBrands?.map((b: any) => b.id) || [];
-
-      // Then search products by model OR matching brand IDs
+      // Server-side multi-term search across brand, model, storage, color, IMEI
       const { data: products, error } = await this.supabaseService.client
-        .from('products')
-        .select(`
-          id,
-          brand_id,
-          model,
-          storage_gb,
-          color,
-          imei,
-          selling_price,
-          cost_price,
-          condition,
-          status,
-          tax_rate,
-          is_tax_inclusive,
-          is_tax_exempt,
-          product_type,
-          created_at,
-          brand:brands!brand_id(id, name, logo_url)
-        `)
-        .eq('status', 'available')
-        .or(brandIds.length > 0
-          ? `model.ilike.%${query}%,brand_id.in.(${brandIds.join(',')})`
-          : `model.ilike.%${query}%`
-        )
-        .limit(20);
+        .rpc('search_available_products', {
+          search_query: query,
+          result_limit: 20
+        });
 
       if (error) {
         throw new Error(error.message);
@@ -328,8 +298,8 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
           id: p.id,
           productId: p.id,
           brandId: p.brand_id,
-          brandName: p.brand?.name || '',
-          brandLogoUrl: p.brand?.logo_url || null,
+          brandName: p.brand_name || '',
+          brandLogoUrl: p.brand_logo_url || null,
           model: p.model,
           storageGb: p.storage_gb,
           color: p.color,
@@ -494,7 +464,15 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
   }
 
   isFormValid(): boolean {
+    // If phone is provided, name is mandatory
+    if (this.customerInfo.phone.trim().length >= 5 && !this.customerInfo.name.trim()) {
+      return false;
+    }
     return this.cartItems.length > 0 && this.saleDate !== null && this.paymentValidation.isValid;
+  }
+
+  isNameRequired(): boolean {
+    return this.customerInfo.phone.trim().length >= 5;
   }
 
   /**
@@ -620,7 +598,13 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     const summary = this.cartSummary;
 
     // Build confirmation message (F-023: use finalTotal to account for discount)
+    const isPartialPayment = this.paymentValidation.isPartialPayment;
     let confirmMessage = `Confirm sale of ${this.cartItems.length} item(s) for ${this.formatCurrency(summary.finalTotal)}?`;
+
+    if (isPartialPayment) {
+      confirmMessage += `\n\nPartial Payment: ${this.formatCurrency(this.paymentValidation.totalPaid)} paid`;
+      confirmMessage += `\nOutstanding Balance: ${this.formatCurrency(this.paymentValidation.balance)}`;
+    }
 
     if (this.appliedDiscount) {
       confirmMessage += `\n\nDiscount applied: ${this.formatCurrency(this.appliedDiscount.discountAmount)} off`;
@@ -634,12 +618,12 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
     }
 
     const confirmed = await this.confirmDialogService.confirm({
-      header: 'Complete Sale',
+      header: isPartialPayment ? 'Complete Sale (Partial Payment)' : 'Complete Sale',
       message: confirmMessage,
-      acceptLabel: 'Complete Sale',
+      acceptLabel: isPartialPayment ? 'Complete with Partial Payment' : 'Complete Sale',
       rejectLabel: 'Cancel',
-      icon: 'pi pi-check-circle',
-      acceptButtonStyleClass: 'p-button-success'
+      icon: isPartialPayment ? 'pi pi-exclamation-triangle' : 'pi pi-check-circle',
+      acceptButtonStyleClass: isPartialPayment ? 'p-button-warning' : 'p-button-success'
     });
 
     if (!confirmed) return;
@@ -653,6 +637,28 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         email: this.customerInfo.email.trim()
       };
       const sanitizedNotes = this.sanitizer.sanitizeOrNull(this.notes);
+
+      // Auto-create customer if phone is provided and customer doesn't exist yet
+      if (sanitizedCustomerInfo.phone.trim().length >= 5 && !this.selectedCustomer) {
+        try {
+          const result = await this.customerService.findOrCreate({
+            phone: sanitizedCustomerInfo.phone,
+            name: sanitizedCustomerInfo.name,
+            email: sanitizedCustomerInfo.email || undefined
+          });
+          if (result.customer) {
+            this.selectedCustomer = {
+              ...result.customer,
+              totalTransactions: 0,
+              totalSpent: 0,
+              lastPurchaseDate: null
+            } as CustomerWithStats;
+          }
+        } catch (custError) {
+          console.error('Failed to auto-create customer:', custError);
+          // Don't block sale if customer creation fails
+        }
+      }
 
       // Prepare discount info for the sale transaction (F-023)
       const discountInfo: AppliedDiscountInfo | null = this.appliedDiscount ? {
@@ -676,7 +682,9 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         saleDate: this.formatDate(this.saleDate),
         notes: sanitizedNotes,
         payments: this.payments,
-        discount: discountInfo
+        discount: discountInfo,
+        totalPaid: this.paymentValidation.totalPaid,
+        grandTotal: summary.finalTotal
       });
 
       if (!result.success) {
@@ -725,6 +733,12 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         };
         receiptData.originalTotal = summary.grandTotal;
         receiptData.finalTotal = summary.finalTotal;
+      }
+
+      // Apply balance info to receipt data (partial payment)
+      if (this.paymentValidation.isPartialPayment) {
+        receiptData.balance = this.paymentValidation.balance;
+        receiptData.paymentStatus = 'partial_paid';
       }
 
       // Apply loyalty info to receipt data (F-022)

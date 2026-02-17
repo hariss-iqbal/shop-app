@@ -558,13 +558,13 @@
               <p-inputNumber
                 id="costPrice"
                 formControlName="costPrice"
-                mode="currency"
-                currency="PKR"
+                mode="decimal"
+                [useGrouping]="true"
                 [min]="0"
                 styleClass="w-full"
                 inputStyleClass="w-full"
-                placeholder="0.00"
-                ariaLabel="Cost price in PKR"
+                placeholder="0"
+                ariaLabel="Cost price"
               />
               @if (form.controls['costPrice'].invalid && form.controls['costPrice'].touched) {
                 <small class="p-error block mt-1">Cost price is required</small>
@@ -580,13 +580,13 @@
               <p-inputNumber
                 id="sellingPrice"
                 formControlName="sellingPrice"
-                mode="currency"
-                currency="PKR"
+                mode="decimal"
+                [useGrouping]="true"
                 [min]="0"
                 styleClass="w-full"
                 inputStyleClass="w-full"
-                placeholder="0.00"
-                ariaLabel="Selling price in PKR"
+                placeholder="0"
+                ariaLabel="Selling price"
               />
               @if (form.controls['sellingPrice'].invalid && form.controls['sellingPrice'].touched) {
                 <small class="p-error block mt-1">Selling price is required</small>
@@ -797,7 +797,7 @@
             }
 
             <!-- Actions -->
-            <div class="col-12 mt-4">
+            <div class="col-12 mt-4" [class.dialog-sticky-footer]="dialogMode()">
               <p-divider />
               <div class="flex flex-column sm:flex-row justify-content-between align-items-center gap-3 mt-3">
                 <div class="text-500 text-sm">

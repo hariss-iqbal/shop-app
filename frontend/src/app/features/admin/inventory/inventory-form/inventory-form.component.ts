@@ -92,6 +92,13 @@ interface BrandSuggestion {
         opacity: 0.6 !important;
       }
     }
+    .dialog-sticky-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--p-content-background, var(--surface-card, #fff));
+      z-index: 10;
+      padding-bottom: 1rem;
+    }
   `]
 })
 export class InventoryFormComponent implements OnInit {
@@ -219,7 +226,7 @@ export class InventoryFormComponent implements OnInit {
     ramGb: [null as number | null],
     color: ['', Validators.maxLength(this.constraints.COLOR_MAX)],
     condition: [ProductCondition.NEW, Validators.required],
-    conditionRating: [null as number | null, [Validators.min(1), Validators.max(10)]],
+    conditionRating: [10, [Validators.min(1), Validators.max(10)]],
     ptaStatus: [null as PtaStatus | null],
     batteryHealth: [null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]],
     imei: ['', Validators.maxLength(this.constraints.IMEI_MAX)],
@@ -344,6 +351,11 @@ export class InventoryFormComponent implements OnInit {
         dimensions: product.dimensions || ''
       });
     }
+
+    // Auto-fetch specs if phone with brand and model present
+    if (product.productType === ProductType.PHONE && brand && product.model) {
+      this.fetchProductSpecs();
+    }
   }
 
   /**
@@ -372,7 +384,7 @@ export class InventoryFormComponent implements OnInit {
         this.form.addControl('batteryHealth', this.fb.control(null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]));
       }
       if (!this.form.get('conditionRating')) {
-        this.form.addControl('conditionRating', this.fb.control(null as number | null, [Validators.min(1), Validators.max(10)]));
+        this.form.addControl('conditionRating', this.fb.control(10, [Validators.min(1), Validators.max(10)]));
       }
       if (!this.form.get('ptaStatus')) {
         this.form.addControl('ptaStatus', this.fb.control(null as PtaStatus | null));

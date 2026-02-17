@@ -90,6 +90,12 @@ export interface SplitPaymentValidation {
   amountDue: number;
   difference: number;
   message: string;
+  /** Whether this is a full payment (totalPaid >= totalDue) */
+  isFullPayment: boolean;
+  /** Whether this is a partial payment (0 < totalPaid < totalDue) */
+  isPartialPayment: boolean;
+  /** Outstanding balance after payment */
+  balance: number;
 }
 
 /**
@@ -140,4 +146,61 @@ export function createDefaultPayment(amount: number, method: PaymentMethod = Pay
     method,
     amount
   };
+}
+
+/**
+ * Follow-up payment request
+ */
+export interface FollowUpPaymentRequest {
+  batchId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentSummary: PaymentSummary[];
+  notes?: string | null;
+}
+
+/**
+ * Follow-up payment response
+ */
+export interface FollowUpPaymentResponse {
+  success: boolean;
+  paymentId?: string;
+  batchId?: string;
+  amountPaid?: number;
+  previousBalance?: number;
+  newBalance?: number;
+  paymentStatus?: 'paid' | 'partial_paid';
+  salesUpdated?: number;
+  error?: string;
+}
+
+/**
+ * Batch payment history
+ */
+export interface BatchPaymentHistory {
+  success: boolean;
+  batchId: string;
+  grandTotal: number;
+  currentBalance: number;
+  paymentStatus: 'paid' | 'partial_paid';
+  totalFollowUpPayments: number;
+  initialPayment: number;
+  buyerName: string | null;
+  buyerPhone: string | null;
+  saleDate: string;
+  sales: Array<{
+    saleId: string;
+    productName: string;
+    brandName: string;
+    salePrice: number;
+  }>;
+  followUpPayments: Array<{
+    id: string;
+    amount: number;
+    paymentMethod: string;
+    paymentSummary: PaymentSummary[];
+    notes: string | null;
+    createdAt: string;
+  }>;
+  error?: string;
 }

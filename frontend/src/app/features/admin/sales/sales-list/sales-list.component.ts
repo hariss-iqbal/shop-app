@@ -18,6 +18,8 @@ import { WhatsAppService } from '../../../../shared/services/whatsapp.service';
 import { Sale, SaleFilter, SaleSummary, ReceiptData } from '../../../../models/sale.model';
 import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 import { PrintReceiptDialogComponent } from '../print-receipt-dialog/print-receipt-dialog.component';
+import { FollowUpPaymentDialogComponent } from '../follow-up-payment-dialog/follow-up-payment-dialog.component';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-sales-list',
@@ -35,7 +37,9 @@ import { PrintReceiptDialogComponent } from '../print-receipt-dialog/print-recei
     DatePipe,
     DecimalPipe,
     AppCurrencyPipe,
-    PrintReceiptDialogComponent
+    PrintReceiptDialogComponent,
+    FollowUpPaymentDialogComponent,
+    SelectModule
   ],
   templateUrl: './sales-list.component.html'
 })
@@ -56,10 +60,21 @@ export class SalesListComponent implements OnInit {
 
   startDate: Date | null = null;
   endDate: Date | null = null;
+  paymentStatusFilter: string | null = null;
+
+  paymentStatusOptions = [
+    { label: 'All', value: null },
+    { label: 'Paid', value: 'paid' },
+    { label: 'Partial Paid', value: 'partial_paid' }
+  ];
 
   showReceiptDialog = signal(false);
   selectedReceiptData = signal<ReceiptData | null>(null);
   selectedSaleId = signal<string | null>(null);
+
+  // Follow-up payment dialog
+  showFollowUpDialog = signal(false);
+  selectedFollowUpSale = signal<Sale | null>(null);
 
   ngOnInit(): void {
     this.loadData();
@@ -89,12 +104,28 @@ export class SalesListComponent implements OnInit {
   }
 
   hasActiveFilters(): boolean {
-    return this.startDate !== null || this.endDate !== null;
+    return this.startDate !== null || this.endDate !== null || this.paymentStatusFilter !== null;
   }
 
   clearFilters(): void {
     this.startDate = null;
     this.endDate = null;
+    this.paymentStatusFilter = null;
+    this.loadData();
+  }
+
+  onPaymentStatusFilterChange(): void {
+    this.loadData();
+  }
+
+  onRecordFollowUpPayment(sale: Sale): void {
+    this.selectedFollowUpSale.set(sale);
+    this.showFollowUpDialog.set(true);
+  }
+
+  onFollowUpPaymentRecorded(): void {
+    this.showFollowUpDialog.set(false);
+    this.selectedFollowUpSale.set(null);
     this.loadData();
   }
 
@@ -142,6 +173,10 @@ export class SalesListComponent implements OnInit {
 
     if (this.endDate) {
       filter.endDate = this.formatDate(this.endDate);
+    }
+
+    if (this.paymentStatusFilter) {
+      filter.paymentStatus = this.paymentStatusFilter as 'paid' | 'partial_paid';
     }
 
     return filter;

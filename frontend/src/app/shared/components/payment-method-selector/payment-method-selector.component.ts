@@ -156,20 +156,24 @@ export class PaymentMethodSelectorComponent implements OnInit {
   }
 
   onPaymentChange(): void {
+    // Create new object references so signal change detection triggers re-render
+    this.payments.update(payments => payments.map(p => {
+      const changeGiven = (p.method === PaymentMethod.CASH && p.cashTendered && p.cashTendered >= p.amount)
+        ? p.cashTendered - p.amount
+        : null;
+      return { ...p, changeGiven };
+    }));
     this.emitChanges();
   }
 
   onCashTenderedChange(index: number): void {
-    this.payments.update(payments => {
-      const updated = [...payments];
-      const payment = updated[index];
-      if (payment.cashTendered && payment.cashTendered >= payment.amount) {
-        payment.changeGiven = payment.cashTendered - payment.amount;
-      } else {
-        payment.changeGiven = null;
-      }
-      return updated;
-    });
+    this.payments.update(payments => payments.map((p, i) => {
+      if (i !== index) return p;
+      const changeGiven = (p.cashTendered && p.cashTendered >= p.amount)
+        ? p.cashTendered - p.amount
+        : null;
+      return { ...p, changeGiven };
+    }));
     this.emitChanges();
   }
 

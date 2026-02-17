@@ -3,6 +3,7 @@
     [value]="getStatusLabel(product().status)"
     [severity]="getStatusSeverity(product().status)"
     [attr.aria-label]="'Product status: ' + getStatusLabel(product().status)"
+    styleClass="w-6rem text-center"
   />
   <p-button
     icon="pi pi-chevron-down"

@@ -1,0 +1,115 @@
+<p-dialog
+  header="Record Follow-Up Payment"
+  [visible]="visible()"
+  [modal]="true"
+  [style]="{ width: '700px', 'max-width': '95vw' }"
+  (visibleChange)="onClose()"
+  [closable]="!saving()"
+>
+  @if (loading()) {
+    <div class="flex justify-content-center p-4">
+      <p-progressSpinner strokeWidth="4" />
+    </div>
+  } @else if (sale()) {
+    <div class="flex flex-column gap-4">
+      <!-- Batch Summary -->
+      <div class="surface-ground border-round p-3">
+        <div class="flex align-items-center gap-2 mb-3">
+          <i class="pi pi-info-circle text-primary"></i>
+          <span class="font-semibold">Transaction Summary</span>
+        </div>
+        <div class="grid">
+          <div class="col-6">
+            <span class="text-color-secondary text-sm block">Customer</span>
+            <span class="font-medium">{{ sale()!.buyerName || 'N/A' }}</span>
+          </div>
+          <div class="col-6">
+            <span class="text-color-secondary text-sm block">Sale Date</span>
+            <span class="font-medium">{{ sale()!.saleDate }}</span>
+          </div>
+        </div>
+
+        @if (batchHistory()?.sales) {
+          <p-divider />
+          <span class="text-color-secondary text-sm block mb-2">Items in this transaction</span>
+          <p-table [value]="batchHistory()!.sales" styleClass="p-datatable-sm">
+            <ng-template #body let-item>
+              <tr>
+                <td>{{ item.brandName }} {{ item.productName }}</td>
+                <td class="text-right font-medium">{{ item.salePrice | currency:'PKR' }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </div>
+
+      <!-- Outstanding Balance -->
+      <div class="flex align-items-center justify-content-between p-3 bg-red-100 border-round border-1 border-red-300">
+        <div class="flex flex-column">
+          <span class="text-sm text-red-700 font-medium">Outstanding Balance</span>
+          <span class="text-2xl font-bold text-red-700">{{ currentBalance | currency:'PKR' }}</span>
+        </div>
+        <div class="w-3rem h-3rem border-circle bg-red-200 flex align-items-center justify-content-center">
+          <i class="pi pi-exclamation-triangle text-red-700 text-xl"></i>
+        </div>
+      </div>
+
+      <!-- Previous Follow-Up Payments -->
+      @if (batchHistory()?.followUpPayments && batchHistory()!.followUpPayments.length > 0) {
+        <div class="surface-ground border-round p-3">
+          <span class="text-color-secondary text-sm font-medium block mb-2">Previous Follow-Up Payments</span>
+          @for (payment of batchHistory()!.followUpPayments; track payment.id) {
+            <div class="flex justify-content-between align-items-center py-2 border-bottom-1 surface-border">
+              <div class="flex flex-column">
+                <span class="font-medium">{{ payment.amount | currency:'PKR' }}</span>
+                <span class="text-xs text-color-secondary">{{ payment.createdAt | date:'medium' }}</span>
+              </div>
+              <p-tag [value]="payment.paymentMethod" severity="secondary" />
+            </div>
+          }
+        </div>
+      }
+
+      <p-divider />
+
+      <!-- Payment Method Selector -->
+      <app-payment-method-selector
+        [totalDue]="currentBalance"
+        (paymentsChange)="onPaymentsChange($event)"
+        (validationChange)="onPaymentValidationChange($event)"
+      />
+
+      <!-- Notes -->
+      <p-floatlabel variant="on">
+        <textarea
+          pTextarea
+          id="followUpNotes"
+          [(ngModel)]="notes"
+          [maxlength]="500"
+          rows="2"
+          [autoResize]="true"
+          class="w-full"
+        ></textarea>
+        <label for="followUpNotes">Payment Notes</label>
+      </p-floatlabel>
+
+      <!-- Action Button -->
+      <p-button
+        label="Record Payment"
+        icon="pi pi-wallet"
+        severity="success"
+        styleClass="w-full"
+        [loading]="saving()"
+        [disabled]="!paymentValidation.isValid || paymentValidation.totalPaid <= 0"
+        (onClick)="onRecordPayment()"
+      />
+    </div>
+  }
+</p-dialog>
+
+<!-- Follow-Up Receipt Dialog -->
+<app-print-receipt-dialog
+  [receiptData]="followUpReceiptData()"
+  [visible]="showReceiptDialog()"
+  (visibleChange)="onReceiptDialogClose($event)"
+/>

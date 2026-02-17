@@ -83,6 +83,10 @@ export class ProductService {
       query = query.eq('storage_gb', filter.storageGb);
     }
 
+    if (filter?.ramGb) {
+      query = query.eq('ram_gb', filter.ramGb);
+    }
+
     if (filter?.minPrice !== undefined && filter?.minPrice !== null) {
       query = query.gte('selling_price', filter.minPrice);
     }
@@ -189,7 +193,9 @@ export class ProductService {
       query = query.eq('status', filter.status);
     }
 
-    if (filter?.brandId) {
+    if (filter?.brandIds && filter.brandIds.length > 0) {
+      query = query.in('brand_id', filter.brandIds);
+    } else if (filter?.brandId) {
       query = query.eq('brand_id', filter.brandId);
     }
 
@@ -203,6 +209,10 @@ export class ProductService {
       query = query.in('storage_gb', filter.storageGbOptions);
     } else if (filter?.storageGb) {
       query = query.eq('storage_gb', filter.storageGb);
+    }
+
+    if (filter?.ramGb) {
+      query = query.eq('ram_gb', filter.ramGb);
     }
 
     if (filter?.minPrice !== undefined && filter?.minPrice !== null) {
@@ -485,7 +495,7 @@ export class ProductService {
     const { data, error } = await this.supabase
       .from('products')
       .select('storage_gb')
-      .eq('status', ProductStatus.AVAILABLE);
+      .not('storage_gb', 'is', null);
 
     if (error) {
       throw new Error(error.message);
@@ -493,6 +503,20 @@ export class ProductService {
 
     const storageValues = [...new Set((data || []).map(p => p.storage_gb as number).filter(gb => gb != null))];
     return storageValues.sort((a, b) => a - b);
+  }
+
+  async getDistinctRamOptions(): Promise<number[]> {
+    const { data, error } = await this.supabase
+      .from('products')
+      .select('ram_gb')
+      .not('ram_gb', 'is', null);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const ramValues = [...new Set((data || []).map(p => p.ram_gb as number).filter(gb => gb != null))];
+    return ramValues.sort((a, b) => a - b);
   }
 
   async getDistinctModelsByBrand(brandId: string): Promise<string[]> {

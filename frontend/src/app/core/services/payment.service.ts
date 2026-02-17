@@ -79,21 +79,25 @@ export class PaymentService {
 
   /**
    * Validate split payment totals
+   * Allows partial payments (any positive amount is valid)
    */
   validateSplitPayment(payments: PaymentDetail[], totalDue: number): SplitPaymentValidation {
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const difference = totalPaid - totalDue;
     const tolerance = 0.01; // Allow 1 cent tolerance for rounding
 
-    const isValid = Math.abs(difference) <= tolerance;
+    const isFullPayment = totalPaid >= totalDue - tolerance;
+    const isPartialPayment = totalPaid > 0 && totalPaid < totalDue - tolerance;
+    const isValid = totalPaid > 0; // Any positive payment is valid
+    const balance = Math.max(totalDue - totalPaid, 0);
 
     let message = '';
-    if (isValid) {
+    if (isFullPayment) {
       message = 'Payment amounts match total due';
-    } else if (totalPaid < totalDue) {
-      message = `Short by ${this.formatCurrency(Math.abs(difference))}`;
+    } else if (isPartialPayment) {
+      message = `Partial payment: ${this.formatCurrency(balance)} remaining balance`;
     } else {
-      message = `Over by ${this.formatCurrency(difference)}`;
+      message = 'Enter a payment amount';
     }
 
     return {
@@ -101,7 +105,10 @@ export class PaymentService {
       totalPaid,
       amountDue: totalDue,
       difference,
-      message
+      message,
+      isFullPayment,
+      isPartialPayment,
+      balance
     };
   }
 

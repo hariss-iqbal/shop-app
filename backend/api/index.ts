@@ -33,10 +33,10 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/phones/fetch-specs
- * Fetch phone specifications from GSMArena
+ * POST /api/products/fetch-specs
+ * Fetch product specifications from GSMArena
  */
-app.post('/api/phones/fetch-specs', async (req: Request, res: Response) => {
+app.post('/api/products/fetch-specs', async (req: Request, res: Response) => {
   try {
     const { brand, model } = req.body;
 
@@ -70,9 +70,9 @@ app.post('/api/phones/fetch-specs', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/phones/cache-stats
+ * GET /api/products/cache-stats
  */
-app.get('/api/phones/cache-stats', (req: Request, res: Response) => {
+app.get('/api/products/cache-stats', (req: Request, res: Response) => {
   const stats = scraperService.getCacheStats();
   res.json({
     success: true,
@@ -81,9 +81,9 @@ app.get('/api/phones/cache-stats', (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/phones/clear-cache
+ * POST /api/products/clear-cache
  */
-app.post('/api/phones/clear-cache', (req: Request, res: Response) => {
+app.post('/api/products/clear-cache', (req: Request, res: Response) => {
   scraperService.clearCache();
   res.json({
     success: true,

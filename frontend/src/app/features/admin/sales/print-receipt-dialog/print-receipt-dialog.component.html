@@ -200,212 +200,126 @@
     </div>
   }
 
-  <!-- Professional Receipt Preview -->
+  <!-- Modern Receipt Preview -->
   @if (receiptData()) {
-    <div class="receipt-container">
-      <!-- Header -->
-      <header class="receipt-header">
-        <div class="header-left">
-          <h1 class="receipt-title">Sales Receipt</h1>
-          <p class="receipt-subtitle">Transaction Record</p>
-        </div>
-        <div class="header-right">
-          <div class="info-grid">
-            <span class="info-label">Receipt #</span>
-            <span class="info-value">{{ receiptData()!.receiptNumber }}</span>
-            <span class="info-label">Date</span>
-            <span class="info-value">{{ receiptData()!.transactionDate }}</span>
-            <span class="info-label">Time</span>
-            <span class="info-value">{{ receiptData()!.transactionTime }}</span>
+    <div class="receipt-container" #receiptEl>
+      <!-- Header Section -->
+      <div class="receipt-header-section">
+        <div class="receipt-header-left">
+          <div class="payment-badge" [class.payment-badge-partial]="receiptData()!.paymentStatus === 'partial_paid'">
+            <span class="badge-dot"></span>
+            {{ receiptData()!.paymentStatus === 'partial_paid' ? 'Partial Payment' : 'Payment Completed' }}
+          </div>
+          <h2 class="receipt-main-title">Sales Receipt</h2>
+          <div class="receipt-meta">
+            <div class="meta-item">
+              <span class="meta-label">Date Issued</span>
+              <span class="meta-value">{{ receiptData()!.transactionDate }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Receipt Number</span>
+              <span class="meta-value">#{{ receiptData()!.receiptNumber }}</span>
+            </div>
           </div>
         </div>
-      </header>
-
-      <!-- Store Info -->
-      <div class="store-section">
-        <p class="section-label">From</p>
-        <div class="store-info">
-          <p class="store-name">{{ storeConfig.name }}</p>
-          <p>{{ storeConfig.address }}</p>
-          <p>Tel: {{ storeConfig.phone }}</p>
-          <p>{{ storeConfig.email }}</p>
+        <div class="receipt-header-right">
+          <div class="parties-grid">
+            <div class="party-block">
+              <p class="party-label">Bill From</p>
+              <p class="party-name">{{ storeConfig.name }}</p>
+              <p class="party-detail">{{ storeConfig.address }}</p>
+              <p class="party-detail">Tel: {{ storeConfig.phone }}</p>
+            </div>
+            @if (receiptData()!.customerName || receiptData()!.customerPhone || receiptData()!.customerEmail) {
+              <div class="party-block">
+                <p class="party-label">Bill To</p>
+                @if (receiptData()!.customerName) {
+                  <p class="party-name">{{ receiptData()!.customerName }}</p>
+                }
+                @if (receiptData()!.customerPhone) {
+                  <p class="party-detail">Tel: {{ receiptData()!.customerPhone }}</p>
+                }
+                @if (receiptData()!.customerEmail) {
+                  <p class="party-detail">{{ receiptData()!.customerEmail }}</p>
+                }
+              </div>
+            }
+          </div>
         </div>
       </div>
 
-      <!-- Customer Info -->
-      @if (receiptData()!.customerName || receiptData()!.customerPhone || receiptData()!.customerEmail) {
-        <div class="customer-section">
-          <p class="section-label">Recipient</p>
-          <div class="customer-info">
-            @if (receiptData()!.customerName) {
-              <p class="customer-name">{{ receiptData()!.customerName }}</p>
-            }
-            @if (receiptData()!.customerPhone) {
-              <p>Tel: {{ receiptData()!.customerPhone }}</p>
-            }
-            @if (receiptData()!.customerEmail) {
-              <p>{{ receiptData()!.customerEmail }}</p>
-            }
-          </div>
-        </div>
-      }
-
       <!-- Items Table -->
-      <div class="items-section">
+      <div class="items-table-wrapper">
         <table class="items-table">
           <thead>
             <tr>
-              <th class="text-left">Description</th>
-              <th class="text-right">Unit Price</th>
-              <th class="text-right">Qty</th>
-              <th class="text-right">Amount</th>
+              <th class="th-description">Description</th>
+              <th class="th-qty">QTY</th>
+              <th class="th-price">Unit Price</th>
+              <th class="th-total">Total</th>
             </tr>
           </thead>
           <tbody>
             @for (item of receiptData()!.items; track $index) {
               <tr>
-                <td class="item-description">
+                <td class="td-description">
                   <span class="item-name">{{ item.name }}</span>
                   @if (item.imei) {
-                    <span class="imei-info">IMEI: {{ item.imei }}</span>
+                    <span class="item-sub">IMEI: {{ item.imei }}</span>
                   }
                 </td>
-                <td class="text-right item-price">{{ item.unitPrice | appCurrency:'1.2-2' }}</td>
-                <td class="text-right item-qty">{{ item.quantity }}</td>
-                <td class="text-right item-total">{{ item.total | appCurrency:'1.2-2' }}</td>
+                <td class="td-qty">{{ item.quantity }}</td>
+                <td class="td-price">{{ item.unitPrice | number:'1.2-2' }}</td>
+                <td class="td-total">{{ item.total | number:'1.2-2' }}</td>
               </tr>
             }
           </tbody>
         </table>
       </div>
 
-      <!-- Totals Section -->
-      <div class="totals-section">
-        <div class="totals-wrapper">
-          <div class="totals-row">
-            <span class="totals-label">Subtotal</span>
-            <span class="totals-value">{{ receiptData()!.subtotal | appCurrency:'1.2-2' }}</span>
-          </div>
+      <!-- Spacer -->
+      <div class="receipt-spacer"></div>
 
-          <!-- Discount -->
-          @if (receiptData()!.discount) {
-            <div class="totals-row discount-row">
-              <span class="totals-label">
-                <i class="pi pi-tag mr-1"></i>
-                Discount
-                @if (receiptData()!.discount!.couponCode) {
-                  <span class="coupon-code">({{ receiptData()!.discount!.couponCode }})</span>
+      <!-- Footer: Payment Method + Grand Total + Divider -->
+      <div class="receipt-footer">
+        <div class="receipt-footer-content">
+          @if (receiptData()!.payments && receiptData()!.payments!.length > 0) {
+            <div class="receipt-footer-payment">
+              <p class="footer-payment-label">{{ receiptData()!.payments!.length > 1 ? 'Payments' : 'Payment Method' }}</p>
+              @for (payment of receiptData()!.payments; track $index) {
+                <div class="footer-payment-row">
+                  <span class="footer-payment-method">{{ getPaymentMethodLabel(payment.method) }}</span>
+                  <span class="footer-payment-amount">{{ payment.amount | number:'1.2-2' }}</span>
+                </div>
+                @if (payment.cashTendered && payment.cashTendered > payment.amount) {
+                  <div class="footer-cash-details">
+                    <span>Tendered: {{ payment.cashTendered | number:'1.2-2' }}</span>
+                    <span>Change: {{ (payment.changeGiven ?? payment.cashTendered - payment.amount) | number:'1.2-2' }}</span>
+                  </div>
                 }
-              </span>
-              <span class="totals-value">-{{ receiptData()!.discount!.discountAmount | appCurrency:'1.2-2' }}</span>
+              }
             </div>
           }
-
-          <div class="totals-divider"></div>
-
-          <div class="totals-row grand-total-row">
-            <span class="grand-total-label">Total</span>
-            <span class="grand-total-value">{{ receiptData()!.finalTotal ?? receiptData()!.grandTotal | appCurrency:'1.2-2' }}</span>
+          <div class="grand-total-block">
+            <p class="grand-total-label">{{ receiptData()!.paymentStatus === 'partial_paid' ? 'Amount Paid' : 'Total Amount Paid' }}</p>
+            <div class="grand-total-amount">
+              <span class="grand-total-currency">PKR</span>
+              <span class="grand-total-value">{{ getDisplayAmountPaid() | number:'1.2-2' }}</span>
+            </div>
           </div>
-
-          <!-- Savings Note -->
-          @if (receiptData()!.discount) {
-            <div class="savings-note">
-              <span>Original: {{ receiptData()!.grandTotal | appCurrency:'1.2-2' }}</span>
-              <span class="savings-amount">You saved {{ receiptData()!.discount!.discountAmount | appCurrency:'1.2-2' }}!</span>
+          @if (receiptData()!.balance && receiptData()!.balance! > 0) {
+            <div class="remaining-balance-block">
+              <p class="remaining-balance-label">Remaining Balance</p>
+              <div class="remaining-balance-amount">
+                <span class="remaining-balance-currency">PKR</span>
+                <span class="remaining-balance-value">{{ receiptData()!.balance | number:'1.2-2' }}</span>
+              </div>
+              <p class="remaining-balance-note">This amount is outstanding</p>
             </div>
           }
         </div>
+        <div class="receipt-footer-divider"></div>
       </div>
-
-      <!-- Payment Details -->
-      @if (receiptData()!.payments && receiptData()!.payments!.length > 0) {
-        <div class="payment-section">
-          <p class="section-label">
-            <i class="pi pi-credit-card mr-2"></i>
-            {{ receiptData()!.payments!.length > 1 ? 'Payments' : 'Payment Method' }}
-          </p>
-          <div class="payment-details">
-            @for (payment of receiptData()!.payments; track $index) {
-              <div class="payment-row">
-                <div class="payment-info">
-                  <span class="payment-method">{{ getPaymentMethodLabel(payment.method) }}</span>
-                  @if (payment.cardLastFour) {
-                    <span class="card-last-four">****{{ payment.cardLastFour }}</span>
-                  }
-                  @if (payment.transactionReference) {
-                    <span class="transaction-ref">Ref: {{ payment.transactionReference }}</span>
-                  }
-                </div>
-                <span class="payment-amount">{{ payment.amount | appCurrency:'1.2-2' }}</span>
-              </div>
-              @if (payment.cashTendered && payment.cashTendered > payment.amount) {
-                <div class="cash-details">
-                  <span>Tendered: {{ payment.cashTendered | appCurrency:'1.2-2' }}</span>
-                  @if (payment.changeGiven) {
-                    <span>Change: {{ payment.changeGiven | appCurrency:'1.2-2' }}</span>
-                  }
-                </div>
-              }
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Loyalty Points -->
-      @if (receiptData()!.loyalty) {
-        <div class="loyalty-section">
-          <div class="loyalty-header">
-            <span class="loyalty-title">
-              <i class="pi pi-star-fill mr-2"></i>
-              Loyalty Points
-            </span>
-            <span class="loyalty-tier">{{ receiptData()!.loyalty!.tier }}</span>
-          </div>
-          <div class="loyalty-details">
-            <div class="loyalty-row">
-              @if (receiptData()!.loyalty!.pointsEarned > 0) {
-                <div class="loyalty-item">
-                  <span class="loyalty-label">Points Earned</span>
-                  <span class="points-earned">+{{ receiptData()!.loyalty!.pointsEarned | number }}</span>
-                </div>
-              }
-              @if (receiptData()!.loyalty!.pointsRedeemed > 0) {
-                <div class="loyalty-item">
-                  <span class="loyalty-label">Points Redeemed</span>
-                  <span class="points-redeemed">-{{ receiptData()!.loyalty!.pointsRedeemed | number }}</span>
-                </div>
-              }
-              <div class="loyalty-item">
-                <span class="loyalty-label">New Balance</span>
-                <span class="loyalty-balance">{{ receiptData()!.loyalty!.balanceAfter | number }} pts</span>
-              </div>
-            </div>
-            @if (receiptData()!.loyalty!.tierMultiplier > 1) {
-              <div class="tier-bonus">
-                {{ receiptData()!.loyalty!.tierMultiplier }}x tier bonus applied
-              </div>
-            }
-            @if (receiptData()!.loyalty!.redemptionDiscount > 0) {
-              <div class="redemption-discount">
-                Points Discount Applied: -{{ receiptData()!.loyalty!.redemptionDiscount | appCurrency:'1.2-2' }}
-              </div>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Footer -->
-      <footer class="receipt-footer">
-        <p class="section-label">Terms & Notes</p>
-        <div class="footer-content">
-          <p>This document serves as a final proof of purchase. Please retain for your records.</p>
-          <p>Thank you for your business. We appreciate your continued support.</p>
-          @if (receiptData()!.notes) {
-            <p class="receipt-notes"><strong>Note:</strong> {{ receiptData()!.notes }}</p>
-          }
-        </div>
-      </footer>
     </div>
   }
 

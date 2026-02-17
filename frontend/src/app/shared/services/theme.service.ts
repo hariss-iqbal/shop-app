@@ -11,8 +11,8 @@ const themeStorageLabels: Record<ThemeMode, string> = {
 
 // Browser chrome colors for mobile devices
 const themeColors: Record<ThemeMode, string> = {
-  [ThemeMode.LIGHT]: '#3B82F6',
-  [ThemeMode.DARK]: '#1e293b'
+  [ThemeMode.LIGHT]: '#f5f7f8',
+  [ThemeMode.DARK]: '#0c1220'
 };
 
 @Injectable({

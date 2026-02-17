@@ -1,155 +1,84 @@
-<div class="surface-card border-round-xl h-full cursor-pointer p-3 hover:surface-ground transition-all"
-     (click)="navigateToDetail()">
-  <div class="relative mb-3 overflow-hidden border-round-lg" style="height: 200px;">
-    <!-- Badges -->
+<div class="product-card-new" (click)="navigateToDetail()">
+  <!-- Image Area -->
+  <div class="card-image-area">
+    <!-- Badge (top-left) -->
     @if (showBadges()) {
       @if (productExtras().isFeatured) {
-        <span class="featured-badge">
-          <i class="pi pi-star mr-1"></i>FEATURED
-        </span>
+        <span class="card-badge badge-featured">FEATURED</span>
       } @else if (productExtras().hasDiscount && productExtras().discountPercent >= 15) {
-        <span class="sale-badge">
-          <i class="pi pi-tag mr-1"></i>{{ productExtras().discountPercent }}% OFF
-        </span>
+        <span class="card-badge badge-sale">{{ productExtras().discountPercent }}% OFF</span>
       } @else if (productExtras().isNewArrival) {
-        <span class="new-arrival-badge">
-          <i class="pi pi-sparkles mr-1"></i>NEW
-        </span>
-      } @else if (productExtras().isTopSeller) {
-        <span class="top-seller-badge">
-          <i class="pi pi-star-fill mr-1"></i>TOP
-        </span>
+        <span class="card-badge badge-new">NEW ARRIVAL</span>
+      } @else if (product().condition !== 'new') {
+        <span class="card-badge badge-preowned">PRE-OWNED</span>
       }
     }
 
+    <!-- Product Image -->
     @if (product().primaryImageUrl) {
       <img
         [src]="cardImageUrl()"
         [srcset]="cardSrcSet()"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
         [alt]="product().brandName + ' ' + product().model"
-        width="300"
-        height="200"
+        width="200"
+        height="256"
         [loading]="eagerLoad() ? 'eager' : 'lazy'"
         [appBlurUpImage]="product().primaryImageUrl!"
         [blurUpDisabled]="eagerLoad()"
-        class="w-full h-full"
-        style="object-fit: cover;"
         (error)="onImageError($event)"
       />
     } @else {
-      <div class="w-full h-full flex flex-column align-items-center justify-content-center surface-100">
-        <i class="pi pi-image text-4xl text-400 mb-2" aria-hidden="true"></i>
-        <span class="text-400 text-xs">No image available</span>
+      <div class="no-image-placeholder">
+        <i class="pi pi-image" aria-hidden="true"></i>
+        <span>No image</span>
       </div>
     }
 
-    <!-- Condition Tag -->
-    @if (!(showBadges() && productExtras().isNewArrival)) {
-      <p-tag
-        [value]="getConditionLabel(product().condition)"
-        [severity]="getConditionSeverity(product().condition)"
-        styleClass="absolute"
-        [style]="{ bottom: '10px', right: '10px' }"
-      />
-    }
-
-    <!-- Quick Action Overlay (temporarily disabled)
-    <div class="quick-action-overlay flex justify-content-center gap-2">
-      <p-button
-        icon="pi pi-eye"
-        [rounded]="true"
-        severity="contrast"
-        pTooltip="Quick View"
-        tooltipPosition="top"
-        (onClick)="navigateToDetail(); $event.stopPropagation()"
-        tabindex="-1"
-      />
-      @if (showCompareButton()) {
-        <p-button
-          [icon]="isCompareSelected() ? 'pi pi-check' : 'pi pi-clone'"
-          [rounded]="true"
-          [severity]="isCompareSelected() ? 'success' : 'contrast'"
-          [pTooltip]="isCompareSelected() ? 'In comparison' : 'Add to compare'"
-          tooltipPosition="top"
-          (onClick)="toggleCompare($event)"
-          tabindex="-1"
-        />
-      }
-    </div>
-    -->
-  </div>
-
-  <!-- Brand & Model -->
-  <div class="flex align-items-center gap-2 mb-2">
-    @if (product().brandLogoUrl) {
-      <img [src]="product().brandLogoUrl" [alt]="product().brandName" style="width: 20px; height: 20px; object-fit: contain;" (error)="onImageError($event)" />
-    }
-    <span class="text-500 text-sm font-medium">{{ product().brandName }}</span>
-  </div>
-
-  <h3 class="text-lg font-bold m-0 mb-2 white-space-nowrap overflow-hidden text-overflow-ellipsis text-900">
-    {{ product().model }}
-  </h3>
-
-  <!-- Rating Stars -->
-  @if (showRating()) {
-    <div class="flex align-items-center gap-2 mb-2 rating-stars">
-      <p-rating
-        [ngModel]="productExtras().rating"
-        [readonly]="true"
-        [stars]="5"
-      />
-      <span class="text-500 text-xs">({{ productExtras().rating }}.0)</span>
-    </div>
-  }
-
-  <!-- Specs -->
-  @if (showSpecs()) {
-    <div class="flex align-items-center gap-2 text-500 text-sm mb-3">
-      @if (product().storageGb) {
-        <span class="surface-100 px-2 py-1 border-round text-xs font-medium">{{ product().storageGb }}GB</span>
-      }
-      @if (product().color) {
-        <span class="surface-100 px-2 py-1 border-round text-xs font-medium">{{ product().color }}</span>
-      }
-    </div>
-  }
-
-  <!-- PTA Status Badge -->
-  @if (product().ptaStatus) {
-    <div class="mb-2">
-      <span class="px-2 py-1 border-round text-xs font-bold"
-            [class.bg-green-100]="product().ptaStatus === 'pta_approved'"
-            [class.text-green-700]="product().ptaStatus === 'pta_approved'"
-            [class.bg-blue-100]="product().ptaStatus === 'non_pta'"
-            [class.text-blue-700]="product().ptaStatus === 'non_pta'">
+    <!-- PTA Badge (bottom-right) -->
+    @if (product().ptaStatus) {
+      <span class="pta-overlay"
+            [class.pta-overlay-approved]="product().ptaStatus === 'pta_approved'"
+            [class.pta-overlay-non]="product().ptaStatus === 'non_pta'">
         @if (product().ptaStatus === 'pta_approved') {
-          <i class="pi pi-verified mr-1"></i>PTA Approved
+          <i class="pi pi-verified" style="font-size: 0.6rem;"></i> PTA
         } @else {
-          <i class="pi pi-mobile mr-1"></i>Non PTA
+          <i class="pi pi-mobile" style="font-size: 0.6rem;"></i> NON PTA
         }
       </span>
-    </div>
-  }
+    }
 
-  <!-- Price with Discount -->
-  <div class="flex align-items-center justify-content-between mt-auto">
-    <div class="flex flex-column">
-      @if (showDiscount() && productExtras().hasDiscount && productExtras().originalPrice) {
-        <span class="original-price">{{ productExtras().originalPrice | appCurrency }}</span>
+    <!-- Compare Button (hover overlay) -->
+    <button class="card-compare-btn" (click)="toggleCompare($event)" aria-label="Compare this product">
+      <i class="pi pi-arrows-h"></i> Compare
+    </button>
+  </div>
+
+  <!-- Info Section -->
+  <div class="card-info">
+    <span class="card-brand">{{ product().brandName }}</span>
+    <h3 class="card-model">{{ product().model }}</h3>
+
+    <!-- Chips: storage + color -->
+    <div class="card-chips">
+      @if (product().storageGb) {
+        <span class="card-chip">{{ product().storageGb }}GB</span>
       }
-      <span class="text-xl font-bold" [class.discount-price]="showDiscount() && productExtras().hasDiscount" [class.text-primary]="!(showDiscount() && productExtras().hasDiscount)">
-        {{ product().sellingPrice | appCurrency }}
-      </span>
+      @if (product().color) {
+        <span class="card-chip">{{ product().color }}</span>
+      }
     </div>
-    <p-button
-      icon="pi pi-arrow-right"
-      [rounded]="true"
-      [text]="true"
-      severity="primary"
-      ariaLabel="View details"
-      tabindex="-1"
-    />
+
+    <!-- Price Row -->
+    <div class="card-price-row">
+      <div class="card-price-group">
+        <span class="card-price" [class.discount-price]="showDiscount() && productExtras().hasDiscount">
+          {{ product().sellingPrice | appCurrency }}
+        </span>
+        @if (showDiscount() && productExtras().hasDiscount && productExtras().originalPrice) {
+          <span class="card-original-price">{{ productExtras().originalPrice | appCurrency }}</span>
+        }
+      </div>
+    </div>
   </div>
 </div>

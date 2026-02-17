@@ -79,10 +79,29 @@ export class CustomerService {
   async lookupByPhone(phone: string): Promise<CustomerWithStats | null> {
     const cleanedPhone = phone.replace(/[^\d+]/g, '');
 
-    const { data, error } = await this.supabase
+    // Build alternate format for Pakistani numbers: 03xxx <-> +923xxx
+    let alternatePhone: string | null = null;
+    if (cleanedPhone.startsWith('0')) {
+      alternatePhone = '+92' + cleanedPhone.substring(1);
+    } else if (cleanedPhone.startsWith('+92')) {
+      alternatePhone = '0' + cleanedPhone.substring(3);
+    } else if (cleanedPhone.startsWith('92')) {
+      alternatePhone = '0' + cleanedPhone.substring(2);
+    }
+
+    // Search for both formats using OR
+    let query = this.supabase
       .from('customers')
-      .select('*')
-      .ilike('phone', `%${cleanedPhone}%`)
+      .select('*');
+
+    if (alternatePhone) {
+      const altCleaned = alternatePhone.replace(/[^\d+]/g, '');
+      query = query.or(`phone.ilike.%${cleanedPhone}%,phone.ilike.%${altCleaned}%`);
+    } else {
+      query = query.ilike('phone', `%${cleanedPhone}%`);
+    }
+
+    const { data, error } = await query
       .limit(1)
       .single();
 

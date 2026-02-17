@@ -1,461 +1,439 @@
-/* Professional Receipt Styles */
+/* Modern Sales Receipt Styles */
 .receipt-container {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 2.5rem;
+  border-radius: 1rem;
+  padding: 2.5rem 3rem 2rem;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #1e293b;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* Header */
-.receipt-header {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  aspect-ratio: 210 / 297;
+}
+
+/* ===== Header Section ===== */
+.receipt-header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
   margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 @media (min-width: 640px) {
-  .receipt-header {
+  .receipt-header-section {
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 3rem;
   }
 }
 
-.receipt-title {
-  font-size: 2rem;
-  font-weight: 300;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #0f172a;
-  margin: 0 0 0.5rem 0;
+.receipt-header-left {
+  flex: 1;
 }
 
-.receipt-subtitle {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin: 0;
+.receipt-header-right {
+  border-left: 1px solid #e2e8f0;
+  padding-left: 2.5rem;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 0.5rem 2rem;
-  font-size: 0.75rem;
+@media (max-width: 639px) {
+  .receipt-header-right {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1.5rem;
+  }
 }
 
-.info-label {
+/* Payment Badge */
+.payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.875rem;
+  background: #ecfdf5;
+  color: #15803d;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: #94a3b8;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.25rem;
 }
 
-.info-value {
-  font-weight: 600;
-  text-align: right;
-  color: #0f172a;
-}
-
-/* Section Labels */
-.section-label {
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin: 0 0 0.75rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f1f5f9;
+.badge-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #22c55e;
+  border-radius: 50%;
   display: inline-block;
 }
 
-/* Store Section */
-.store-section {
-  margin-bottom: 1.5rem;
+.payment-badge-partial {
+  background: #fff7ed;
+  color: #c2410c;
+
+  .badge-dot {
+    background: #f97316;
+  }
 }
 
-.store-info {
-  color: #475569;
-  line-height: 1.6;
-}
-
-.store-info p {
-  margin: 0;
-}
-
-.store-name {
-  font-weight: 600;
-  font-size: 1.125rem;
+/* Main Title */
+.receipt-main-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: #0f172a;
-  margin-bottom: 0.25rem !important;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.1;
 }
 
-/* Customer Section */
-.customer-section {
-  margin-bottom: 2rem;
+/* Meta (Date, Receipt #) */
+.receipt-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2.5rem;
 }
 
-.customer-info {
-  color: #475569;
-  line-height: 1.6;
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
-.customer-info p {
-  margin: 0;
+.meta-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
 }
 
-.customer-name {
+.meta-value {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+/* Parties (Bill From / Bill To) */
+.parties-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+@media (max-width: 639px) {
+  .parties-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.party-block {
+  min-width: 0;
+}
+
+.party-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #94a3b8;
+  margin: 0 0 0.5rem 0;
+}
+
+.party-name {
+  font-size: 0.9375rem;
   font-weight: 600;
-  font-size: 1.125rem;
   color: #0f172a;
+  margin: 0 0 0.25rem 0;
 }
 
-/* Items Table */
-.items-section {
-  margin-bottom: 1.5rem;
+.party-detail {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ===== Items Table ===== */
+.items-table-wrapper {
+  margin: 0 -3rem;
   overflow-x: auto;
 }
 
 .items-table {
   width: 100%;
   border-collapse: collapse;
+  text-align: left;
 }
 
 .items-table thead tr {
-  border-bottom: 2px solid #0f172a;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .items-table th {
-  padding: 1rem 0.5rem;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
   text-transform: uppercase;
-  color: #0f172a;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+.th-description {
+  padding-left: 3rem !important;
+}
+
+.th-qty {
+  text-align: center !important;
+}
+
+.th-price {
+  text-align: right !important;
+}
+
+.th-total {
+  text-align: right !important;
+  padding-right: 3rem !important;
 }
 
 .items-table tbody tr {
   border-bottom: 1px solid #f1f5f9;
 }
 
-.items-table td {
-  padding: 1.25rem 0.5rem;
-  vertical-align: top;
+.items-table tbody tr:last-child {
+  border-bottom: none;
 }
 
-.item-description {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.items-table td {
+  padding: 1.25rem 1.25rem;
+  vertical-align: middle;
+}
+
+.td-description {
+  padding-left: 3rem !important;
 }
 
 .item-name {
-  color: #475569;
+  display: block;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #0f172a;
 }
 
-.imei-info {
+.item-sub {
   display: block;
   font-size: 0.75rem;
   color: #94a3b8;
-  margin-top: 2px;
+  margin-top: 0.25rem;
 }
 
-.tax-exempt-badge {
-  font-size: 0.625rem;
-  color: #3b82f6;
+.td-qty {
+  text-align: center;
+  font-size: 0.9375rem;
   font-weight: 500;
-}
-
-.tax-info {
-  font-size: 0.625rem;
-  color: #94a3b8;
-}
-
-.item-price {
   color: #475569;
 }
 
-.item-qty {
+.td-price {
+  text-align: right;
+  font-size: 0.9375rem;
+  font-weight: 500;
   color: #475569;
 }
 
-.item-total {
-  font-weight: 500;
-  color: #0f172a;
-}
-
-/* Totals Section */
-.totals-section {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 2.5rem;
-}
-
-.totals-wrapper {
-  width: 100%;
-  max-width: 280px;
-}
-
-.totals-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.375rem 0;
-}
-
-.totals-label {
-  font-size: 0.6875rem;
+.td-total {
+  text-align: right;
+  padding-right: 3rem !important;
+  font-size: 0.9375rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
-
-.totals-value {
-  font-weight: 500;
   color: #0f172a;
 }
 
-.discount-row {
-  color: #16a34a;
+/* ===== Spacer ===== */
+.receipt-spacer {
+  flex: 1;
+  min-height: 3rem;
 }
 
-.discount-row .totals-label,
-.discount-row .totals-value {
-  color: #16a34a;
+/* ===== Footer ===== */
+.receipt-footer {
+  margin-top: auto;
 }
 
-.coupon-code {
-  font-weight: 400;
-  font-size: 0.625rem;
-}
-
-.totals-divider {
+.receipt-footer-divider {
   height: 1px;
-  background: #0f172a;
-  margin: 1rem 0;
+  background: #e2e8f0;
 }
 
-.grand-total-row {
-  padding: 0;
+.receipt-footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 1.5rem 0;
+  gap: 2rem;
 }
 
-.grand-total-label {
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
+.receipt-footer-payment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.footer-payment-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
   text-transform: uppercase;
-  color: #0f172a;
-}
-
-.grand-total-value {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-}
-
-.savings-note {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   color: #94a3b8;
-  margin-top: 0.5rem;
+  margin: 0 0 0.25rem 0;
 }
 
-.savings-amount {
-  color: #16a34a;
-  font-weight: 500;
-}
-
-/* Payment Section */
-.payment-section {
-  background: #f8fafc;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.payment-details {
+.footer-payment-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.payment-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.payment-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.payment-method {
-  font-weight: 500;
-  color: #0f172a;
-}
-
-.card-last-four {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.transaction-ref {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.payment-amount {
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.cash-details {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  padding-left: 0.5rem;
-}
-
-/* Loyalty Section */
-.loyalty-section {
-  background: linear-gradient(135deg, #f3e7fa 0%, #e8f4fd 100%);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.loyalty-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.loyalty-title {
-  font-weight: 600;
-  color: #7c3aed;
-  font-size: 0.875rem;
-}
-
-.loyalty-tier {
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  color: #7c3aed;
-}
-
-.loyalty-details {
-  font-size: 0.875rem;
-}
-
-.loyalty-row {
-  display: flex;
-  flex-wrap: wrap;
   gap: 1.5rem;
 }
 
-.loyalty-item {
+.footer-payment-method {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.footer-payment-amount {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.footer-cash-details {
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.loyalty-label {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.points-earned {
-  color: #16a34a;
-  font-weight: 600;
-}
-
-.points-redeemed {
-  color: #7c3aed;
-  font-weight: 600;
-}
-
-.loyalty-balance {
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.tier-bonus {
-  font-size: 0.75rem;
-  color: #7c3aed;
-  margin-top: 0.5rem;
-}
-
-.redemption-discount {
-  font-weight: 600;
-  color: #7c3aed;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(124, 58, 237, 0.2);
-}
-
-/* QR Code Section */
-.qr-section {
-  text-align: center;
-  padding: 1.5rem;
-  background: #f8fafc;
-  border-radius: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.qr-image {
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.qr-hint {
-  font-size: 0.75rem;
+  gap: 1.5rem;
+  font-size: 0.8125rem;
   color: #94a3b8;
-  margin-top: 0.75rem;
-  margin-bottom: 0;
+  padding-left: 0.5rem;
 }
 
-/* Footer */
-.receipt-footer {
-  border-top: 1px solid #f1f5f9;
-  padding-top: 1.5rem;
+/* Grand Total Dark Block */
+.grand-total-block {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  padding: 1.5rem 2rem;
+  border-radius: 0.875rem;
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.15);
 }
 
-.footer-content {
-  font-size: 0.875rem;
-  color: #64748b;
-  line-height: 1.6;
+.grand-total-block::before {
+  content: '';
+  position: absolute;
+  right: -1.5rem;
+  bottom: -1.5rem;
+  width: 7rem;
+  height: 7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 50%;
+  filter: blur(2rem);
 }
 
-.footer-content p {
+.grand-total-block::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent);
+  pointer-events: none;
+}
+
+.grand-total-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0 0 0.5rem 0;
 }
 
-.receipt-notes {
-  margin-top: 1rem !important;
-  padding-top: 0.75rem;
-  border-top: 1px solid #f1f5f9;
-  color: #475569;
+.grand-total-amount {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
-/* Print Styles */
+.grand-total-currency {
+  font-size: 1rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.grand-total-value {
+  font-size: 1.875rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+/* Remaining Balance Block */
+.remaining-balance-block {
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  color: #dc2626;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.remaining-balance-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #ef4444;
+  margin: 0 0 0.375rem 0;
+}
+
+.remaining-balance-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.remaining-balance-currency {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.remaining-balance-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #dc2626;
+}
+
+.remaining-balance-note {
+  font-size: 0.75rem;
+  color: #991b1b;
+  margin: 0.25rem 0 0 0;
+}
+
+/* ===== Print Styles ===== */
 @media print {
   .no-print {
     display: none !important;
@@ -463,67 +441,62 @@
 
   .receipt-container {
     box-shadow: none;
-    border: none;
-    padding: 0;
+    border: 1px solid #e5e7eb;
+    padding: 2rem 2.5rem;
+  }
+
+  .grand-total-block {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 
-/* Dark Mode Support */
+/* ===== Dark Mode ===== */
 :host-context(.dark) .receipt-container {
-  background: #18181b;
-  border-color: #27272a;
-  color: #f4f4f5;
+  background: #0f172a;
+  border-color: #1e293b;
+  color: #f1f5f9;
 }
 
-:host-context(.dark) .receipt-title,
-:host-context(.dark) .info-value,
-:host-context(.dark) .store-name,
-:host-context(.dark) .customer-name,
-:host-context(.dark) .items-table th,
-:host-context(.dark) .item-total,
-:host-context(.dark) .totals-value,
-:host-context(.dark) .grand-total-label,
-:host-context(.dark) .grand-total-value,
-:host-context(.dark) .payment-method,
-:host-context(.dark) .payment-amount,
-:host-context(.dark) .loyalty-balance {
+:host-context(.dark) .receipt-header-section {
+  border-bottom-color: #1e293b;
+}
+
+:host-context(.dark) .receipt-main-title,
+:host-context(.dark) .item-name,
+:host-context(.dark) .td-total,
+:host-context(.dark) .party-name {
   color: #ffffff;
 }
 
-:host-context(.dark) .receipt-header,
+:host-context(.dark) .meta-value,
+:host-context(.dark) .td-qty,
+:host-context(.dark) .td-price {
+  color: #cbd5e1;
+}
+
+:host-context(.dark) .payment-badge {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+}
+
+:host-context(.dark) .receipt-header-right {
+  border-color: #1e293b;
+}
+
 :host-context(.dark) .items-table thead tr {
-  border-color: #ffffff;
+  background: rgba(30, 41, 59, 0.5);
+  border-color: #1e293b;
 }
 
-:host-context(.dark) .totals-divider {
-  background: #ffffff;
+:host-context(.dark) .items-table tbody tr {
+  border-color: #1e293b;
 }
 
-:host-context(.dark) .section-label,
-:host-context(.dark) .info-label,
-:host-context(.dark) .totals-label {
-  color: #71717a;
+:host-context(.dark) .receipt-footer-divider {
+  background: #1e293b;
 }
 
-:host-context(.dark) .store-info,
-:host-context(.dark) .customer-info,
-:host-context(.dark) .item-name,
-:host-context(.dark) .item-price,
-:host-context(.dark) .item-qty {
-  color: #a1a1aa;
-}
-
-:host-context(.dark) .items-table tbody tr,
-:host-context(.dark) .section-label,
-:host-context(.dark) .receipt-footer {
-  border-color: #27272a;
-}
-
-:host-context(.dark) .payment-section,
-:host-context(.dark) .qr-section {
-  background: #27272a;
-}
-
-:host-context(.dark) .footer-content {
-  color: #71717a;
+:host-context(.dark) .grand-total-block {
+  background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
 }

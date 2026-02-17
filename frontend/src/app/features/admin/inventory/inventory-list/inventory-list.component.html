@@ -53,27 +53,6 @@
             />
           }
         </div>
-        @if (selectedProducts().length > 0) {
-          <div class="flex align-items-center gap-2">
-            <p-button
-              label="Mark as Sold"
-              icon="pi pi-check"
-              severity="success"
-              size="small"
-              [loading]="bulkActionLoading()"
-              (onClick)="onBulkMarkAsSold()"
-            />
-            <p-button
-              label="Delete Selected"
-              icon="pi pi-trash"
-              severity="danger"
-              size="small"
-              [loading]="bulkActionLoading()"
-              (onClick)="onBulkDelete()"
-            />
-            <p-tag severity="info" [value]="selectedProducts().length + ' selected'" />
-          </div>
-        }
       </div>
 
       <!-- Filter Dropdowns Row -->
@@ -81,7 +60,7 @@
         <p-select
           [options]="productTypeFilterOptions"
           [(ngModel)]="productTypeFilter"
-          (onChange)="onProductTypeFilterChange()"
+          (onChange)="onFilterChange()"
           optionLabel="label"
           optionValue="value"
           placeholder="All Types"
@@ -102,7 +81,7 @@
           <p-select
             [options]="modelOptions()"
             [(ngModel)]="modelFilter"
-            (onChange)="onModelFilterChange()"
+            (onChange)="onFilterChange()"
             optionLabel="label"
             optionValue="value"
             placeholder="All Products"
@@ -113,9 +92,39 @@
           />
         }
         <p-select
+          [options]="ptaFilterOptions"
+          [(ngModel)]="ptaFilter"
+          (onChange)="onFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All PTA"
+          [showClear]="true"
+          styleClass="w-10rem"
+        />
+        <p-select
+          [options]="ramFilterOptions()"
+          [(ngModel)]="ramFilter"
+          (onChange)="onFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All RAM"
+          [showClear]="true"
+          styleClass="w-9rem"
+        />
+        <p-select
+          [options]="storageFilterOptions()"
+          [(ngModel)]="storageFilter"
+          (onChange)="onFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Storage"
+          [showClear]="true"
+          styleClass="w-10rem"
+        />
+        <p-select
           [options]="conditionOptions"
           [(ngModel)]="conditionFilter"
-          (onChange)="onConditionFilterChange()"
+          (onChange)="onFilterChange()"
           optionLabel="label"
           optionValue="value"
           placeholder="All Conditions"
@@ -125,7 +134,7 @@
         <p-select
           [options]="statusOptions"
           [(ngModel)]="statusFilter"
-          (onChange)="onStatusFilterChange()"
+          (onChange)="onFilterChange()"
           optionLabel="label"
           optionValue="value"
           placeholder="All Statuses"
@@ -145,10 +154,10 @@
         [rowsPerPageOptions]="[10, 25, 50]"
         [showCurrentPageReport]="true"
         currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
-        [(selection)]="selectedProducts"
         [rowHover]="true"
         dataKey="id"
         (onLazyLoad)="loadProducts($event)"
+        [contextMenu]="cm"
         [globalFilterFields]="['brandName', 'model']"
         styleClass="p-datatable-sm"
         [scrollable]="true"
@@ -157,10 +166,6 @@
       >
         <ng-template #header>
           <tr>
-            <th style="width: 3rem">
-              <p-tableHeaderCheckbox />
-            </th>
-            <th style="width: 6rem">Type</th>
             <th pSortableColumn="brandName">
               Brand
               <p-sortIcon field="brandName" />
@@ -169,13 +174,17 @@
               Model
               <p-sortIcon field="model" />
             </th>
+            <th pSortableColumn="ramGb">
+              RAM
+              <p-sortIcon field="ramGb" />
+            </th>
             <th pSortableColumn="storageGb">
               Storage
               <p-sortIcon field="storageGb" />
             </th>
-            <th pSortableColumn="condition">
-              Condition
-              <p-sortIcon field="condition" />
+            <th pSortableColumn="color">
+              Color
+              <p-sortIcon field="color" />
             </th>
             <th pSortableColumn="ptaStatus">
               PTA
@@ -193,21 +202,12 @@
               Status
               <p-sortIcon field="status" />
             </th>
-            <th style="width: 9rem" alignFrozen="right" pFrozenColumn [frozen]="true">Actions</th>
           </tr>
         </ng-template>
 
         <ng-template #body let-product>
-          <tr>
-            <td>
-              <p-tableCheckbox [value]="product" />
-            </td>
-            <td>
-              <p-tag
-                [value]="getProductTypeLabel(product.productType)"
-                [severity]="getProductTypeSeverity(product.productType)"
-              />
-            </td>
+          <tr (dblclick)="onEditInDialog(product)" (contextmenu)="onRowContextMenu($event, product)"
+              (touchstart)="onTouchStart($event, product)" (touchend)="onTouchEnd()" (touchmove)="onTouchMove()">
             <td>
               <div class="flex align-items-center gap-2">
                 @if (product.brandLogoUrl) {
@@ -218,6 +218,23 @@
             </td>
             <td>{{ product.model }}</td>
             <td>
+              @if (editingProductId() === product.id) {
+                <p-select
+                  [(ngModel)]="editRamGb"
+                  [options]="inlineRamOptions()"
+                  placeholder="RAM"
+                  styleClass="w-7rem"
+                  [loading]="fetchingInlineSpecs()"
+                />
+              } @else {
+                @if (product.ramGb) {
+                  {{ product.ramGb }} GB
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
+              }
+            </td>
+            <td>
               @if (product.storageGb) {
                 {{ product.storageGb }} GB
               } @else {
@@ -225,19 +242,43 @@
               }
             </td>
             <td>
-              <p-tag
-                [value]="getConditionLabel(product.condition)"
-                [severity]="getConditionSeverity(product.condition)"
-              />
-            </td>
-            <td>
-              @if (product.ptaStatus) {
-                <p-tag
-                  [value]="getPtaLabel(product.ptaStatus)"
-                  [severity]="getPtaSeverity(product.ptaStatus)"
+              @if (editingProductId() === product.id) {
+                <p-select
+                  [(ngModel)]="editColor"
+                  [options]="inlineColorOptions()"
+                  placeholder="Color"
+                  styleClass="w-8rem"
+                  [showClear]="true"
+                  [loading]="fetchingInlineSpecs()"
                 />
               } @else {
-                <span class="text-color-secondary">-</span>
+                @if (product.color) {
+                  <span>{{ product.color }}</span>
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
+              }
+            </td>
+            <td>
+              @if (editingProductId() === product.id) {
+                <p-select
+                  [(ngModel)]="editPtaStatus"
+                  [options]="ptaStatusOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="PTA Status"
+                  [showClear]="true"
+                  styleClass="w-9rem"
+                />
+              } @else {
+                @if (product.ptaStatus) {
+                  <p-tag
+                    [value]="getPtaLabel(product.ptaStatus)"
+                    [severity]="getPtaSeverity(product.ptaStatus)"
+                  />
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
               }
             </td>
             <td>
@@ -253,7 +294,7 @@
                   (keydown.escape)="cancelPriceEdit()"
                 />
               } @else {
-                {{ product.costPrice | appCurrency }}
+                {{ product.costPrice | number:'1.0-0' }}
               }
             </td>
             <td>
@@ -269,20 +310,19 @@
                   (keydown.escape)="cancelPriceEdit()"
                 />
               } @else {
-                {{ product.sellingPrice | appCurrency }}
+                {{ product.sellingPrice | number:'1.0-0' }}
               }
             </td>
             <td>
-              <app-inventory-status-actions
-                [product]="product"
-                (statusChanged)="onStatusChanged()"
-                (markAsSoldRequested)="onMarkAsSold($event)"
-                (printLabelRequested)="onPrintLabel($event)"
-              />
-            </td>
-            <td alignFrozen="right" pFrozenColumn [frozen]="true">
               @if (editingProductId() === product.id) {
                 <div class="flex align-items-center gap-1">
+                  <p-select
+                    [(ngModel)]="editStatus"
+                    [options]="inlineStatusOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="w-9rem"
+                  />
                   <p-button
                     icon="pi pi-check"
                     [rounded]="true"
@@ -291,7 +331,6 @@
                     size="small"
                     pTooltip="Save"
                     tooltipPosition="top"
-                    [loading]="savingPriceId() === product.id"
                     (onClick)="savePriceEdit(product)"
                   />
                   <p-button
@@ -306,58 +345,12 @@
                   />
                 </div>
               } @else {
-                <div class="flex align-items-center gap-1">
-                  <p-button
-                    icon="pi pi-images"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="warn"
-                    size="small"
-                    pTooltip="Manage Images"
-                    tooltipPosition="top"
-                    (onClick)="onManageImages(product)"
-                  />
-                  <p-button
-                    icon="pi pi-pencil"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="info"
-                    size="small"
-                    pTooltip="Edit Prices"
-                    tooltipPosition="top"
-                    (onClick)="startPriceEdit(product)"
-                  />
-                  <p-button
-                    icon="pi pi-window-maximize"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="help"
-                    size="small"
-                    pTooltip="Edit in Dialog"
-                    tooltipPosition="top"
-                    (onClick)="onEditInDialog(product)"
-                  />
-                  <p-button
-                    icon="pi pi-external-link"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="secondary"
-                    size="small"
-                    pTooltip="Full Edit"
-                    tooltipPosition="top"
-                    (onClick)="onEdit(product)"
-                  />
-                  <p-button
-                    icon="pi pi-trash"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="danger"
-                    size="small"
-                    pTooltip="Delete"
-                    tooltipPosition="top"
-                    (onClick)="onDelete(product)"
-                  />
-                </div>
+                <app-inventory-status-actions
+                  [product]="product"
+                  (statusChanged)="onStatusChanged()"
+                  (markAsSoldRequested)="onMarkAsSold($event)"
+                  (printLabelRequested)="onPrintLabel($event)"
+                />
               }
             </td>
           </tr>
@@ -365,7 +358,7 @@
 
         <ng-template #emptymessage>
           <tr>
-            <td colspan="11" class="text-center p-4">
+            <td colspan="9" class="text-center p-4">
               <div class="flex flex-column align-items-center gap-3">
                 <i class="pi pi-inbox text-4xl text-color-secondary"></i>
                 <span class="text-color-secondary">No products found</span>
@@ -382,12 +375,11 @@
         <ng-template #loadingbody>
           @for (_ of skeletonRows; track $index) {
             <tr>
-              <td><p-skeleton width="1.5rem" height="1.5rem" /></td>
-              <td><p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" /></td>
               <td><p-skeleton width="60%" /></td>
               <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="3rem" /></td>
               <td><p-skeleton width="50%" /></td>
-              <td><p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" /></td>
+              <td><p-skeleton width="50%" /></td>
               <td><p-skeleton width="4rem" height="1.5rem" borderRadius="1rem" /></td>
               <td><p-skeleton width="60%" /></td>
               <td><p-skeleton width="60%" /></td>
@@ -397,13 +389,6 @@
                   <p-skeleton shape="circle" size="1.5rem" />
                 </div>
               </td>
-              <td alignFrozen="right" pFrozenColumn [frozen]="true">
-                <div class="flex gap-1">
-                  <p-skeleton shape="circle" size="2rem" />
-                  <p-skeleton shape="circle" size="2rem" />
-                  <p-skeleton shape="circle" size="2rem" />
-                </div>
-              </td>
             </tr>
           }
         </ng-template>
@@ -411,6 +396,8 @@
     </p-card>
   </div>
 </div>
+
+<p-contextMenu #cm [model]="contextMenuItems()" />
 
 <app-mark-as-sold-dialog
   [product]="markAsSoldProduct()"

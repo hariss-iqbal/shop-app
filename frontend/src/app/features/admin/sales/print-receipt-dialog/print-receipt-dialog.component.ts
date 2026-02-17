@@ -1,4 +1,4 @@
-import { Component, input, output, computed, OnChanges, SimpleChanges, signal } from '@angular/core';
+import { Component, input, output, computed, OnChanges, SimpleChanges, signal, ViewChild, ElementRef } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -18,13 +18,10 @@ import { FocusManagementService } from '../../../../shared/services/focus-manage
 import { ReceiptSendLogService } from '../../../../core/services/receipt-send-log.service';
 import { EmailReceiptService } from '../../../../core/services/email-receipt.service';
 import { PaymentMethodLabels, PaymentMethod } from '../../../../enums/payment-method.enum';
-import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
-
 @Component({
   selector: 'app-print-receipt-dialog',
   imports: [
     DecimalPipe,
-    AppCurrencyPipe,
     DialogModule,
     ButtonModule,
     FormsModule,
@@ -47,6 +44,8 @@ export class PrintReceiptDialogComponent implements OnChanges {
   visibleChange = output<boolean>();
   whatsAppSent = output<{ phoneNumber: string; receiptNumber: string }>();
   emailSent = output<{ email: string; receiptNumber: string }>();
+
+  @ViewChild('receiptEl') receiptEl!: ElementRef<HTMLDivElement>;
 
   manualPhoneNumber = '';
   manualEmailAddress = '';
@@ -110,17 +109,25 @@ export class PrintReceiptDialogComponent implements OnChanges {
   }
 
   onPrint(): void {
-    const data = this.receiptData();
-    if (!data) return;
-
-    this.receiptService.printReceipt(data, { showQrCode: false });
+    if (!this.receiptData()) return;
+    window.print();
   }
 
-  onDownloadPdf(): void {
+  async onDownloadPdf(): Promise<void> {
     const data = this.receiptData();
-    if (!data) return;
+    if (!data || !this.receiptEl) return;
 
-    this.receiptService.generatePdf(data, { showQrCode: false });
+    const blob = await this.generatePdfFromHtml();
+    if (!blob) return;
+
+    const dateStr = data.transactionDate.replace(/[^a-zA-Z0-9]/g, '-');
+    const filename = `${data.receiptNumber}_${dateStr}.pdf`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async onSharePdf(): Promise<void> {
@@ -129,17 +136,59 @@ export class PrintReceiptDialogComponent implements OnChanges {
 
     this.pdfSharing.set(true);
     try {
-      // Try to share with customer phone if available
+      const blob = await this.generatePdfFromHtml();
+      if (!blob) return;
+
+      const dateStr = data.transactionDate.replace(/[^a-zA-Z0-9]/g, '-');
+      const filename = `${data.receiptNumber}_${dateStr}.pdf`;
+
+      // Download the PDF
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      // Open WhatsApp if customer phone available
       const customerPhone = data.customerPhone;
       if (customerPhone && this.whatsAppService.canSendWhatsApp(customerPhone)) {
-        await this.whatsAppService.shareToWhatsApp(data, customerPhone, { showQrCode: false });
-      } else {
-        // Just share the PDF without targeting WhatsApp specifically
-        await this.whatsAppService.sharePdfReceipt(data, { showQrCode: false });
+        const whatsappLink = this.receiptService.generateWhatsAppLink(
+          customerPhone, `Receipt #${data.receiptNumber} - Please find the attached PDF.`
+        );
+        window.open(whatsappLink, '_blank');
+        this.whatsAppSent.emit({ phoneNumber: customerPhone, receiptNumber: data.receiptNumber });
       }
     } finally {
       this.pdfSharing.set(false);
     }
+  }
+
+  private async generatePdfFromHtml(): Promise<Blob | null> {
+    if (!this.receiptEl?.nativeElement) return null;
+
+    const html2canvas = (await import('html2canvas-pro')).default;
+    const { jsPDF } = await import('jspdf');
+
+    const canvas = await html2canvas(this.receiptEl.nativeElement, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = 190; // A4 width minus margins (in mm)
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+    return doc.output('blob');
   }
 
   // WhatsApp functionality
@@ -181,7 +230,24 @@ export class PrintReceiptDialogComponent implements OnChanges {
 
     this.pdfSharing.set(true);
     try {
-      await this.whatsAppService.shareToWhatsApp(data, this.manualPhoneNumber, { showQrCode: false });
+      const blob = await this.generatePdfFromHtml();
+      if (!blob) return;
+
+      const dateStr = data.transactionDate.replace(/[^a-zA-Z0-9]/g, '-');
+      const filename = `${data.receiptNumber}_${dateStr}.pdf`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      const whatsappLink = this.receiptService.generateWhatsAppLink(
+        this.manualPhoneNumber, `Receipt #${data.receiptNumber} - Please find the attached PDF.`
+      );
+      window.open(whatsappLink, '_blank');
+
+      this.whatsAppSent.emit({ phoneNumber: this.manualPhoneNumber, receiptNumber: data.receiptNumber });
       this.showWhatsAppInput.set(false);
       this.manualPhoneNumber = '';
     } finally {
@@ -253,6 +319,16 @@ export class PrintReceiptDialogComponent implements OnChanges {
 
   getPaymentMethodLabel(method: PaymentMethod): string {
     return PaymentMethodLabels[method] || method;
+  }
+
+  getDisplayAmountPaid(): number {
+    const data = this.receiptData();
+    if (!data) return 0;
+    // For partial payments, show actual amount paid from payments array
+    if (data.paymentStatus === 'partial_paid' && data.payments && data.payments.length > 0) {
+      return data.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    }
+    return data.finalTotal ?? data.grandTotal;
   }
 
   private async sendToWhatsApp(phoneNumber: string): Promise<void> {

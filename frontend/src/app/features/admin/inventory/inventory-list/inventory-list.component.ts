@@ -1,6 +1,8 @@
-import { Component, computed, signal, OnInit } from '@angular/core';
+import { Component, computed, signal, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
+import { MenuItem } from 'primeng/api';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
@@ -12,19 +14,20 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
 import { ProductService, LazyLoadParams } from '../../../../core/services/product.service';
 import { BrandService } from '../../../../core/services/brand.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirmation.service';
 import { CsvExportService, CsvColumn } from '../../../../shared/services/csv-export.service';
-import { AppCurrencyPipe } from '../../../../shared/pipes/app-currency.pipe';
 import { Product } from '../../../../models/product.model';
 import { Brand } from '../../../../models/brand.model';
 import { ProductStatus, ProductStatusLabels } from '../../../../enums/product-status.enum';
 import { ProductCondition, ProductConditionLabels } from '../../../../enums/product-condition.enum';
 import { ProductType, ProductTypeLabels } from '../../../../enums/product-type.enum';
 import { PtaStatus, PtaStatusLabels } from '../../../../enums/pta-status.enum';
+import { ProductSpecsScraperService } from '../../../../core/services/product-specs-scraper.service';
 import { MarkAsSoldDialogComponent } from '../mark-as-sold-dialog/mark-as-sold-dialog.component';
 import { InventoryStatusActionsComponent } from '../inventory-status-actions/inventory-status-actions.component';
 import { PrintLabelDialogComponent } from '../print-label-dialog/print-label-dialog.component';
@@ -48,7 +51,8 @@ import { InventoryFormComponent } from '../inventory-form/inventory-form.compone
     SkeletonModule,
     TagModule,
     SelectModule,
-    AppCurrencyPipe,
+    DecimalPipe,
+    ContextMenuModule,
     MarkAsSoldDialogComponent,
     InventoryStatusActionsComponent,
     PrintLabelDialogComponent,
@@ -65,8 +69,11 @@ export class InventoryListComponent implements OnInit {
     private toastService: ToastService,
     private confirmDialogService: ConfirmDialogService,
     private csvExportService: CsvExportService,
+    private specsScraperService: ProductSpecsScraperService,
     private router: Router
   ) { }
+
+  @ViewChild('cm') cm!: ContextMenu;
 
   readonly ProductStatus = ProductStatus;
   readonly ProductTypeLabels = ProductTypeLabels;
@@ -79,6 +86,23 @@ export class InventoryListComponent implements OnInit {
   bulkActionLoading = signal(false);
   selectedProducts = signal<Product[]>([]);
   globalFilter = '';
+
+  // Context menu
+  contextMenuProduct = signal<Product | null>(null);
+  contextMenuItems = computed<MenuItem[]>(() => {
+    const product = this.contextMenuProduct();
+    if (!product) return [];
+    return [
+      { label: 'Inline Edit', icon: 'pi pi-pencil', command: () => this.startPriceEdit(product) },
+      { label: 'Edit in Dialog', icon: 'pi pi-window-maximize', command: () => this.onEditInDialog(product) },
+      { label: 'Full Edit', icon: 'pi pi-external-link', command: () => this.onEdit(product) },
+      { separator: true },
+      { label: 'Manage Images', icon: 'pi pi-images', command: () => this.onManageImages(product) },
+      { label: 'Print Label', icon: 'pi pi-print', command: () => this.onPrintLabel(product) },
+      { separator: true },
+      { label: 'Delete', icon: 'pi pi-trash', command: () => this.onDelete(product) }
+    ];
+  });
 
   markAsSoldDialogVisible = signal(false);
   markAsSoldProduct = signal<Product | null>(null);
@@ -131,20 +155,72 @@ export class InventoryListComponent implements OnInit {
     { label: ProductStatusLabels[ProductStatus.RESERVED], value: ProductStatus.RESERVED }
   ];
 
-  // Inline price editing
+  // PTA filter
+  ptaFilter = signal<string | null>(null);
+  ptaFilterOptions = [
+    { label: 'All PTA', value: null },
+    { label: PtaStatusLabels[PtaStatus.PTA_APPROVED], value: PtaStatus.PTA_APPROVED },
+    { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
+  ];
+
+  // RAM filter
+  ramFilter = signal<number | null>(null);
+  ramFilterValues = signal<number[]>([]);
+  ramFilterOptions = computed(() => [
+    { label: 'All RAM', value: null },
+    ...this.ramFilterValues().map(v => ({ label: `${v} GB`, value: v }))
+  ]);
+
+  // Storage filter
+  storageFilter = signal<number | null>(null);
+  storageFilterValues = signal<number[]>([]);
+  storageFilterOptions = computed(() => [
+    { label: 'All Storage', value: null },
+    ...this.storageFilterValues().map(v => ({ label: `${v} GB`, value: v }))
+  ]);
+
+  // PTA status options for inline edit
+  ptaStatusOptions = [
+    { label: PtaStatusLabels[PtaStatus.PTA_APPROVED], value: PtaStatus.PTA_APPROVED },
+    { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
+  ];
+
+  // Status options for inline edit
+  inlineStatusOptions = [
+    { label: ProductStatusLabels[ProductStatus.AVAILABLE], value: ProductStatus.AVAILABLE },
+    { label: ProductStatusLabels[ProductStatus.SOLD], value: ProductStatus.SOLD },
+    { label: ProductStatusLabels[ProductStatus.RESERVED], value: ProductStatus.RESERVED }
+  ];
+
+  // Inline editing
   editingProductId = signal<string | null>(null);
   editCostPrice = signal<number | null>(null);
   editSellingPrice = signal<number | null>(null);
+  editPtaStatus = signal<PtaStatus | null>(null);
+  editColor = signal<string | null>(null);
+  editRamGb = signal<number | null>(null);
+  editStatus = signal<ProductStatus | null>(null);
+  inlineColorOptions = signal<string[]>([]);
+  inlineRamOptions = signal<number[]>([]);
+  fetchingInlineSpecs = signal(false);
   savingPriceId = signal<string | null>(null);
 
   private lastLazyLoadEvent: TableLazyLoadEvent | null = null;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
   async ngOnInit(): Promise<void> {
     try {
-      this.brands.set(await this.brandService.getBrands());
+      const [brands, storageOptions, ramOptions] = await Promise.all([
+        this.brandService.getBrands(),
+        this.productService.getDistinctStorageOptions(),
+        this.productService.getDistinctRamOptions()
+      ]);
+      this.brands.set(brands);
+      this.storageFilterValues.set(storageOptions);
+      this.ramFilterValues.set(ramOptions);
     } catch (error) {
-      console.error('Failed to load brands:', error);
+      console.error('Failed to load initial data:', error);
     }
   }
 
@@ -177,6 +253,15 @@ export class InventoryListComponent implements OnInit {
       if (this.modelFilter()) {
         filter['model'] = this.modelFilter();
       }
+      if (this.ptaFilter()) {
+        filter['ptaStatus'] = this.ptaFilter();
+      }
+      if (this.ramFilter()) {
+        filter['ramGb'] = this.ramFilter();
+      }
+      if (this.storageFilter()) {
+        filter['storageGb'] = this.storageFilter();
+      }
 
       const response = await this.productService.getProducts(params, filter as any);
       this.products.set(response.data);
@@ -206,7 +291,7 @@ export class InventoryListComponent implements OnInit {
     this.onSearch();
   }
 
-  onProductTypeFilterChange(): void {
+  onFilterChange(): void {
     if (this.lastLazyLoadEvent) {
       this.loadProducts({ ...this.lastLazyLoadEvent, first: 0 });
     }
@@ -232,24 +317,6 @@ export class InventoryListComponent implements OnInit {
       this.modelOptions.set([]);
     }
 
-    if (this.lastLazyLoadEvent) {
-      this.loadProducts({ ...this.lastLazyLoadEvent, first: 0 });
-    }
-  }
-
-  onModelFilterChange(): void {
-    if (this.lastLazyLoadEvent) {
-      this.loadProducts({ ...this.lastLazyLoadEvent, first: 0 });
-    }
-  }
-
-  onConditionFilterChange(): void {
-    if (this.lastLazyLoadEvent) {
-      this.loadProducts({ ...this.lastLazyLoadEvent, first: 0 });
-    }
-  }
-
-  onStatusFilterChange(): void {
     if (this.lastLazyLoadEvent) {
       this.loadProducts({ ...this.lastLazyLoadEvent, first: 0 });
     }
@@ -439,54 +506,154 @@ export class InventoryListComponent implements OnInit {
     }
   }
 
-  // Inline price editing
+  // Inline editing
   startPriceEdit(product: Product): void {
     this.editingProductId.set(product.id);
     this.editCostPrice.set(product.costPrice);
     this.editSellingPrice.set(product.sellingPrice);
+    this.editPtaStatus.set(product.ptaStatus ?? null);
+    this.editColor.set(product.color ?? null);
+    this.editRamGb.set(product.ramGb ?? null);
+    this.editStatus.set(product.status);
+    this.inlineColorOptions.set([]);
+    this.inlineRamOptions.set([]);
+
+    // Fetch specs for color and ram dropdowns if phone
+    if (product.productType === ProductType.PHONE && product.brandName && product.model) {
+      this.fetchingInlineSpecs.set(true);
+      this.specsScraperService.fetchSpecs(product.brandName, product.model).then(result => {
+        if (result.success && result.data) {
+          if (result.data.colors?.length) {
+            this.inlineColorOptions.set(result.data.colors);
+          }
+          if (result.data.ram?.length) {
+            this.inlineRamOptions.set(result.data.ram);
+          }
+        }
+      }).catch(() => {}).finally(() => {
+        this.fetchingInlineSpecs.set(false);
+      });
+    }
   }
 
   cancelPriceEdit(): void {
     this.editingProductId.set(null);
     this.editCostPrice.set(null);
     this.editSellingPrice.set(null);
+    this.editPtaStatus.set(null);
+    this.editColor.set(null);
+    this.editRamGb.set(null);
+    this.editStatus.set(null);
+    this.inlineColorOptions.set([]);
+    this.inlineRamOptions.set([]);
   }
 
   async savePriceEdit(product: Product): Promise<void> {
     const newCost = this.editCostPrice();
     const newSelling = this.editSellingPrice();
+    const newPtaStatus = this.editPtaStatus();
+    const newColor = this.editColor();
+    const newRamGb = this.editRamGb();
+    const newStatus = this.editStatus();
 
     if (newCost === null || newSelling === null || newCost < 0 || newSelling < 0) {
       this.toastService.warn('Invalid', 'Prices must be valid positive numbers');
       return;
     }
 
-    if (newCost === product.costPrice && newSelling === product.sellingPrice) {
+    const noChanges = newCost === product.costPrice &&
+      newSelling === product.sellingPrice &&
+      newPtaStatus === (product.ptaStatus ?? null) &&
+      (newColor ?? null) === (product.color ?? null) &&
+      (newRamGb ?? null) === (product.ramGb ?? null) &&
+      newStatus === product.status;
+
+    if (noChanges) {
       this.cancelPriceEdit();
       return;
     }
 
     this.savingPriceId.set(product.id);
     try {
-      await this.productService.updateProduct(product.id, {
+      const updatePayload: Record<string, unknown> = {
         costPrice: newCost,
         sellingPrice: newSelling
-      });
+      };
+      if (newPtaStatus !== (product.ptaStatus ?? null)) {
+        updatePayload['ptaStatus'] = newPtaStatus;
+      }
+      if ((newColor ?? null) !== (product.color ?? null)) {
+        updatePayload['color'] = newColor || null;
+      }
+      if ((newRamGb ?? null) !== (product.ramGb ?? null)) {
+        updatePayload['ramGb'] = newRamGb;
+      }
+      if (newStatus !== product.status) {
+        updatePayload['status'] = newStatus;
+      }
+
+      await this.productService.updateProduct(product.id, updatePayload);
 
       this.products.update(products =>
         products.map(p => p.id === product.id
-          ? { ...p, costPrice: newCost, sellingPrice: newSelling, profitMargin: newSelling > 0 ? Math.round(((newSelling - newCost) / newSelling) * 10000) / 100 : 0 }
+          ? {
+              ...p,
+              costPrice: newCost,
+              sellingPrice: newSelling,
+              profitMargin: newSelling > 0 ? Math.round(((newSelling - newCost) / newSelling) * 10000) / 100 : 0,
+              ptaStatus: newPtaStatus,
+              color: newColor || null,
+              ramGb: newRamGb,
+              status: newStatus || product.status
+            }
           : p
         )
       );
 
-      this.toastService.success('Updated', `Prices updated for ${product.brandName} ${product.model}`);
+      this.toastService.success('Updated', `Updated ${product.brandName} ${product.model}`);
       this.cancelPriceEdit();
     } catch (error) {
-      this.toastService.error('Error', 'Failed to update prices');
+      this.toastService.error('Error', 'Failed to update product');
     } finally {
       this.savingPriceId.set(null);
     }
+  }
+
+  onTouchStart(event: TouchEvent, product: Product): void {
+    const touch = event.touches[0];
+    this.longPressTimer = setTimeout(() => {
+      this.contextMenuProduct.set(product);
+      // Create a synthetic mouse event at the touch position for the context menu
+      const mouseEvent = new MouseEvent('contextmenu', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        bubbles: true
+      });
+      this.cm.show(mouseEvent);
+      // Prevent text selection / native context menu
+      event.preventDefault();
+    }, 500);
+  }
+
+  onTouchEnd(): void {
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+  }
+
+  onTouchMove(): void {
+    // Cancel long press if user scrolls/moves finger
+    if (this.longPressTimer) {
+      clearTimeout(this.longPressTimer);
+      this.longPressTimer = null;
+    }
+  }
+
+  onRowContextMenu(event: MouseEvent, product: Product): void {
+    this.contextMenuProduct.set(product);
+    this.cm.show(event);
+    event.preventDefault();
   }
 
   onEditInDialog(product: Product): void {

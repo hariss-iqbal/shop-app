@@ -38,6 +38,12 @@ export interface Sale {
   /** Location where the sale occurred - Feature: F-024 */
   locationId: string | null;
   locationName: string | null;
+  /** Outstanding balance for partial payments */
+  balance: number;
+  /** Payment status: paid or partial_paid */
+  paymentStatus: 'paid' | 'partial_paid';
+  /** Batch ID grouping multiple sale rows from one transaction */
+  batchId: string | null;
 }
 
 export interface CreateSaleRequest {
@@ -74,6 +80,8 @@ export interface SaleFilter {
   brandId?: string;
   /** Filter by location - Feature: F-024 */
   locationId?: string;
+  /** Filter by payment status */
+  paymentStatus?: 'paid' | 'partial_paid';
 }
 
 export interface SaleSummary {
@@ -186,6 +194,10 @@ export interface CompleteSaleTransactionRequest {
   discount?: AppliedDiscountInfo | null;
   /** Location ID for multi-location inventory deduction - Feature: F-024 */
   locationId?: string | null;
+  /** Total amount paid (for partial payment support) */
+  totalPaid?: number;
+  /** Grand total of the transaction (for partial payment support) */
+  grandTotal?: number;
 }
 
 /**
@@ -257,6 +269,10 @@ export interface ReceiptData {
     /** Tier multiplier applied */
     tierMultiplier: number;
   } | null;
+  /** Outstanding balance for partial payments */
+  balance?: number;
+  /** Payment status: paid or partial_paid */
+  paymentStatus?: 'paid' | 'partial_paid';
 }
 
 /**

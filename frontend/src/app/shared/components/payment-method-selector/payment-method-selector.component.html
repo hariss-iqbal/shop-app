@@ -264,6 +264,21 @@
       }
     </div>
 
+    <!-- Partial Payment Balance Banner -->
+    @if (validation().isPartialPayment) {
+      <div class="flex align-items-center gap-2 p-3 bg-orange-100 border-round border-1 border-orange-300" role="status">
+        <i class="pi pi-exclamation-triangle text-orange-700 text-xl" aria-hidden="true"></i>
+        <div class="flex flex-column">
+          <span class="font-semibold text-orange-700">
+            Remaining Balance: {{ formatCurrency(validation().balance) }}
+          </span>
+          <span class="text-sm text-orange-600">
+            Customer will owe this amount after sale
+          </span>
+        </div>
+      </div>
+    }
+
     <!-- Validation Message -->
     @if (!validation().isValid) {
       <p-message severity="warn" [text]="validation().message" styleClass="w-full" role="alert" />

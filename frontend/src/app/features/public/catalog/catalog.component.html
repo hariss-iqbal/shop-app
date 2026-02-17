@@ -1,10 +1,10 @@
 <div class="catalog-container">
   <!-- Toolbar -->
   <div class="catalog-toolbar">
-    <div class="flex align-items-center gap-3 flex-wrap flex-grow-1">
-      <h1 class="text-2xl font-bold m-0 text-primary">Products</h1>
+    <div class="flex align-items-center gap-3 flex-grow-1">
+      <h2 class="m-0 text-color font-bold" style="font-size: 1.25rem;">Smartphones</h2>
       @if (!loading()) {
-        <span class="text-color-secondary text-sm">({{ totalRecords() }} results)</span>
+        <span class="text-color-secondary text-sm">{{ totalRecords() }} results</span>
       }
     </div>
     <div class="flex align-items-center gap-2">
@@ -22,48 +22,37 @@
       </div>
 
       <!-- Sort -->
-      <p-select
-        [options]="sortOptions"
-        [(ngModel)]="selectedSort"
-        (onChange)="onSortChange()"
-        optionLabel="label"
-        styleClass="w-auto"
-        aria-label="Sort catalog by"
-      >
-        <ng-template let-sort pTemplate="selectedItem">
-          @if (sort) {
-            <div class="flex align-items-center gap-2">
-              <i [class]="sort.icon + ' text-primary'" aria-hidden="true"></i>
-              <span>{{ sort.label }}</span>
-            </div>
-          }
-        </ng-template>
-        <ng-template let-sort pTemplate="item">
-          <div class="flex align-items-center justify-content-between w-full gap-3">
-            <div class="flex align-items-center gap-2">
-              <i [class]="sort.icon + ' text-500'" aria-hidden="true"></i>
-              <span>{{ sort.label }}</span>
-            </div>
-            @if (sort.value === selectedSort.value) {
-              <i class="pi pi-check text-primary font-bold" aria-hidden="true"></i>
+      <div class="flex align-items-center gap-2">
+        <span class="text-color-secondary text-sm hidden sm:inline">Sort by:</span>
+        <p-select
+          [options]="sortOptions"
+          [(ngModel)]="selectedSort"
+          (onChange)="onSortChange()"
+          optionLabel="label"
+          styleClass="w-auto"
+          aria-label="Sort catalog by"
+        >
+          <ng-template let-sort pTemplate="selectedItem">
+            @if (sort) {
+              <div class="flex align-items-center gap-2">
+                <i [class]="sort.icon + ' text-primary'" aria-hidden="true"></i>
+                <span>{{ sort.label }}</span>
+              </div>
             }
-          </div>
-        </ng-template>
-      </p-select>
-
-      <!-- View Toggle -->
-      <p-selectButton
-        [options]="viewOptions"
-        [(ngModel)]="viewMode"
-        optionLabel="icon"
-        optionValue="value"
-        [unselectable]="true"
-        aria-label="Switch between grid and list view"
-      >
-        <ng-template let-item pTemplate="item">
-          <i [class]="item.icon" [pTooltip]="item.tooltip" tooltipPosition="top"></i>
-        </ng-template>
-      </p-selectButton>
+          </ng-template>
+          <ng-template let-sort pTemplate="item">
+            <div class="flex align-items-center justify-content-between w-full gap-3">
+              <div class="flex align-items-center gap-2">
+                <i [class]="sort.icon + ' text-500'" aria-hidden="true"></i>
+                <span>{{ sort.label }}</span>
+              </div>
+              @if (sort.value === selectedSort.value) {
+                <i class="pi pi-check text-primary font-bold" aria-hidden="true"></i>
+              }
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
     </div>
   </div>
 
@@ -71,68 +60,48 @@
   <div class="catalog-layout">
     <!-- Desktop Sidebar -->
     <aside class="catalog-sidebar hidden lg:block">
-      <ng-container *ngTemplateOutlet="filterControls" />
+      <div class="sidebar-card">
+        <!-- Filters header -->
+        <div class="flex align-items-center justify-content-between mb-3">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-filter text-color-secondary" style="font-size: 0.9rem;"></i>
+            <span class="font-bold text-sm text-color">Filters</span>
+          </div>
+          @if (hasActiveFilters()) {
+            <a class="text-xs font-semibold cursor-pointer" style="color: #3c8df6;" (click)="clearFilters()">Clear All</a>
+          }
+        </div>
+        <ng-container *ngTemplateOutlet="filterControls" />
+      </div>
     </aside>
 
     <!-- Main Content Area -->
     <div class="catalog-main">
-      <!-- Section Tabs -->
-      <div class="mb-3">
-        <div class="flex flex-wrap gap-2">
-          @for (section of sectionOptions; track section.value) {
-            <button
-              type="button"
-              class="p-button p-component"
-              [class.p-button-outlined]="currentSection !== section.value"
-              [class.p-button-primary]="currentSection === section.value"
-              (click)="switchSection(section.value)"
-              [attr.aria-pressed]="currentSection === section.value"
-            >
-              <i [class]="section.icon + ' mr-2'"></i>
-              <span>{{ section.label }}</span>
-            </button>
-          }
-        </div>
-      </div>
-
       <!-- Results -->
       @if (loading()) {
-        <!-- Loading Skeletons - Grid View -->
-        @if (viewMode === 'grid') {
-          <div class="catalog-grid">
-            @for (_ of skeletonItems; track $index) {
-              <p-card>
-                <p-skeleton height="200px" styleClass="mb-3" />
-                <p-skeleton width="60%" styleClass="mb-2" />
-                <p-skeleton width="80%" styleClass="mb-2" />
-                <p-skeleton width="40%" />
-              </p-card>
-            }
-          </div>
-        } @else {
-          <!-- Loading Skeletons - List View -->
-          <div class="flex flex-column gap-3">
-            @for (_ of skeletonItems.slice(0, 5); track $index) {
-              <p-card>
-                <div class="flex flex-column sm:flex-row gap-4">
-                  <p-skeleton width="120px" height="120px" />
-                  <div class="flex-grow-1">
-                    <p-skeleton width="40%" height="1.5rem" styleClass="mb-2" />
-                    <p-skeleton width="60%" styleClass="mb-2" />
-                    <p-skeleton width="30%" />
-                  </div>
-                  <p-skeleton width="100px" height="2rem" />
+        <!-- Loading Skeletons -->
+        <div class="catalog-grid">
+          @for (_ of skeletonItems; track $index) {
+            <div class="skeleton-card">
+              <p-skeleton height="16rem" styleClass="mb-0 border-round-top-xl" />
+              <div class="p-3">
+                <p-skeleton width="40%" height="0.625rem" styleClass="mb-2" />
+                <p-skeleton width="75%" height="1rem" styleClass="mb-3" />
+                <div class="flex gap-2 mb-3">
+                  <p-skeleton width="50px" height="1.25rem" borderRadius="6px" />
+                  <p-skeleton width="60px" height="1.25rem" borderRadius="6px" />
                 </div>
-              </p-card>
-            }
-          </div>
-        }
+                <p-skeleton width="50%" height="1.125rem" />
+              </div>
+            </div>
+          }
+        </div>
       } @else if (products().length === 0) {
-        <p-card>
+        <div class="empty-state-card">
           <div class="text-center py-6">
-            <i class="pi pi-search text-4xl text-500 mb-3" style="display: block;"></i>
-            <p class="text-900 text-xl font-semibold m-0">No products found</p>
-            <p class="text-500 mt-2 mb-4">
+            <i class="pi pi-search text-4xl mb-3" style="display: block; color: #94a3b8;"></i>
+            <p class="text-color text-xl font-semibold m-0">No products found</p>
+            <p class="text-color-secondary mt-2 mb-4">
               @if (hasActiveFilters()) {
                 No products match your current filters
               } @else {
@@ -148,166 +117,31 @@
               />
             }
           </div>
-        </p-card>
+        </div>
       } @else {
-        <!-- F-042: Live region for screen readers to announce result count changes -->
+        <!-- F-042: Live region for screen readers -->
         <div aria-live="polite" aria-atomic="true" class="sr-only" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0);">
           {{ totalRecords() }} products found
         </div>
 
-        <!-- Grid View -->
-        @if (viewMode === 'grid') {
-          <div class="catalog-grid fadein animation-duration-300" role="list" aria-label="Product catalog grid">
-            @for (product of products(); track product.id) {
-              <div role="listitem"
-                   tabindex="0"
-                   class="product-card-focusable"
-                   [attr.aria-label]="product.brandName + ' ' + product.model + ', ' + getConditionLabel(product.condition) + ', ' + (product.sellingPrice | appCurrency) + '. Press Enter to view details.'"
-                   appProductCardKeyboard
-                   (cardActivated)="viewProduct(product)">
-                <app-product-card
-                  [product]="product"
-                  [index]="$index"
-                  [eagerLoad]="$index < 4"
-                  (compareToggled)="onCompareToggled($event)"
-                />
-              </div>
-            }
-          </div>
-        } @else {
-          <!-- List View -->
-          <div class="flex flex-column gap-3 fadein animation-duration-300" role="list" aria-label="Product catalog list">
-            @for (product of productsWithExtras(); track product.id) {
-              <div role="listitem"
-                   tabindex="0"
-                   class="product-card-focusable"
-                   [attr.aria-label]="product.brandName + ' ' + product.model + ', ' + getConditionLabel(product.condition) + ', ' + (product.sellingPrice | appCurrency) + '. Press Enter to view details.'"
-                   appProductCardKeyboard
-                   (cardActivated)="viewProduct(product)"
-                   (click)="viewProduct(product)">
-                <div class="surface-card border-round-xl cursor-pointer p-3 sm:p-4 hover:surface-ground transition-all">
-                  <div class="flex flex-column sm:flex-row gap-4">
-                    <!-- Image with Badges -->
-                    <div class="flex-shrink-0 relative">
-                      @if (product.isFeatured) {
-                        <span class="featured-badge" style="top: 8px; left: 8px;">
-                          FEATURED
-                        </span>
-                      } @else if (product.hasDiscount && product.discountPercent >= 15) {
-                        <span class="sale-badge" style="top: 8px; left: 8px;">
-                          {{ product.discountPercent }}% OFF
-                        </span>
-                      } @else if (product.isNewArrival) {
-                        <span class="new-arrival-badge" style="top: 8px; left: 8px;">
-                          NEW
-                        </span>
-                      }
-
-                      @if (product.primaryImageUrl) {
-                        <div class="overflow-hidden border-round-lg" style="width: 140px; height: 140px; background: var(--p-surface-100);">
-                          <img
-                            [src]="getListOptimizedUrl(product.primaryImageUrl)"
-                            [srcset]="getListSrcSet(product.primaryImageUrl)"
-                            sizes="140px"
-                            [alt]="product.brandName + ' ' + product.model"
-                            width="140"
-                            height="140"
-                            loading="lazy"
-                            [appBlurUpImage]="product.primaryImageUrl"
-                            class="w-full h-full"
-                            style="object-fit: cover;"
-                            (error)="onImageError($event)"
-                          />
-                        </div>
-                      } @else {
-                        <div class="flex flex-column align-items-center justify-content-center surface-100 border-round-lg" style="width: 140px; height: 140px;">
-                          <i class="pi pi-image text-3xl text-400 mb-1" aria-hidden="true"></i>
-                          <span class="text-400 text-xs">No image</span>
-                        </div>
-                      }
-                    </div>
-
-                    <!-- Details -->
-                    <div class="flex-grow-1 flex flex-column justify-content-between">
-                      <div>
-                        <div class="flex align-items-center flex-wrap gap-2 mb-2">
-                          @if (product.brandLogoUrl) {
-                            <img [src]="product.brandLogoUrl" [alt]="product.brandName" style="width: 24px; height: 24px; object-fit: contain;" (error)="onImageError($event)" />
-                          }
-                          <span class="text-600 font-medium">{{ product.brandName }}</span>
-                          <p-tag
-                            [value]="getConditionLabel(product.condition)"
-                            [severity]="getConditionSeverity(product.condition)"
-                          />
-                        </div>
-
-                        <h3 class="text-xl font-bold m-0 mb-2 text-900">
-                          {{ product.model }}
-                        </h3>
-
-                        <div class="flex align-items-center flex-wrap gap-2 mt-2">
-                          @if (product.storageGb) {
-                            <span class="surface-100 px-3 py-1 border-round-lg text-sm font-medium flex align-items-center gap-1">
-                              <i class="pi pi-database text-primary" aria-hidden="true"></i>
-                              {{ product.storageGb }}GB
-                            </span>
-                          }
-                          @if (product.ramGb) {
-                            <span class="surface-100 px-3 py-1 border-round-lg text-sm font-medium flex align-items-center gap-1">
-                              <i class="pi pi-microchip text-primary" aria-hidden="true"></i>
-                              {{ product.ramGb }}GB RAM
-                            </span>
-                          }
-                          @if (product.color) {
-                            <span class="surface-100 px-3 py-1 border-round-lg text-sm font-medium flex align-items-center gap-1">
-                              <i class="pi pi-palette text-primary" aria-hidden="true"></i>
-                              {{ product.color }}
-                            </span>
-                          }
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Price & Action -->
-                    <div class="flex sm:flex-column align-items-center sm:align-items-end justify-content-between sm:justify-content-center gap-3">
-                      <div class="text-right">
-                        @if (product.hasDiscount && product.originalPrice) {
-                          <span class="original-price block">{{ product.originalPrice | appCurrency }}</span>
-                        }
-                        <span class="text-2xl font-bold" [class.discount-price]="product.hasDiscount" [class.text-primary]="!product.hasDiscount">
-                          {{ product.sellingPrice | appCurrency }}
-                        </span>
-                        @if (product.hasDiscount && product.discountPercent >= 10) {
-                          <span class="block text-sm font-semibold text-green-600 mt-1">
-                            Save {{ product.discountPercent }}%
-                          </span>
-                        }
-                      </div>
-                      <div class="flex flex-column gap-2">
-                        <p-button
-                          label="View Details"
-                          icon="pi pi-arrow-right"
-                          iconPos="right"
-                          size="small"
-                          tabindex="-1"
-                        />
-                        <p-button
-                          [label]="isProductSelected(product.id) ? 'Compared' : 'Compare'"
-                          [icon]="isProductSelected(product.id) ? 'pi pi-check' : 'pi pi-clone'"
-                          [outlined]="true"
-                          [severity]="isProductSelected(product.id) ? 'success' : 'secondary'"
-                          size="small"
-                          (onClick)="toggleCompare($event, product)"
-                          tabindex="-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        }
+        <!-- Product Grid -->
+        <div class="catalog-grid fadein animation-duration-300" role="list" aria-label="Product catalog grid">
+          @for (product of products(); track product.id) {
+            <div role="listitem"
+                 tabindex="0"
+                 class="product-card-focusable"
+                 [attr.aria-label]="product.brandName + ' ' + product.model + ', ' + getConditionLabel(product.condition) + ', ' + (product.sellingPrice | appCurrency) + '. Press Enter to view details.'"
+                 appProductCardKeyboard
+                 (cardActivated)="viewProduct(product)">
+              <app-product-card
+                [product]="product"
+                [index]="$index"
+                [eagerLoad]="$index < 4"
+                (compareToggled)="onCompareToggled($event)"
+              />
+            </div>
+          }
+        </div>
 
         <!-- Pagination -->
         @if (totalRecords() > pageSize) {
@@ -350,7 +184,7 @@
 
 <!-- Filter Controls Template (shared between sidebar and drawer) -->
 <ng-template #filterControls>
-  <div class="filter-panel p-2">
+  <div class="filter-panel">
     <!-- Search -->
     <div class="filter-group">
       <label for="search" class="filter-label">Search</label>
@@ -371,60 +205,45 @@
       </p-iconfield>
     </div>
 
-    <!-- Brand Filter -->
+    <!-- Brand Filter: Checkboxes -->
     <div class="filter-group">
-      <label for="brand" class="filter-label">Brand</label>
-      <p-select
-        id="brand"
-        [options]="brandOptions()"
-        [(ngModel)]="selectedBrandId"
-        (onChange)="onFilterChange()"
-        optionLabel="name"
-        optionValue="id"
-        [showClear]="true"
-        placeholder="All Brands"
-        styleClass="w-full"
-      >
-        <ng-template let-brand pTemplate="selectedItem">
-          @if (brand) {
-            <div class="flex align-items-center gap-2">
+      <label class="filter-label">Brand</label>
+      <div class="brand-checkbox-list">
+        @for (brand of brands(); track brand.id) {
+          <div class="flex align-items-center gap-2 mb-2">
+            <p-checkbox
+              [value]="brand.id"
+              [(ngModel)]="selectedBrandIds"
+              (onChange)="onFilterChange()"
+              [inputId]="'brand-' + brand.id"
+            />
+            <label [for]="'brand-' + brand.id" class="text-sm cursor-pointer text-color" style="font-weight: 500;">
               @if (brand.logoUrl) {
-                <img [src]="brand.logoUrl" [alt]="brand.name" style="width: 20px; height: 20px; object-fit: contain;" (error)="onImageError($event)" />
+                <img [src]="brand.logoUrl" [alt]="brand.name" style="width: 18px; height: 18px; object-fit: contain; vertical-align: middle; margin-right: 0.35rem;" (error)="onImageError($event)" />
               }
-              <span>{{ brand.name }}</span>
-            </div>
-          }
-        </ng-template>
-        <ng-template let-brand pTemplate="item">
-          <div class="flex align-items-center gap-2">
-            @if (brand.logoUrl) {
-              <img [src]="brand.logoUrl" [alt]="brand.name" style="width: 24px; height: 24px; object-fit: contain;" (error)="onImageError($event)" />
-            } @else if (brand.id) {
-              <p-avatar [label]="brand.name.charAt(0).toUpperCase()" size="normal" shape="circle" />
-            } @else {
-              <i class="pi pi-list text-500"></i>
-            }
-            <span>{{ brand.name }}</span>
+              {{ brand.name }}
+            </label>
           </div>
-        </ng-template>
-      </p-select>
+        }
+      </div>
     </div>
 
-    <!-- Condition Multi-Select -->
+    <!-- Condition Filter: Checkboxes -->
     <div class="filter-group">
-      <label for="condition" class="filter-label">Condition</label>
-      <p-multiSelect
-        id="condition"
-        [options]="conditionOptions"
-        [(ngModel)]="selectedConditions"
-        (onChange)="onFilterChange()"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="All Conditions"
-        styleClass="w-full"
-        [showClear]="true"
-        display="chip"
-      />
+      <label class="filter-label">Condition</label>
+      <div class="condition-checkbox-list">
+        @for (cond of conditionOptions; track cond.value) {
+          <div class="flex align-items-center gap-2 mb-2">
+            <p-checkbox
+              [value]="cond.value"
+              [(ngModel)]="selectedConditions"
+              (onChange)="onFilterChange()"
+              [inputId]="'cond-' + cond.value"
+            />
+            <label [for]="'cond-' + cond.value" class="text-sm cursor-pointer text-color" style="font-weight: 500;">{{ cond.label }}</label>
+          </div>
+        }
+      </div>
     </div>
 
     <!-- PTA Status Filter -->
@@ -444,30 +263,31 @@
       />
     </div>
 
-    <!-- Storage Filter -->
+    <!-- Storage Filter: Toggle Buttons -->
     <div class="filter-group">
-      <label for="storage" class="filter-label">Storage</label>
-      <p-multiSelect
-        id="storage"
-        [options]="storageOptions()"
-        [(ngModel)]="selectedStorageValues"
-        (onChange)="onFilterChange()"
-        optionLabel="label"
-        appendTo="body"
-        optionValue="value"
-        placeholder="All Storage Options"
-        styleClass="w-full"
-        [showClear]="true"
-        display="chip"
-      />
+      <label class="filter-label">Storage</label>
+      <div class="storage-grid">
+        @for (opt of storageOptions(); track opt.value) {
+          <button
+            type="button"
+            class="storage-toggle-btn"
+            [class.storage-toggle-active]="selectedStorageValues.includes(opt.value)"
+            (click)="toggleStorageValue(opt.value)"
+          >
+            {{ opt.label }}
+          </button>
+        }
+      </div>
     </div>
 
     <!-- Price Range Slider -->
     <div class="filter-group">
-      <label class="filter-label">
-        Price Range: {{ priceRange[0] | appCurrency }} - {{ priceRange[1] | appCurrency }}
-      </label>
-      <div class="px-2">
+      <label class="filter-label">Price Range</label>
+      <div class="flex justify-content-between mb-2" style="font-size: 0.75rem; color: #94a3b8;">
+        <span>{{ priceRange[0] | appCurrency }}</span>
+        <span>{{ priceRange[1] | appCurrency }}</span>
+      </div>
+      <div class="px-1">
         <p-slider
           [(ngModel)]="priceRange"
           [range]="true"
@@ -500,7 +320,7 @@
               [label]="filter.label"
               [removable]="true"
               (onRemove)="removeFilter(filter)"
-              styleClass="surface-200"
+              styleClass="bg-primary-100 text-primary"
             />
           }
         </div>

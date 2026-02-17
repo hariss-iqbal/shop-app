@@ -390,7 +390,10 @@ export class OfflineSaleService {
       isSplitPayment: (payload.payments || []).length > 1,
       primaryPaymentMethod: payload.payments?.[0]?.method || null,
       locationId: null,
-      locationName: null
+      locationName: null,
+      balance: 0,
+      paymentStatus: 'paid',
+      batchId: null
     };
   }
 

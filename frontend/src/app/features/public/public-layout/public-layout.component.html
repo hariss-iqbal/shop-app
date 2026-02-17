@@ -2,18 +2,41 @@
   <!-- F-042: Skip Link for keyboard users -->
   <app-skip-link targetId="main-content" />
 
-  <!-- AC_REDESIGN_004: Modern E-commerce Header -->
-  <header class="navbar-header sticky top-0 z-5">
+  <!-- Redesigned Header: Light with backdrop blur -->
+  <header class="header-redesign sticky top-0" style="z-index: 50;">
     <!-- Main Navigation -->
     <nav class="flex align-items-center justify-content-between px-3 py-3 sm:px-4 lg:px-6 gap-3"
          aria-label="Main navigation">
       <!-- Logo/Brand -->
       <a routerLink="/"
-         class="flex align-items-center gap-2 text-xl font-bold text-primary no-underline flex-shrink-0"
+         class="flex align-items-center gap-2 text-xl font-bold no-underline flex-shrink-0 text-color"
          [attr.aria-label]="shopName() + ' - Home'">
-        <i class="pi pi-mobile text-2xl" aria-hidden="true"></i>
+        <div class="header-logo-icon">
+          <i class="pi pi-mobile text-white" style="font-size: 1.1rem;" aria-hidden="true"></i>
+        </div>
         <span class="hidden sm:inline">{{ shopName() }}</span>
       </a>
+
+      <!-- Desktop Nav Links -->
+      <div class="hidden lg:flex align-items-center gap-1" role="menubar">
+        <a routerLink="/"
+           routerLinkActive="nav-link-active"
+           [routerLinkActiveOptions]="{ exact: true }"
+           class="nav-link-pill"
+           role="menuitem"
+           aria-label="Home page">
+          Home
+        </a>
+        <a class="nav-link-pill" role="menuitem" style="cursor: default;">
+          Smartphones
+        </a>
+        <a class="nav-link-pill" role="menuitem" style="cursor: default;">
+          Tablets
+        </a>
+        <a class="nav-link-pill" role="menuitem" style="cursor: default;">
+          Accessories
+        </a>
+      </div>
 
       <!-- Search Bar (Desktop) -->
       <div class="hidden lg:flex flex-grow-1 max-w-30rem mx-4">
@@ -24,38 +47,12 @@
               pInputText
               [(ngModel)]="searchQuery"
               name="search"
-              class="w-full border-round-xl"
+              class="w-full header-search-input"
               placeholder="Search products..."
               aria-label="Search products"
             />
           </p-iconfield>
         </form>
-      </div>
-
-      <!-- Desktop Navigation (visible >= 992px) -->
-      <div class="hidden lg:flex align-items-center gap-1" role="menubar">
-        <a routerLink="/"
-           routerLinkActive="text-primary font-semibold"
-           [routerLinkActiveOptions]="{ exact: true }"
-           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
-           role="menuitem"
-           aria-label="Home page">
-          Home
-        </a>
-        <a routerLink="/about"
-           routerLinkActive="text-primary font-semibold"
-           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
-           role="menuitem"
-           aria-label="Learn about our shop">
-          About
-        </a>
-        <a routerLink="/contact"
-           routerLinkActive="text-primary font-semibold"
-           class="px-3 py-2 border-round text-color no-underline transition-colors transition-duration-200 font-medium"
-           role="menuitem"
-           aria-label="Contact us">
-          Contact
-        </a>
       </div>
 
       <!-- Action Icons (Desktop) -->
@@ -65,7 +62,6 @@
           [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
           [text]="true"
           [rounded]="true"
-          severity="secondary"
           (onClick)="themeService.toggleTheme()"
           [pTooltip]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
           tooltipPosition="bottom"
@@ -77,7 +73,6 @@
             icon="pi pi-arrows-h"
             [text]="true"
             [rounded]="true"
-            severity="secondary"
             pTooltip="Compare products"
             tooltipPosition="bottom"
           />
@@ -94,7 +89,6 @@
           icon="pi pi-search"
           [text]="true"
           [rounded]="true"
-          severity="secondary"
           (onClick)="mobileSearchOpen.set(!mobileSearchOpen())"
           ariaLabel="Toggle search"
         />
@@ -103,7 +97,6 @@
           [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
           [text]="true"
           [rounded]="true"
-          severity="secondary"
           (onClick)="themeService.toggleTheme()"
           [ariaLabel]="themeService.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
         />
@@ -113,7 +106,6 @@
             icon="pi pi-arrows-h"
             [text]="true"
             [rounded]="true"
-            severity="secondary"
             ariaLabel="Compare products"
           />
           @if (comparisonService.count() > 0) {
@@ -124,7 +116,6 @@
         <p-button icon="pi pi-bars"
                   [text]="true"
                   [rounded]="true"
-                  severity="secondary"
                   (onClick)="mobileMenuOpen.set(true)"
                   [attr.aria-label]="'Open navigation menu'"
                   [attr.aria-expanded]="mobileMenuOpen()"
@@ -161,7 +152,9 @@
             ariaCloseLabel="Close navigation menu">
     <ng-template pTemplate="header">
       <div class="flex align-items-center gap-2">
-        <i class="pi pi-mobile text-primary text-xl" aria-hidden="true"></i>
+        <div class="header-logo-icon" style="width: 28px; height: 28px;">
+          <i class="pi pi-mobile text-white" style="font-size: 0.85rem;" aria-hidden="true"></i>
+        </div>
         <span class="font-bold text-lg">{{ shopName() }}</span>
       </div>
     </ng-template>
@@ -208,16 +201,6 @@
         <i class="pi pi-whatsapp text-xl" aria-hidden="true"></i>
         <span class="font-medium">WhatsApp</span>
       </a>
-      <!-- Admin login hidden from public view
-      <a routerLink="/auth/login"
-         class="flex align-items-center gap-3 p-3 border-round text-color no-underline transition-colors transition-duration-200"
-         (click)="closeMobileMenu()"
-         role="menuitem"
-         aria-label="Admin login">
-        <i class="pi pi-sign-in text-xl" aria-hidden="true"></i>
-        <span class="font-medium">Admin Login</span>
-      </a>
-      -->
     </nav>
   </p-drawer>
 
@@ -226,20 +209,20 @@
     <router-outlet />
   </main>
 
-  <!-- AC_REDESIGN_005: Redesigned Footer -->
+  <!-- Redesigned Footer: 4-column layout -->
   <footer class="footer-section" role="contentinfo">
     <!-- Main Footer Content -->
     <div class="footer-main">
       <div class="grid px-3 py-5 sm:px-4 lg:px-6">
-        <!-- Store Info -->
-        <div class="col-12 md:col-6 lg:col-4 mb-4 lg:mb-0">
+        <!-- Column 1: Store Info -->
+        <div class="col-12 md:col-6 lg:col-3 mb-4 lg:mb-0">
           <div class="flex align-items-center gap-2 mb-4">
             <div class="footer-logo">
-              <i class="pi pi-mobile text-2xl text-white" aria-hidden="true"></i>
+              <i class="pi pi-mobile text-xl text-white" aria-hidden="true"></i>
             </div>
             <span class="font-bold text-xl text-color">{{ shopName() }}</span>
           </div>
-          <p class="text-color-secondary line-height-3 mt-0 mb-4">
+          <p class="text-color-secondary line-height-3 mt-0 mb-4" style="font-size: 0.875rem;">
             Your trusted destination for quality mobile products. We offer new, used, and open box
             devices at competitive prices with a 30-day quality guarantee.
           </p>
@@ -273,10 +256,10 @@
           </div>
         </div>
 
-        <!-- Quick Links -->
+        <!-- Column 2: Shop Links -->
         <div class="col-12 md:col-6 lg:col-2 mb-4 lg:mb-0">
-          <h3 class="font-semibold mb-3 mt-0 text-color">Quick Links</h3>
-          <nav aria-label="Footer navigation">
+          <h3 class="font-semibold mb-3 mt-0 text-color" style="font-size: 0.9375rem;">Shop</h3>
+          <nav aria-label="Footer shop navigation">
             <ul class="list-none p-0 m-0">
               <li class="mb-2">
                 <a routerLink="/"
@@ -310,9 +293,9 @@
           </nav>
         </div>
 
-        <!-- Customer Service -->
+        <!-- Column 3: Support Links -->
         <div class="col-12 md:col-6 lg:col-2 mb-4 lg:mb-0">
-          <h3 class="font-semibold mb-3 mt-0 text-color">Support</h3>
+          <h3 class="font-semibold mb-3 mt-0 text-color" style="font-size: 0.9375rem;">Support</h3>
           <nav aria-label="Support links">
             <ul class="list-none p-0 m-0">
               <li class="mb-2">
@@ -339,47 +322,37 @@
               <li class="mb-2">
                 <a routerLink="/contact"
                    class="footer-link"
-                   aria-label="Shipping information">
-                  Shipping
+                   aria-label="Contact support">
+                  Contact
                 </a>
               </li>
             </ul>
           </nav>
         </div>
 
-        <!-- Contact Info -->
-        <div class="col-12 md:col-6 lg:col-4">
-          <h3 class="font-semibold mb-3 mt-0 text-color">Contact Us</h3>
-          <address class="not-italic">
-            <ul class="list-none p-0 m-0">
-              <li class="flex align-items-start gap-3 mb-3">
-                <i class="pi pi-map-marker text-primary mt-1" aria-hidden="true"></i>
-                <span class="text-color-secondary">{{ address() }}</span>
-              </li>
-              <li class="flex align-items-center gap-3 mb-3">
-                <i class="pi pi-phone text-primary" aria-hidden="true"></i>
-                <a [href]="'tel:' + phoneLink()"
-                   class="footer-link"
-                   [attr.aria-label]="'Call us at ' + phoneDisplay()">
-                  {{ phoneDisplay() }}
-                </a>
-              </li>
-              @if (hasEmail()) {
-                <li class="flex align-items-center gap-3 mb-3">
-                  <i class="pi pi-envelope text-primary" aria-hidden="true"></i>
-                  <a [href]="'mailto:' + email()"
-                     class="footer-link"
-                     [attr.aria-label]="'Email us at ' + email()">
-                    {{ email() }}
-                  </a>
-                </li>
-              }
-              <li class="flex align-items-center gap-3">
-                <i class="pi pi-clock text-primary" aria-hidden="true"></i>
-                <span class="text-color-secondary">{{ weekdayHours() }}</span>
-              </li>
-            </ul>
-          </address>
+        <!-- Column 4: Newsletter (visual placeholder) -->
+        <div class="col-12 md:col-6 lg:col-5">
+          <h3 class="font-semibold mb-3 mt-0 text-color" style="font-size: 0.9375rem;">Newsletter</h3>
+          <p class="text-color-secondary line-height-3 mt-0 mb-3" style="font-size: 0.875rem;">
+            Stay updated with our latest arrivals and exclusive deals. Subscribe to our newsletter.
+          </p>
+          <div class="flex gap-2">
+            <input
+              pInputText
+              type="email"
+              placeholder="Enter your email"
+              class="flex-grow-1"
+              style="border-radius: 8px;"
+              disabled
+            />
+            <button
+              class="newsletter-join-btn"
+              disabled
+            >
+              Join
+            </button>
+          </div>
+          <span class="text-color-secondary text-xs mt-2 block">Coming soon</span>
         </div>
       </div>
     </div>
