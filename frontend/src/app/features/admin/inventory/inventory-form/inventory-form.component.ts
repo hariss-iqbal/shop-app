@@ -207,6 +207,18 @@ export class InventoryFormComponent implements OnInit {
   fetchingSpecs = signal(false);
   specsFetched = signal(false);
   specsError = signal<string | null>(null);
+  specsReady = signal(false);
+
+  conditionRatingOptions = [8, 9, 10];
+  conditionChipOptions = [
+    { label: 'New', value: ProductCondition.NEW },
+    { label: 'Used', value: ProductCondition.USED },
+    { label: 'Open Box', value: ProductCondition.OPEN_BOX }
+  ];
+  ptaChipOptions = [
+    { label: 'PTA Approved', value: PtaStatus.PTA_APPROVED },
+    { label: 'Non PTA', value: PtaStatus.NON_PTA }
+  ];
 
   // Fallback options (only used if API returns empty or fails)
   private readonly FALLBACK_RAM = [6, 8, 12, 16];
@@ -226,7 +238,7 @@ export class InventoryFormComponent implements OnInit {
     ramGb: [null as number | null],
     color: ['', Validators.maxLength(this.constraints.COLOR_MAX)],
     condition: [ProductCondition.NEW, Validators.required],
-    conditionRating: [10, [Validators.min(1), Validators.max(10)]],
+    conditionRating: [10],
     ptaStatus: [null as PtaStatus | null],
     batteryHealth: [null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]],
     imei: ['', Validators.maxLength(this.constraints.IMEI_MAX)],
@@ -535,6 +547,25 @@ export class InventoryFormComponent implements OnInit {
     this.form.get('supplierId')?.setValue(id);
   }
 
+  setConditionRating(value: number): void {
+    this.form.get('conditionRating')?.setValue(value);
+  }
+
+  setCondition(value: ProductCondition): void {
+    this.form.get('condition')?.setValue(value);
+  }
+
+  setPtaStatus(value: PtaStatus): void {
+    this.form.get('ptaStatus')?.setValue(value);
+  }
+
+  skipSpecs(): void {
+    this.specsReady.set(true);
+    // Set fallback options so user can still pick
+    this.ramQuickOptions.set(this.FALLBACK_RAM);
+    this.storageQuickOptions.set(this.FALLBACK_STORAGE);
+  }
+
   /**
    * Fetch product specifications from GSMArena
    * Triggered when user clicks "Fetch Information" button
@@ -588,6 +619,7 @@ export class InventoryFormComponent implements OnInit {
         }
 
         this.specsFetched.set(true);
+        this.specsReady.set(true);
 
         const specsCount = result.data.ram.length + result.data.storage.length + result.data.colors.length;
         if (specsCount > 0) {
@@ -608,6 +640,7 @@ export class InventoryFormComponent implements OnInit {
         this.colorSuggestions.set([]);
 
         this.specsError.set(result.error || 'No specifications found');
+        this.specsReady.set(true);
         this.toastService.warn('Not Found', result.error || 'Could not find specifications. Using fallback options.');
       }
     } catch (error) {
@@ -618,6 +651,7 @@ export class InventoryFormComponent implements OnInit {
 
       const errorMsg = error instanceof Error ? error.message : 'An error occurred';
       this.specsError.set(errorMsg);
+      this.specsReady.set(true);
       this.toastService.error('Error', 'Failed to fetch specifications. Using fallback options.');
     } finally {
       this.fetchingSpecs.set(false);

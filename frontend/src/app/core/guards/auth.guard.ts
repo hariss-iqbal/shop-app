@@ -15,7 +15,8 @@ const AUTH_INIT_TIMEOUT = 10000;
 /**
  * Auth guard that protects admin routes.
  * Redirects unauthenticated users to login with returnUrl preservation.
- * Waits for both authentication AND role to be initialized before proceeding.
+ * Unapproved users are already signed out by the auth service, so they
+ * will be redirected to login naturally.
  */
 export const authGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const authService = inject(SupabaseAuthService);

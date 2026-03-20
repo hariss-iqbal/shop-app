@@ -102,13 +102,14 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Assign role to the new user
+    // Assign role to the new user (admin-created users are pre-approved)
     const { error: roleInsertError } = await adminClient
       .from('user_roles')
       .insert({
         user_id: newUser.user.id,
         role,
         created_by: caller.id,
+        is_approved: true,
       });
 
     if (roleInsertError) {

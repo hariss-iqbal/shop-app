@@ -1,7 +1,7 @@
 import { Inject, Injectable, OnDestroy, PLATFORM_ID, computed, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
+import { User, Session, AuthChangeEvent, RealtimeChannel } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service';
 import { AuditLogService } from './audit-log.service';
 import { UserRole, Permission, getPermissionsForRole } from '../../enums/user-role.enum';
@@ -32,6 +32,7 @@ interface StoredSessionData {
 })
 export class SupabaseAuthService implements OnDestroy {
   private authSubscription: { unsubscribe: () => void } | null = null;
+  private approvalChannel: RealtimeChannel | null = null;
 
   private readonly _user = signal<User | null>(null);
   private readonly _session = signal<Session | null>(null);
@@ -39,6 +40,7 @@ export class SupabaseAuthService implements OnDestroy {
   private readonly _error = signal<string | null>(null);
   private readonly _userRole = signal<UserRole | null>(null);
   private readonly _permissions = signal<Record<Permission, boolean> | null>(null);
+  private readonly _isApproved = signal<boolean>(false);
   private readonly _roleLoading = signal<boolean>(false);
   private readonly _roleInitialized = signal<boolean>(false);
 
@@ -65,6 +67,7 @@ export class SupabaseAuthService implements OnDestroy {
   readonly error = this._error.asReadonly();
   readonly userRole = this._userRole.asReadonly();
   readonly permissions = this._permissions.asReadonly();
+  readonly isApproved = this._isApproved.asReadonly();
   readonly roleLoading = this._roleLoading.asReadonly();
   readonly roleInitialized = this._roleInitialized.asReadonly();
 
@@ -108,6 +111,7 @@ export class SupabaseAuthService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.authSubscription?.unsubscribe();
+    this.unsubscribeApprovalChannel();
     this.cleanupActivityTracking();
   }
 
@@ -239,9 +243,15 @@ export class SupabaseAuthService implements OnDestroy {
           this.saveSessionToStorage(session);
           await this.loadUserRole();
           this._loading.set(false);
+          if (!this._isApproved()) {
+            await this.signOutAndRedirectToPending();
+            return;
+          }
+          this.subscribeToApprovalChanges(session.user.id);
         }
 
         if (event === 'SIGNED_OUT') {
+          this.unsubscribeApprovalChannel();
           this.clearRole();
           this.clearSessionFromStorage();
           this._loading.set(false);
@@ -276,6 +286,14 @@ export class SupabaseAuthService implements OnDestroy {
         this._session.set(session);
         this._user.set(session.user);
         await this.loadUserRole();
+
+        if (!this._isApproved()) {
+          // Session exists but user not approved — sign out silently
+          await this.signOutAndRedirectToPending();
+          return;
+        }
+
+        this.subscribeToApprovalChanges(session.user.id);
         this.resetInactivityTimer();
       } else {
         // No session - user is not authenticated
@@ -316,17 +334,21 @@ export class SupabaseAuthService implements OnDestroy {
     this._roleLoading.set(true);
 
     try {
-      const { data, error } = await this.supabaseService.client.rpc('get_user_role');
+      const { data, error } = await this.supabaseService.client.rpc('get_my_permissions');
 
-      if (error) {
-        console.warn('Failed to get user role, defaulting to cashier:', error.message);
+      if (error || !data) {
+        console.warn('Failed to get permissions, defaulting to cashier:', error?.message);
         this.setRole(UserRole.CASHIER);
+        this._isApproved.set(false);
       } else {
-        const role = (data as UserRole) || UserRole.CASHIER;
-        this.setRole(role);
+        const role = (data.role as UserRole) || UserRole.CASHIER;
+        const permissions = data.permissions as Record<Permission, boolean>;
+        this._userRole.set(role);
+        this._permissions.set(permissions);
+        this._isApproved.set(!!data.isApproved);
       }
     } catch (err) {
-      console.error('Failed to load user role:', err);
+      console.error('Failed to load permissions:', err);
       this.setRole(UserRole.CASHIER);
     } finally {
       this._roleLoading.set(false);
@@ -342,7 +364,66 @@ export class SupabaseAuthService implements OnDestroy {
   private clearRole(): void {
     this._userRole.set(null);
     this._permissions.set(null);
+    this._isApproved.set(false);
     this._roleInitialized.set(false);
+  }
+
+  // ============ Realtime Approval Monitoring ============
+
+  private subscribeToApprovalChanges(userId: string): void {
+    this.unsubscribeApprovalChannel();
+
+    this.approvalChannel = this.supabaseService.client
+      .channel('user-approval')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_roles',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload: { new: { is_approved: boolean } }) => {
+          const wasApproved = this._isApproved();
+          const nowApproved = payload.new.is_approved;
+
+          if (wasApproved && !nowApproved) {
+            // Approval was revoked — sign out and redirect
+            console.warn('Approval revoked, signing out...');
+            this.signOutAndRedirectToPending();
+          } else if (!wasApproved && nowApproved) {
+            // User was just approved while on pending page
+            this._isApproved.set(true);
+          }
+        }
+      )
+      .subscribe();
+  }
+
+  private unsubscribeApprovalChannel(): void {
+    if (this.approvalChannel) {
+      this.supabaseService.removeChannel(this.approvalChannel);
+      this.approvalChannel = null;
+    }
+  }
+
+  /**
+   * Sign out silently and redirect to pending-approval page.
+   * Used when an unapproved user is detected or approval is revoked.
+   */
+  async signOutAndRedirectToPending(): Promise<void> {
+    this.unsubscribeApprovalChannel();
+    try {
+      await this.supabaseService.auth.signOut();
+    } catch {
+      // Ignore errors — we're force-clearing anyway
+    }
+    this._session.set(null);
+    this._user.set(null);
+    this.clearRole();
+    this.clearSessionFromStorage();
+    this._loading.set(false);
+    this.router.navigate(['/pending-approval']);
   }
 
   /**
@@ -414,6 +495,14 @@ export class SupabaseAuthService implements OnDestroy {
 
       await this.loadUserRole();
 
+      if (!this._isApproved()) {
+        // User is not approved — sign out silently, return special indicator
+        await this.signOutAndRedirectToPending();
+        return { success: true };
+      }
+
+      this.subscribeToApprovalChanges(data.user.id);
+
       // Log successful login to audit log
       this.auditLogService.logAuthEvent({
         eventType: 'user_logged_in',
@@ -482,6 +571,30 @@ export class SupabaseAuthService implements OnDestroy {
       }
     } catch (err) {
       this._error.set('Failed to refresh session');
+    }
+  }
+
+  async signInWithGoogle(): Promise<{ success: boolean; error?: string }> {
+    this._error.set(null);
+
+    try {
+      const redirectTo = `${window.location.origin}/admin/sales`;
+      const { error } = await this.supabaseService.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      });
+
+      if (error) {
+        this._error.set(error.message);
+        return { success: false, error: error.message };
+      }
+
+      // OAuth redirects away from the app; onAuthStateChange handles the rest on return
+      return { success: true };
+    } catch (err) {
+      const errorMessage = 'An unexpected error occurred during Google sign in';
+      this._error.set(errorMessage);
+      return { success: false, error: errorMessage };
     }
   }
 

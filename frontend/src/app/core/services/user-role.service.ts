@@ -175,6 +175,7 @@ export class UserRoleService {
       user_id: string;
       email: string;
       role: string;
+      is_approved: boolean;
       created_at: string;
       updated_at: string | null;
       last_sign_in_at: string | null;
@@ -184,6 +185,7 @@ export class UserRoleService {
       email: item.email || '',
       role: item.role as UserRole,
       permissions: getPermissionsForRole(item.role as UserRole),
+      isApproved: item.is_approved ?? true,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
       lastSignInAt: item.last_sign_in_at
@@ -229,6 +231,7 @@ export class UserRoleService {
       email: '',
       role: data.role as UserRole,
       permissions: getPermissionsForRole(data.role as UserRole),
+      isApproved: data.is_approved ?? true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       lastSignInAt: null
@@ -256,6 +259,7 @@ export class UserRoleService {
       email: '',
       role: data.role as UserRole,
       permissions: getPermissionsForRole(data.role as UserRole),
+      isApproved: data.is_approved ?? true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       lastSignInAt: null
@@ -292,6 +296,7 @@ export class UserRoleService {
       email: '',
       role: data.role as UserRole,
       permissions: getPermissionsForRole(data.role as UserRole),
+      isApproved: data.is_approved ?? true,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       lastSignInAt: null
@@ -433,6 +438,22 @@ export class UserRoleService {
       await this.initializeRole();
     } finally {
       this._loading.set(false);
+    }
+  }
+
+  /**
+   * Approve or revoke a user's access (admin only).
+   */
+  async approveUser(userId: string, approved: boolean): Promise<void> {
+    const { data, error } = await this.supabaseService.client
+      .rpc('approve_user', { target_user_id: userId, approved });
+
+    if (error) {
+      throw new Error(`Failed to update approval status: ${error.message}`);
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to update approval status');
     }
   }
 

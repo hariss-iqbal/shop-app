@@ -81,6 +81,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly allNavItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'pi pi-chart-bar', route: '/admin/dashboard', permission: 'canAccessDashboard' },
     { id: 'inventory', label: 'Inventory', icon: 'pi pi-mobile', route: '/admin/inventory', permission: 'canAccessInventory' },
+    { id: 'images', label: 'Image Management', icon: 'pi pi-images', route: '/admin/images', permission: 'canAccessInventory' },
     { id: 'location-inventory', label: 'Location Inventory', icon: 'pi pi-map-marker', route: '/admin/location-inventory', permission: 'canAccessInventory' },
     { id: 'locations', label: 'Store Locations', icon: 'pi pi-building', route: '/admin/locations', permission: 'canAccessInventory' },
     { id: 'inventory-transfers', label: 'Stock Transfers', icon: 'pi pi-arrows-h', route: '/admin/inventory-transfers', permission: 'canAccessInventory' },

@@ -14,6 +14,7 @@ export interface UserRoleResponse {
   email: string;
   role: UserRole;
   permissions: Record<Permission, boolean>;
+  isApproved: boolean;
   createdAt: string;
   updatedAt: string | null;
   lastSignInAt: string | null;

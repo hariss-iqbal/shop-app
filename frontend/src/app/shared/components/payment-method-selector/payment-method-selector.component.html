@@ -148,7 +148,7 @@
                 <div class="flex align-items-center gap-2 p-3 bg-green-100 border-round change-display" role="status" aria-live="polite">
                   <i class="pi pi-money-bill text-green-700 text-xl" aria-hidden="true"></i>
                   <span class="font-semibold text-green-700">
-                    Change: {{ getChangeAmount(payment) | currency }}
+                    Change: {{ getChangeAmount(payment) | currency:'PKR' }}
                   </span>
                 </div>
               </div>
@@ -240,26 +240,26 @@
     <div class="payment-summary">
       <div class="flex justify-content-between align-items-center mb-2">
         <span class="text-color-secondary">Total Due</span>
-        <span class="font-bold text-lg">{{ totalDue() | currency }}</span>
+        <span class="font-bold text-lg">{{ totalDue() | currency:'PKR' }}</span>
       </div>
       <div class="flex justify-content-between align-items-center mb-2">
         <span class="text-color-secondary">Total Paid</span>
         <span class="font-bold text-lg" [class.text-green-500]="validation().isValid" [class.text-red-500]="!validation().isValid">
-          {{ totalPaid() | currency }}
+          {{ totalPaid() | currency:'PKR' }}
         </span>
       </div>
       @if (isSplitPayment) {
         <div class="flex justify-content-between align-items-center">
           <span class="text-color-secondary">Remaining</span>
           <span class="font-bold" [class.text-red-500]="remainingAmount() > 0">
-            {{ remainingAmount() | currency }}
+            {{ remainingAmount() | currency:'PKR' }}
           </span>
         </div>
       }
       @if (totalChangeAmount() > 0) {
         <div class="flex justify-content-between align-items-center mt-2 p-2 bg-green-100 border-round">
           <span class="text-green-700 font-semibold">Total Change</span>
-          <span class="font-bold text-green-700 text-lg">{{ totalChangeAmount() | currency }}</span>
+          <span class="font-bold text-green-700 text-lg">{{ totalChangeAmount() | currency:'PKR' }}</span>
         </div>
       }
     </div>

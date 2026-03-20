@@ -138,7 +138,7 @@
               <th style="width: 40%">Product</th>
               <th style="width: 22%">Unit Price</th>
               <th style="width: 25%">Sale Price</th>
-              <th style="width: 13%">Actions</th>
+              <th style="width: 13%"></th>
             </tr>
           </ng-template>
 
@@ -172,13 +172,13 @@
               <td>
                 <p-inputNumber
                   [(ngModel)]="item.salePrice"
-                  mode="currency"
-                  currency="PKR"
-                  [minFractionDigits]="2"
-                  [maxFractionDigits]="2"
+                  mode="decimal"
+                  [minFractionDigits]="0"
+                  [maxFractionDigits]="0"
                   [min]="0"
+                  [useGrouping]="true"
                   (ngModelChange)="onSalePriceChange()"
-                  inputStyleClass="w-6rem"
+                  inputStyleClass="w-8rem"
                 />
               </td>
               <td>

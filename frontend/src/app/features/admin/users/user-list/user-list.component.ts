@@ -18,6 +18,7 @@ import {
   getRoleSeverity
 } from '../../../../enums/user-role.enum';
 import { UserRoleResponse, RoleStats } from '../../../../models/user-role.model';
+import { TooltipModule } from 'primeng/tooltip';
 
 interface RoleOption {
   label: string;
@@ -42,7 +43,8 @@ interface RoleOption {
     InputTextModule,
     PasswordModule,
     FormsModule,
-    DatePipe
+    DatePipe,
+    TooltipModule
   ],
   templateUrl: './user-list.component.html'
 })
@@ -127,6 +129,22 @@ export class UserListComponent implements OnInit {
     this.newUserPassword = '';
     this.newUserRole = UserRole.CASHIER;
     this.createDialogVisible = true;
+  }
+
+  get pendingCount(): number {
+    return this.users().filter(u => !u.isApproved).length;
+  }
+
+  async approveUser(userId: string, approved: boolean): Promise<void> {
+    try {
+      await this.userRoleService.approveUser(userId, approved);
+      this.toastService.success('Success', approved ? 'User approved' : 'User approval revoked');
+      await this.loadData();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update approval status';
+      this.toastService.error('Error', message);
+      console.error('Failed to update approval:', error);
+    }
   }
 
   async createUser(): Promise<void> {

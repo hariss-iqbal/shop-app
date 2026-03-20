@@ -24,7 +24,7 @@
   <!-- Role Statistics -->
   <div class="grid">
     @for (stat of roleStats(); track stat.role) {
-      <div class="col-12 md:col-4">
+      <div class="col-12 md:col-3">
         <p-card styleClass="h-full">
           <div class="flex align-items-center justify-content-between">
             <div>
@@ -35,6 +35,19 @@
               [value]="getRoleDisplayName(stat.role)"
               [severity]="getRoleSeverity(stat.role)"
             />
+          </div>
+        </p-card>
+      </div>
+    }
+    @if (pendingCount > 0) {
+      <div class="col-12 md:col-3">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="text-color-secondary text-sm block mb-1">Pending Approval</span>
+              <span class="text-2xl font-bold text-orange-500">{{ pendingCount }}</span>
+            </div>
+            <p-tag value="Pending" severity="warn" />
           </div>
         </p-card>
       </div>
@@ -57,9 +70,10 @@
         <tr>
           <th>Email</th>
           <th>Role</th>
+          <th>Status</th>
           <th>Created</th>
           <th>Last Sign In</th>
-          <th style="width: 150px">Actions</th>
+          <th style="width: 200px">Actions</th>
         </tr>
       </ng-template>
       <ng-template #body let-user>
@@ -79,6 +93,13 @@
               [severity]="getRoleSeverity(user.role)"
             />
           </td>
+          <td>
+            @if (user.isApproved) {
+              <p-tag value="Approved" severity="success" />
+            } @else {
+              <p-tag value="Pending" severity="warn" />
+            }
+          </td>
           <td>{{ user.createdAt | date:'medium' }}</td>
           <td>
             @if (user.lastSignInAt) {
@@ -89,14 +110,35 @@
           </td>
           <td>
             @if (user.userId !== authService.user()?.id) {
-              <p-button
-                icon="pi pi-pencil"
-                severity="secondary"
-                [text]="true"
-                size="small"
-                pTooltip="Change Role"
-                (onClick)="openEditDialog(user)"
-              />
+              <div class="flex gap-1">
+                @if (!user.isApproved) {
+                  <p-button
+                    icon="pi pi-check"
+                    severity="success"
+                    [text]="true"
+                    size="small"
+                    pTooltip="Approve User"
+                    (onClick)="approveUser(user.userId, true)"
+                  />
+                } @else {
+                  <p-button
+                    icon="pi pi-ban"
+                    severity="danger"
+                    [text]="true"
+                    size="small"
+                    pTooltip="Revoke Approval"
+                    (onClick)="approveUser(user.userId, false)"
+                  />
+                }
+                <p-button
+                  icon="pi pi-pencil"
+                  severity="secondary"
+                  [text]="true"
+                  size="small"
+                  pTooltip="Change Role"
+                  (onClick)="openEditDialog(user)"
+                />
+              </div>
             } @else {
               <span class="text-color-secondary text-sm">Cannot edit own role</span>
             }
@@ -105,7 +147,7 @@
       </ng-template>
       <ng-template #emptymessage>
         <tr>
-          <td colspan="5" class="text-center py-4">
+          <td colspan="6" class="text-center py-4">
             <i class="pi pi-users text-4xl text-color-secondary mb-3"></i>
             <p class="text-color-secondary m-0">No users found</p>
           </td>

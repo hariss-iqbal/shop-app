@@ -6,6 +6,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { SupabaseAuthService } from '../../../core';
 import { ToastService } from '../../../shared';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
@@ -19,7 +21,9 @@ import { ShopDetailsService } from '../../../core/services/shop-details.service'
     InputTextModule,
     PasswordModule,
     ButtonModule,
-    MessageModule
+    MessageModule,
+    IconFieldModule,
+    InputIconModule
   ],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
@@ -28,6 +32,7 @@ export class LoginComponent implements OnInit {
 
   loginForm: FormGroup;
   loading = false;
+  googleLoading = false;
   errorMessage: string | null = null;
   private returnUrl: string | null = null;
 
@@ -69,15 +74,29 @@ export class LoginComponent implements OnInit {
     this.loading = false;
 
     if (result.success) {
+      // If user is not approved, signIn() already signed out and redirected to /pending-approval
+      if (!this.authService.isAuthenticated()) {
+        return;
+      }
       this.toastService.success('Login Successful', 'Welcome back!');
-      // Navigate to the appropriate page based on user role
-      // If there's a return URL and user can access it, use that
-      // Otherwise, redirect to a role-appropriate default page
       const targetUrl = this.getTargetUrl();
       this.router.navigateByUrl(targetUrl);
     } else {
       this.errorMessage = result.error || 'Invalid credentials';
     }
+  }
+
+  async onGoogleLogin(): Promise<void> {
+    this.googleLoading = true;
+    this.errorMessage = null;
+
+    const result = await this.authService.signInWithGoogle();
+
+    if (!result.success) {
+      this.googleLoading = false;
+      this.errorMessage = result.error || 'Google sign in failed';
+    }
+    // On success, the browser redirects to Google — no need to reset loading
   }
 
   /**

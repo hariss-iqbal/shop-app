@@ -1,0 +1,449 @@
+<div class="grid">
+  <!-- Header Row -->
+  <div class="col-12">
+    <div class="flex align-items-center justify-content-between mb-3">
+      <h1 class="text-3xl font-bold m-0">Image Management</h1>
+      <!-- KPI Chip -->
+      <div
+        class="flex align-items-center gap-2 border-round-lg px-3 py-2 cursor-pointer select-none transition-all transition-duration-200"
+        [class.bg-orange-100]="missingImageCount() > 0"
+        [class.bg-green-100]="missingImageCount() === 0"
+        [class.border-1]="activeFilter() === 'no-images'"
+        [class.border-orange-400]="activeFilter() === 'no-images'"
+        (click)="onKpiClick()"
+        pTooltip="Click to toggle missing-images filter"
+        tooltipPosition="left"
+      >
+        @if (missingImageCount() > 0) {
+          <i class="pi pi-exclamation-triangle text-orange-600"></i>
+          <span class="font-bold text-orange-700">{{ missingImageCount() }}</span>
+          <span class="text-orange-600 text-sm">missing images</span>
+        } @else {
+          <i class="pi pi-check-circle text-green-600"></i>
+          <span class="text-green-700 text-sm font-medium">All products have images</span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="col-12">
+    <p-card>
+      <!-- Toolbar: Filters + Search -->
+      <div class="flex flex-column md:flex-row gap-3 align-items-start md:align-items-center justify-content-between mb-3">
+        <div class="flex flex-wrap gap-2">
+          <p-button
+            label="All"
+            [severity]="activeFilter() === 'all' ? 'primary' : 'secondary'"
+            [outlined]="activeFilter() !== 'all'"
+            size="small"
+            (onClick)="setFilter('all')"
+          />
+          <p-button
+            label="No Images"
+            icon="pi pi-exclamation-triangle"
+            [severity]="activeFilter() === 'no-images' ? 'warn' : 'secondary'"
+            [outlined]="activeFilter() !== 'no-images'"
+            size="small"
+            (onClick)="setFilter('no-images')"
+          />
+          <p-button
+            label="Has Images"
+            icon="pi pi-check"
+            [severity]="activeFilter() === 'has-images' ? 'success' : 'secondary'"
+            [outlined]="activeFilter() !== 'has-images'"
+            size="small"
+            (onClick)="setFilter('has-images')"
+          />
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+          <input
+            pInputText
+            [(ngModel)]="searchQuery"
+            (keydown.enter)="onSearch()"
+            placeholder="Search by model..."
+            class="w-full md:w-20rem"
+          />
+          <p-button icon="pi pi-search" [outlined]="true" (onClick)="onSearch()" pTooltip="Search" tooltipPosition="top" />
+        </div>
+      </div>
+
+      <!-- Table -->
+      @if (loading()) {
+        <div class="flex justify-content-center p-5">
+          <p-progressSpinner strokeWidth="4" />
+        </div>
+      } @else if (products().length === 0) {
+        <p-message severity="info" text="No products found matching the current filter" styleClass="w-full" />
+      } @else {
+        <p-table
+          [value]="products()"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [tableStyle]="{ 'min-width': '50rem' }"
+          styleClass="p-datatable-sm p-datatable-gridlines"
+          [paginator]="true"
+          [rows]="rows"
+          [first]="first"
+          [totalRecords]="totalProducts()"
+          [lazy]="false"
+          (onPage)="onPageChange($event)"
+          [rowHover]="true"
+        >
+          <ng-template #header>
+            <tr>
+              <th style="width: 56px"></th>
+              <th>Brand</th>
+              <th>Model</th>
+              <th>Storage</th>
+              <th>RAM</th>
+              <th>Color</th>
+              <th>Price</th>
+              <th style="width: 110px" class="text-center">Images</th>
+              <th style="width: 90px"></th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-product>
+            <tr class="cursor-pointer" (click)="onRowClick(product)">
+              <td>
+                @if (getImageThumbnail(product)) {
+                  <img [src]="getImageThumbnail(product)" alt="" width="40" height="40" class="border-round" style="object-fit: cover;" />
+                } @else {
+                  <div class="flex align-items-center justify-content-center surface-200 border-round" style="width: 40px; height: 40px;">
+                    <i class="pi pi-image text-color-secondary"></i>
+                  </div>
+                }
+              </td>
+              <td>{{ product.brandName }}</td>
+              <td class="font-semibold">{{ product.model }}</td>
+              <td>
+                @if (product.storageGb) {
+                  {{ product.storageGb }}GB
+                } @else {
+                  <span class="text-color-secondary">—</span>
+                }
+              </td>
+              <td>
+                @if (product.ramGb) {
+                  {{ product.ramGb }}GB
+                } @else {
+                  <span class="text-color-secondary">—</span>
+                }
+              </td>
+              <td>
+                @if (product.color) {
+                  {{ product.color }}
+                } @else {
+                  <span class="text-color-secondary">—</span>
+                }
+              </td>
+              <td>{{ product.sellingPrice | currency:'PKR':'symbol-narrow':'1.0-0' }}</td>
+              <td class="text-center">
+                <p-tag
+                  [value]="'' + product.imageCount"
+                  [severity]="product.imageCount === 0 ? 'warn' : 'success'"
+                />
+              </td>
+              <td>
+                <p-button
+                  icon="pi pi-images"
+                  label="Manage"
+                  size="small"
+                  [text]="true"
+                  (onClick)="openUploadDialog(product); $event.stopPropagation()"
+                />
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="9" class="text-center p-4 text-color-secondary">
+                No products found
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+  </div>
+</div>
+
+<!-- Image Upload Dialog -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [style]="dialogStyle()"
+  [maximizable]="true"
+  [closable]="!uploading()"
+  (onHide)="onDialogHide()"
+>
+  <ng-template pTemplate="header">
+    @if (selectedProduct(); as product) {
+      <div class="flex align-items-center gap-3">
+        @if (getImageThumbnail(product)) {
+          <img [src]="getImageThumbnail(product)" alt="" width="36" height="36" class="border-round" style="object-fit: cover;" />
+        } @else {
+          <div class="flex align-items-center justify-content-center surface-200 border-round" style="width: 36px; height: 36px;">
+            <i class="pi pi-mobile text-color-secondary"></i>
+          </div>
+        }
+        <div>
+          <div class="font-semibold">{{ product.brandName }} {{ product.model }}</div>
+          <div class="text-color-secondary text-sm">
+            @if (product.storageGb) { {{ product.storageGb }}GB }
+            @if (product.ramGb) { · {{ product.ramGb }}GB RAM }
+            @if (product.color) { · {{ product.color }} }
+          </div>
+        </div>
+      </div>
+    }
+  </ng-template>
+
+  @if (selectedProduct(); as product) {
+    <div class="flex flex-column gap-4">
+
+      <!-- Existing Images -->
+      @if (loadingImages()) {
+        <div class="flex justify-content-center p-4">
+          <p-progressSpinner strokeWidth="4" styleClass="w-2rem h-2rem" />
+        </div>
+      } @else if (productImages().length > 0) {
+        <div>
+          <div class="flex justify-content-between align-items-center mb-2">
+            <label class="font-medium">Current Images ({{ productImages().length }})</label>
+            @if (!viewportService.isMobile()) {
+              <span class="text-color-secondary text-xs">Drag to reorder</span>
+            } @else {
+              <span class="text-color-secondary text-xs">Use arrows to reorder</span>
+            }
+          </div>
+
+          <!-- DESKTOP: Drag-to-reorder grid -->
+          @if (!viewportService.isMobile()) {
+            <div
+              cdkDropList
+              [cdkDropListData]="productImages()"
+              (cdkDropListDropped)="onImageDrop($event)"
+              cdkDropListOrientation="horizontal"
+              class="image-grid"
+            >
+              @for (image of productImages(); track image.id; let i = $index) {
+                <div cdkDrag class="image-card" [cdkDragData]="image">
+                  <div
+                    class="relative border-round overflow-hidden shadow-1"
+                    [class.ring-primary]="image.isPrimary"
+                  >
+                    <div
+                      cdkDragHandle
+                      class="absolute top-0 left-0 right-0 p-1 flex justify-content-between align-items-center z-1 cursor-move"
+                      style="background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);"
+                    >
+                      <div class="flex align-items-center gap-1">
+                        <i class="pi pi-bars text-white text-xs"></i>
+                        <span class="text-white text-xs font-medium">{{ i + 1 }}</span>
+                      </div>
+                      @if (image.isPrimary) {
+                        <p-badge value="Primary" severity="success" />
+                      }
+                    </div>
+
+                    <img
+                      [src]="image.imageUrl"
+                      [alt]="'Image ' + (i + 1)"
+                      class="w-full"
+                      style="aspect-ratio: 1; object-fit: cover; display: block;"
+                      loading="lazy"
+                    />
+
+                    <div class="flex gap-1 justify-content-center p-1 surface-ground">
+                      @if (!image.isPrimary) {
+                        <p-button
+                          icon="pi pi-star"
+                          [rounded]="true"
+                          [text]="true"
+                          severity="secondary"
+                          size="small"
+                          pTooltip="Set as Primary"
+                          tooltipPosition="top"
+                          (onClick)="setPrimary(image)"
+                          [disabled]="reordering()"
+                        />
+                      } @else {
+                        <p-button
+                          icon="pi pi-star-fill"
+                          [rounded]="true"
+                          [text]="true"
+                          severity="warn"
+                          size="small"
+                          pTooltip="Primary Image"
+                          tooltipPosition="top"
+                          [disabled]="true"
+                        />
+                      }
+                      <p-button
+                        icon="pi pi-trash"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="danger"
+                        size="small"
+                        pTooltip="Delete"
+                        tooltipPosition="top"
+                        (onClick)="deleteImage(image)"
+                        [disabled]="reordering()"
+                      />
+                    </div>
+                  </div>
+
+                  <div *cdkDragPlaceholder class="image-placeholder"></div>
+                </div>
+              }
+            </div>
+          } @else {
+            <!-- MOBILE: Vertical list with arrow buttons -->
+            <div class="flex flex-column gap-3">
+              @for (image of productImages(); track image.id; let i = $index; let first = $first; let last = $last) {
+                <div class="flex align-items-center gap-3 surface-ground border-round p-2"
+                     [class.border-left-3]="image.isPrimary"
+                     [class.border-primary]="image.isPrimary">
+                  <!-- Image thumbnail -->
+                  <img
+                    [src]="image.imageUrl"
+                    [alt]="'Image ' + (i + 1)"
+                    class="border-round flex-shrink-0"
+                    style="width: 72px; height: 72px; object-fit: cover;"
+                    loading="lazy"
+                  />
+
+                  <!-- Info + badges -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex align-items-center gap-2 mb-1">
+                      <span class="font-medium text-sm">Image {{ i + 1 }}</span>
+                      @if (image.isPrimary) {
+                        <p-badge value="Primary" severity="success" />
+                      }
+                    </div>
+                    <!-- Action buttons row -->
+                    <div class="flex gap-1">
+                      @if (!image.isPrimary) {
+                        <p-button
+                          icon="pi pi-star"
+                          [rounded]="true"
+                          [text]="true"
+                          severity="secondary"
+                          size="small"
+                          (onClick)="setPrimary(image)"
+                          [disabled]="reordering()"
+                        />
+                      }
+                      <p-button
+                        icon="pi pi-trash"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="danger"
+                        size="small"
+                        (onClick)="deleteImage(image)"
+                        [disabled]="reordering()"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Reorder arrows -->
+                  <div class="flex flex-column gap-1 flex-shrink-0">
+                    <p-button
+                      icon="pi pi-chevron-up"
+                      [rounded]="true"
+                      [outlined]="true"
+                      severity="secondary"
+                      size="small"
+                      (onClick)="moveImage(i, 'left')"
+                      [disabled]="first || reordering()"
+                    />
+                    <p-button
+                      icon="pi pi-chevron-down"
+                      [rounded]="true"
+                      [outlined]="true"
+                      severity="secondary"
+                      size="small"
+                      (onClick)="moveImage(i, 'right')"
+                      [disabled]="last || reordering()"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="text-center p-4 surface-ground border-round">
+          <i class="pi pi-image text-4xl text-color-secondary mb-2 block"></i>
+          <p class="text-color-secondary m-0">No images yet</p>
+        </div>
+      }
+
+      <p-divider />
+
+      <!-- Add Photos Section -->
+      <div>
+        <input
+          type="file"
+          #fileInput
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          multiple
+          (change)="onFilesSelected($event)"
+          class="hidden"
+        />
+        <p-button
+          label="Add Photos"
+          icon="pi pi-plus"
+          [outlined]="true"
+          (onClick)="fileInput.click()"
+          [disabled]="uploading()"
+        />
+      </div>
+
+      <!-- Pending Previews -->
+      @if (pendingPreviews().length > 0) {
+        <div>
+          <label class="block font-medium mb-2">Selected ({{ pendingFiles().length }})</label>
+          <div class="flex flex-wrap gap-3">
+            @for (preview of pendingPreviews(); track $index) {
+              <div class="relative">
+                <img
+                  [src]="preview"
+                  alt="Preview"
+                  class="border-round border-1 surface-border"
+                  style="width: 80px; height: 80px; object-fit: cover;"
+                />
+                <p-button
+                  icon="pi pi-times"
+                  [rounded]="true"
+                  severity="danger"
+                  size="small"
+                  styleClass="absolute"
+                  [style]="{ top: '-8px', right: '-8px', width: '1.5rem', height: '1.5rem' }"
+                  (onClick)="removePendingFile($index)"
+                  [disabled]="uploading()"
+                />
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (uploading()) {
+          <p-progressBar [value]="uploadProgress()" />
+        }
+
+        <p-button
+          label="Upload Images"
+          icon="pi pi-cloud-upload"
+          severity="success"
+          styleClass="w-full"
+          [loading]="uploading()"
+          [disabled]="uploading()"
+          (onClick)="uploadImages()"
+        />
+      }
+    </div>
+  }
+</p-dialog>

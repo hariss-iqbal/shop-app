@@ -104,6 +104,12 @@ export const routes: Routes = [
         canActivate: [inventoryGuard]
       },
       {
+        path: 'images',
+        loadComponent: () => import('./features/admin/images/image-management.component')
+          .then(m => m.ImageManagementComponent),
+        canActivate: [inventoryGuard]
+      },
+      {
         path: 'brands',
         loadComponent: () => import('./features/admin/brands/brand-list/brand-list.component')
           .then(m => m.BrandListComponent),
@@ -310,6 +316,11 @@ export const routes: Routes = [
           .then(m => m.LoginComponent)
       }
     ]
+  },
+  {
+    path: 'pending-approval',
+    loadComponent: () => import('./features/error/pending-approval-page/pending-approval-page.component')
+      .then(m => m.PendingApprovalPageComponent)
   },
   {
     path: 'access-denied',
