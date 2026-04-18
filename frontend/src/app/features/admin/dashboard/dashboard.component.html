@@ -299,6 +299,73 @@
     </div>
   </section>
 
+  <!-- Most Viewed Products Section -->
+  <section class="col-12" aria-label="Most viewed products">
+    <p-card>
+      <ng-template #header>
+        <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-2 px-3 pt-3">
+          <h2 class="text-xl font-semibold text-color m-0">Most Viewed Products</h2>
+          <p-selectButton
+            [options]="mostViewedWindowOptions"
+            [(ngModel)]="mostViewedWindowDays"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="onMostViewedWindowChange()"
+            ariaLabel="Select view window"
+          />
+        </div>
+      </ng-template>
+      @if (mostViewedLoading()) {
+        <div class="flex flex-column gap-3" aria-busy="true" aria-label="Loading most viewed products">
+          @for (_ of skeletonRows; track $index) {
+            <div class="flex align-items-center gap-3">
+              <p-skeleton width="5%" />
+              <p-skeleton width="20%" />
+              <p-skeleton width="30%" />
+              <p-skeleton width="15%" />
+              <p-skeleton width="10%" />
+            </div>
+          }
+        </div>
+      } @else if (mostViewedProducts().length > 0) {
+        <p-table
+          [value]="mostViewedProducts()"
+          [rowHover]="true"
+          dataKey="productId"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [tableStyle]="{ 'min-width': '40rem' }"
+          ariaLabel="Most viewed products table"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col" class="w-3rem">#</th>
+              <th scope="col">Brand</th>
+              <th scope="col">Model</th>
+              <th scope="col">Price</th>
+              <th scope="col">Views</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-product let-i="rowIndex">
+            <tr>
+              <td class="font-medium">{{ i + 1 }}</td>
+              <td>{{ product.brandName }}</td>
+              <td class="font-medium">{{ product.model }}</td>
+              <td>{{ product.sellingPrice | appCurrency:'1.2-2' }}</td>
+              <td><span class="font-semibold">{{ product.views }}</span></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="flex flex-column align-items-center justify-content-center text-color-secondary py-5" role="status">
+          <i class="pi pi-eye text-4xl mb-3" aria-hidden="true"></i>
+          <span class="text-lg">No product views yet</span>
+          <span class="text-sm mt-1">Views from the public site will appear here</span>
+        </div>
+      }
+    </p-card>
+  </section>
+
   <!-- Recently Added Products Section -->
   <section class="col-12" aria-label="Recently added products">
     <p-card>

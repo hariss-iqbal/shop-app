@@ -44,7 +44,13 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     ConfirmationService,
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withViewTransitions()),
+    provideRouter(routes, withViewTransitions({
+      onViewTransitionCreated: ({ transition }) => {
+        // Skip transition if the previous one hasn't finished yet
+        // This prevents "InvalidStateError: Transition was aborted because of invalid state"
+        transition.finished.catch(() => {});
+      }
+    })),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([errorInterceptor])),
     provideSupabase(),

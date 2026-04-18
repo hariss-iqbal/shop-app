@@ -87,6 +87,50 @@ app.post('/api/products/fetch-specs', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/products/search-models
+ * Search GSMArena for phone models matching a query.
+ *
+ * Request body:
+ * {
+ *   "query": "Samsung Galaxy S24"
+ * }
+ *
+ * Response:
+ * {
+ *   "success": true,
+ *   "data": [
+ *     { "name": "Samsung Galaxy S24", "url": "https://..." },
+ *     { "name": "Samsung Galaxy S24+", "url": "https://..." }
+ *   ]
+ * }
+ */
+app.post('/api/products/search-models', async (req: Request, res: Response) => {
+  try {
+    const { query } = req.body;
+
+    if (!query || typeof query !== 'string' || query.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Query is required and must be at least 2 characters'
+      });
+    }
+
+    const results = await scraperService.searchModels(query.trim());
+
+    res.json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error('[API] Error searching models:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error'
+    });
+  }
+});
+
+/**
  * GET /api/products/cache-stats
  * Get cache statistics
  */

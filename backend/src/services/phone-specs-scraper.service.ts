@@ -230,6 +230,14 @@ export class PhoneSpecsScraperService {
   }
 
   /**
+   * Search GSMArena for phone models matching the query.
+   * Returns a list of { name, url } results.
+   */
+  async searchModels(query: string): Promise<Array<{ name: string; url: string }>> {
+    return this.searchPhone(query);
+  }
+
+  /**
    * Search GSMArena for phone model
    */
   private async searchPhone(query: string): Promise<Array<{ name: string; url: string }>> {

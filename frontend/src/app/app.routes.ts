@@ -104,7 +104,7 @@ export const routes: Routes = [
         canActivate: [inventoryGuard]
       },
       {
-        path: 'images',
+        path: 'data-quality',
         loadComponent: () => import('./features/admin/images/image-management.component')
           .then(m => m.ImageManagementComponent),
         canActivate: [inventoryGuard]
@@ -113,6 +113,12 @@ export const routes: Routes = [
         path: 'brands',
         loadComponent: () => import('./features/admin/brands/brand-list/brand-list.component')
           .then(m => m.BrandListComponent),
+        canActivate: [brandsGuard]
+      },
+      {
+        path: 'models',
+        loadComponent: () => import('./features/admin/models/model-list/model-list.component')
+          .then(m => m.ModelListComponent),
         canActivate: [brandsGuard]
       },
       {
@@ -286,6 +292,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/inventory-transfers/transfer-detail/transfer-detail.component')
           .then(m => m.TransferDetailComponent),
         canActivate: [inventoryGuard]
+      },
+      {
+        path: 'legacy-data',
+        loadComponent: () => import('./features/admin/legacy-data/legacy-data-list.component')
+          .then(m => m.LegacyDataListComponent),
+        canActivate: [salesGuard]
       },
       {
         path: 'sync-status',

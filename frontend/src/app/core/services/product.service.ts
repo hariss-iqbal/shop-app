@@ -20,6 +20,13 @@ export interface CatalogPaginationParams {
   sortOrder?: number;
 }
 
+function buildDisplayName(modelName: string | null, model: string, storageGb: number | null): string {
+  const name = modelName || model || '';
+  const parts = [name];
+  if (storageGb) parts.push(`${storageGb}GB`);
+  return parts.join(' ');
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -59,6 +66,7 @@ export class ProductService {
       .select(`
         *,
         brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
         supplier:suppliers!supplier_id(id, name),
         images:product_images(id, image_url, is_primary, display_order)
       `, { count: 'exact' });
@@ -105,6 +113,10 @@ export class ProductService {
 
     if (filter?.model) {
       query = query.eq('model', filter.model);
+    }
+
+    if (filter?.modelId) {
+      query = query.eq('model_id', filter.modelId);
     }
 
     if (searchTerm) {
@@ -185,6 +197,7 @@ export class ProductService {
       .select(`
         *,
         brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
         supplier:suppliers!supplier_id(id, name),
         images:product_images(id, image_url, is_primary, display_order)
       `, { count: 'exact' });
@@ -231,6 +244,10 @@ export class ProductService {
       query = query.eq('product_type', filter.productType);
     }
 
+    if (filter?.modelId) {
+      query = query.eq('model_id', filter.modelId);
+    }
+
     if (searchTerm) {
       if (brandIdsMatchingSearch && brandIdsMatchingSearch.length > 0) {
         query = query.or(`model.ilike.%${searchTerm}%,brand_id.in.(${brandIdsMatchingSearch.join(',')})`);
@@ -269,6 +286,7 @@ export class ProductService {
       .select(`
         *,
         brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
         supplier:suppliers!supplier_id(id, name),
         images:product_images(id, image_url, is_primary, display_order)
       `)
@@ -291,6 +309,7 @@ export class ProductService {
       .select(`
         *,
         brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
         supplier:suppliers!supplier_id(id, name),
         images:product_images(id, image_url, is_primary, display_order)
       `)
@@ -353,7 +372,8 @@ export class ProductService {
       is_tax_exempt: request.isTaxExempt ?? false,
       condition_rating: request.conditionRating,
       pta_status: request.ptaStatus,
-      product_type: request.productType ?? ProductType.PHONE
+      product_type: request.productType ?? ProductType.PHONE,
+      model_id: request.modelId || null
     };
 
     if (request.accessoryCategory !== undefined) insertData['accessory_category'] = request.accessoryCategory;
@@ -409,6 +429,7 @@ export class ProductService {
     if (request.weightGrams !== undefined) updateData['weight_grams'] = request.weightGrams;
     if (request.dimensions !== undefined) updateData['dimensions'] = request.dimensions;
     if (request.isFeatured !== undefined) updateData['is_featured'] = request.isFeatured;
+    if (request.modelId !== undefined) updateData['model_id'] = request.modelId;
 
     const { error } = await this.supabase
       .from('products')
@@ -466,6 +487,7 @@ export class ProductService {
       .select(`
         *,
         brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
         supplier:suppliers!supplier_id(id, name),
         images:product_images(id, image_url, is_primary, display_order)
       `);
@@ -519,18 +541,18 @@ export class ProductService {
     return ramValues.sort((a, b) => a - b);
   }
 
-  async getDistinctModelsByBrand(brandId: string): Promise<string[]> {
+  async getDistinctModelsByBrand(brandId: string): Promise<{ id: string; name: string }[]> {
     const { data, error } = await this.supabase
-      .from('products')
-      .select('model')
+      .from('models')
+      .select('id, name')
       .eq('brand_id', brandId)
-      .order('model', { ascending: true });
+      .order('name', { ascending: true });
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return [...new Set((data || []).map(p => p.model as string))];
+    return (data || []).map(p => ({ id: p.id as string, name: p.name as string }));
   }
 
   async getPriceRange(): Promise<{ min: number; max: number }> {
@@ -570,6 +592,7 @@ export class ProductService {
 
   private mapToProduct(data: Record<string, unknown>): Product {
     const brand = data['brand'] as Record<string, unknown> | null;
+    const phoneModel = data['phone_model'] as Record<string, unknown> | null;
     const supplier = data['supplier'] as Record<string, unknown> | null;
     const images = (data['images'] as Array<Record<string, unknown>>) || [];
     const primaryImage = images.find(img => img['is_primary']) || images[0];
@@ -579,12 +602,18 @@ export class ProductService {
       ? Math.round(((sellingPrice - costPrice) / sellingPrice) * 10000) / 100
       : 0;
 
+    const modelName = phoneModel?.['name'] as string | null;
+    const storageGb = data['storage_gb'] as number | null;
+
     return {
       id: data['id'] as string,
       brandId: data['brand_id'] as string,
       brandName: brand?.['name'] as string || '',
       brandLogoUrl: brand?.['logo_url'] as string | null,
       model: data['model'] as string,
+      modelId: data['model_id'] as string || null,
+      modelName,
+      displayName: buildDisplayName(modelName, data['model'] as string, storageGb),
       description: data['description'] as string | null,
       storageGb: data['storage_gb'] as number | null,
       ramGb: data['ram_gb'] as number | null,

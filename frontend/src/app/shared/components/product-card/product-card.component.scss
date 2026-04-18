@@ -96,26 +96,16 @@
   position: absolute;
   bottom: 0.75rem;
   right: 0.75rem;
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
   z-index: 2;
-}
-
-.pta-overlay-approved {
-  background: #e8f5ec;
-  color: #16a34a;
-}
-
-.pta-overlay-non {
-  background: #eef1f5;
-  color: #64748b;
 }
 
 /* ── Info Section ── */
@@ -157,12 +147,23 @@
 }
 
 .card-chip {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: #64748b;
-  background: #f1f5f9;
-  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #e2e8f0;
+  padding: 0.3rem 0.6rem;
   border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.card-chip-pta {
+  background: #16a34a;
+  color: #fff;
+}
+
+.card-chip-non-pta {
+  background: #e2e8f0;
+  color: #64748b;
 }
 
 /* ── Price Row ── */
@@ -264,6 +265,16 @@
     color: var(--text-color-secondary);
   }
 
+  .card-chip-pta {
+    background: #15803d;
+    color: #fff;
+  }
+
+  .card-chip-non-pta {
+    background: #334155;
+    color: #94a3b8;
+  }
+
   .card-price-row {
     border-top-color: var(--surface-border);
   }
@@ -304,13 +315,4 @@
     color: #f87171;
   }
 
-  .pta-overlay-approved {
-    background: #122e1e;
-    color: #4ade80;
-  }
-
-  .pta-overlay-non {
-    background: #1e2a3a;
-    color: #94a3b8;
-  }
 }

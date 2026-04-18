@@ -9,6 +9,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProductService } from '../../../core/services/product.service';
+import { ProductViewTrackerService } from '../../../core/services/product-view-tracker.service';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
@@ -51,6 +52,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     private router: Router,
     private location: Location,
     private productService: ProductService,
+    private tracker: ProductViewTrackerService,
     private imageOptimization: ImageOptimizationService,
     private toastService: ToastService,
     private seoService: SeoService,
@@ -226,6 +228,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     return this.shopDetailsService.phoneLink() || '';
   }
 
+  shopPhoneDisplay = this.shopDetailsService.phoneDisplay;
+  shopPhoneLink = this.shopDetailsService.phoneLink;
+  shopEmail = this.shopDetailsService.email;
+  shopHasEmail = this.shopDetailsService.hasEmail;
+
   @HostListener('window:scroll')
   onScroll(): void {
     this.scrollPosition.set(window.scrollY);
@@ -262,6 +269,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       this.buildGalleriaImages(productDetail);
       this.updateSeoTags(productDetail);
       this.jsonLdService.setProductStructuredData(productDetail);
+      this.tracker.trackView(productDetail.id);
     } catch (error) {
       console.error('Failed to load product detail:', error);
       this.toastService.error('Error', 'Failed to load product details');

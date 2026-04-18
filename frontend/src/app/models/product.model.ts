@@ -11,6 +11,10 @@ export interface Product {
   brandName: string;
   brandLogoUrl: string | null;
   model: string;
+  modelId: string | null;
+  modelName: string | null;
+  /** Computed: ModelName + Storage + PTA (e.g., "Pixel 8 256GB PTA") */
+  displayName: string;
   description: string | null;
   storageGb: number | null;
   ramGb: number | null;
@@ -51,6 +55,7 @@ export interface Product {
 export interface CreateProductRequest {
   brandId: string;
   model: string;
+  modelId?: string | null;
   description?: string | null;
   storageGb?: number | null;
   ramGb?: number | null;
@@ -82,6 +87,7 @@ export interface CreateProductRequest {
 export interface UpdateProductRequest {
   brandId?: string;
   model?: string;
+  modelId?: string | null;
   description?: string | null;
   storageGb?: number | null;
   ramGb?: number | null;
@@ -130,6 +136,7 @@ export interface ProductFilter {
   ptaStatus?: PtaStatus;
   productType?: ProductType;
   model?: string;
+  modelId?: string;
 }
 
 export interface ProductSort {

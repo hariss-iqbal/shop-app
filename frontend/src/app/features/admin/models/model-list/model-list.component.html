@@ -1,0 +1,285 @@
+<div class="grid">
+  <div class="col-12 flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-3 mb-4">
+    <h1 class="text-3xl font-bold m-0">Models</h1>
+    <div class="flex align-items-center gap-2">
+      <p-select
+        [options]="brandOptions()"
+        [ngModel]="brandFilter()"
+        (ngModelChange)="brandFilter.set($event); onBrandFilterChange()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="All Brands"
+        styleClass="w-12rem"
+        appendTo="body"
+      />
+      <p-button label="Add Model" icon="pi pi-plus" (onClick)="openAddDialog()" styleClass="w-full sm:w-auto" />
+    </div>
+  </div>
+
+  <div class="col-12">
+    <p-card>
+      @if (loading()) {
+        <p-table [value]="skeletonRows" styleClass="p-datatable-striped">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Brand</th>
+              <th>Model Name</th>
+              <th style="width: 120px;">Stock</th>
+              <th style="width: 200px;">Created</th>
+              <th style="width: 150px;">Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body">
+            <tr>
+              <td><div class="flex align-items-center gap-2"><p-skeleton shape="circle" size="2rem" /><p-skeleton width="60%" /></div></td>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="40%" /></td>
+              <td><p-skeleton width="70%" /></td>
+              <td>
+                <div class="flex gap-1">
+                  <p-skeleton shape="circle" size="2rem" />
+                  <p-skeleton shape="circle" size="2rem" />
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else if (models().length === 0) {
+        <div class="text-center py-6">
+          <i class="pi pi-box text-4xl text-500 mb-3"></i>
+          <p class="text-500 m-0">No models found. Add your first model to get started.</p>
+        </div>
+      } @else {
+        <p-table
+          [value]="models()"
+          [paginator]="models().length > 10"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} models"
+          styleClass="p-datatable-striped"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="brandName">Brand <p-sortIcon field="brandName" /></th>
+              <th pSortableColumn="name">Model Name <p-sortIcon field="name" /></th>
+              <th style="width: 120px;">Stock</th>
+              <th style="width: 200px;">Created</th>
+              <th style="width: 150px;">Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-model>
+            <tr>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  @if (model.brandLogoUrl) {
+                    <img [src]="model.brandLogoUrl" [alt]="model.brandName" class="border-round" style="width: 28px; height: 28px; object-fit: contain;" />
+                  } @else {
+                    <p-avatar [label]="model.brandName?.charAt(0)?.toUpperCase()" shape="circle" size="normal" />
+                  }
+                  <span>{{ model.brandName }}</span>
+                </div>
+              </td>
+              <td>
+                @if (model.editing) {
+                  <input
+                    pInputText
+                    [(ngModel)]="model.editName"
+                    class="w-full"
+                    [maxlength]="100"
+                    (keyup.enter)="saveEdit(model)"
+                    (keyup.escape)="cancelEdit(model)"
+                    [attr.data-model-id]="model.id"
+                    #editInput
+                    aria-label="Edit model name"
+                  />
+                } @else {
+                  <span class="font-medium">{{ model.name }}</span>
+                }
+              </td>
+              <td>
+                @if (model.stockCount !== undefined) {
+                  <span class="text-500">{{ model.stockCount }}</span>
+                } @else {
+                  <p-skeleton width="30px" />
+                }
+              </td>
+              <td>
+                <span class="text-500">{{ model.createdAt | date:'medium' }}</span>
+              </td>
+              <td>
+                @if (model.editing) {
+                  <div class="flex gap-1">
+                    <p-button
+                      icon="pi pi-check"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="success"
+                      pTooltip="Save"
+                      (onClick)="saveEdit(model)"
+                      [loading]="savingId() === model.id"
+                    />
+                    <p-button
+                      icon="pi pi-times"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      pTooltip="Cancel"
+                      (onClick)="cancelEdit(model)"
+                    />
+                  </div>
+                } @else {
+                  <div class="flex gap-1">
+                    <p-button
+                      icon="pi pi-pencil"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="info"
+                      pTooltip="Edit Name"
+                      (onClick)="startEdit(model)"
+                    />
+                    <p-button
+                      icon="pi pi-trash"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="danger"
+                      pTooltip="Delete"
+                      (onClick)="confirmDelete(model)"
+                      [loading]="deletingId() === model.id"
+                    />
+                  </div>
+                }
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="text-center py-4 text-500">No models found</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </p-card>
+  </div>
+</div>
+
+<!-- Add Model Dialog -->
+<p-dialog
+  header="Add Model"
+  [(visible)]="showAddDialog"
+  [modal]="true"
+  [style]="{ width: '750px', 'max-width': '95vw' }"
+  [closable]="!saving()"
+  [focusOnShow]="true"
+  [focusTrap]="true"
+  [closeOnEscape]="true"
+  (onShow)="onDialogShow()"
+  (onHide)="onDialogHide()"
+  role="dialog"
+  aria-label="Add Model"
+>
+  <div class="flex flex-column gap-3">
+    <!-- Step 1: Select Brand -->
+    <div>
+      <label for="newModelBrand" class="block font-medium mb-2">Brand <span class="text-red-500">*</span></label>
+      <p-select
+        id="newModelBrand"
+        [options]="newBrandOptions"
+        [(ngModel)]="newModelBrandId"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select a brand"
+        styleClass="w-full"
+        [filter]="true"
+        filterPlaceholder="Search brands..."
+        appendTo="body"
+      />
+    </div>
+
+    <!-- Step 2: Search GSMArena -->
+    @if (newModelBrandId) {
+      <div>
+        <label for="modelSearch" class="block font-medium mb-2">Search Model <span class="text-red-500">*</span></label>
+        <div class="flex gap-2">
+          <input
+            id="modelSearch"
+            pInputText
+            [(ngModel)]="searchQuery"
+            class="flex-1"
+            [placeholder]="'Type model name, e.g. Galaxy S24'"
+            (input)="onSearchInput()"
+            (keyup.enter)="performSearch()"
+            [disabled]="searching()"
+          />
+          <p-button
+            icon="pi pi-search"
+            label="Search"
+            (onClick)="performSearch()"
+            [loading]="searching()"
+            [disabled]="!searchQuery.trim() || searchQuery.trim().length < 2"
+          />
+        </div>
+        <small class="text-500 block mt-1">Searches GSMArena for matching models</small>
+      </div>
+
+      <!-- Search Results -->
+      @if (searching()) {
+        <div class="flex align-items-center justify-content-center py-3 gap-2">
+          <p-progressSpinner [style]="{ width: '24px', height: '24px' }" strokeWidth="4" />
+          <span class="text-500">Searching GSMArena...</span>
+        </div>
+      } @else if (searchError()) {
+        <p-message severity="warn" [text]="searchError()!" styleClass="w-full" />
+      } @else if (searchPerformed() && searchResults().length === 0) {
+        <p-message severity="info" text="No models found. Try a different search term." styleClass="w-full" />
+      } @else if (searchResults().length > 0) {
+        <div>
+          <label class="block font-medium mb-2">
+            Select Model
+            <span class="text-500 font-normal ml-1">({{ searchResults().length }} result{{ searchResults().length > 1 ? 's' : '' }})</span>
+          </label>
+          <div class="border-1 surface-border border-round overflow-auto" style="max-height: 250px;">
+            @for (result of searchResults(); track result.url) {
+              <div
+                class="p-3 flex align-items-center justify-content-between transition-colors transition-duration-150"
+                [ngClass]="{
+                  'bg-primary-50 font-bold cursor-pointer': selectedResult()?.url === result.url && !isModelInDb(result),
+                  'hover:bg-gray-100 cursor-pointer': selectedResult()?.url !== result.url && !isModelInDb(result),
+                  'opacity-50': isModelInDb(result)
+                }"
+                (click)="!isModelInDb(result) && onResultSelect(result)"
+              >
+                <span>{{ result.name }}</span>
+                @if (isModelInDb(result)) {
+                  <span class="text-500 text-sm">Already added</span>
+                } @else if (selectedResult()?.url === result.url) {
+                  <i class="pi pi-check text-primary"></i>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Selected model preview -->
+      @if (selectedModelName) {
+        <div class="surface-ground border-round p-3">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-check-circle text-primary"></i>
+            <span class="font-medium">Will be saved as:</span>
+            <span class="font-bold">{{ selectedModelName }}</span>
+          </div>
+        </div>
+        @if (similarModelExists) {
+          <p-message severity="error" [text]="'A model named &quot;' + similarModelExists.name + '&quot; already exists for this brand'" styleClass="w-full" />
+        }
+      }
+    } @else {
+      <p-message severity="info" text="Select a brand first to search for models." styleClass="w-full" />
+    }
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="closeAddDialog()" [disabled]="saving()" />
+    <p-button label="Save" icon="pi pi-check" (onClick)="saveModel()" [loading]="saving()" [disabled]="!selectedModelName || !newModelBrandId || !!similarModelExists" />
+  </ng-template>
+</p-dialog>

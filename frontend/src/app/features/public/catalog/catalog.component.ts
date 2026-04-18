@@ -26,6 +26,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DrawerModule } from 'primeng/drawer';
 import { ProductService, CatalogPaginationParams } from '../../../core/services/product.service';
 import { BrandService } from '../../../core/services/brand.service';
+import { ModelService } from '../../../core/services/model.service';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
@@ -117,6 +118,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   selectedConditions: ProductCondition[] = [];
   selectedStorageValues: number[] = [];
   selectedPtaStatus: PtaStatus | null = null;
+  selectedModelId: string | null = null;
+  modelOptions = signal<{ label: string; value: string | null }[]>([]);
   priceRange: [number, number] = [0, 1000];
   selectedSort: SortOption;
   first = 0;
@@ -228,6 +231,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private productService: ProductService,
     private brandService: BrandService,
+    private modelService: ModelService,
     private imageOptimization: ImageOptimizationService,
     private toastService: ToastService,
     private seoService: SeoService,
@@ -483,7 +487,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
           minPrice: hasPriceFilter ? this.priceRange[0] : undefined,
           maxPrice: hasPriceFilter ? this.priceRange[1] : undefined,
           search: this.searchQuery || undefined,
-          ptaStatus: this.selectedPtaStatus || undefined
+          ptaStatus: this.selectedPtaStatus || undefined,
+          modelId: this.selectedModelId || undefined
         }
       );
 
@@ -516,6 +521,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
       this.selectedConditions.length > 0 ||
       this.selectedStorageValues.length > 0 ||
       this.selectedPtaStatus ||
+      this.selectedModelId ||
       this.priceRange[0] > min ||
       this.priceRange[1] < max
     );
@@ -527,6 +533,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.selectedConditions = [];
     this.selectedStorageValues = [];
     this.selectedPtaStatus = null;
+    this.selectedModelId = null;
+    this.modelOptions.set([]);
     this.priceRange = [this.priceMin(), this.priceMax()];
     this.first = 0;
     this.updateUrlParams();
@@ -561,6 +569,31 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
+    if (this.isInitializing) return;
+    this.first = 0;
+    this.loadModelsForSelectedBrand();
+    this.updateUrlParams();
+    this.loadProducts();
+  }
+
+  private async loadModelsForSelectedBrand(): Promise<void> {
+    if (this.selectedBrandIds.length === 1) {
+      try {
+        const models = await this.modelService.getModelsByBrand(this.selectedBrandIds[0]);
+        this.modelOptions.set([
+          { label: 'All Models', value: null },
+          ...models.map(m => ({ label: m.name, value: m.id }))
+        ]);
+      } catch {
+        this.modelOptions.set([]);
+      }
+    } else {
+      this.selectedModelId = null;
+      this.modelOptions.set([]);
+    }
+  }
+
+  onModelFilterChange(): void {
     if (this.isInitializing) return;
     this.first = 0;
     this.updateUrlParams();

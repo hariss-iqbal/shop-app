@@ -1,0 +1,162 @@
+<div class="grid">
+  <!-- Header -->
+  <div class="col-12 flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="text-3xl font-bold m-0">Legacy Data</h1>
+      <p class="text-color-secondary mt-1 mb-0">DigiKhata bill history — {{ totalBills() }} records</p>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="col-12">
+    <p-card>
+      <!-- Search -->
+      <div class="flex flex-column md:flex-row md:align-items-center gap-3 mb-4">
+        <p-iconfield iconPosition="left" class="w-full md:w-25rem">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            [(ngModel)]="searchQuery"
+            (input)="onSearch()"
+            placeholder="Search by name, phone, product, brand, IMEI..."
+            class="w-full"
+          />
+        </p-iconfield>
+        @if (searchQuery) {
+          <p-button
+            label="Clear"
+            icon="pi pi-times"
+            severity="secondary"
+            [text]="true"
+            (onClick)="clearSearch()"
+          />
+        }
+      </div>
+
+      <!-- Data Table -->
+      <p-table
+        [value]="bills()"
+        [loading]="loading()"
+        [paginator]="true"
+        [rows]="25"
+        [rowsPerPageOptions]="[10, 25, 50, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} bills"
+        [rowHover]="true"
+        dataKey="id"
+        styleClass="p-datatable-sm"
+        [sortField]="'billDate'"
+        [sortOrder]="-1"
+        [scrollable]="true"
+        scrollDirection="horizontal"
+        [tableStyle]="{ 'min-width': '80rem' }"
+      >
+        <ng-template #header>
+          <tr>
+            <th pSortableColumn="billNum" style="width: 6%">
+              Bill #
+              <p-sortIcon field="billNum" />
+            </th>
+            <th pSortableColumn="billDate" style="width: 10%">
+              Date
+              <p-sortIcon field="billDate" />
+            </th>
+            <th style="width: 16%">Customer</th>
+            <th style="width: 10%">Phone</th>
+            <th style="width: 8%">Brand</th>
+            <th style="width: 16%">Product</th>
+            <th pSortableColumn="qty" style="width: 5%">
+              Qty
+              <p-sortIcon field="qty" />
+            </th>
+            <th pSortableColumn="amount" style="width: 10%">
+              Amount
+              <p-sortIcon field="amount" />
+            </th>
+            <th style="width: 8%">Severity</th>
+            <th style="width: 14%">Notes</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-bill>
+          <tr>
+            <td>{{ bill.billNum }}</td>
+            <td>{{ bill.billDate | date:'dd MMM yy' }}</td>
+            <td>
+              <span class="font-medium">{{ bill.customerName || '—' }}</span>
+            </td>
+            <td>
+              @if (bill.phoneMissing) {
+                <span class="text-red-500 font-medium">Missing</span>
+              } @else {
+                {{ bill.phone || '—' }}
+              }
+            </td>
+            <td>{{ bill.brand || '—' }}</td>
+            <td>
+              <span pTooltip="{{ bill.allProducts }}" tooltipPosition="top">
+                {{ bill.primaryProduct || '—' }}
+              </span>
+            </td>
+            <td>{{ bill.qty || '' }}</td>
+            <td class="font-medium">
+              @if (bill.amount) {
+                {{ bill.amount | appCurrency }}
+              } @else {
+                —
+              }
+            </td>
+            <td>
+              <p-tag
+                [value]="bill.severity"
+                [severity]="getSeverityTag(bill.severity)"
+              />
+            </td>
+            <td>
+              <span
+                class="text-sm text-color-secondary white-space-nowrap overflow-hidden text-overflow-ellipsis block"
+                style="max-width: 200px"
+                pTooltip="{{ bill.conditionNotes }}"
+                tooltipPosition="top"
+              >
+                {{ bill.conditionNotes || '—' }}
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="10" class="text-center p-4">
+              <div class="flex flex-column align-items-center gap-3">
+                <i class="pi pi-inbox text-4xl text-color-secondary"></i>
+                @if (searchQuery) {
+                  <span class="text-color-secondary">No bills found matching "{{ searchQuery }}"</span>
+                } @else {
+                  <span class="text-color-secondary">No legacy bills imported</span>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #loadingbody>
+          @for (_ of skeletonRows; track $index) {
+            <tr>
+              <td><p-skeleton width="40%" /></td>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="80%" /></td>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="80%" /></td>
+              <td><p-skeleton width="30%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="50%" /></td>
+              <td><p-skeleton width="70%" /></td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>

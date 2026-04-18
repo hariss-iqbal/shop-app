@@ -35,9 +35,16 @@
   opacity: 0.9;
 }
 
-// Table row cursor
+// Hide scrollbar for category chips on horizontal scroll
 :host ::ng-deep {
-  .p-datatable .p-datatable-tbody > tr {
-    cursor: pointer;
+  .overflow-x-auto {
+    scrollbar-width: thin;
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: var(--p-surface-300, #cbd5e1);
+      border-radius: 2px;
+    }
   }
 }

@@ -251,7 +251,7 @@ export class InventoryListComponent implements OnInit {
         filter['status'] = this.statusFilter();
       }
       if (this.modelFilter()) {
-        filter['model'] = this.modelFilter();
+        filter['modelId'] = this.modelFilter();
       }
       if (this.ptaFilter()) {
         filter['ptaStatus'] = this.ptaFilter();
@@ -307,7 +307,7 @@ export class InventoryListComponent implements OnInit {
         const models = await this.productService.getDistinctModelsByBrand(brandId);
         this.modelOptions.set([
           { label: 'All Products', value: null },
-          ...models.map(m => ({ label: m, value: m }))
+          ...models.map(m => ({ label: m.name, value: m.id }))
         ]);
       } catch (error) {
         console.error('Failed to load models:', error);

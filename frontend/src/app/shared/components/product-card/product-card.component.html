@@ -20,7 +20,7 @@
         [src]="cardImageUrl()"
         [srcset]="cardSrcSet()"
         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-        [alt]="product().brandName + ' ' + product().model"
+        [alt]="product().brandName + ' ' + (product().modelName || product().model)"
         width="200"
         height="256"
         [loading]="eagerLoad() ? 'eager' : 'lazy'"
@@ -36,15 +36,13 @@
     }
 
     <!-- PTA Badge (bottom-right) -->
-    @if (product().ptaStatus) {
-      <span class="pta-overlay"
-            [class.pta-overlay-approved]="product().ptaStatus === 'pta_approved'"
-            [class.pta-overlay-non]="product().ptaStatus === 'non_pta'">
-        @if (product().ptaStatus === 'pta_approved') {
-          <i class="pi pi-verified" style="font-size: 0.6rem;"></i> PTA
-        } @else {
-          <i class="pi pi-mobile" style="font-size: 0.6rem;"></i> NON PTA
-        }
+    @if (product().ptaStatus === 'pta_approved') {
+      <span class="pta-overlay card-chip-pta">
+        <i class="pi pi-check-circle" style="font-size: 0.7rem;"></i> PTA
+      </span>
+    } @else if (product().ptaStatus === 'non_pta') {
+      <span class="pta-overlay card-chip-non-pta">
+        <i class="pi pi-times-circle" style="font-size: 0.7rem;"></i> Non-PTA
       </span>
     }
 
@@ -57,7 +55,7 @@
   <!-- Info Section -->
   <div class="card-info">
     <span class="card-brand">{{ product().brandName }}</span>
-    <h3 class="card-model">{{ product().model }}</h3>
+    <h3 class="card-model">{{ product().modelName || product().model }}</h3>
 
     <!-- Chips: storage + color -->
     <div class="card-chips">

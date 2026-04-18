@@ -2,70 +2,44 @@
   <!-- Header Row -->
   <div class="col-12">
     <div class="flex align-items-center justify-content-between mb-3">
-      <h1 class="text-3xl font-bold m-0">Image Management</h1>
-      <!-- KPI Chip -->
-      <div
-        class="flex align-items-center gap-2 border-round-lg px-3 py-2 cursor-pointer select-none transition-all transition-duration-200"
-        [class.bg-orange-100]="missingImageCount() > 0"
-        [class.bg-green-100]="missingImageCount() === 0"
-        [class.border-1]="activeFilter() === 'no-images'"
-        [class.border-orange-400]="activeFilter() === 'no-images'"
-        (click)="onKpiClick()"
-        pTooltip="Click to toggle missing-images filter"
-        tooltipPosition="left"
-      >
-        @if (missingImageCount() > 0) {
-          <i class="pi pi-exclamation-triangle text-orange-600"></i>
-          <span class="font-bold text-orange-700">{{ missingImageCount() }}</span>
-          <span class="text-orange-600 text-sm">missing images</span>
-        } @else {
-          <i class="pi pi-check-circle text-green-600"></i>
-          <span class="text-green-700 text-sm font-medium">All products have images</span>
-        }
-      </div>
+      <h1 class="text-3xl font-bold m-0">Data Quality</h1>
+    </div>
+  </div>
+
+  <!-- Category KPI Chips -->
+  <div class="col-12">
+    <div class="flex gap-2 overflow-x-auto pb-2">
+      @for (cat of categories; track cat.key) {
+        <div
+          class="flex align-items-center gap-2 px-3 py-2 border-round cursor-pointer white-space-nowrap transition-colors transition-duration-150"
+          [ngClass]="{
+            'bg-orange-50 text-orange-700 border-1 border-orange-200': missingCounts()[cat.key] > 0 && activeFilter() !== cat.key,
+            'bg-green-50 text-green-700 border-1 border-green-200': missingCounts()[cat.key] === 0 && activeFilter() !== cat.key,
+            'bg-primary text-white': activeFilter() === cat.key
+          }"
+          (click)="setFilter(cat.key)"
+        >
+          <i [class]="cat.icon"></i>
+          <span class="font-medium">{{ cat.label }}</span>
+          <span class="font-bold">{{ missingCounts()[cat.key] }}</span>
+        </div>
+      }
     </div>
   </div>
 
   <!-- Table Card -->
   <div class="col-12">
     <p-card>
-      <!-- Toolbar: Filters + Search -->
-      <div class="flex flex-column md:flex-row gap-3 align-items-start md:align-items-center justify-content-between mb-3">
-        <div class="flex flex-wrap gap-2">
-          <p-button
-            label="All"
-            [severity]="activeFilter() === 'all' ? 'primary' : 'secondary'"
-            [outlined]="activeFilter() !== 'all'"
-            size="small"
-            (onClick)="setFilter('all')"
-          />
-          <p-button
-            label="No Images"
-            icon="pi pi-exclamation-triangle"
-            [severity]="activeFilter() === 'no-images' ? 'warn' : 'secondary'"
-            [outlined]="activeFilter() !== 'no-images'"
-            size="small"
-            (onClick)="setFilter('no-images')"
-          />
-          <p-button
-            label="Has Images"
-            icon="pi pi-check"
-            [severity]="activeFilter() === 'has-images' ? 'success' : 'secondary'"
-            [outlined]="activeFilter() !== 'has-images'"
-            size="small"
-            (onClick)="setFilter('has-images')"
-          />
-        </div>
-        <div class="flex gap-2 w-full md:w-auto">
-          <input
-            pInputText
-            [(ngModel)]="searchQuery"
-            (keydown.enter)="onSearch()"
-            placeholder="Search by model..."
-            class="w-full md:w-20rem"
-          />
-          <p-button icon="pi pi-search" [outlined]="true" (onClick)="onSearch()" pTooltip="Search" tooltipPosition="top" />
-        </div>
+      <!-- Search bar -->
+      <div class="flex gap-2 mb-3 w-full md:w-auto">
+        <input
+          pInputText
+          [(ngModel)]="searchQuery"
+          (keydown.enter)="onSearch()"
+          placeholder="Search by brand or model..."
+          class="w-full md:w-20rem"
+        />
+        <p-button icon="pi pi-search" [outlined]="true" (onClick)="onSearch()" pTooltip="Search" tooltipPosition="top" />
       </div>
 
       <!-- Table -->
@@ -73,11 +47,11 @@
         <div class="flex justify-content-center p-5">
           <p-progressSpinner strokeWidth="4" />
         </div>
-      } @else if (products().length === 0) {
+      } @else if (filteredProducts().length === 0) {
         <p-message severity="info" text="No products found matching the current filter" styleClass="w-full" />
       } @else {
         <p-table
-          [value]="products()"
+          [value]="filteredProducts()"
           [scrollable]="true"
           scrollDirection="horizontal"
           [tableStyle]="{ 'min-width': '50rem' }"
@@ -85,7 +59,6 @@
           [paginator]="true"
           [rows]="rows"
           [first]="first"
-          [totalRecords]="totalProducts()"
           [lazy]="false"
           (onPage)="onPageChange($event)"
           [rowHover]="true"
@@ -95,16 +68,49 @@
               <th style="width: 56px"></th>
               <th>Brand</th>
               <th>Model</th>
-              <th>Storage</th>
-              <th>RAM</th>
-              <th>Color</th>
-              <th>Price</th>
-              <th style="width: 110px" class="text-center">Images</th>
-              <th style="width: 90px"></th>
+
+              <!-- Dynamic columns based on active filter -->
+              @if (activeFilter() === 'all') {
+                <th>Storage</th>
+                <th>RAM</th>
+                <th>Color</th>
+                <th>PTA</th>
+                <th>Selling Price</th>
+                <th>Cost Price</th>
+                <th class="text-center" style="width: 90px">Images</th>
+              }
+
+              @if (activeFilter() === 'images') {
+                <th class="text-center" style="width: 90px">Images</th>
+                <th style="width: 100px"></th>
+              }
+
+              @if (activeFilter() === 'prices') {
+                <th style="min-width: 160px">Cost Price</th>
+                <th style="min-width: 160px">Selling Price</th>
+              }
+
+              @if (activeFilter() === 'ram') {
+                <th style="min-width: 160px">RAM</th>
+              }
+
+              @if (activeFilter() === 'storage') {
+                <th style="min-width: 160px">Storage</th>
+              }
+
+              @if (activeFilter() === 'color') {
+                <th style="min-width: 180px">Color</th>
+              }
+
+              @if (activeFilter() === 'ptaStatus') {
+                <th style="min-width: 180px">PTA Status</th>
+              }
             </tr>
           </ng-template>
+
           <ng-template #body let-product>
-            <tr class="cursor-pointer" (click)="onRowClick(product)">
+            <tr>
+              <!-- Thumbnail -->
               <td>
                 @if (getImageThumbnail(product)) {
                   <img [src]="getImageThumbnail(product)" alt="" width="40" height="40" class="border-round" style="object-fit: cover;" />
@@ -114,50 +120,178 @@
                   </div>
                 }
               </td>
+              <!-- Brand -->
               <td>{{ product.brandName }}</td>
+              <!-- Model -->
               <td class="font-semibold">{{ product.model }}</td>
-              <td>
-                @if (product.storageGb) {
-                  {{ product.storageGb }}GB
-                } @else {
-                  <span class="text-color-secondary">—</span>
-                }
-              </td>
-              <td>
-                @if (product.ramGb) {
-                  {{ product.ramGb }}GB
-                } @else {
-                  <span class="text-color-secondary">—</span>
-                }
-              </td>
-              <td>
-                @if (product.color) {
-                  {{ product.color }}
-                } @else {
-                  <span class="text-color-secondary">—</span>
-                }
-              </td>
-              <td>{{ product.sellingPrice | currency:'PKR':'symbol-narrow':'1.0-0' }}</td>
-              <td class="text-center">
-                <p-tag
-                  [value]="'' + product.imageCount"
-                  [severity]="product.imageCount === 0 ? 'warn' : 'success'"
-                />
-              </td>
-              <td>
-                <p-button
-                  icon="pi pi-images"
-                  label="Manage"
-                  size="small"
-                  [text]="true"
-                  (onClick)="openUploadDialog(product); $event.stopPropagation()"
-                />
-              </td>
+
+              <!-- ===== ALL view: read-only overview ===== -->
+              @if (activeFilter() === 'all') {
+                <td>
+                  @if (product.storageGb) {
+                    {{ product.storageGb >= 1024 ? (product.storageGb / 1024) + 'TB' : product.storageGb + 'GB' }}
+                  } @else {
+                    <span class="text-color-secondary">--</span>
+                  }
+                </td>
+                <td>
+                  @if (product.ramGb) {
+                    {{ product.ramGb }}GB
+                  } @else {
+                    <span class="text-color-secondary">--</span>
+                  }
+                </td>
+                <td>
+                  @if (product.color) {
+                    {{ product.color }}
+                  } @else {
+                    <span class="text-color-secondary">--</span>
+                  }
+                </td>
+                <td>
+                  @if (product.ptaStatus) {
+                    <p-tag
+                      [value]="product.ptaStatus === 'pta_approved' ? 'PTA' : 'Non PTA'"
+                      [severity]="product.ptaStatus === 'pta_approved' ? 'success' : 'warn'"
+                    />
+                  } @else {
+                    <span class="text-color-secondary">--</span>
+                  }
+                </td>
+                <td>
+                  @if (product.sellingPrice) {
+                    {{ product.sellingPrice | number:'1.0-0' }}
+                  } @else {
+                    <span class="text-color-secondary">--</span>
+                  }
+                </td>
+                <td>
+                  @if (product.costPrice) {
+                    {{ product.costPrice | number:'1.0-0' }}
+                  } @else {
+                    <span class="text-color-secondary">--</span>
+                  }
+                </td>
+                <td class="text-center">
+                  <p-tag
+                    [value]="'' + product.imageCount"
+                    [severity]="product.imageCount === 0 ? 'warn' : 'success'"
+                  />
+                </td>
+              }
+
+              <!-- ===== IMAGES category ===== -->
+              @if (activeFilter() === 'images') {
+                <td class="text-center">
+                  <p-tag
+                    [value]="'' + product.imageCount"
+                    [severity]="product.imageCount === 0 ? 'warn' : 'success'"
+                  />
+                </td>
+                <td>
+                  <p-button
+                    icon="pi pi-images"
+                    label="Manage"
+                    size="small"
+                    [text]="true"
+                    (onClick)="openUploadDialog(product)"
+                  />
+                </td>
+              }
+
+              <!-- ===== PRICES category ===== -->
+              @if (activeFilter() === 'prices') {
+                <td>
+                  <p-inputNumber
+                    [(ngModel)]="product.costPrice"
+                    [inputStyleClass]="'w-full'"
+                    (onBlur)="saveField(product, 'costPrice', product.costPrice)"
+                    placeholder="Cost"
+                  />
+                </td>
+                <td>
+                  <p-inputNumber
+                    [(ngModel)]="product.sellingPrice"
+                    [inputStyleClass]="'w-full'"
+                    (onBlur)="saveField(product, 'sellingPrice', product.sellingPrice)"
+                    placeholder="Selling"
+                  />
+                </td>
+              }
+
+              <!-- ===== RAM category ===== -->
+              @if (activeFilter() === 'ram') {
+                <td>
+                  <p-select
+                    [ngModel]="product.ramGb"
+                    [options]="getRamOptions(product)"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select RAM"
+                    appendTo="body"
+                    [style]="{ width: '100%' }"
+                    (onChange)="saveField(product, 'ramGb', $event.value)"
+                    (onShow)="fetchSpecsForProduct(product)"
+                  />
+                </td>
+              }
+
+              <!-- ===== STORAGE category ===== -->
+              @if (activeFilter() === 'storage') {
+                <td>
+                  <p-select
+                    [ngModel]="product.storageGb"
+                    [options]="getStorageOptions(product)"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select Storage"
+                    appendTo="body"
+                    [style]="{ width: '100%' }"
+                    (onChange)="saveField(product, 'storageGb', $event.value)"
+                    (onShow)="fetchSpecsForProduct(product)"
+                  />
+                </td>
+              }
+
+              <!-- ===== COLOR category ===== -->
+              @if (activeFilter() === 'color') {
+                <td>
+                  <p-select
+                    [ngModel]="product.color"
+                    [options]="getColorOptions(product)"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Type or select color"
+                    appendTo="body"
+                    [editable]="true"
+                    [style]="{ width: '100%' }"
+                    (onChange)="saveField(product, 'color', $event.value)"
+                    (onShow)="fetchSpecsForProduct(product)"
+                  />
+                </td>
+              }
+
+              <!-- ===== PTA STATUS category ===== -->
+              @if (activeFilter() === 'ptaStatus') {
+                <td>
+                  <p-select
+                    [ngModel]="product.ptaStatus"
+                    [options]="ptaOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select PTA Status"
+                    appendTo="body"
+                    [style]="{ width: '100%' }"
+                    (onChange)="saveField(product, 'ptaStatus', $event.value)"
+                  />
+                </td>
+              }
             </tr>
           </ng-template>
+
           <ng-template #emptymessage>
             <tr>
-              <td colspan="9" class="text-center p-4 text-color-secondary">
+              <td colspan="10" class="text-center p-4 text-color-secondary">
                 No products found
               </td>
             </tr>

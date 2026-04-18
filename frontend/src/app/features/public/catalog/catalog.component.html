@@ -130,7 +130,7 @@
             <div role="listitem"
                  tabindex="0"
                  class="product-card-focusable"
-                 [attr.aria-label]="product.brandName + ' ' + product.model + ', ' + getConditionLabel(product.condition) + ', ' + (product.sellingPrice | appCurrency) + '. Press Enter to view details.'"
+                 [attr.aria-label]="product.brandName + ' ' + (product.modelName || product.model) + ', ' + getConditionLabel(product.condition) + ', ' + (product.sellingPrice | appCurrency) + '. Press Enter to view details.'"
                  appProductCardKeyboard
                  (cardActivated)="viewProduct(product)">
               <app-product-card
@@ -227,6 +227,25 @@
         }
       </div>
     </div>
+
+    <!-- Model Filter: Shows when single brand selected -->
+    @if (selectedBrandIds.length === 1 && modelOptions().length > 1) {
+      <div class="filter-group">
+        <label class="filter-label">Model</label>
+        <p-select
+          [options]="modelOptions()"
+          [(ngModel)]="selectedModelId"
+          (onChange)="onModelFilterChange()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="All Models"
+          [filter]="true"
+          filterPlaceholder="Search model..."
+          styleClass="w-full"
+          [showClear]="true"
+        />
+      </div>
+    }
 
     <!-- Condition Filter: Checkboxes -->
     <div class="filter-group">
@@ -341,11 +360,11 @@
           <div class="flex align-items-center gap-2 surface-100 border-round px-3 py-2">
             @if (product.primaryImageUrl) {
               <img [src]="getCardOptimizedUrl(product.primaryImageUrl)"
-                   [alt]="product.brandName + ' ' + product.model"
+                   [alt]="product.brandName + ' ' + (product.modelName || product.model)"
                    style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;"
                    (error)="onImageError($event)" />
             }
-            <span class="text-sm font-medium white-space-nowrap">{{ product.brandName }} {{ product.model }}</span>
+            <span class="text-sm font-medium white-space-nowrap">{{ product.brandName }} {{ product.modelName || product.model }}</span>
             <p-button
               icon="pi pi-times"
               [rounded]="true"

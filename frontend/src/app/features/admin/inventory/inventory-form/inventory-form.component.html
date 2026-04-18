@@ -121,32 +121,82 @@
             <!-- Model -->
             <div class="col-12 md:col-6">
               <label for="model" class="block font-medium mb-2">Model <span class="text-red-500">*</span></label>
-              <div class="flex gap-2">
-                <input
-                  id="model"
-                  type="text"
-                  pInputText
-                  formControlName="model"
-                  class="flex-1"
-                  placeholder="e.g., iPhone 15 Pro Max"
-                  [maxlength]="constraints.MODEL_MAX"
-                  aria-describedby="model-help"
-                />
-                @if (form.get('productType')?.value === 'phone') {
-                  <p-button
-                    label="Fetch Info"
-                    icon="pi pi-search"
-                    [outlined]="true"
-                    size="small"
-                    (onClick)="fetchProductSpecs()"
-                    [loading]="fetchingSpecs()"
-                    [disabled]="!form.get('brand')?.value || !form.get('model')?.value || fetchingSpecs()"
-                    pTooltip="Auto-fill specs from GSMArena"
-                    tooltipPosition="top"
+              @if (modelOptions().length > 0) {
+                <div class="flex flex-column gap-2">
+                  <div class="flex gap-2">
+                    <p-select
+                      [options]="modelOptions()"
+                      [ngModel]="selectedModelId()"
+                      (ngModelChange)="onModelSelect($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select a model..."
+                      styleClass="flex-1"
+                      [filter]="true"
+                      filterPlaceholder="Search models..."
+                      [showClear]="true"
+                      [loading]="loadingModels()"
+                    />
+                    @if (form.get('productType')?.value === 'phone') {
+                      <p-button
+                        label="Fetch Info"
+                        icon="pi pi-search"
+                        [outlined]="true"
+                        size="small"
+                        (onClick)="fetchProductSpecs()"
+                        [loading]="fetchingSpecs()"
+                        [disabled]="!form.get('brand')?.value || !form.get('model')?.value || fetchingSpecs()"
+                        pTooltip="Auto-fill specs from GSMArena"
+                        tooltipPosition="top"
+                      />
+                    }
+                  </div>
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-500 text-sm">or type custom:</span>
+                    <input
+                      id="model"
+                      type="text"
+                      pInputText
+                      formControlName="model"
+                      class="flex-1"
+                      placeholder="e.g., iPhone 15 Pro Max"
+                      [maxlength]="constraints.MODEL_MAX"
+                      aria-describedby="model-help"
+                      (input)="selectedModelId.set(null)"
+                    />
+                  </div>
+                </div>
+              } @else {
+                <div class="flex gap-2">
+                  <input
+                    id="model"
+                    type="text"
+                    pInputText
+                    formControlName="model"
+                    class="flex-1"
+                    placeholder="e.g., iPhone 15 Pro Max"
+                    [maxlength]="constraints.MODEL_MAX"
+                    aria-describedby="model-help"
                   />
-                }
-              </div>
-              @if (form.controls['model'].invalid && form.controls['model'].touched) {
+                  @if (form.get('productType')?.value === 'phone') {
+                    <p-button
+                      label="Fetch Info"
+                      icon="pi pi-search"
+                      [outlined]="true"
+                      size="small"
+                      (onClick)="fetchProductSpecs()"
+                      [loading]="fetchingSpecs()"
+                      [disabled]="!form.get('brand')?.value || !form.get('model')?.value || fetchingSpecs()"
+                      pTooltip="Auto-fill specs from GSMArena"
+                      tooltipPosition="top"
+                    />
+                  }
+                </div>
+              }
+              @if (loadingModels()) {
+                <small class="text-500 block mt-1"><i class="pi pi-spin pi-spinner mr-1"></i>Loading models...</small>
+              } @else if (form.controls['model'].invalid && form.controls['model'].touched) {
                 <small id="model-help" class="p-error block mt-1">Model name is required</small>
               } @else {
                 <small id="model-help" class="text-500 block mt-1">{{ form.get('model')?.value?.length || 0 }}/{{ constraints.MODEL_MAX }} characters</small>

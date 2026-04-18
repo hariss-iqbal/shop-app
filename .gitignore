@@ -26,6 +26,10 @@ logs/
 *.log
 npm-debug.log*
 
+# Python
+__pycache__/
+*.pyc
+
 # Supabase local temp files
 backend/supabase/.temp/
 

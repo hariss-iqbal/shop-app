@@ -18,6 +18,17 @@ export interface FetchProductSpecsResponse {
   sourceUrl?: string;
 }
 
+export interface GsmArenaSearchResult {
+  name: string;
+  url: string;
+}
+
+export interface SearchModelsResponse {
+  success: boolean;
+  data?: GsmArenaSearchResult[];
+  error?: string;
+}
+
 /**
  * Product Specifications Scraper Service
  *
@@ -34,6 +45,8 @@ export class ProductSpecsScraperService {
   // In-memory cache (survives for session only)
   private cache = new Map<string, { data: ProductSpecSuggestion; timestamp: number }>();
   private readonly CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
+  private readonly SEARCH_URL = `${environment.apiServer.url}/api/products/search-models`;
 
   constructor(private http: HttpClient) {}
 
@@ -90,4 +103,36 @@ export class ProductSpecsScraperService {
     }
   }
 
+  /**
+   * Search GSMArena for phone models matching a query
+   */
+  async searchModels(query: string): Promise<SearchModelsResponse> {
+    try {
+      if (!query || query.trim().length < 2) {
+        return { success: false, error: 'Query must be at least 2 characters' };
+      }
+
+      const result = await firstValueFrom(
+        this.http.post<SearchModelsResponse>(this.SEARCH_URL, {
+          query: query.trim()
+        })
+      );
+
+      return result;
+    } catch (error) {
+      console.error('[ProductSpecsScraper] Error searching models:', error);
+
+      if (error instanceof Error && error.message.includes('Http failure')) {
+        return {
+          success: false,
+          error: 'Backend API server is not running. Please start it with: npm run api-server'
+        };
+      }
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
 }

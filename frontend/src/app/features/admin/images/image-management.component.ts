@@ -1,12 +1,14 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { TagModule } from 'primeng/tag';
+import { SelectModule } from 'primeng/select';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageModule } from 'primeng/message';
@@ -16,17 +18,35 @@ import { DividerModule } from 'primeng/divider';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ProductService, LazyLoadParams } from '../../../core/services/product.service';
 import { ProductImageService } from '../../../core/services/product-image.service';
+import { ProductSpecsScraperService } from '../../../core/services/product-specs-scraper.service';
 import { ViewportService } from '../../../core';
 import { ToastService } from '../../../shared/services/toast.service';
 import { Product } from '../../../models/product.model';
 import { ProductImage } from '../../../models/product-image.model';
+import { PtaStatus, PtaStatusLabels } from '../../../enums/pta-status.enum';
 
 interface ProductWithImages extends Product {
   imageCount: number;
   images: ProductImage[];
 }
 
-type ImageFilter = 'all' | 'no-images' | 'has-images';
+type DataCategory = 'all' | 'images' | 'prices' | 'ram' | 'color' | 'storage' | 'ptaStatus';
+
+interface CategoryConfig {
+  key: DataCategory;
+  label: string;
+  icon: string;
+  isMissing: (p: ProductWithImages) => boolean;
+}
+
+const CATEGORIES: CategoryConfig[] = [
+  { key: 'images', label: 'Images', icon: 'pi pi-image', isMissing: p => p.imageCount === 0 },
+  { key: 'prices', label: 'Prices', icon: 'pi pi-tag', isMissing: p => !p.sellingPrice || !p.costPrice },
+  { key: 'ram', label: 'RAM', icon: 'pi pi-microchip', isMissing: p => p.ramGb === null },
+  { key: 'color', label: 'Color', icon: 'pi pi-palette', isMissing: p => !p.color },
+  { key: 'storage', label: 'Storage', icon: 'pi pi-database', isMissing: p => p.storageGb === null },
+  { key: 'ptaStatus', label: 'PTA Status', icon: 'pi pi-shield', isMissing: p => !p.ptaStatus },
+];
 
 @Component({
   selector: 'app-image-management',
@@ -38,7 +58,9 @@ type ImageFilter = 'all' | 'no-images' | 'has-images';
     ButtonModule,
     DialogModule,
     InputTextModule,
+    InputNumberModule,
     TagModule,
+    SelectModule,
     ProgressSpinnerModule,
     TooltipModule,
     MessageModule,
@@ -46,7 +68,6 @@ type ImageFilter = 'all' | 'no-images' | 'has-images';
     BadgeModule,
     DividerModule,
     DragDropModule,
-    CurrencyPipe
   ],
   templateUrl: './image-management.component.html',
   styleUrls: ['./image-management.component.scss']
@@ -55,17 +76,68 @@ export class ImageManagementComponent implements OnInit {
   constructor(
     private productService: ProductService,
     private productImageService: ProductImageService,
+    private specsScraperService: ProductSpecsScraperService,
     public viewportService: ViewportService,
     private toastService: ToastService
   ) {}
 
+  // Category definitions
+  categories = CATEGORIES;
+
+  // PTA options for dropdown
+  ptaOptions = [
+    { label: PtaStatusLabels[PtaStatus.PTA_APPROVED], value: PtaStatus.PTA_APPROVED },
+    { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
+  ];
+
+  // Common fallback options
+  commonRamOptions = [2, 3, 4, 6, 8, 12, 16];
+  commonStorageOptions = [32, 64, 128, 256, 512, 1024];
+
   // State
   loading = signal(false);
-  products = signal<ProductWithImages[]>([]);
-  totalProducts = signal(0);
+  allProducts = signal<ProductWithImages[]>([]);
   searchQuery = '';
-  activeFilter = signal<ImageFilter>('all');
-  missingImageCount = signal(0);
+  activeFilter = signal<DataCategory>('all');
+
+  // Inline editing
+  specsCache = new Map<string, { ram: number[], storage: number[], colors: string[] }>();
+  fetchingSpecsFor = signal<string | null>(null);
+
+  // Computed: missing counts per category
+  missingCounts = computed(() => {
+    const products = this.allProducts();
+    const counts: Record<string, number> = {};
+    for (const cat of CATEGORIES) {
+      counts[cat.key] = products.filter(cat.isMissing).length;
+    }
+    return counts;
+  });
+
+  // Computed: filtered products based on active category + search
+  filteredProducts = computed(() => {
+    const filter = this.activeFilter();
+    const query = this.searchQuery.toLowerCase().trim();
+    let products = this.allProducts();
+
+    // Filter by category
+    if (filter !== 'all') {
+      const cat = CATEGORIES.find(c => c.key === filter);
+      if (cat) {
+        products = products.filter(cat.isMissing);
+      }
+    }
+
+    // Filter by search query
+    if (query) {
+      products = products.filter(p =>
+        p.model.toLowerCase().includes(query) ||
+        p.brandName.toLowerCase().includes(query)
+      );
+    }
+
+    return products;
+  });
 
   // Pagination
   rows = 20;
@@ -96,15 +168,16 @@ export class ImageManagementComponent implements OnInit {
   async loadProducts(): Promise<void> {
     this.loading.set(true);
     try {
+      // Fetch all phone products (no pagination — client-side filtering)
       const params: LazyLoadParams = {
-        first: this.first,
-        rows: this.rows,
+        first: 0,
+        rows: 1000,
         sortField: 'createdAt',
         sortOrder: -1,
-        globalFilter: this.searchQuery || undefined
+        globalFilter: undefined
       };
 
-      const result = await this.productService.getProducts(params);
+      const result = await this.productService.getProducts(params, { productType: 'phone' as any });
 
       // Fetch image counts for each product
       const productsWithImages: ProductWithImages[] = await Promise.all(
@@ -118,20 +191,7 @@ export class ImageManagementComponent implements OnInit {
         })
       );
 
-      // Apply filter
-      let filtered = productsWithImages;
-      if (this.activeFilter() === 'no-images') {
-        filtered = productsWithImages.filter(p => p.imageCount === 0);
-      } else if (this.activeFilter() === 'has-images') {
-        filtered = productsWithImages.filter(p => p.imageCount > 0);
-      }
-
-      this.products.set(filtered);
-      this.totalProducts.set(result.total);
-
-      // Count missing images across all products
-      const missing = productsWithImages.filter(p => p.imageCount === 0).length;
-      this.missingImageCount.set(missing);
+      this.allProducts.set(productsWithImages);
     } catch (error) {
       this.toastService.error('Error', 'Failed to load products');
       console.error('Failed to load products:', error);
@@ -142,27 +202,106 @@ export class ImageManagementComponent implements OnInit {
 
   onSearch(): void {
     this.first = 0;
-    this.loadProducts();
+    // Trigger recomputation by updating the signal
+    this.allProducts.update(p => [...p]);
   }
 
-  setFilter(filter: ImageFilter): void {
-    this.activeFilter.set(filter);
+  setFilter(filter: DataCategory): void {
+    // Toggle: clicking the active filter goes back to 'all'
+    if (this.activeFilter() === filter) {
+      this.activeFilter.set('all');
+    } else {
+      this.activeFilter.set(filter);
+    }
     this.first = 0;
-    this.loadProducts();
+
+    // Auto-fetch specs for relevant categories
+    if (filter === 'ram' || filter === 'storage' || filter === 'color') {
+      this.prefetchSpecsForVisibleProducts();
+    }
   }
 
   onPageChange(event: { first: number; rows: number }): void {
     this.first = event.first;
     this.rows = event.rows;
-    this.loadProducts();
   }
 
-  onKpiClick(): void {
-    this.setFilter(this.activeFilter() === 'no-images' ? 'all' : 'no-images');
+  // --- Inline Editing ---
+
+  getSpecsForProduct(product: ProductWithImages): { ram: number[], storage: number[], colors: string[] } | null {
+    const key = `${product.brandName.toLowerCase()}_${product.model.toLowerCase()}`;
+    return this.specsCache.get(key) || null;
   }
 
-  onRowClick(product: ProductWithImages): void {
-    this.openUploadDialog(product);
+  getRamOptions(product: ProductWithImages): { label: string, value: number }[] {
+    const specs = this.getSpecsForProduct(product);
+    const values = specs?.ram?.length ? specs.ram : this.commonRamOptions;
+    return values.map(v => ({ label: `${v} GB`, value: v }));
+  }
+
+  getStorageOptions(product: ProductWithImages): { label: string, value: number }[] {
+    const specs = this.getSpecsForProduct(product);
+    const values = specs?.storage?.length ? specs.storage : this.commonStorageOptions;
+    return values.map(v => ({ label: v >= 1024 ? `${v / 1024} TB` : `${v} GB`, value: v }));
+  }
+
+  getColorOptions(product: ProductWithImages): { label: string, value: string }[] {
+    const specs = this.getSpecsForProduct(product);
+    if (specs?.colors?.length) {
+      return specs.colors.map(c => ({ label: c, value: c }));
+    }
+    return [];
+  }
+
+  async fetchSpecsForProduct(product: ProductWithImages): Promise<void> {
+    const key = `${product.brandName.toLowerCase()}_${product.model.toLowerCase()}`;
+    if (this.specsCache.has(key)) return;
+
+    this.fetchingSpecsFor.set(product.id);
+    try {
+      const result = await this.specsScraperService.fetchSpecs(product.brandName, product.model);
+      if (result.success && result.data) {
+        this.specsCache.set(key, {
+          ram: result.data.ram || [],
+          storage: result.data.storage || [],
+          colors: result.data.colors || []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch specs:', error);
+    } finally {
+      this.fetchingSpecsFor.set(null);
+    }
+  }
+
+  private async prefetchSpecsForVisibleProducts(): Promise<void> {
+    const products = this.filteredProducts();
+    const uniqueModels = new Map<string, ProductWithImages>();
+    for (const p of products) {
+      const key = `${p.brandName.toLowerCase()}_${p.model.toLowerCase()}`;
+      if (!this.specsCache.has(key) && !uniqueModels.has(key)) {
+        uniqueModels.set(key, p);
+      }
+    }
+
+    // Fetch specs for up to 5 unique models at a time
+    const toFetch = Array.from(uniqueModels.values()).slice(0, 5);
+    for (const p of toFetch) {
+      await this.fetchSpecsForProduct(p);
+    }
+  }
+
+  async saveField(product: ProductWithImages, field: string, value: any): Promise<void> {
+    if (value === null || value === undefined || value === '') return;
+
+    try {
+      const updatePayload: Record<string, unknown> = { [field]: value };
+      await this.productService.updateProduct(product.id, updatePayload);
+      this.toastService.success('Saved', `Updated ${product.brandName} ${product.model}`);
+    } catch (error) {
+      this.toastService.error('Error', 'Failed to save');
+      console.error('Failed to save field:', error);
+    }
   }
 
   // --- Upload Dialog ---
@@ -236,9 +375,9 @@ export class ImageManagementComponent implements OnInit {
       // Refresh images in dialog
       await this.loadProductImages(product.id);
 
-      // Update the product row in the table
+      // Update the product in allProducts
       const newCount = this.productImages().length;
-      this.products.update(products =>
+      this.allProducts.update(products =>
         products.map(p => {
           if (p.id === product.id) {
             return { ...p, imageCount: newCount };
@@ -246,11 +385,6 @@ export class ImageManagementComponent implements OnInit {
           return p;
         })
       );
-
-      // Update missing count
-      if (product.imageCount === 0 && newCount > 0) {
-        this.missingImageCount.update(count => Math.max(0, count - 1));
-      }
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Upload failed';
       this.toastService.error('Upload Error', msg);
@@ -292,7 +426,7 @@ export class ImageManagementComponent implements OnInit {
       await this.loadProductImages(product.id);
 
       const newCount = this.productImages().length;
-      this.products.update(products =>
+      this.allProducts.update(products =>
         products.map(p => {
           if (p.id === product.id) {
             return { ...p, imageCount: newCount };
@@ -300,10 +434,6 @@ export class ImageManagementComponent implements OnInit {
           return p;
         })
       );
-
-      if (newCount === 0) {
-        this.missingImageCount.update(count => count + 1);
-      }
     } catch (error) {
       this.toastService.error('Error', 'Failed to delete image');
     }

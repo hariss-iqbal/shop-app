@@ -23,11 +23,13 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { ProductService } from '../../../../core/services/product.service';
 import { ProductImageService } from '../../../../core/services/product-image.service';
 import { BrandService } from '../../../../core/services/brand.service';
+import { ModelService } from '../../../../core/services/model.service';
 import { SupplierService } from '../../../../core/services/supplier.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { Brand } from '../../../../models/brand.model';
+import { PhoneModel } from '../../../../models/phone-model.model';
 import { Supplier } from '../../../../models/supplier.model';
 import { CreateProductRequest, UpdateProductRequest } from '../../../../models/product.model';
 import { ProductImage } from '../../../../models/product-image.model';
@@ -113,6 +115,7 @@ export class InventoryFormComponent implements OnInit {
     private route: ActivatedRoute,
     private productService: ProductService,
     private brandService: BrandService,
+    private modelService: ModelService,
     private supplierService: SupplierService,
     private sanitizer: InputSanitizationService,
     private toastService: ToastService,
@@ -131,6 +134,13 @@ export class InventoryFormComponent implements OnInit {
   suppliers = signal<Supplier[]>([]);
   showBatteryHealth = signal(false);
   creatingBrand = signal(false);
+
+  availableModels = signal<PhoneModel[]>([]);
+  modelOptions = computed(() => {
+    return this.availableModels().map(m => ({ label: m.name, value: m.id }));
+  });
+  selectedModelId = signal<string | null>(null);
+  loadingModels = signal(false);
 
   showCreateBrandDialog = false;
   pendingBrandName = '';
@@ -320,6 +330,14 @@ export class InventoryFormComponent implements OnInit {
 
     const brand = this.brands().find(b => b.id === product.brandId);
 
+    // Load models for this brand and pre-select if exists
+    if (product.brandId) {
+      await this.loadModelsForBrand(product.brandId);
+      if (product.modelId) {
+        this.selectedModelId.set(product.modelId);
+      }
+    }
+
     const shouldShowBatteryHealth = product.condition === ProductCondition.USED || product.condition === ProductCondition.OPEN_BOX;
     this.showBatteryHealth.set(shouldShowBatteryHealth);
 
@@ -499,6 +517,31 @@ export class InventoryFormComponent implements OnInit {
       this.pendingBrandName = selected.name;
       this.showCreateBrandDialog = true;
       this.form.get('brand')?.setValue(null);
+    } else if (selected.id) {
+      this.loadModelsForBrand(selected.id);
+    }
+  }
+
+  async loadModelsForBrand(brandId: string): Promise<void> {
+    this.loadingModels.set(true);
+    this.selectedModelId.set(null);
+    try {
+      const models = await this.modelService.getModelsByBrand(brandId);
+      this.availableModels.set(models);
+    } catch {
+      this.availableModels.set([]);
+    } finally {
+      this.loadingModels.set(false);
+    }
+  }
+
+  onModelSelect(modelId: string | null): void {
+    this.selectedModelId.set(modelId);
+    if (modelId) {
+      const model = this.availableModels().find(m => m.id === modelId);
+      if (model) {
+        this.form.get('model')?.setValue(model.name);
+      }
     }
   }
 
@@ -514,6 +557,7 @@ export class InventoryFormComponent implements OnInit {
       this.brands.update(brands => [...brands, newBrand].sort((a, b) => a.name.localeCompare(b.name)));
 
       this.form.get('brand')?.setValue(newBrand);
+      this.loadModelsForBrand(newBrand.id);
 
       this.toastService.success('Success', `Brand "${newBrand.name}" created successfully`);
       this.showCreateBrandDialog = false;
@@ -701,6 +745,7 @@ export class InventoryFormComponent implements OnInit {
         const updateRequest: UpdateProductRequest = {
           brandId: selectedBrand.id,
           model: this.sanitizer.sanitize(formValue.model),
+          modelId: this.selectedModelId() || null,
           color: this.sanitizer.sanitizeOrNull(formValue.color),
           condition: formValue.condition,
           costPrice: formValue.costPrice,
@@ -743,6 +788,7 @@ export class InventoryFormComponent implements OnInit {
         const createRequest: CreateProductRequest = {
           brandId: selectedBrand.id,
           model: this.sanitizer.sanitize(formValue.model),
+          modelId: this.selectedModelId() || null,
           color: this.sanitizer.sanitizeOrNull(formValue.color),
           condition: formValue.condition,
           costPrice: formValue.costPrice,

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { inject as injectVercelAnalytics } from '@vercel/analytics';
 
 @Component({
   selector: 'app-root',
@@ -11,4 +12,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 })
 export class AppComponent {
   title = 'phone-shop';
+
+  constructor() {
+    injectVercelAnalytics();
+  }
 }

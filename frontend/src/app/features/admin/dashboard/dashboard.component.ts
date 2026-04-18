@@ -9,8 +9,10 @@ import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DashboardService } from '../../../core/services/dashboard.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { StockAlertService } from '../../../core/services/stock-alert.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { ThemeService } from '../../../shared/services/theme.service';
@@ -22,6 +24,24 @@ import { StockAlertsPanelComponent } from './stock-alerts-panel/stock-alerts-pan
 import { StockAlertConfigDialogComponent } from './stock-alert-config-dialog/stock-alert-config-dialog.component';
 import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
 import { CurrencyService } from '../../../core/services/currency.service';
+
+interface MostViewedProduct {
+  productId: string;
+  model: string;
+  brandName: string;
+  sellingPrice: number;
+  views: number;
+}
+
+interface ProductViewRow {
+  product_id: string;
+  products: {
+    id: string;
+    model: string;
+    selling_price: number;
+    brand: { name: string } | null;
+  } | null;
+}
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr',
@@ -40,7 +60,7 @@ const DOUGHNUT_COLORS = [
   imports: [
     DatePipe, TitleCasePipe, FormsModule,
     CardModule, SkeletonModule, ButtonModule, ChartModule,
-    TableModule, TagModule, SelectModule, DatePickerModule,
+    TableModule, TagModule, SelectModule, SelectButtonModule, DatePickerModule,
     StockAlertsPanelComponent, StockAlertConfigDialogComponent,
     AppCurrencyPipe
   ],
@@ -50,6 +70,7 @@ const DOUGHNUT_COLORS = [
 export class DashboardComponent implements OnInit {
   constructor(
     private dashboardService: DashboardService,
+    private supabase: SupabaseService,
     private stockAlertService: StockAlertService,
     private toastService: ToastService,
     private themeService: ThemeService,
@@ -78,6 +99,14 @@ export class DashboardComponent implements OnInit {
   monthlySales = signal<MonthlySalesData[]>([]);
   stockByBrand = signal<StockByBrand[]>([]);
   recentProducts = signal<RecentProduct[]>([]);
+
+  mostViewedProducts = signal<MostViewedProduct[]>([]);
+  mostViewedLoading = signal(false);
+  mostViewedWindowDays: 7 | 30 = 7;
+  mostViewedWindowOptions = [
+    { label: '7 days', value: 7 },
+    { label: '30 days', value: 30 },
+  ];
 
   skeletonRows = Array(5);
   today = new Date();
@@ -231,6 +260,57 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.updateDateRange();
     this.loadAll();
+    this.loadMostViewedProducts();
+  }
+
+  onMostViewedWindowChange(): void {
+    this.loadMostViewedProducts();
+  }
+
+  async loadMostViewedProducts(): Promise<void> {
+    this.mostViewedLoading.set(true);
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - this.mostViewedWindowDays);
+
+      const { data, error } = await this.supabase
+        .from('product_views')
+        .select('product_id, products(id, model, selling_price, brand:brands(name))')
+        .gte('viewed_at', since.toISOString());
+
+      if (error) throw new Error(error.message);
+
+      const rows = (data ?? []) as unknown as ProductViewRow[];
+      const counts = new Map<string, MostViewedProduct>();
+
+      for (const row of rows) {
+        if (!row.products) continue;
+        const existing = counts.get(row.product_id);
+        if (existing) {
+          existing.views += 1;
+          continue;
+        }
+        counts.set(row.product_id, {
+          productId: row.product_id,
+          model: row.products.model,
+          brandName: row.products.brand?.name ?? '—',
+          sellingPrice: row.products.selling_price,
+          views: 1,
+        });
+      }
+
+      const top = Array.from(counts.values())
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 10);
+
+      this.mostViewedProducts.set(top);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load most viewed products';
+      this.toastService.error('Dashboard Error', message);
+      this.mostViewedProducts.set([]);
+    } finally {
+      this.mostViewedLoading.set(false);
+    }
   }
 
   onDateRangeChange(): void {

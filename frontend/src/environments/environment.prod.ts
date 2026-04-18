@@ -14,7 +14,7 @@ import { Environment } from './environment.type';
  */
 export const environment: Environment = {
   production: true,
-  siteUrl: 'https://shop-app-phi-wine.vercel.app',
+  siteUrl: 'https://smartcell.pk',
   supabase: {
     url: 'https://dgatqyxfpvocoyinpshg.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRnYXRxeXhmcHZvY295aW5wc2hnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3MTYzNTQsImV4cCI6MjA4NTI5MjM1NH0.oNHOwCQ2HlllocQ0hsjVPTJD5qt-KoRZvzaQT8eWfME'

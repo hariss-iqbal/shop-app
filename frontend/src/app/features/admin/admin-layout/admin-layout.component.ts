@@ -81,11 +81,12 @@ export class AdminLayoutComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly allNavItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'pi pi-chart-bar', route: '/admin/dashboard', permission: 'canAccessDashboard' },
     { id: 'inventory', label: 'Inventory', icon: 'pi pi-mobile', route: '/admin/inventory', permission: 'canAccessInventory' },
-    { id: 'images', label: 'Image Management', icon: 'pi pi-images', route: '/admin/images', permission: 'canAccessInventory' },
+    { id: 'data-quality', label: 'Data Quality', icon: 'pi pi-exclamation-circle', route: '/admin/data-quality', permission: 'canAccessInventory' },
     { id: 'location-inventory', label: 'Location Inventory', icon: 'pi pi-map-marker', route: '/admin/location-inventory', permission: 'canAccessInventory' },
     { id: 'locations', label: 'Store Locations', icon: 'pi pi-building', route: '/admin/locations', permission: 'canAccessInventory' },
     { id: 'inventory-transfers', label: 'Stock Transfers', icon: 'pi pi-arrows-h', route: '/admin/inventory-transfers', permission: 'canAccessInventory' },
     { id: 'brands', label: 'Brands', icon: 'pi pi-tag', route: '/admin/brands', permission: 'canAccessBrands' },
+    { id: 'models', label: 'Models', icon: 'pi pi-box', route: '/admin/models', permission: 'canAccessBrands' },
     { id: 'purchase-orders', label: 'Purchase Orders', icon: 'pi pi-file', route: '/admin/purchase-orders', permission: 'canAccessPurchaseOrders' },
     { id: 'suppliers', label: 'Suppliers', icon: 'pi pi-truck', route: '/admin/suppliers', permission: 'canAccessSuppliers' },
     { id: 'sales', label: 'Sales', icon: 'pi pi-dollar', route: '/admin/sales', permission: 'canAccessSales' },
@@ -101,6 +102,7 @@ export class AdminLayoutComponent implements OnInit, OnDestroy, AfterViewInit {
     { id: 'audit-logs', label: 'Audit Logs', icon: 'pi pi-history', route: '/admin/audit-logs', permission: 'canAccessAuditLogs' },
     // { id: 'loyalty', label: 'Loyalty Program', icon: 'pi pi-gift', route: '/admin/loyalty', permission: 'canAccessSales' },
     // { id: 'coupons', label: 'Coupons', icon: 'pi pi-ticket', route: '/admin/coupons', permission: 'canAccessSales' },
+    { id: 'legacy-data', label: 'Legacy Data', icon: 'pi pi-database', route: '/admin/legacy-data', permission: 'canAccessSales' },
     { id: 'sidebar-settings', label: 'Sidebar Settings', icon: 'pi pi-sliders-h', route: '/admin/sidebar-settings', permission: 'canAccessDashboard' },
     { id: 'shop-details', label: 'Shop Details', icon: 'pi pi-cog', route: '/admin/shop-details', permission: 'canAccessDashboard' }
   ];

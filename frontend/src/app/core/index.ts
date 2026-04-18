@@ -53,3 +53,5 @@ export * from './services/user-location-assignment.service';
 export * from './services/viewport.service';
 export * from './services/barcode-scanner.service';
 export * from './services/shop-details.service';
+export * from './services/legacy-bill.service';
+export * from './services/model.service';

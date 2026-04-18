@@ -438,6 +438,7 @@
       <!-- Sidebar Widgets -->
       <div class="col-12 lg:col-5">
         <!-- Trust Badges -->
+        <!--
         <div class="surface-card border-round-xl p-4 shadow-1 mb-4">
           <div class="flex flex-column gap-3">
             <div class="flex align-items-center gap-3">
@@ -469,20 +470,25 @@
             </div>
           </div>
         </div>
+        -->
 
         <!-- Contact Card -->
         <div class="surface-card border-round-xl p-4 shadow-1">
           <h3 class="text-lg font-semibold text-900 m-0 mb-3">Need Help?</h3>
           <p class="text-600 text-sm m-0 mb-3">Have questions about this product? Our team is here to help!</p>
           <div class="flex flex-column gap-2">
-            <a href="tel:+1234567890" class="flex align-items-center gap-2 text-primary no-underline hover:underline">
-              <i class="pi pi-phone" aria-hidden="true"></i>
-              +1 (234) 567-890
-            </a>
-            <a href="mailto:info&#64;shop.com" class="flex align-items-center gap-2 text-primary no-underline hover:underline">
-              <i class="pi pi-envelope" aria-hidden="true"></i>
-              info&#64;shop.com
-            </a>
+            @if (shopPhoneLink()) {
+              <a [href]="'tel:' + shopPhoneLink()" class="flex align-items-center gap-2 text-primary no-underline hover:underline">
+                <i class="pi pi-phone" aria-hidden="true"></i>
+                {{ shopPhoneDisplay() }}
+              </a>
+            }
+            @if (shopHasEmail()) {
+              <a [href]="'mailto:' + shopEmail()" class="flex align-items-center gap-2 text-primary no-underline hover:underline">
+                <i class="pi pi-envelope" aria-hidden="true"></i>
+                {{ shopEmail() }}
+              </a>
+            }
           </div>
         </div>
       </div>
