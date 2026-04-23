@@ -1,0 +1,402 @@
+<div class="grid">
+  <!-- Back Button -->
+  <div class="col-12 mb-3">
+    <p-button
+      icon="pi pi-arrow-left"
+      label="Back to Suppliers"
+      [text]="true"
+      (onClick)="goBackToList()"
+    />
+  </div>
+
+  @if (loading()) {
+    <!-- Loading Skeleton -->
+    <div class="col-12">
+      <p-card>
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <p-skeleton width="60%" height="2rem" styleClass="mb-3" />
+            <p-skeleton width="40%" height="1.5rem" styleClass="mb-2" />
+            <p-skeleton width="50%" height="1.5rem" styleClass="mb-2" />
+            <p-skeleton width="30%" height="1.5rem" />
+          </div>
+          <div class="col-12 md:col-6">
+            <p-skeleton width="40%" height="1.5rem" styleClass="mb-2" />
+            <p-skeleton width="35%" height="1.5rem" styleClass="mb-2" />
+            <p-skeleton width="45%" height="1.5rem" />
+          </div>
+        </div>
+      </p-card>
+    </div>
+    <div class="col-12">
+      <p-card header="Purchase Orders">
+        <p-skeleton height="200px" />
+      </p-card>
+    </div>
+    <div class="col-12">
+      <p-card header="Products">
+        <p-skeleton height="200px" />
+      </p-card>
+    </div>
+  } @else if (notFound()) {
+    <!-- Not Found -->
+    <div class="col-12">
+      <p-card>
+        <div class="text-center py-8">
+          <i class="pi pi-exclamation-circle text-6xl text-orange-500 mb-4" style="display: block;"></i>
+          <h2 class="text-2xl font-bold text-900 m-0 mb-2">Supplier Not Found</h2>
+          <p class="text-600 text-lg m-0 mb-4">
+            The supplier you're looking for doesn't exist or has been removed.
+          </p>
+          <p-button
+            icon="pi pi-arrow-left"
+            label="Back to Suppliers"
+            (onClick)="goBackToList()"
+          />
+        </div>
+      </p-card>
+    </div>
+  } @else if (supplier()) {
+    <!-- Supplier Info Header -->
+    <div class="col-12">
+      <p-card>
+        <div class="flex flex-column md:flex-row md:align-items-start md:justify-content-between gap-4">
+          <div class="flex-grow-1">
+            <div class="flex align-items-center gap-3 mb-3">
+              <h1 class="text-3xl font-bold text-900 m-0">{{ supplier()!.name }}</h1>
+            </div>
+
+            <div class="grid">
+              @if (supplier()!.contactPerson) {
+                <div class="col-12 md:col-6 lg:col-4">
+                  <div class="flex align-items-center gap-2 mb-1">
+                    <i class="pi pi-user text-primary"></i>
+                    <span class="text-600 text-sm">Contact Person</span>
+                  </div>
+                  <span class="text-900 font-semibold">{{ supplier()!.contactPerson }}</span>
+                </div>
+              }
+
+              @if (supplier()!.contactEmail) {
+                <div class="col-12 md:col-6 lg:col-4">
+                  <div class="flex align-items-center gap-2 mb-1">
+                    <i class="pi pi-envelope text-primary"></i>
+                    <span class="text-600 text-sm">Email</span>
+                  </div>
+                  <a [href]="'mailto:' + supplier()!.contactEmail" class="text-primary no-underline hover:underline font-semibold">
+                    {{ supplier()!.contactEmail }}
+                  </a>
+                </div>
+              }
+
+              @if (supplier()!.contactPhone) {
+                <div class="col-12 md:col-6 lg:col-4">
+                  <div class="flex align-items-center gap-2 mb-1">
+                    <i class="pi pi-phone text-primary"></i>
+                    <span class="text-600 text-sm">Phone</span>
+                  </div>
+                  <a [href]="'tel:' + supplier()!.contactPhone" class="text-primary no-underline hover:underline font-semibold">
+                    {{ supplier()!.contactPhone }}
+                  </a>
+                </div>
+              }
+
+              @if (supplier()!.address) {
+                <div class="col-12 md:col-6 lg:col-4">
+                  <div class="flex align-items-center gap-2 mb-1">
+                    <i class="pi pi-map-marker text-primary"></i>
+                    <span class="text-600 text-sm">Address</span>
+                  </div>
+                  <span class="text-900 font-semibold">{{ supplier()!.address }}</span>
+                </div>
+              }
+            </div>
+
+            @if (supplier()!.notes) {
+              <div class="mt-4">
+                <div class="flex align-items-center gap-2 mb-1">
+                  <i class="pi pi-file-edit text-primary"></i>
+                  <span class="text-600 text-sm">Notes</span>
+                </div>
+                <p class="text-900 m-0 line-height-3">{{ supplier()!.notes }}</p>
+              </div>
+            }
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-column gap-2" style="min-width: 180px;">
+            <p-button
+              icon="pi pi-pencil"
+              label="Edit Supplier"
+              severity="info"
+              [outlined]="true"
+              styleClass="w-full"
+              (onClick)="onEdit()"
+              pTooltip="Edit supplier details"
+              tooltipPosition="left"
+            />
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="col-12 md:col-4">
+      <p-card>
+        <div class="flex align-items-center gap-3">
+          <div class="flex align-items-center justify-content-center border-circle bg-primary-100" style="width: 3rem; height: 3rem;">
+            <i class="pi pi-file text-primary text-xl"></i>
+          </div>
+          <div>
+            <span class="text-600 text-sm block">Total Purchase Orders</span>
+            <span class="text-2xl font-bold text-900">{{ purchaseOrders().length }}</span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-4">
+      <p-card>
+        <div class="flex align-items-center gap-3">
+          <div class="flex align-items-center justify-content-center border-circle bg-blue-100" style="width: 3rem; height: 3rem;">
+            <i class="pi pi-box text-blue-500 text-xl"></i>
+          </div>
+          <div>
+            <span class="text-600 text-sm block">Total Products</span>
+            <span class="text-2xl font-bold text-900">{{ products().length }}</span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-4">
+      <p-card>
+        <div class="flex align-items-center gap-3">
+          <div class="flex align-items-center justify-content-center border-circle bg-green-100" style="width: 3rem; height: 3rem;">
+            <i class="pi pi-dollar text-green-500 text-xl"></i>
+          </div>
+          <div>
+            <span class="text-600 text-sm block">Total Spent</span>
+            <span class="text-2xl font-bold text-900">{{ totalSpent() | appCurrency }}</span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Purchase Orders Section -->
+    <div class="col-12">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-file"></i>
+            <span>Purchase Orders</span>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="subtitle">
+          <span class="text-600 text-sm">
+            {{ purchaseOrders().length }} purchase order{{ purchaseOrders().length !== 1 ? 's' : '' }} from this supplier
+          </span>
+        </ng-template>
+
+        <p-table
+          [value]="purchaseOrders()"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [tableStyle]="{ 'min-width': '40rem' }"
+          styleClass="p-datatable-striped"
+          [paginator]="purchaseOrders().length > 10"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} purchase orders"
+          [rowHover]="true"
+          dataKey="id"
+          aria-label="Purchase orders for this supplier"
+        >
+          <ng-template #header>
+            <tr>
+              <th style="width: 20%">PO Number</th>
+              <th style="width: 20%">Order Date</th>
+              <th style="width: 25%" class="text-right">Total Amount</th>
+              <th style="width: 15%">Status</th>
+              <th style="width: 10%">Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-po>
+            <tr>
+              <td>
+                <span class="font-medium cursor-pointer text-primary hover:underline" (click)="navigateToPurchaseOrder(po.id)">
+                  {{ po.poNumber }}
+                </span>
+              </td>
+              <td>{{ formatDate(po.orderDate) }}</td>
+              <td class="text-right">
+                <span class="font-semibold">{{ po.totalAmount | appCurrency:'1.2-2' }}</span>
+              </td>
+              <td>
+                <p-tag
+                  [value]="getPOStatusLabel(po.status)"
+                  [severity]="getPOStatusSeverity(po.status)"
+                  [rounded]="true"
+                />
+              </td>
+              <td>
+                <p-button
+                  icon="pi pi-eye"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  size="small"
+                  pTooltip="View PO"
+                  tooltipPosition="top"
+                  [attr.aria-label]="'View purchase order ' + po.poNumber"
+                  (onClick)="navigateToPurchaseOrder(po.id)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="5" class="text-center py-4">
+                <div class="flex flex-column align-items-center gap-3">
+                  <i class="pi pi-file text-4xl text-color-secondary"></i>
+                  <span class="text-color-secondary">No purchase orders from this supplier yet</span>
+                  <p-button
+                    label="Create Purchase Order"
+                    icon="pi pi-plus"
+                    routerLink="/admin/purchase-orders/new"
+                    size="small"
+                  />
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+
+    <!-- Products Section -->
+    <div class="col-12">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-box"></i>
+            <span>Products</span>
+          </div>
+        </ng-template>
+        <ng-template pTemplate="subtitle">
+          <span class="text-600 text-sm">
+            {{ products().length }} product{{ products().length !== 1 ? 's' : '' }} sourced from this supplier
+          </span>
+        </ng-template>
+
+        <p-table
+          [value]="products()"
+          [scrollable]="true"
+          scrollDirection="horizontal"
+          [tableStyle]="{ 'min-width': '60rem' }"
+          styleClass="p-datatable-striped"
+          [paginator]="products().length > 10"
+          [rows]="10"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+          [rowHover]="true"
+          dataKey="id"
+          aria-label="Products from this supplier"
+        >
+          <ng-template #header>
+            <tr>
+              <th style="width: 18%">Model</th>
+              <th style="width: 12%">Brand</th>
+              <th style="width: 10%">Storage</th>
+              <th style="width: 8%">Color</th>
+              <th style="width: 10%">Condition</th>
+              <th style="width: 12%" class="text-right">Cost Price</th>
+              <th style="width: 12%" class="text-right">Selling Price</th>
+              <th style="width: 10%">Status</th>
+              <th style="width: 10%">Date Added</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-product>
+            <tr>
+              <td>
+                <span class="font-medium">{{ product.model }}</span>
+              </td>
+              <td>
+                @if (product.brand) {
+                  {{ product.brand.name }}
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
+              </td>
+              <td>
+                @if (product.storageGb) {
+                  {{ product.storageGb }}GB
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
+              </td>
+              <td>
+                @if (product.color) {
+                  {{ product.color }}
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
+              </td>
+              <td>
+                @if (product.condition) {
+                  {{ product.condition }}
+                } @else {
+                  <span class="text-color-secondary">-</span>
+                }
+              </td>
+              <td class="text-right">
+                {{ product.costPrice | appCurrency }}
+              </td>
+              <td class="text-right">
+                {{ product.sellingPrice | appCurrency }}
+              </td>
+              <td>
+                <p-tag
+                  [value]="getProductStatusLabel(product.status)"
+                  [severity]="getProductStatusSeverity(product.status)"
+                  [rounded]="true"
+                />
+              </td>
+              <td>{{ formatDate(product.createdAt) }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="9" class="text-center py-4">
+                <div class="flex flex-column align-items-center gap-3">
+                  <i class="pi pi-box text-4xl text-color-secondary"></i>
+                  <span class="text-color-secondary">No products from this supplier yet</span>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+
+    <!-- Metadata -->
+    <div class="col-12">
+      <p-card>
+        <div class="flex flex-wrap gap-4 text-sm text-600">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-clock"></i>
+            <span>Created: {{ formatDateTime(supplier()!.createdAt) }}</span>
+          </div>
+          @if (supplier()!.updatedAt) {
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-refresh"></i>
+              <span>Last Updated: {{ formatDateTime(supplier()!.updatedAt!) }}</span>
+            </div>
+          }
+        </div>
+      </p-card>
+    </div>
+  }
+</div>

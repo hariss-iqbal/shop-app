@@ -1,0 +1,48 @@
+:host ::ng-deep {
+  .po-inline-select {
+    min-width: 5.5rem;
+
+    .p-select-label {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+.variant-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 1rem;
+  border: 1px solid var(--p-surface-300, #dee2e6);
+  background: var(--p-surface-0, #ffffff);
+  color: var(--p-text-color, #495057);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--p-primary-400, #93c5fd);
+    background: var(--p-primary-50, #eff6ff);
+  }
+
+  &.selected {
+    border-color: var(--p-primary-500, #3b82f6);
+    background: var(--p-primary-500, #3b82f6);
+    color: #ffffff;
+  }
+
+  &.clear-chip {
+    border-color: var(--p-surface-400, #ced4da);
+    color: var(--p-surface-600, #6c757d);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+
+    &:hover {
+      border-color: var(--p-red-400, #f87171);
+      background: var(--p-red-50, #fef2f2);
+      color: var(--p-red-500, #ef4444);
+    }
+  }
+}

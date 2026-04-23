@@ -1,48 +1,46 @@
 import { Component, OnInit, OnDestroy, signal, computed, HostListener } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
-import { TagModule } from 'primeng/tag';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { SkeletonModule } from 'primeng/skeleton';
-import { DividerModule } from 'primeng/divider';
-import { TooltipModule } from 'primeng/tooltip';
-import { ProductService } from '../../../core/services/product.service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subject, Subscription } from 'rxjs';
+import { ProductService, ModelVariant } from '../../../core/services/product.service';
 import { ProductViewTrackerService } from '../../../core/services/product-view-tracker.service';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
 import { JsonLdService } from '../../../shared/services/json-ld.service';
-import { ProductDetail } from '../../../models/product.model';
-import { ProductCondition, ProductConditionLabels, ProductStatus, ProductStatusLabels } from '../../../enums';
-import { ProductType, ProductTypeLabels } from '../../../enums/product-type.enum';
-import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
 import { CurrencyService } from '../../../core/services/currency.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { ProductDetail, Product } from '../../../models/product.model';
+import { ProductCondition, ProductConditionLabels, PtaStatus, PtaStatusLabels } from '../../../enums';
 
-interface GalleriaImage {
-  itemImageSrc: string;
-  itemSrcSet: string;
-  thumbnailImageSrc: string;
+interface GalleryImage {
+  detailUrl: string;
+  detailSrcSet: string;
+  thumbUrl: string;
   originalUrl: string;
   alt: string;
-  isPrimary: boolean;
+}
+
+interface VariantChip {
+  id: string;
+  slug: string;
+  storageGb: number | null;
+  availableColors: string[];
+  condition: string;
+  conditionLabel: string;
+  ptaStatus: string | null;
+  ptaLabel: string;
+  ptaClass: string;
+  sellingPrice: number;
+  avgCostPrice: number;
+  stockCount: number;
+  isCurrent: boolean;
 }
 
 @Component({
   selector: 'app-product-detail',
-  imports: [
-    CommonModule,
-    CardModule,
-    ButtonModule,
-    TagModule,
-    ProgressBarModule,
-    SkeletonModule,
-    DividerModule,
-    TooltipModule,
-    AppCurrencyPipe
-  ],
+  standalone: true,
+  imports: [CommonModule, RouterLink],
   templateUrl: './product-detail.component.html',
   styleUrls: ['./product-detail.component.scss']
 })
@@ -59,100 +57,363 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     private jsonLdService: JsonLdService,
     private currencyService: CurrencyService,
     private shopDetailsService: ShopDetailsService
-  ) { }
+  ) {}
+
+  /* ── Data signals ── */
   product = signal<ProductDetail | null>(null);
+  modelVariants = signal<ModelVariant[]>([]);
   loading = signal(true);
   notFound = signal(false);
+  private routeSub!: Subscription;
+  private destroy$ = new Subject<void>();
+
+  /* ── Gallery ── */
+  galleryImages: GalleryImage[] = [];
+  activeIndex = signal(0);
+  fullscreen = signal(false);
+  imageLoading = signal(false);
+  showLoader = signal(false);
+  linkCopied = signal(false);
+  private loadedImages = new Set<number>();
+
+  /* ── UI state ── */
   scrollPosition = signal(0);
 
-  galleriaImages: GalleriaImage[] = [];
-  activeIndex = 0;
-  fullscreen = false;
-  slideDirection: 'left' | 'right' | '' = '';
-  imageLoading = false;
-  // Track which images have been loaded
-  private loadedImages = new Set<number>();
-  showLoader = false;
-
-  // Swipe tracking
+  /* ── Touch tracking ── */
   private touchStartX = 0;
   private touchStartY = 0;
   private touchStartTime = 0;
   swiping = false;
-  private swipeOffset = 0;
+  swipeOffset = 0;
   private readonly SWIPE_THRESHOLD = 40;
 
-  get currentImage(): GalleriaImage | null {
-    return this.galleriaImages[this.activeIndex] ?? null;
+  /* ── Shop details ── */
+  shopPhoneDisplay = this.shopDetailsService.phoneDisplay;
+  shopPhoneLink = this.shopDetailsService.phoneLink;
+  shopEmail = this.shopDetailsService.email;
+
+  get whatsappNumber(): string {
+    return this.shopDetailsService.whatsappNumber();
   }
 
-  get imageCounter(): string {
-    return `${this.activeIndex + 1} / ${this.galleriaImages.length}`;
+  /* ── Computed ── */
+  showStickyBar = computed(() => this.scrollPosition() > 400 && !!this.product());
+
+  hasDiscount = computed(() => {
+    const p = this.product();
+    return p ? p.profitMargin >= 20 : false;
+  });
+
+  originalPrice = computed(() => {
+    const p = this.product();
+    if (!p) return 0;
+    return Math.round(p.sellingPrice * (1 + Math.round(p.profitMargin) / 100));
+  });
+
+  discountAmount = computed(() => this.originalPrice() - (this.product()?.sellingPrice ?? 0));
+
+  ptaLabel = computed(() => {
+    const p = this.product();
+    if (!p || !p.ptaStatus) return '';
+    return PtaStatusLabels[p.ptaStatus] ?? '';
+  });
+
+  sku = computed(() => {
+    const p = this.product();
+    if (!p) return '';
+    const parts: string[] = [];
+    if (p.brandName) parts.push(p.brandName.substring(0, 2).toUpperCase());
+    if (p.model) parts.push(p.model.replace(/\s+/g, '').substring(0, 6).toUpperCase());
+    if (p.storageGb) parts.push(`${p.storageGb}`);
+    if (p.color) parts.push(p.color.substring(0, 3).toUpperCase());
+    return parts.join('-');
+  });
+
+  conditionLabel = computed(() => {
+    const p = this.product();
+    return p ? ProductConditionLabels[p.condition] : '';
+  });
+
+  variantChips = computed<VariantChip[]>(() => {
+    const p = this.product();
+    const mv = this.modelVariants();
+    if (!p || mv.length === 0) return [];
+
+    const currentVariantId = p.variantId;
+
+    return mv.map(v => ({
+      id: v.id,
+      slug: v.slug,
+      storageGb: v.storageGb,
+      availableColors: v.availableColors || [],
+      condition: v.condition,
+      conditionLabel: this.getCondLabel(v.condition as ProductCondition),
+      ptaStatus: v.ptaStatus,
+      ptaLabel: v.ptaStatus ? (PtaStatusLabels[v.ptaStatus as PtaStatus] ?? '') : '',
+      ptaClass: v.ptaStatus === PtaStatus.PTA_APPROVED ? 'pta' : 'npta',
+      sellingPrice: v.sellingPrice,
+      avgCostPrice: v.avgCostPrice,
+      stockCount: v.stockCount,
+      isCurrent: v.id === currentVariantId
+    }));
+  });
+
+  otherVariants = computed<VariantChip[]>(() => {
+    return this.variantChips().filter(v => !v.isCurrent);
+  });
+
+  currentVariantChip = computed<VariantChip | undefined>(() => {
+    return this.variantChips().find(c => c.isCurrent);
+  });
+
+  /* ── Lifecycle ── */
+  ngOnInit(): void {
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const slug = params.get('slug');
+      if (!slug) {
+        this.notFound.set(true);
+        this.loading.set(false);
+        return;
+      }
+      // Skip if this URL change came from our own variant switch
+      const p = this.product();
+      if (p && !this.loading() && p.variantSlug === slug) {
+        return;
+      }
+      this.loadBySlugOrId(slug);
+    });
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.routeSub?.unsubscribe();
+    this.jsonLdService.removeStructuredData();
+    document.body.style.overflow = '';
+  }
+
+  /* ── Data loading ── */
+  private readonly UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  private async loadBySlugOrId(slugOrId: string): Promise<void> {
+    this.loading.set(true);
+    this.notFound.set(false);
+    this.product.set(null);
+    this.modelVariants.set([]);
+
+    try {
+      // Backward compat: old UUID URLs still work
+      if (this.UUID_REGEX.test(slugOrId)) {
+        await this.loadById(slugOrId);
+        return;
+      }
+
+      await this.loadBySlug(slugOrId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load product details';
+      this.toastService.error('Error', message);
+      this.notFound.set(true);
+      this.loading.set(false);
+    }
+  }
+
+  private async loadBySlug(slug: string): Promise<void> {
+    const colorQuery = this.route.snapshot.queryParamMap.get('color');
+
+    const result = await this.productService.getVariantBySlug(slug);
+    if (!result) {
+      this.notFound.set(true);
+      this.loading.set(false);
+      return;
+    }
+
+    const { variant, images } = result;
+
+    // Find an available product matching the color query param
+    const product = await this.findAvailableProduct(variant.id, colorQuery);
+    if (!product) {
+      this.notFound.set(true);
+      this.loading.set(false);
+      return;
+    }
+
+    const primaryImage = images.find(img => img.isPrimary) || images[0];
+    const detail: ProductDetail = {
+      ...product,
+      variantId: variant.id,
+      variantSlug: variant.slug,
+      images: images.map(img => ({
+        id: img.id,
+        imageUrl: img.imageUrl,
+        isPrimary: img.isPrimary,
+        displayOrder: img.displayOrder
+      })),
+      primaryImageUrl: primaryImage?.imageUrl || null,
+      profitMargin: variant.avgCostPrice > 0
+        ? Math.round(((variant.sellingPrice - variant.avgCostPrice) / variant.sellingPrice) * 10000) / 100
+        : 0
+    };
+
+    await this.onProductLoaded(detail);
+  }
+
+  private async findAvailableProduct(variantId: string, preferredColor: string | null): Promise<Product | null> {
+    return this.productService.getAvailableProductByVariant(variantId, preferredColor);
+  }
+
+  private async loadById(id: string): Promise<void> {
+    this.loading.set(true);
+    this.notFound.set(false);
+    this.product.set(null);
+    this.modelVariants.set([]);
+
+    try {
+      let detail = await this.productService.getAvailableProductDetail(id);
+      if (detail) {
+        await this.onProductLoaded(detail);
+        return;
+      }
+
+      detail = await this.productService.getProductByModel(id);
+      if (detail) {
+        await this.onProductLoaded(detail, id);
+        return;
+      }
+
+      this.notFound.set(true);
+      this.loading.set(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load product details';
+      this.toastService.error('Error', message);
+      this.notFound.set(true);
+      this.loading.set(false);
+    }
+  }
+
+  private async onProductLoaded(detail: ProductDetail, modelId?: string): Promise<void> {
+    this.product.set(detail);
+    this.buildGalleryImages(detail);
+    this.updateSeoTags(detail);
+    this.jsonLdService.setProductStructuredData(detail);
+    this.tracker.trackView(detail.id);
+
+    const mid = modelId || detail.modelId;
+    if (mid) {
+      await this.loadModelVariants(mid);
+    }
+    this.loading.set(false);
+  }
+
+  private async loadModelVariants(modelId: string): Promise<void> {
+    try {
+      const variants = await this.productService.getModelVariants(modelId);
+      this.modelVariants.set(variants);
+    } catch {
+      this.modelVariants.set([]);
+    }
+  }
+
+  /* ── Variant navigation ── */
+  viewVariant(variantId: string): void {
+    const p = this.product();
+    if (p && p.variantId === variantId) return;
+    this.switchToVariant(variantId);
+  }
+
+  private async switchToVariant(variantId: string): Promise<void> {
+    try {
+      // Load variant details via RPC
+      const variant = await this.productService.getVariantById(variantId);
+      if (!variant) return;
+
+      // Get variant images
+      const images = await this.productService.getVariantImages(variantId);
+      const primaryImage = images.find(img => img.isPrimary) || images[0];
+
+      // Find an available product in this variant to set as current product
+      const currentProduct = this.product();
+      const updatedProduct: ProductDetail = {
+        ...(currentProduct!),
+        variantId: variant.id,
+        variantSlug: variant.slug,
+        storageGb: variant.storageGb,
+        condition: variant.condition,
+        ptaStatus: variant.ptaStatus as any,
+        sellingPrice: variant.sellingPrice,
+        costPrice: variant.avgCostPrice,
+        images: images.map(img => ({
+          id: img.id,
+          imageUrl: img.imageUrl,
+          isPrimary: img.isPrimary,
+          displayOrder: img.displayOrder
+        })),
+        primaryImageUrl: primaryImage?.imageUrl || null,
+        profitMargin: variant.avgCostPrice > 0
+          ? Math.round(((variant.sellingPrice - variant.avgCostPrice) / variant.sellingPrice) * 10000) / 100
+          : 0
+      };
+
+      this.product.set(updatedProduct);
+      this.buildGalleryImages(updatedProduct);
+      this.updateSeoTags(updatedProduct);
+      const colorParam = currentProduct?.color ? `?color=${encodeURIComponent(currentProduct.color)}` : '';
+      this.location.replaceState(`/product/${variant.slug}${colorParam}`);
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    } catch {
+      // Stay on current variant if switch fails
+    }
+  }
+
+  /* ── Gallery ── */
   selectImage(index: number): void {
-    if (index === this.activeIndex) return;
-    this.slideDirection = index > this.activeIndex ? 'left' : 'right';
+    if (index === this.activeIndex()) return;
     this.navigateTo(index);
   }
 
   prevImage(): void {
-    this.slideDirection = 'right';
-    const index = this.activeIndex > 0
-      ? this.activeIndex - 1
-      : this.galleriaImages.length - 1;
+    const imgs = this.galleryImages;
+    const index = this.activeIndex() > 0 ? this.activeIndex() - 1 : imgs.length - 1;
     this.navigateTo(index);
   }
 
   nextImage(): void {
-    this.slideDirection = 'left';
-    const index = this.activeIndex < this.galleriaImages.length - 1
-      ? this.activeIndex + 1
-      : 0;
+    const imgs = this.galleryImages;
+    const index = this.activeIndex() < imgs.length - 1 ? this.activeIndex() + 1 : 0;
     this.navigateTo(index);
   }
 
   onImageLoad(): void {
-    this.loadedImages.add(this.activeIndex);
-    this.imageLoading = false;
-    this.showLoader = false;
-    // Start slide animation only after new image is loaded
-    this.clearSlideDirection();
+    this.loadedImages.add(this.activeIndex());
+    this.imageLoading.set(false);
+    this.showLoader.set(false);
   }
 
   private navigateTo(index: number): void {
-    // Hide the current image immediately before changing src
-    this.imageLoading = true;
-    // Only show spinner for images that haven't been loaded yet
-    this.showLoader = !this.loadedImages.has(index);
-    this.activeIndex = index;
-    this.scrollThumbnailIntoView();
+    this.imageLoading.set(true);
+    this.showLoader.set(!this.loadedImages.has(index));
+    this.activeIndex.set(index);
+    requestAnimationFrame(() => {
+      const container = document.querySelector('.gallery-thumbs');
+      const active = container?.querySelector('.gthumb.on');
+      if (active && container) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
   }
 
-  // Fullscreen
   openFullscreen(): void {
-    this.fullscreen = true;
+    this.fullscreen.set(true);
     document.body.style.overflow = 'hidden';
   }
 
   closeFullscreen(): void {
-    this.fullscreen = false;
+    this.fullscreen.set(false);
     document.body.style.overflow = '';
   }
 
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    if (!this.fullscreen && this.galleriaImages.length <= 1) return;
-    if (event.key === 'Escape' && this.fullscreen) {
-      this.closeFullscreen();
-    } else if (event.key === 'ArrowLeft') {
-      this.prevImage();
-    } else if (event.key === 'ArrowRight') {
-      this.nextImage();
-    }
+  getSwipeTransform(): string {
+    return this.swiping && this.swipeOffset !== 0 ? `translateX(${this.swipeOffset}px)` : '';
   }
 
-  // Swipe gestures
+  /* ── Touch ── */
   onTouchStart(event: TouchEvent): void {
     this.touchStartX = event.touches[0].clientX;
     this.touchStartY = event.touches[0].clientY;
@@ -162,318 +423,139 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   onTouchMove(event: TouchEvent): void {
-    if (this.galleriaImages.length <= 1) return;
-    const deltaX = event.touches[0].clientX - this.touchStartX;
-    const deltaY = event.touches[0].clientY - this.touchStartY;
-    // Lock into horizontal swipe once threshold is met
-    if (!this.swiping && Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      this.swiping = true;
-    }
-    if (this.swiping) {
-      event.preventDefault();
-      this.swipeOffset = deltaX;
-    }
+    if (this.galleryImages.length <= 1) return;
+    const dx = event.touches[0].clientX - this.touchStartX;
+    const dy = event.touches[0].clientY - this.touchStartY;
+    if (!this.swiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) this.swiping = true;
+    if (this.swiping) { event.preventDefault(); this.swipeOffset = dx; }
   }
 
-  onTouchEnd(_event: TouchEvent): void {
-    if (this.galleriaImages.length <= 1 || !this.swiping) {
-      this.swipeOffset = 0;
-      this.swiping = false;
-      return;
-    }
+  onTouchEnd(): void {
+    if (this.galleryImages.length <= 1 || !this.swiping) { this.swipeOffset = 0; this.swiping = false; return; }
     const velocity = Math.abs(this.swipeOffset) / (Date.now() - this.touchStartTime);
-    // Trigger navigation if swiped far enough or fast enough
     if (Math.abs(this.swipeOffset) > this.SWIPE_THRESHOLD || velocity > 0.5) {
-      if (this.swipeOffset < 0) {
-        this.nextImage();
-      } else {
-        this.prevImage();
-      }
+      this.swipeOffset < 0 ? this.nextImage() : this.prevImage();
     }
     this.swipeOffset = 0;
     this.swiping = false;
   }
 
-  getSwipeTransform(): string {
-    if (this.swiping && this.swipeOffset !== 0) {
-      return `translateX(${this.swipeOffset}px)`;
+  /* ── Keyboard ── */
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (this.fullscreen()) {
+      if (event.key === 'Escape') this.closeFullscreen();
+      else if (event.key === 'ArrowLeft') this.prevImage();
+      else if (event.key === 'ArrowRight') this.nextImage();
     }
-    return '';
   }
 
-  private clearSlideDirection(): void {
-    setTimeout(() => { this.slideDirection = ''; }, 300);
-  }
-
-  private scrollThumbnailIntoView(): void {
-    // Use requestAnimationFrame to ensure DOM is updated
-    requestAnimationFrame(() => {
-      const container = document.querySelector('.gallery-thumbs-scroll');
-      const activeThumb = container?.querySelector('.gallery-thumbnail-active');
-      if (activeThumb && container) {
-        activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
-    });
-  }
-
-  // Show sticky bar after scrolling past the main CTA
-  showStickyBar = computed(() => {
-    return this.scrollPosition() > 400;
-  });
-
-  private get whatsappNumber(): string {
-    return this.shopDetailsService.whatsappNumber();
-  }
-  private get shopPhoneNumber(): string {
-    return this.shopDetailsService.phoneLink() || '';
-  }
-
-  shopPhoneDisplay = this.shopDetailsService.phoneDisplay;
-  shopPhoneLink = this.shopDetailsService.phoneLink;
-  shopEmail = this.shopDetailsService.email;
-  shopHasEmail = this.shopDetailsService.hasEmail;
-
+  /* ── Scroll ── */
   @HostListener('window:scroll')
   onScroll(): void {
     this.scrollPosition.set(window.scrollY);
   }
 
-  ngOnInit(): void {
-    const productId = this.route.snapshot.paramMap.get('id');
-    if (productId) {
-      this.loadProductDetail(productId);
-    } else {
-      this.notFound.set(true);
-      this.loading.set(false);
-    }
+  /* ── Commerce ── */
+  openWhatsAppInquiry(): void {
+    const p = this.product();
+    if (!p) return;
+    const parts = [`Hi! I'm interested in the ${p.brandName} ${p.model}`];
+    if (p.storageGb) parts[0] += ` (${p.storageGb}GB)`;
+    if (p.color) parts[0] += ` in ${p.color}`;
+    parts.push('', `Price: ${this.currencyService.format(p.sellingPrice)}`, '', 'Could you please provide more details about this product?');
+    const msg = encodeURIComponent(parts.join('\n'));
+    const url = this.whatsappNumber ? `https://wa.me/${this.whatsappNumber}?text=${msg}` : `https://wa.me/?text=${msg}`;
+    window.open(url, '_blank');
   }
 
-  ngOnDestroy(): void {
-    this.jsonLdService.removeStructuredData();
-    document.body.style.overflow = '';
+  /* ── Helpers ── */
+  fmt(n: number): string { return n.toLocaleString('en-PK'); }
+
+  getCondLabel(cond: ProductCondition): string {
+    if (cond === ProductCondition.NEW) return 'New';
+    if (cond === ProductCondition.USED) return 'Pre-owned · A';
+    return 'Open box';
   }
 
-  private async loadProductDetail(id: string): Promise<void> {
-    this.loading.set(true);
-    this.notFound.set(false);
-
-    try {
-      const productDetail = await this.productService.getAvailableProductDetail(id);
-
-      if (!productDetail) {
-        this.notFound.set(true);
-        return;
-      }
-
-      this.product.set(productDetail);
-      this.buildGalleriaImages(productDetail);
-      this.updateSeoTags(productDetail);
-      this.jsonLdService.setProductStructuredData(productDetail);
-      this.tracker.trackView(productDetail.id);
-    } catch (error) {
-      console.error('Failed to load product detail:', error);
-      this.toastService.error('Error', 'Failed to load product details');
-      this.notFound.set(true);
-    } finally {
-      this.loading.set(false);
-    }
+  getCondClass(cond: ProductCondition): string {
+    if (cond === ProductCondition.NEW) return 'new';
+    if (cond === ProductCondition.USED) return 'used';
+    return 'open';
   }
 
-  private buildGalleriaImages(productDetail: ProductDetail): void {
+  copyLink(): void {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      this.linkCopied.set(true);
+      setTimeout(() => this.linkCopied.set(false), 2000);
+    });
+  }
+
+  getPtaClass(pta: PtaStatus | null): string {
+    if (!pta) return '';
+    return pta === PtaStatus.PTA_APPROVED ? 'pta' : 'npta';
+  }
+
+  getProductColor(product: Product): string {
+    const c = (product.color ?? '').toLowerCase();
+    return this.cssColorFromName(c);
+  }
+
+  cssColorFromName(color: string): string {
+    const c = color.toLowerCase();
+    if (/black|obsidian|midnight|carbon/i.test(c)) return '#1F1F23';
+    if (/white|snow|starlight|porcelain|silver/i.test(c)) return '#E8E6E1';
+    if (/blue|ocean|navy|sky|cobalt/i.test(c)) return '#4A7FB5';
+    if (/green|mint|alpine|forest/i.test(c)) return '#5F9E6F';
+    if (/red|crimson/i.test(c)) return '#C44B4B';
+    if (/gold|bronze|champagne/i.test(c)) return '#C9A96E';
+    if (/purple|violet|lavender/i.test(c)) return '#8B6BAE';
+    if (/pink|rose|peony|coral/i.test(c)) return '#E4AEB4';
+    if (/yellow|lemon/i.test(c)) return '#E8D44D';
+    if (/orange|tangerine|apricot/i.test(c)) return '#E89B4D';
+    if (/gray|graphite|hazel|titanium/i.test(c)) return '#8A816A';
+    if (/teal|aqua/i.test(c)) return '#4DA8A8';
+    return '#888';
+  }
+
+  private buildGalleryImages(detail: ProductDetail): void {
     this.loadedImages.clear();
-    this.galleriaImages = productDetail.images.map(img => ({
-      itemImageSrc: this.imageOptimization.getDetailImageUrl(img.imageUrl),
-      itemSrcSet: this.imageOptimization.getDetailSrcSet(img.imageUrl),
-      thumbnailImageSrc: this.imageOptimization.getThumbnailUrl(img.imageUrl),
+    this.galleryImages = detail.images.map(img => ({
+      detailUrl: this.imageOptimization.getDetailImageUrl(img.imageUrl),
+      detailSrcSet: this.imageOptimization.getDetailSrcSet(img.imageUrl),
+      thumbUrl: this.imageOptimization.getThumbnailUrl(img.imageUrl),
       originalUrl: img.imageUrl,
-      alt: `${productDetail.brandName} ${productDetail.model}`,
-      isPrimary: img.isPrimary
+      alt: `${detail.brandName} ${detail.model}`
     }));
-    // The first image will be loaded by the browser directly
     this.loadedImages.add(0);
+    this.activeIndex.set(0);
   }
 
   private updateSeoTags(product: ProductDetail): void {
-    const productName = `${product.brandName} ${product.model}`;
+    const modelDisplay = product.modelName || product.model;
+    const productName = `${product.brandName} ${modelDisplay}`;
     const conditionLabel = ProductConditionLabels[product.condition];
-    const price = this.formatCurrency(product.sellingPrice);
+    const price = this.currencyService.format(product.sellingPrice);
     const storagePart = product.storageGb ? ` ${product.storageGb}GB` : '';
-
     const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
-
+    const slugUrl = product.variantSlug
+      ? `/product/${product.variantSlug}` + (product.color ? `?color=${encodeURIComponent(product.color)}` : '')
+      : `/product/${product.id}`;
     this.seoService.updateMetaTags({
       title: `${productName}${storagePart}`,
       description: `Buy ${productName}${storagePart} - ${conditionLabel} condition for ${price}. Browse specs, images, and inquire via WhatsApp.`,
-      url: `/product/${product.id}`,
+      url: slugUrl,
       image: primaryImage?.imageUrl || product.primaryImageUrl,
       type: 'product'
     });
   }
 
-  showBatteryHealth(): boolean {
-    const currentProduct = this.product();
-    if (!currentProduct) return false;
-
-    const isUsedOrRefurbished =
-      currentProduct.condition === ProductCondition.USED ||
-      currentProduct.condition === ProductCondition.OPEN_BOX;
-
-    return isUsedOrRefurbished && currentProduct.batteryHealth !== null;
+  goBack(): void {
+    if (window.history.length > 1) { this.location.back(); }
+    else { this.router.navigate(['/catalog']); }
   }
 
-  getBatteryHealthClass(batteryHealth: number | null): string {
-    if (batteryHealth === null) return '';
-    if (batteryHealth >= 90) return 'text-green-600';
-    if (batteryHealth >= 80) return 'text-green-500';
-    if (batteryHealth >= 70) return 'text-yellow-600';
-    if (batteryHealth >= 50) return 'text-orange-500';
-    return 'text-red-500';
-  }
-
-  getBatteryProgressClass(batteryHealth: number | null): string {
-    if (batteryHealth === null) return '';
-    if (batteryHealth >= 90) return 'battery-excellent';
-    if (batteryHealth >= 80) return 'battery-good';
-    if (batteryHealth >= 70) return 'battery-fair';
-    if (batteryHealth >= 50) return 'battery-poor';
-    return 'battery-critical';
-  }
-
-  getConditionLabel(condition: ProductCondition): string {
-    return ProductConditionLabels[condition];
-  }
-
-  getConditionSeverity(condition: ProductCondition): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-    switch (condition) {
-      case ProductCondition.NEW:
-        return 'success';
-      case ProductCondition.OPEN_BOX:
-        return 'info';
-      case ProductCondition.USED:
-        return 'warn';
-      default:
-        return 'secondary';
-    }
-  }
-
-  getStatusLabel(status: ProductStatus): string {
-    return ProductStatusLabels[status];
-  }
-
-  getStatusSeverity(status: ProductStatus): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-    switch (status) {
-      case ProductStatus.AVAILABLE:
-        return 'success';
-      case ProductStatus.RESERVED:
-        return 'warn';
-      case ProductStatus.SOLD:
-        return 'danger';
-      default:
-        return 'secondary';
-    }
-  }
-
-  getProductTypeLabel(type: ProductType): string {
-    return ProductTypeLabels[type] || type;
-  }
-
-  openWhatsAppInquiry(): void {
-    const currentProduct = this.product();
-    if (!currentProduct) return;
-
-    const message = this.buildWhatsAppMessage(currentProduct);
-    const encodedMessage = encodeURIComponent(message);
-
-    // Build WhatsApp URL
-    let whatsappUrl: string;
-    if (this.whatsappNumber) {
-      whatsappUrl = `https://wa.me/${this.whatsappNumber}?text=${encodedMessage}`;
-    } else {
-      // Without a number, opens WhatsApp with message to be shared
-      whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
-    }
-
-    window.open(whatsappUrl, '_blank');
-  }
-
-  private buildWhatsAppMessage(product: ProductDetail): string {
-    const parts: string[] = [
-      `Hi! I'm interested in the ${product.brandName} ${product.model}`,
-    ];
-
-    if (product.storageGb) {
-      parts[0] += ` (${product.storageGb}GB)`;
-    }
-
-    parts.push('');
-    parts.push(`Price: ${this.formatCurrency(product.sellingPrice)}`);
-    parts.push('');
-    parts.push('Could you please provide more details about this product?');
-
-    return parts.join('\n');
-  }
-
-  private formatCurrency(value: number): string {
-    return this.currencyService.format(value);
-  }
-
-  // AC_REDESIGN_001: Discount calculations
-  hasDiscount(): boolean {
-    const currentProduct = this.product();
-    if (!currentProduct) return false;
-    return currentProduct.profitMargin >= 20;
-  }
-
-  getOriginalPrice(): number {
-    const currentProduct = this.product();
-    if (!currentProduct) return 0;
-    const discountPercent = Math.round(currentProduct.profitMargin);
-    return Math.round(currentProduct.sellingPrice * (1 + discountPercent / 100));
-  }
-
-  getDiscountPercent(): number {
-    const currentProduct = this.product();
-    if (!currentProduct) return 0;
-    return Math.round(currentProduct.profitMargin);
-  }
-
-  // AC_REDESIGN_001: Condition background class
-  getConditionBgClass(condition: ProductCondition): string {
-    switch (condition) {
-      case ProductCondition.NEW:
-        return 'condition-new';
-      case ProductCondition.OPEN_BOX:
-        return 'condition-open-box';
-      case ProductCondition.USED:
-        return 'condition-used';
-      default:
-        return 'surface-100';
-    }
-  }
-
-  // Battery health description
-  getBatteryHealthDescription(batteryHealth: number | null): string {
-    if (batteryHealth === null) return '';
-    if (batteryHealth >= 90) return 'Excellent - performs like new';
-    if (batteryHealth >= 80) return 'Good - reliable performance';
-    if (batteryHealth >= 70) return 'Fair - acceptable for normal use';
-    if (batteryHealth >= 50) return 'Below average - may need replacement soon';
-    return 'Critical - battery replacement recommended';
-  }
-
-  // Call to reserve action
-  callToReserve(): void {
-    window.location.href = `tel:${this.shopPhoneNumber}`;
-  }
-
-  goBackToCatalog(): void {
-    // Use location.back() to preserve the filter/search state
-    // Check if there's history to go back to
-    if (window.history.length > 1) {
-      this.location.back();
-    } else {
-      // Fallback to catalog root if no history
-      this.router.navigate(['/']);
-    }
+  scrollToVariants(): void {
+    document.getElementById('other-variants')?.scrollIntoView({ behavior: 'smooth' });
   }
 }

@@ -214,6 +214,85 @@
               }
             </div>
 
+            <!-- Variant Picker Section (only for new phone products with a selected model) -->
+            @if (form.get('productType')?.value === 'phone' && !isEdit && selectedModelId() && !loadingVariants()) {
+              @if (existingVariants().length > 0) {
+                <div class="col-12 mt-3">
+                  <p-divider />
+                  <h3 class="text-lg font-semibold m-0 mb-3 flex align-items-center gap-2">
+                    <i class="pi pi-list text-primary"></i>
+                    Select Variant
+                  </h3>
+
+                  <!-- Add mode toggle -->
+                  <div class="mb-3">
+                    <p-selectButton
+                      [options]="addModeOptions"
+                      [ngModel]="addingToExisting() ? 'existing' : 'new'"
+                      (ngModelChange)="onAddModeChange($event)"
+                      [ngModelOptions]="{standalone: true}"
+                      styleClass="w-full"
+                    />
+                  </div>
+
+                  @if (addingToExisting()) {
+                    <!-- Existing variant cards -->
+                    <div class="grid">
+                      @for (variant of existingVariants(); track variant.id) {
+                        <div class="col-12 md:col-6 lg:col-4">
+                          <div
+                            class="border-2 border-round p-3 cursor-pointer transition-all transition-duration-200"
+                            [class.border-primary]="selectedVariantId() === variant.id"
+                            [class.surface-50]="selectedVariantId() === variant.id"
+                            [class.border-300]="selectedVariantId() !== variant.id"
+                            (click)="selectVariant(variant)"
+                          >
+                            <div class="flex flex-column gap-2">
+                              <div class="flex justify-content-between align-items-center">
+                                <span class="font-semibold">
+                                  @if (variant.storageGb) {
+                                    {{ variant.storageGb }}GB
+                                  }
+                                </span>
+                                <p-tag
+                                  [value]="variant.stockCount + ' in stock'"
+                                  [severity]="variant.stockCount > 0 ? 'success' : 'danger'"
+                                />
+                              </div>
+                              <div class="flex flex-wrap gap-1">
+                                @if (variant.ptaStatus) {
+                                  <p-tag [value]="variant.ptaStatus === 'pta_approved' ? 'PTA Approved' : 'Non PTA'" [severity]="variant.ptaStatus === 'pta_approved' ? 'success' : 'warn'" styleClass="text-xs" />
+                                }
+                                <p-tag [value]="ProductConditionLabels[variant.condition]" severity="info" styleClass="text-xs" />
+                              </div>
+                              <div class="flex justify-content-between text-sm">
+                                <span class="text-500">Sell: <strong class="text-900">{{ variant.sellingPrice | appCurrency:'1.2-2' }}</strong></span>
+                                <span class="text-500">Avg Cost: <strong class="text-900">{{ variant.avgCostPrice | appCurrency:'1.2-2' }}</strong></span>
+                              </div>
+                              @if (variant.availableColors.length > 0) {
+                                <div class="text-sm text-500">
+                                  Colors: {{ variant.availableColors.join(', ') }}
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                    @if (!selectedVariantId()) {
+                      <small class="text-500 block mt-2">Click a variant card above to select it</small>
+                    }
+                  }
+                </div>
+              }
+            }
+
+            @if (loadingVariants()) {
+              <div class="col-12">
+                <small class="text-500 block mt-1"><i class="pi pi-spin pi-spinner mr-1"></i>Loading variants...</small>
+              </div>
+            }
+
             <!-- Phone-Specific: Specifications Section -->
             @if (form.get('productType')?.value === 'phone' && (specsReady() || isEdit)) {
               <!-- Section: Specifications -->
@@ -225,7 +304,7 @@
                 </h3>
               </div>
 
-              <!-- Storage GB (chips only) -->
+              <!-- Storage GB (chips only) - read-only when adding to existing -->
               <div class="col-12 md:col-6">
                 <label class="block font-medium mb-2">
                   Storage (GB)
@@ -233,7 +312,15 @@
                     <i class="pi pi-check-circle text-green-600 ml-1 text-sm"></i>
                   }
                 </label>
-                @if (storageQuickOptions().length > 0) {
+                @if (addingToExisting()) {
+                  <div class="surface-100 border-round p-3 text-lg font-semibold">
+                    @if (form.get('storageGb')?.value) {
+                      {{ form.get('storageGb')?.value }}GB
+                    } @else {
+                      <span class="text-500">N/A</span>
+                    }
+                  </div>
+                } @else if (storageQuickOptions().length > 0) {
                   <div class="flex flex-wrap gap-2">
                     @for (opt of storageQuickOptions(); track opt) {
                       <p-button
@@ -371,23 +458,33 @@
                 </div>
               </div>
 
-              <!-- PTA Status (chips) -->
+              <!-- PTA Status (chips) - read-only when adding to existing -->
               <div class="col-12 md:col-6 lg:col-4">
                 <label class="block font-medium mb-2">
                   PTA Status
                   <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Pakistan Telecommunication Authority approval status" tooltipPosition="top"></i>
                 </label>
-                <div class="flex flex-wrap gap-2">
-                  @for (opt of ptaChipOptions; track opt.value) {
-                    <p-button
-                      [label]="opt.label"
-                      [severity]="form.get('ptaStatus')?.value === opt.value ? 'primary' : 'secondary'"
-                      [outlined]="form.get('ptaStatus')?.value !== opt.value"
-                      size="small"
-                      (onClick)="setPtaStatus(opt.value)"
-                    />
-                  }
-                </div>
+                @if (addingToExisting()) {
+                  <div class="surface-100 border-round p-3 text-base font-semibold">
+                    @if (form.get('ptaStatus')?.value) {
+                      {{ form.get('ptaStatus')?.value === 'pta_approved' ? 'PTA Approved' : 'Non PTA' }}
+                    } @else {
+                      <span class="text-500">N/A</span>
+                    }
+                  </div>
+                } @else {
+                  <div class="flex flex-wrap gap-2">
+                    @for (opt of ptaChipOptions; track opt.value) {
+                      <p-button
+                        [label]="opt.label"
+                        [severity]="form.get('ptaStatus')?.value === opt.value ? 'primary' : 'secondary'"
+                        [outlined]="form.get('ptaStatus')?.value !== opt.value"
+                        size="small"
+                        (onClick)="setPtaStatus(opt.value)"
+                      />
+                    }
+                  </div>
+                }
               </div>
 
               <!-- Battery Health (only for Used/Open Box) -->
@@ -558,20 +655,26 @@
                 </h3>
               </div>
 
-              <!-- Condition (chips) -->
+              <!-- Condition (chips) - read-only when adding to existing -->
               <div class="col-12 md:col-6 lg:col-4">
                 <label class="block font-medium mb-2">Condition <span class="text-red-500">*</span></label>
-                <div class="flex flex-wrap gap-2">
-                  @for (opt of conditionChipOptions; track opt.value) {
-                    <p-button
-                      [label]="opt.label"
-                      [severity]="form.get('condition')?.value === opt.value ? 'primary' : 'secondary'"
-                      [outlined]="form.get('condition')?.value !== opt.value"
-                      size="small"
-                      (onClick)="setCondition(opt.value)"
-                    />
-                  }
-                </div>
+                @if (addingToExisting()) {
+                  <div class="surface-100 border-round p-3 text-base font-semibold">
+                    {{ form.get('condition')?.value === 'new' ? 'New' : form.get('condition')?.value === 'used' ? 'Used' : 'Open Box' }}
+                  </div>
+                } @else {
+                  <div class="flex flex-wrap gap-2">
+                    @for (opt of conditionChipOptions; track opt.value) {
+                      <p-button
+                        [label]="opt.label"
+                        [severity]="form.get('condition')?.value === opt.value ? 'primary' : 'secondary'"
+                        [outlined]="form.get('condition')?.value !== opt.value"
+                        size="small"
+                        (onClick)="setCondition(opt.value)"
+                      />
+                    }
+                  </div>
+                }
                 @if (form.controls['condition'].invalid && form.controls['condition'].touched) {
                   <small class="p-error block mt-1">Please select a condition</small>
                 }
@@ -630,27 +733,63 @@
               }
             </div>
 
-            <!-- Selling Price -->
-            <div class="col-12 md:col-6 lg:col-4">
-              <label for="sellingPrice" class="block font-medium mb-2">
-                Selling Price <span class="text-red-500">*</span>
-                <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="The price you will sell this product for" tooltipPosition="top"></i>
-              </label>
-              <p-inputNumber
-                id="sellingPrice"
-                formControlName="sellingPrice"
-                mode="decimal"
-                [useGrouping]="true"
-                [min]="0"
-                styleClass="w-full"
-                inputStyleClass="w-full"
-                placeholder="0"
-                ariaLabel="Selling price"
-              />
-              @if (form.controls['sellingPrice'].invalid && form.controls['sellingPrice'].touched) {
-                <small class="p-error block mt-1">Selling price is required</small>
-              }
-            </div>
+            <!-- Selling Price - read-only when adding to existing variant -->
+            @if (addingToExisting()) {
+              <div class="col-12 md:col-6 lg:col-4">
+                <label class="block font-medium mb-2">
+                  Selling Price
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Selling price is set on the variant and applies to all products in it" tooltipPosition="top"></i>
+                </label>
+                <div class="surface-100 border-round p-3 text-lg font-bold">
+                  {{ form.get('sellingPrice')?.value | appCurrency:'1.2-2' }}
+                </div>
+              </div>
+            } @else {
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="sellingPrice" class="block font-medium mb-2">
+                  Selling Price <span class="text-red-500">*</span>
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="The price you will sell this product for" tooltipPosition="top"></i>
+                </label>
+                <p-inputNumber
+                  id="sellingPrice"
+                  formControlName="sellingPrice"
+                  mode="decimal"
+                  [useGrouping]="true"
+                  [min]="0"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="0"
+                  ariaLabel="Selling price"
+                />
+                @if (form.controls['sellingPrice'].invalid && form.controls['sellingPrice'].touched) {
+                  <small class="p-error block mt-1">Selling price is required</small>
+                }
+              </div>
+            }
+
+            <!-- Quantity - only shown when adding to existing variant -->
+            @if (addingToExisting()) {
+              <div class="col-12 md:col-6 lg:col-4">
+                <label for="quantity" class="block font-medium mb-2">
+                  Quantity <span class="text-red-500">*</span>
+                  <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Number of units to add to this variant" tooltipPosition="top"></i>
+                </label>
+                <p-inputNumber
+                  id="quantity"
+                  [ngModel]="quantity()"
+                  (ngModelChange)="setQuantity($event)"
+                  [ngModelOptions]="{standalone: true}"
+                  [min]="1"
+                  [max]="999"
+                  [showButtons]="true"
+                  mode="decimal"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  placeholder="1"
+                  ariaLabel="Quantity"
+                />
+              </div>
+            }
 
             <!-- Profit Margin Preview -->
             <div class="col-12 md:col-6 lg:col-4">

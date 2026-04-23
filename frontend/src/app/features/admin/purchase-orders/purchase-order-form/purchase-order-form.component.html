@@ -100,26 +100,30 @@
         } @else {
           <!-- Desktop table view -->
           <div class="hidden md:block">
-            <p-table [value]="lineItemsArray" [scrollable]="true" scrollDirection="horizontal" [tableStyle]="{ 'min-width': '60rem' }">
+            <p-table [value]="lineItemsArray" [scrollable]="true" scrollDirection="horizontal" [tableStyle]="{ 'min-width': '80rem' }">
               <ng-template pTemplate="header">
                 <tr>
-                  <th style="width: 5%">#</th>
-                  <th style="width: 18%">Brand <span class="text-red-500">*</span></th>
-                  <th style="width: 22%">Model <span class="text-red-500">*</span></th>
-                  <th style="width: 13%">Quantity <span class="text-red-500">*</span></th>
-                  <th style="width: 15%">Unit Cost <span class="text-red-500">*</span></th>
-                  <th style="width: 12%">Line Total</th>
-                  <th style="width: 15%">Actions</th>
+                  <th style="width: 4%">#</th>
+                  <th style="width: 12%">Brand <span class="text-red-500">*</span></th>
+                  <th style="width: 14%">Model <span class="text-red-500">*</span></th>
+                  <th style="width: 14%">Variant</th>
+                  <th style="width: 8%">Qty <span class="text-red-500">*</span></th>
+                  <th style="width: 10%">Unit Cost <span class="text-red-500">*</span></th>
+                  <th style="width: 8%">Color</th>
+                  <th style="width: 10%">Line Total</th>
+                  <th style="width: 10%">Actions</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-item let-i="rowIndex">
                 <tr [formGroup]="getLineItemFormGroup(i)">
                   <td class="font-semibold">{{ i + 1 }}</td>
+                  <!-- Brand -->
                   <td>
                     <p-autoComplete
                       formControlName="brand"
                       [suggestions]="filteredBrands()"
                       (completeMethod)="searchBrands($event)"
+                      (onSelect)="onBrandSelect(i, $event)"
                       [dropdown]="true"
                       [forceSelection]="false"
                       placeholder="Select or type brand"
@@ -132,18 +136,93 @@
                       <small class="text-red-500 block mt-1">Required</small>
                     }
                   </td>
+                  <!-- Model -->
                   <td>
-                    <input
-                      pInputText
-                      formControlName="model"
-                      class="w-full"
-                      placeholder="Model name"
-                      [maxlength]="150"
-                    />
-                    @if (getLineItemFormGroup(i).get('model')?.invalid && getLineItemFormGroup(i).get('model')?.touched) {
+                    @if (hasModelsLoaded(i)) {
+                      <p-select
+                        formControlName="modelId"
+                        [options]="getModelOptionsForLineItem(i)"
+                        placeholder="Select model"
+                        styleClass="w-full"
+                        [filter]="true"
+                        filterPlaceholder="Search models..."
+                        [showClear]="true"
+                        [loading]="isLoadingModels(i)"
+                        (onChange)="onModelSelect(i, $event.value)"
+                      />
+                    } @else {
+                      <input
+                        pInputText
+                        formControlName="model"
+                        class="w-full"
+                        placeholder="Model name"
+                        [maxlength]="150"
+                      />
+                    }
+                    @if (getLineItemFormGroup(i).get('model')?.invalid && getLineItemFormGroup(i).get('model')?.touched && !hasModelsLoaded(i)) {
                       <small class="text-red-500 block mt-1">Required</small>
                     }
                   </td>
+                  <!-- Variant -->
+                  <td>
+                    @if (isLoadingVariants(i)) {
+                      <i class="pi pi-spin pi-spinner text-color-secondary"></i>
+                    } @else if (getVariantsForLineItem(i).length > 0) {
+                      <div class="flex flex-wrap gap-1">
+                        @for (variant of getVariantsForLineItem(i); track variant.id) {
+                          <button
+                            type="button"
+                            class="variant-chip"
+                            [class.selected]="getSelectedVariantId(i) === variant.id"
+                            (click)="onVariantSelect(i, variant.id)"
+                            [pTooltip]="getVariantLabel(variant) + (variant.stockCount != null ? ' | Stock: ' + variant.stockCount : '')"
+                            tooltipPosition="top"
+                          >
+                            {{ getVariantLabel(variant) }}
+                          </button>
+                        }
+                        @if (getSelectedVariantId(i)) {
+                          <button
+                            type="button"
+                            class="variant-chip clear-chip"
+                            (click)="clearVariantSelection(i)"
+                            pTooltip="Clear variant selection"
+                            tooltipPosition="top"
+                          >
+                            <i class="pi pi-times" style="font-size: 0.7rem"></i>
+                          </button>
+                        }
+                      </div>
+                    } @else if (hasModelsLoaded(i) && getLineItemFormGroup(i).get('modelId')?.value) {
+                      <!-- No variants found for this model - show manual fields inline -->
+                      <div class="flex flex-wrap gap-1 align-items-center">
+                        <p-select
+                          formControlName="storageGb"
+                          [options]="storageOptions"
+                          placeholder="Storage"
+                          styleClass="po-inline-select"
+                          [showClear]="true"
+                        />
+                        <p-select
+                          formControlName="ptaStatus"
+                          [options]="ptaStatusOptions"
+                          placeholder="PTA"
+                          styleClass="po-inline-select"
+                          [showClear]="true"
+                        />
+                        <p-select
+                          formControlName="condition"
+                          [options]="conditionOptions"
+                          placeholder="Condition"
+                          styleClass="po-inline-select"
+                          [showClear]="true"
+                        />
+                      </div>
+                    } @else {
+                      <span class="text-color-secondary text-sm">Select brand & model first</span>
+                    }
+                  </td>
+                  <!-- Quantity -->
                   <td>
                     <p-inputNumber
                       formControlName="quantity"
@@ -161,6 +240,7 @@
                       <small class="text-red-500 block mt-1">Min: 1</small>
                     }
                   </td>
+                  <!-- Unit Cost -->
                   <td>
                     <p-inputNumber
                       formControlName="unitCost"
@@ -174,11 +254,23 @@
                       <small class="text-red-500 block mt-1">Required</small>
                     }
                   </td>
+                  <!-- Color -->
+                  <td>
+                    <input
+                      pInputText
+                      formControlName="color"
+                      class="w-full"
+                      placeholder="Color"
+                      [maxlength]="50"
+                    />
+                  </td>
+                  <!-- Line Total -->
                   <td>
                     <span class="font-semibold text-primary">
                       {{ calculateLineTotal(i) | appCurrency:'1.2-2' }}
                     </span>
                   </td>
+                  <!-- Actions -->
                   <td>
                     <div class="flex align-items-center gap-1">
                       <p-button
@@ -241,6 +333,7 @@
                       formControlName="brand"
                       [suggestions]="filteredBrands()"
                       (completeMethod)="searchBrands($event)"
+                      (onSelect)="onBrandSelect(i, $event)"
                       [dropdown]="true"
                       [forceSelection]="false"
                       placeholder="Select or type brand"
@@ -256,17 +349,100 @@
 
                   <div class="col-12">
                     <label class="block text-color-secondary text-sm mb-1">Model <span class="text-red-500">*</span></label>
-                    <input
-                      pInputText
-                      formControlName="model"
-                      class="w-full"
-                      placeholder="Model name"
-                      [maxlength]="150"
-                    />
-                    @if (getLineItemFormGroup(i).get('model')?.invalid && getLineItemFormGroup(i).get('model')?.touched) {
+                    @if (hasModelsLoaded(i)) {
+                      <p-select
+                        formControlName="modelId"
+                        [options]="getModelOptionsForLineItem(i)"
+                        placeholder="Select model"
+                        styleClass="w-full"
+                        [filter]="true"
+                        filterPlaceholder="Search models..."
+                        [showClear]="true"
+                        [loading]="isLoadingModels(i)"
+                        (onChange)="onModelSelect(i, $event.value)"
+                      />
+                    } @else {
+                      <input
+                        pInputText
+                        formControlName="model"
+                        class="w-full"
+                        placeholder="Model name"
+                        [maxlength]="150"
+                      />
+                    }
+                    @if (getLineItemFormGroup(i).get('model')?.invalid && getLineItemFormGroup(i).get('model')?.touched && !hasModelsLoaded(i)) {
                       <small class="text-red-500">Required</small>
                     }
                   </div>
+
+                  <!-- Variant selection / manual entry -->
+                  @if (isLoadingVariants(i)) {
+                    <div class="col-12 text-center">
+                      <i class="pi pi-spin pi-spinner text-color-secondary"></i>
+                      <span class="text-color-secondary text-sm ml-2">Loading variants...</span>
+                    </div>
+                  } @else if (getVariantsForLineItem(i).length > 0) {
+                    <div class="col-12">
+                      <label class="block text-color-secondary text-sm mb-1">Variant</label>
+                      <div class="flex flex-wrap gap-2">
+                        @for (variant of getVariantsForLineItem(i); track variant.id) {
+                          <button
+                            type="button"
+                            class="variant-chip"
+                            [class.selected]="getSelectedVariantId(i) === variant.id"
+                            (click)="onVariantSelect(i, variant.id)"
+                          >
+                            {{ getVariantLabel(variant) }}
+                            <span class="text-xs text-color-secondary ml-1">({{ variant.stockCount }} in stock)</span>
+                          </button>
+                        }
+                      </div>
+                      @if (getSelectedVariantId(i)) {
+                        <div class="mt-2">
+                          <button
+                            type="button"
+                            class="variant-chip clear-chip"
+                            (click)="clearVariantSelection(i)"
+                          >
+                            <i class="pi pi-times" style="font-size: 0.7rem"></i> Clear
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  } @else if (hasModelsLoaded(i) && getLineItemFormGroup(i).get('modelId')?.value) {
+                    <div class="col-12">
+                      <label class="block text-color-secondary text-sm mb-1">Variant Details (new variant)</label>
+                      <div class="grid">
+                        <div class="col-4">
+                          <p-select
+                            formControlName="storageGb"
+                            [options]="storageOptions"
+                            placeholder="Storage"
+                            styleClass="w-full"
+                            [showClear]="true"
+                          />
+                        </div>
+                        <div class="col-4">
+                          <p-select
+                            formControlName="ptaStatus"
+                            [options]="ptaStatusOptions"
+                            placeholder="PTA"
+                            styleClass="w-full"
+                            [showClear]="true"
+                          />
+                        </div>
+                        <div class="col-4">
+                          <p-select
+                            formControlName="condition"
+                            [options]="conditionOptions"
+                            placeholder="Condition"
+                            styleClass="w-full"
+                            [showClear]="true"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  }
 
                   <div class="col-6">
                     <label class="block text-color-secondary text-sm mb-1">Quantity <span class="text-red-500">*</span></label>
@@ -293,6 +469,17 @@
                       locale="en-US"
                       [min]="0"
                       styleClass="w-full"
+                    />
+                  </div>
+
+                  <div class="col-12">
+                    <label class="block text-color-secondary text-sm mb-1">Color</label>
+                    <input
+                      pInputText
+                      formControlName="color"
+                      class="w-full"
+                      placeholder="e.g. Midnight Blue"
+                      [maxlength]="50"
                     />
                   </div>
 

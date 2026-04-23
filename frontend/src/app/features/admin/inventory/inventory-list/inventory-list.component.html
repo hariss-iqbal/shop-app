@@ -18,6 +18,7 @@
         styleClass="w-full sm:w-auto"
       />
       <p-button label="Add Product" icon="pi pi-plus" routerLink="/admin/inventory/new" styleClass="w-full sm:w-auto" />
+      <p-button label="Add to Existing" icon="pi pi-box" severity="secondary" [outlined]="true" (onClick)="openAddToExisting()" styleClass="w-full sm:w-auto" />
     </div>
   </div>
 
@@ -418,6 +419,8 @@
   (visibleChange)="imageDialogVisible.set($event)"
   (imagesSaved)="onImagesSaved()"
 />
+
+<app-add-to-existing-dialog #addToExistingDialog (selected)="onExistingSelected($event)" />
 
 <p-dialog header="Edit Product" [(visible)]="editDialogVisible" [modal]="true"
           [style]="{ width: '90vw', 'max-width': '1200px' }" [maximizable]="true">

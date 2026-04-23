@@ -92,7 +92,13 @@ export class ProductCardComponent {
   });
 
   navigateToDetail(): void {
-    this.router.navigate(['/product', this.product().id]);
+    const p = this.product();
+    if (p.variantSlug) {
+      const color = p.color;
+      this.router.navigate(['/product', p.variantSlug], color ? { queryParams: { color } } : {});
+    } else {
+      this.router.navigate(['/product', p.id]);
+    }
   }
 
   toggleCompare(event: Event): void {

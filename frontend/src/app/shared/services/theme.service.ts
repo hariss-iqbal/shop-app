@@ -69,8 +69,10 @@ export class ThemeService {
     const htmlElement = document.documentElement;
     if (theme === ThemeMode.DARK) {
       htmlElement.classList.add('dark-theme');
+      htmlElement.setAttribute('data-theme', 'dark');
     } else {
       htmlElement.classList.remove('dark-theme');
+      htmlElement.setAttribute('data-theme', 'light');
     }
 
     // Update meta theme-color for mobile browser chrome

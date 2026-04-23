@@ -15,13 +15,16 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 import { MenuModule } from 'primeng/menu';
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
+import { ProductService } from '../../../../core/services/product.service';
 import { InputSanitizationService } from '../../../../core/services/input-sanitization.service';
 import {
   PurchaseOrder,
   ReceivePurchaseOrderRequest,
   ReceivingProductRecord
 } from '../../../../models/purchase-order.model';
+import { Variant } from '../../../../models/variant.model';
 import { ProductCondition, ProductConditionLabels } from '../../../../enums';
+import { PtaStatusLabels } from '../../../../enums/pta-status.enum';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { FocusManagementService } from '../../../../shared/services/focus-management.service';
 import { MenuItem } from 'primeng/api';
@@ -65,6 +68,7 @@ export class PurchaseOrderReceivingComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private purchaseOrderService: PurchaseOrderService,
+    private productService: ProductService,
     private sanitizer: InputSanitizationService,
     private toastService: ToastService,
     private focusService: FocusManagementService
@@ -76,6 +80,15 @@ export class PurchaseOrderReceivingComponent implements OnInit {
 
   visible = true;
   saving = signal(false);
+
+  /** Cache of variant data keyed by variant ID, loaded during form initialization */
+  variantCache = signal<Map<string, Variant>>(new Map());
+
+  /** Expose PTA status labels for template rendering */
+  readonly ptaStatusLabels = PtaStatusLabels;
+
+  /** Expose condition labels for template rendering */
+  readonly ProductConditionLabels = ProductConditionLabels;
 
   /** Validation constraints for product form fields (F-058: Input Sanitization) */
   readonly constraints = PRODUCT_CONSTRAINTS;
@@ -144,6 +157,15 @@ export class PurchaseOrderReceivingComponent implements OnInit {
     const productsArray: FormGroup[] = [];
     this.productFormGroups = [];
 
+    // Collect unique variant IDs to load in batch
+    const variantIds = new Set<string>();
+    this.purchaseOrder.items.forEach(item => {
+      if (item.variantId) {
+        variantIds.add(item.variantId);
+      }
+    });
+
+    // Build form groups first
     this.purchaseOrder.items.forEach((item, itemIdx) => {
       for (let unitIdx = 0; unitIdx < item.quantity; unitIdx++) {
         this.productFormGroups.push({
@@ -154,15 +176,17 @@ export class PurchaseOrderReceivingComponent implements OnInit {
           unitCost: item.unitCost
         });
 
+        const hasVariant = !!item.variantId;
+
         const productGroup = this.fb.group({
           lineItemIndex: [itemIdx],
           brand: [item.brand],
           model: [item.model],
-          condition: [ProductCondition.NEW, Validators.required],
-          sellingPrice: [null, [Validators.required, Validators.min(0)]],
-          color: [''],
+          condition: [hasVariant && item.condition ? item.condition : ProductCondition.NEW, Validators.required],
+          sellingPrice: [hasVariant ? 0 : null, hasVariant ? [Validators.required, Validators.min(0)] : [Validators.required, Validators.min(0)]],
+          color: [item.color || ''],
           imei: [''],
-          storageGb: [null],
+          storageGb: [item.storageGb || null],
           ramGb: [null],
           batteryHealth: [{ value: null, disabled: true }],
           notes: ['']
@@ -178,6 +202,54 @@ export class PurchaseOrderReceivingComponent implements OnInit {
 
     this.updateInvalidCount();
     this.form.valueChanges.subscribe(() => this.updateInvalidCount());
+
+    // Load variant data asynchronously
+    this.loadVariants(variantIds);
+  }
+
+  private async loadVariants(variantIds: Set<string>): Promise<void> {
+    if (variantIds.size === 0) return;
+
+    const cache = new Map(this.variantCache());
+
+    const loadPromises = Array.from(variantIds).map(async (variantId) => {
+      try {
+        const variant = await this.productService.getVariantById(variantId);
+        if (variant) {
+          cache.set(variantId, variant);
+        }
+      } catch (err) {
+        console.error(`Failed to load variant ${variantId}:`, err);
+      }
+    });
+
+    await Promise.all(loadPromises);
+    this.variantCache.set(cache);
+
+    // Pre-fill form fields from variant data
+    if (!this.purchaseOrder) return;
+
+    this.purchaseOrder.items.forEach((item, itemIdx) => {
+      if (!item.variantId) return;
+      const variant = cache.get(item.variantId);
+      if (!variant) return;
+
+      for (let unitIdx = 0; unitIdx < item.quantity; unitIdx++) {
+        const formIdx = this.getFormIndex(itemIdx, unitIdx);
+        const control = this.productsArray.at(formIdx);
+
+        // Auto-fill condition from variant
+        control.get('condition')?.setValue(variant.condition);
+        // Auto-fill selling price from variant
+        control.get('sellingPrice')?.setValue(variant.sellingPrice);
+        // Auto-fill storage from variant if not already set
+        if (!control.get('storageGb')?.value && variant.storageGb) {
+          control.get('storageGb')?.setValue(variant.storageGb);
+        }
+
+        this.onConditionChange(formIdx);
+      }
+    });
   }
 
   onConditionChange(formIdx: number): void {
@@ -317,6 +389,33 @@ export class PurchaseOrderReceivingComponent implements OnInit {
     return condition === ProductCondition.USED || condition === ProductCondition.OPEN_BOX;
   }
 
+  /** Check if a PO line item has a variant linked */
+  hasVariant(itemIdx: number): boolean {
+    if (!this.purchaseOrder) return false;
+    const item = this.purchaseOrder.items[itemIdx];
+    return !!item?.variantId;
+  }
+
+  /** Get the Variant for a PO line item, or null if not linked */
+  getVariantForItem(itemIdx: number): Variant | null {
+    if (!this.purchaseOrder) return null;
+    const item = this.purchaseOrder.items[itemIdx];
+    if (!item?.variantId) return null;
+    return this.variantCache().get(item.variantId) ?? null;
+  }
+
+  /** Get a human-readable label for a PTA status value */
+  getPtaStatusLabel(status: string | null | undefined): string {
+    if (!status) return 'N/A';
+    return (PtaStatusLabels as Record<string, string>)[status] ?? status;
+  }
+
+  /** Get a human-readable label for a condition value */
+  getConditionLabel(condition: string | null | undefined): string {
+    if (!condition) return 'N/A';
+    return (ProductConditionLabels as Record<string, string>)[condition] ?? condition;
+  }
+
   isFormValid(): boolean {
     return this.form.valid;
   }
@@ -328,19 +427,25 @@ export class PurchaseOrderReceivingComponent implements OnInit {
 
     try {
       const productsValue = this.productsArray.getRawValue();
-      const products: ReceivingProductRecord[] = productsValue.map((product: any) => ({
-        lineItemIndex: product.lineItemIndex,
-        brand: this.sanitizer.sanitize(product.brand),
-        model: this.sanitizer.sanitize(product.model),
-        condition: product.condition,
-        sellingPrice: product.sellingPrice,
-        color: this.sanitizer.sanitizeOrNull(product.color),
-        imei: this.sanitizer.sanitizeOrNull(product.imei),
-        storageGb: product.storageGb || null,
-        ramGb: product.ramGb || null,
-        batteryHealth: product.batteryHealth || null,
-        notes: this.sanitizer.sanitizeOrNull(product.notes)
-      }));
+      const products: ReceivingProductRecord[] = productsValue.map((product: any) => {
+        const itemIdx = product.lineItemIndex;
+        const poItem = this.purchaseOrder!.items[itemIdx];
+        const variant = poItem?.variantId ? this.variantCache().get(poItem.variantId) : null;
+
+        return {
+          lineItemIndex: product.lineItemIndex,
+          brand: this.sanitizer.sanitize(product.brand),
+          model: this.sanitizer.sanitize(product.model),
+          condition: product.condition,
+          sellingPrice: variant ? variant.sellingPrice : product.sellingPrice,
+          color: this.sanitizer.sanitizeOrNull(product.color),
+          imei: this.sanitizer.sanitizeOrNull(product.imei),
+          storageGb: product.storageGb || (variant?.storageGb ?? null),
+          ramGb: product.ramGb || null,
+          batteryHealth: product.batteryHealth || null,
+          notes: this.sanitizer.sanitizeOrNull(product.notes)
+        };
+      });
 
       const request: ReceivePurchaseOrderRequest = { products };
       const result = await this.purchaseOrderService.receiveWithInventory(this.purchaseOrder.id, request);

@@ -33,6 +33,7 @@ import { PhoneModel } from '../../../../models/phone-model.model';
 import { Supplier } from '../../../../models/supplier.model';
 import { CreateProductRequest, UpdateProductRequest } from '../../../../models/product.model';
 import { ProductImage } from '../../../../models/product-image.model';
+import { Variant, AddStockRequest } from '../../../../models/variant.model';
 import { ProductCondition, ProductConditionLabels, ProductStatus, ProductStatusLabels, PtaStatus, PtaStatusLabels, ProductType } from '../../../../enums';
 import { ProductImageUploadComponent } from '../product-image-upload/product-image-upload.component';
 import { PRODUCT_CONSTRAINTS } from '../../../../constants/validation.constants';
@@ -219,6 +220,13 @@ export class InventoryFormComponent implements OnInit {
   specsError = signal<string | null>(null);
   specsReady = signal(false);
 
+  // Variant picker signals
+  existingVariants = signal<Variant[]>([]);
+  selectedVariantId = signal<string | null>(null);
+  addingToExisting = signal(false);
+  quantity = signal(1);
+  loadingVariants = signal(false);
+
   conditionRatingOptions = [8, 9, 10];
   conditionChipOptions = [
     { label: 'New', value: ProductCondition.NEW },
@@ -229,6 +237,15 @@ export class InventoryFormComponent implements OnInit {
     { label: 'PTA Approved', value: PtaStatus.PTA_APPROVED },
     { label: 'Non PTA', value: PtaStatus.NON_PTA }
   ];
+
+  // Variant picker options
+  addModeOptions = [
+    { label: 'Add to Existing Variant', value: 'existing' },
+    { label: 'Create New Variant', value: 'new' }
+  ];
+
+  // Expose for template usage
+  ProductConditionLabels = ProductConditionLabels;
 
   // Fallback options (only used if API returns empty or fails)
   private readonly FALLBACK_RAM = [6, 8, 12, 16];
@@ -311,6 +328,8 @@ export class InventoryFormComponent implements OnInit {
 
       if (this.isEdit && this.productId) {
         await this.loadProduct(this.productId);
+      } else {
+        await this.applyPrefill();
       }
     } catch (error) {
       this.toastService.error('Error', 'Failed to load form data');
@@ -385,6 +404,57 @@ export class InventoryFormComponent implements OnInit {
     // Auto-fetch specs if phone with brand and model present
     if (product.productType === ProductType.PHONE && brand && product.model) {
       this.fetchProductSpecs();
+    }
+  }
+
+  private async applyPrefill(): Promise<void> {
+    const nav = this.router.getCurrentNavigation();
+    const prefill = (nav?.extras?.state?.['prefill'] ?? history.state?.['prefill']) as {
+      modelId?: string;
+      modelName?: string;
+      brandId?: string;
+      brandName?: string;
+      storageGb?: number | null;
+      color?: string | null;
+      ptaStatus?: string | null;
+      condition?: string;
+      variantId?: string;
+      sellingPrice?: number;
+      avgCostPrice?: number;
+      stockCount?: number;
+    } | undefined;
+
+    if (!prefill) return;
+
+    const brand = this.brands().find(b => b.id === prefill.brandId);
+    if (brand) {
+      this.form.get('brand')?.setValue(brand);
+    }
+
+    if (prefill.modelName) {
+      this.form.get('model')?.setValue(prefill.modelName);
+    }
+
+    if (prefill.brandId) {
+      await this.loadModelsForBrand(prefill.brandId);
+      if (prefill.modelId) {
+        this.selectedModelId.set(prefill.modelId);
+      }
+    }
+
+    const condition = prefill.condition as ProductCondition;
+    const ptaStatus = prefill.ptaStatus as PtaStatus;
+
+    this.form.patchValue({
+      storageGb: prefill.storageGb ?? null,
+      color: prefill.color ?? '',
+      condition: condition || ProductCondition.NEW,
+      ptaStatus: ptaStatus ?? null,
+    });
+
+    // If coming from add-to-existing with variant info, pre-fill selling price from variant
+    if (prefill.variantId && prefill.sellingPrice) {
+      this.form.get('sellingPrice')?.setValue(prefill.sellingPrice);
     }
   }
 
@@ -537,12 +607,71 @@ export class InventoryFormComponent implements OnInit {
 
   onModelSelect(modelId: string | null): void {
     this.selectedModelId.set(modelId);
+    // Reset variant picker state
+    this.selectedVariantId.set(null);
+    this.addingToExisting.set(false);
+    this.existingVariants.set([]);
+    this.quantity.set(1);
+
     if (modelId) {
       const model = this.availableModels().find(m => m.id === modelId);
       if (model) {
         this.form.get('model')?.setValue(model.name);
       }
+      // Load existing variants for new phone products
+      if (!this.isEdit && this.form.get('productType')?.value === ProductType.PHONE) {
+        this.loadVariantsForModel(modelId);
+      }
     }
+  }
+
+  async loadVariantsForModel(modelId: string): Promise<void> {
+    this.loadingVariants.set(true);
+    try {
+      const variants = await this.productService.getVariantsForModel(modelId);
+      this.existingVariants.set(variants);
+    } catch {
+      this.existingVariants.set([]);
+    } finally {
+      this.loadingVariants.set(false);
+    }
+  }
+
+  selectVariant(variant: Variant): void {
+    this.selectedVariantId.set(variant.id);
+    this.addingToExisting.set(true);
+    this.quantity.set(1);
+
+    // Pre-fill form fields from the variant
+    this.form.patchValue({
+      storageGb: variant.storageGb,
+      ptaStatus: variant.ptaStatus as PtaStatus,
+      condition: variant.condition,
+      sellingPrice: variant.sellingPrice
+    });
+
+    // Show phone specs section since we have variant data
+    this.specsReady.set(true);
+  }
+
+  onAddModeChange(mode: 'existing' | 'new'): void {
+    if (mode === 'new') {
+      this.addingToExisting.set(false);
+      this.selectedVariantId.set(null);
+      // Clear variant-pre-filled fields so user can enter manually
+      this.form.patchValue({
+        storageGb: null,
+        ptaStatus: null,
+        condition: ProductCondition.NEW,
+        sellingPrice: null
+      });
+    } else {
+      this.addingToExisting.set(true);
+    }
+  }
+
+  setQuantity(value: number): void {
+    this.quantity.set(value);
   }
 
   async confirmCreateBrand(): Promise<void> {
@@ -785,6 +914,22 @@ export class InventoryFormComponent implements OnInit {
         await this.productService.updateProduct(this.productId, updateRequest);
         this.toastService.success('Success', 'Product updated successfully');
       } else {
+        // Add stock to existing variant flow
+        if (this.addingToExisting() && this.selectedVariantId()) {
+          const addStockRequest: AddStockRequest = {
+            variantId: this.selectedVariantId()!,
+            color: this.sanitizer.sanitizeOrNull(formValue.color),
+            costPrice: formValue.costPrice,
+            quantity: this.quantity(),
+            supplierId: formValue.supplierId || null,
+            notes: this.sanitizer.sanitizeOrNull(formValue.notes),
+            purchaseDate: formValue.purchaseDate ? this.formatDate(formValue.purchaseDate) : null
+          };
+
+          const result = await this.productService.addStock(addStockRequest);
+          this.toastService.success('Success', `Added ${result.productsCreated} product(s) to existing variant`);
+
+        } else {
         const createRequest: CreateProductRequest = {
           brandId: selectedBrand.id,
           model: this.sanitizer.sanitize(formValue.model),
@@ -843,6 +988,7 @@ export class InventoryFormComponent implements OnInit {
             this.isUploadingImages.set(false);
           }
         }
+        } // end create new variant flow
       }
 
       if (this.dialogMode()) {

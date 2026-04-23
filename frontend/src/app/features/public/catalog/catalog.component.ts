@@ -1,62 +1,22 @@
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute, Params } from '@angular/router';
+import { Router, ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, skip } from 'rxjs/operators';
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
-import { InputTextModule } from 'primeng/inputtext';
-import { TagModule } from 'primeng/tag';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { AvatarModule } from 'primeng/avatar';
-import { SkeletonModule } from 'primeng/skeleton';
-import { PaginatorModule, PaginatorState } from 'primeng/paginator';
-import { SelectButtonModule } from 'primeng/selectbutton';
-import { DividerModule } from 'primeng/divider';
-import { TooltipModule } from 'primeng/tooltip';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { SliderModule } from 'primeng/slider';
-import { ChipModule } from 'primeng/chip';
-import { BadgeModule } from 'primeng/badge';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DrawerModule } from 'primeng/drawer';
-import { ProductService, CatalogPaginationParams } from '../../../core/services/product.service';
+import { ProductService, CatalogPaginationParams, ModelCatalogItem } from '../../../core/services/product.service';
 import { BrandService } from '../../../core/services/brand.service';
-import { ModelService } from '../../../core/services/model.service';
-import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
-import { ProductComparisonService } from '../../../shared/services/product-comparison.service';
-import { ProductCardKeyboardDirective } from '../../../shared/directives/product-card-keyboard.directive';
-import { BlurUpImageDirective } from '../../../shared/directives/blur-up-image.directive';
-import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
-import { Product } from '../../../models/product.model';
-import { Brand } from '../../../models/brand.model';
-import { ProductStatus, ProductCondition, ProductConditionLabels, PtaStatus, PtaStatusLabels } from '../../../enums';
-import { AppCurrencyPipe } from '../../../shared/pipes/app-currency.pipe';
-import { CurrencyService } from '../../../core/services/currency.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { Brand } from '../../../models/brand.model';
+import { ProductCondition, ProductConditionLabels, PtaStatus, PtaStatusLabels, ProductStatus } from '../../../enums';
 
 interface SortOption {
   label: string;
   value: string;
   field: string;
   order: number;
-  icon: string;
-}
-
-interface ConditionOption {
-  label: string;
-  value: ProductCondition;
-}
-
-interface StorageOption {
-  label: string;
-  value: number;
 }
 
 interface ActiveFilter {
@@ -67,34 +27,8 @@ interface ActiveFilter {
 
 @Component({
   selector: 'app-catalog',
-  imports: [
-    CommonModule,
-    FormsModule,
-    CardModule,
-    ButtonModule,
-    SelectModule,
-    InputTextModule,
-    TagModule,
-    ProgressSpinnerModule,
-    AvatarModule,
-    SkeletonModule,
-    PaginatorModule,
-    SelectButtonModule,
-    DividerModule,
-    TooltipModule,
-    IconFieldModule,
-    InputIconModule,
-    MultiSelectModule,
-    SliderModule,
-    ChipModule,
-    BadgeModule,
-    CheckboxModule,
-    DrawerModule,
-    ProductCardKeyboardDirective,
-    BlurUpImageDirective,
-    AppCurrencyPipe,
-    ProductCardComponent
-  ],
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './catalog.component.html',
   styleUrls: ['./catalog.component.scss']
 })
@@ -104,8 +38,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
   private searchSubject$ = new Subject<string>();
   private isInitializing = true;
   private isNavigatingFromUrl = false;
+  private filterVersion = signal(0);
 
-  products = signal<Product[]>([]);
+  /* ── Data signals ── */
+  models = signal<ModelCatalogItem[]>([]);
   brands = signal<Brand[]>([]);
   loading = signal(true);
   totalRecords = signal(0);
@@ -113,141 +49,143 @@ export class CatalogComponent implements OnInit, OnDestroy {
   priceMin = signal(0);
   priceMax = signal(1000);
 
+  /* ── Filter state ── */
   searchQuery = '';
   selectedBrandIds: string[] = [];
   selectedConditions: ProductCondition[] = [];
   selectedStorageValues: number[] = [];
   selectedPtaStatus: PtaStatus | null = null;
   selectedModelId: string | null = null;
-  modelOptions = signal<{ label: string; value: string | null }[]>([]);
   priceRange: [number, number] = [0, 1000];
   selectedSort: SortOption;
-  first = 0;
+  first = signal(0);
   pageSize = 12;
 
-  skeletonItems = Array(6).fill(0);
-
-  // Filter drawer for mobile
+  /* ── UI state ── */
+  viewMode = signal<'grid' | 'list'>('grid');
   filterDrawerVisible = false;
-  activeFilterCount = computed(() => this.activeFilters().length);
+  collapsedGroups: Record<string, boolean> = {};
 
-  openFilterDrawer(): void {
-    this.filterDrawerVisible = true;
-  }
-
-  closeFilterDrawer(): void {
-    this.filterDrawerVisible = false;
-  }
-
+  /* ── Sort options ── */
   sortOptions: SortOption[] = [
-    { label: 'Newest First', value: 'newest', field: 'created_at', order: -1, icon: 'pi pi-clock' },
-    { label: 'Oldest First', value: 'oldest', field: 'created_at', order: 1, icon: 'pi pi-history' },
-    { label: 'Price: Low to High', value: 'price_asc', field: 'selling_price', order: 1, icon: 'pi pi-sort-amount-up' },
-    { label: 'Price: High to Low', value: 'price_desc', field: 'selling_price', order: -1, icon: 'pi pi-sort-amount-down' },
-    { label: 'Name: A to Z', value: 'name_asc', field: 'model', order: 1, icon: 'pi pi-sort-alpha-down' },
-    { label: 'Name: Z to A', value: 'name_desc', field: 'model', order: -1, icon: 'pi pi-sort-alpha-up' }
+    { label: 'Most popular', value: 'popular', field: 'created_at', order: -1 },
+    { label: 'Newest', value: 'newest', field: 'created_at', order: -1 },
+    { label: 'Price: low → high', value: 'price_asc', field: 'selling_price', order: 1 },
+    { label: 'Price: high → low', value: 'price_desc', field: 'selling_price', order: -1 },
   ];
 
-  conditionOptions: ConditionOption[] = [
-    { label: ProductConditionLabels[ProductCondition.NEW], value: ProductCondition.NEW },
-    { label: ProductConditionLabels[ProductCondition.USED], value: ProductCondition.USED },
-    { label: ProductConditionLabels[ProductCondition.OPEN_BOX], value: ProductCondition.OPEN_BOX }
+  /* ── Condition pills ── */
+  conditionPills = [
+    { label: 'All', value: 'all' },
+    { label: 'New', value: ProductCondition.NEW },
+    { label: 'Open box', value: ProductCondition.OPEN_BOX },
+    { label: 'Pre-owned · A', value: ProductCondition.USED },
   ];
+  selectedConditionPill = signal<string>('all');
 
-  ptaStatusOptions = [
-    { label: 'All', value: null },
-    { label: PtaStatusLabels[PtaStatus.PTA_APPROVED], value: PtaStatus.PTA_APPROVED },
-    { label: PtaStatusLabels[PtaStatus.NON_PTA], value: PtaStatus.NON_PTA }
+  /* ── PTA status references for template ── */
+  ptaApproved = PtaStatus.PTA_APPROVED;
+  ptaNonPta = PtaStatus.NON_PTA;
+
+  /* ── Visual-only filter options ── */
+  ramOptions = ['4 GB', '6 GB', '8 GB', '12 GB', '16 GB'];
+  selectedRamValues: string[] = [];
+
+  batteryHealthOptions = [
+    { label: '95% & above', value: '95+' },
+    { label: '90–95%', value: '90-95' },
+    { label: '85–90%', value: '85-90' },
   ];
+  selectedBatteryHealth: string[] = [];
 
-  storageOptions = computed((): StorageOption[] => {
-    return this.availableStorageOptions().map(gb => ({
-      label: `${gb}GB`,
-      value: gb
-    }));
+  minRating = signal<number>(0);
+
+  /* ── Computed ── */
+  rangePercent = computed(() => {
+    const span = this.priceMax() - this.priceMin();
+    if (span <= 0) return { left: 0, right: 100, nubLeft: 0, nubRight: 100 };
+    return {
+      left: ((this.priceRange[0] - this.priceMin()) / span) * 100,
+      right: 100 - ((this.priceRange[1] - this.priceMin()) / span) * 100,
+      nubLeft: ((this.priceRange[0] - this.priceMin()) / span) * 100,
+      nubRight: ((this.priceRange[1] - this.priceMin()) / span) * 100,
+    };
   });
 
   activeFilters = computed((): ActiveFilter[] => {
+    this.filterVersion();
     const filters: ActiveFilter[] = [];
-
     if (this.searchQuery) {
-      filters.push({
-        type: 'search',
-        label: `Search: "${this.searchQuery}"`,
-        value: this.searchQuery
-      });
+      filters.push({ type: 'search', label: `Search: "${this.searchQuery}"`, value: this.searchQuery });
     }
-
     for (const brandId of this.selectedBrandIds) {
       const brand = this.brands().find(b => b.id === brandId);
-      if (brand) {
-        filters.push({
-          type: 'brand',
-          label: `Brand: ${brand.name}`,
-          value: brandId
-        });
-      }
+      if (brand) filters.push({ type: 'brand', label: brand.name, value: brandId });
     }
-
     for (const condition of this.selectedConditions) {
-      filters.push({
-        type: 'condition',
-        label: `Condition: ${ProductConditionLabels[condition]}`,
-        value: condition
-      });
+      filters.push({ type: 'condition', label: ProductConditionLabels[condition], value: condition });
     }
-
     for (const storage of this.selectedStorageValues) {
-      filters.push({
-        type: 'storage',
-        label: `Storage: ${storage}GB`,
-        value: storage
-      });
+      filters.push({ type: 'storage', label: `${storage}GB`, value: storage });
     }
-
     if (this.selectedPtaStatus) {
-      filters.push({
-        type: 'pta',
-        label: `PTA: ${PtaStatusLabels[this.selectedPtaStatus]}`,
-        value: this.selectedPtaStatus
-      });
+      filters.push({ type: 'pta', label: PtaStatusLabels[this.selectedPtaStatus], value: this.selectedPtaStatus });
     }
-
     const min = this.priceMin();
     const max = this.priceMax();
     if (this.priceRange[0] > min || this.priceRange[1] < max) {
       filters.push({
         type: 'price',
-        label: `Price: ${this.currencyService.symbol}${this.priceRange[0]} - ${this.currencyService.symbol}${this.priceRange[1]}`,
+        label: `PKR ${this.fmt(this.priceRange[0])} – ${this.fmt(this.priceRange[1])}`,
         value: `${this.priceRange[0]}-${this.priceRange[1]}`
       });
     }
-
     return filters;
   });
+
+  totalPages = computed(() => Math.ceil(this.totalRecords() / this.pageSize));
+  currentPage = computed(() => Math.floor(this.first() / this.pageSize) + 1);
+  showingFrom = computed(() => this.loading() ? 0 : this.first() + 1);
+  showingTo = computed(() => Math.min(this.first() + this.pageSize, this.totalRecords()));
+
+  pages = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const result: (number | string)[] = [];
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) result.push(i);
+    } else {
+      result.push(1);
+      if (current > 3) result.push('…');
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        result.push(i);
+      }
+      if (current < total - 2) result.push('…');
+      result.push(total);
+    }
+    return result;
+  });
+
+  storageOptions = computed(() => this.availableStorageOptions().map(gb => `${gb}GB`));
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private productService: ProductService,
     private brandService: BrandService,
-    private modelService: ModelService,
-    private imageOptimization: ImageOptimizationService,
     private toastService: ToastService,
     private seoService: SeoService,
-    public comparisonService: ProductComparisonService,
-    private currencyService: CurrencyService,
-    private shopDetailsService: ShopDetailsService
+    private shopDetailsService: ShopDetailsService,
   ) {
     this.selectedSort = this.sortOptions[0];
   }
 
   ngOnInit(): void {
-    const shopName = this.shopDetailsService.shopName() || 'Phone Shop';
+    const shopName = this.shopDetailsService.shopName() || 'Smart Cell';
     this.seoService.updateMetaTags({
-      title: `${shopName} - Quality Mobile Products`,
-      description: 'Browse our wide selection of new, used, and open box products at competitive prices. Filter by brand, condition, storage, and price range.',
-      url: '/'
+      title: `${shopName} — All Smartphones`,
+      description: 'Browse our wide selection of new, used, and open box phones. Filter by brand, condition, storage, and price.',
+      url: '/catalog'
     });
     this.setupSearchDebounce();
     this.subscribeToQueryParams();
@@ -259,189 +197,37 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /* ── Data loading ── */
+
   private setupSearchDebounce(): void {
     this.searchSubject$
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => {
-        this.first = 0;
-        this.updateUrlParams();
-        this.loadProducts();
-      });
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => { this.first.set(0); this.filterVersion.update(v => v + 1); this.updateUrlParams(); this.loadModels(); });
   }
 
   private subscribeToQueryParams(): void {
     this.route.queryParams
-      .pipe(
-        skip(1),
-        takeUntil(this.destroy$)
-      )
+      .pipe(skip(1), takeUntil(this.destroy$))
       .subscribe((params: Params) => {
-        if (this.isNavigatingFromUrl) {
-          this.isNavigatingFromUrl = false;
-          return;
-        }
-
-        if (this.isInitializing) {
-          return;
-        }
-
+        if (this.isNavigatingFromUrl) { this.isNavigatingFromUrl = false; return; }
+        if (this.isInitializing) return;
         this.applyParams(params);
-        this.loadProducts();
+        this.loadModels();
       });
   }
 
   private async loadInitialData(): Promise<void> {
-    await Promise.all([
-      this.loadBrands(),
-      this.loadFilterOptions()
-    ]);
-
+    await Promise.all([this.loadBrands(), this.loadFilterOptions()]);
     this.applyParams(this.route.snapshot.queryParams);
     this.isInitializing = false;
-    await this.loadProducts();
-  }
-
-  private applyParams(params: Params): void {
-    // Gracefully ignore ?section= param
-    this.searchQuery = params['search'] || '';
-
-    // Support multi-brand from URL: ?brand=id1,id2
-    if (params['brand']) {
-      const brandParam = params['brand'] as string;
-      this.selectedBrandIds = brandParam.split(',').filter(id => id.trim().length > 0);
-    } else {
-      this.selectedBrandIds = [];
-    }
-
-    if (params['condition']) {
-      const conditions = params['condition'].split(',') as ProductCondition[];
-      this.selectedConditions = conditions.filter(c =>
-        Object.values(ProductCondition).includes(c)
-      );
-    } else {
-      this.selectedConditions = [];
-    }
-
-    if (params['storage']) {
-      const storageValues = params['storage'].split(',').map(Number).filter((n: number) => !isNaN(n));
-      this.selectedStorageValues = storageValues;
-    } else {
-      this.selectedStorageValues = [];
-    }
-
-    if (params['pta']) {
-      const pta = params['pta'] as PtaStatus;
-      if (Object.values(PtaStatus).includes(pta)) {
-        this.selectedPtaStatus = pta;
-      }
-    } else {
-      this.selectedPtaStatus = null;
-    }
-
-    const min = this.priceMin();
-    const max = this.priceMax();
-
-    if (params['minPrice']) {
-      const minPrice = Number(params['minPrice']);
-      this.priceRange = [!isNaN(minPrice) ? minPrice : min, this.priceRange[1]];
-    } else {
-      this.priceRange = [min, this.priceRange[1]];
-    }
-
-    if (params['maxPrice']) {
-      const maxPrice = Number(params['maxPrice']);
-      this.priceRange = [this.priceRange[0], !isNaN(maxPrice) ? maxPrice : max];
-    } else {
-      this.priceRange = [this.priceRange[0], max];
-    }
-
-    if (params['sort']) {
-      const sort = this.sortOptions.find(s => s.value === params['sort']);
-      this.selectedSort = sort || this.sortOptions[0];
-    } else {
-      this.selectedSort = this.sortOptions[0];
-    }
-
-    if (params['pageSize']) {
-      const size = Number(params['pageSize']);
-      if (!isNaN(size) && [12, 24, 48].includes(size)) {
-        this.pageSize = size;
-      }
-    } else {
-      this.pageSize = 12;
-    }
-
-    if (params['page']) {
-      const page = Number(params['page']);
-      if (!isNaN(page) && page > 0) {
-        this.first = (page - 1) * this.pageSize;
-      } else {
-        this.first = 0;
-      }
-    } else {
-      this.first = 0;
-    }
-  }
-
-  private buildQueryParams(): Record<string, string> {
-    const params: Record<string, string | null> = {};
-
-    params['search'] = this.searchQuery || null;
-    params['brand'] = this.selectedBrandIds.length > 0
-      ? this.selectedBrandIds.join(',')
-      : null;
-    params['condition'] = this.selectedConditions.length > 0
-      ? this.selectedConditions.join(',')
-      : null;
-    params['storage'] = this.selectedStorageValues.length > 0
-      ? this.selectedStorageValues.join(',')
-      : null;
-    params['pta'] = this.selectedPtaStatus || null;
-
-    const min = this.priceMin();
-    const max = this.priceMax();
-    params['minPrice'] = this.priceRange[0] > min ? String(this.priceRange[0]) : null;
-    params['maxPrice'] = this.priceRange[1] < max ? String(this.priceRange[1]) : null;
-
-    params['sort'] = this.selectedSort.value !== 'newest' ? this.selectedSort.value : null;
-
-    params['pageSize'] = this.pageSize !== 12 ? String(this.pageSize) : null;
-
-    const page = Math.floor(this.first / this.pageSize) + 1;
-    params['page'] = page > 1 ? String(page) : null;
-
-    const cleanParams: Record<string, string> = {};
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== null) {
-        cleanParams[key] = value;
-      }
-    }
-
-    return cleanParams;
-  }
-
-  private updateUrlParams(): void {
-    const cleanParams = this.buildQueryParams();
-
-    this.isNavigatingFromUrl = true;
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: cleanParams,
-      queryParamsHandling: ''
-    });
+    await this.loadModels();
   }
 
   async loadBrands(): Promise<void> {
     try {
       const brands = await this.brandService.getBrands();
       this.brands.set(brands);
-    } catch (error) {
-      console.error('Failed to load brands:', error);
-    }
+    } catch (error) { console.error('Failed to load brands:', error); }
   }
 
   async loadFilterOptions(): Promise<void> {
@@ -450,49 +236,43 @@ export class CatalogComponent implements OnInit, OnDestroy {
         this.productService.getDistinctStorageOptions(),
         this.productService.getPriceRange()
       ]);
-
       this.availableStorageOptions.set(storageOptions);
       this.priceMin.set(priceRange.min);
       this.priceMax.set(priceRange.max);
-
       if (this.priceRange[0] === 0 && this.priceRange[1] === 1000) {
         this.priceRange = [priceRange.min, priceRange.max];
       }
-    } catch (error) {
-      console.error('Failed to load filter options:', error);
-    }
+    } catch (error) { console.error('Failed to load filter options:', error); }
   }
 
-  async loadProducts(): Promise<void> {
+  async loadModels(): Promise<void> {
     this.loading.set(true);
     try {
       const min = this.priceMin();
       const max = this.priceMax();
       const hasPriceFilter = this.priceRange[0] > min || this.priceRange[1] < max;
-
+      const hasAnyFilter = this.selectedBrandIds.length > 0 || this.selectedConditions.length > 0
+        || this.selectedStorageValues.length > 0 || this.selectedPtaStatus !== null
+        || hasPriceFilter || !!this.searchQuery;
+      const effectiveSort = (!hasAnyFilter && this.selectedSort.value === 'popular')
+        ? { field: 'selling_price' as const, order: 1 as const }
+        : { field: this.selectedSort.field, order: this.selectedSort.order };
       const paginationParams: CatalogPaginationParams = {
-        first: this.first,
-        rows: this.pageSize,
-        sortField: this.selectedSort.field,
-        sortOrder: this.selectedSort.order
+        first: this.first(), rows: this.pageSize,
+        sortField: effectiveSort.field, sortOrder: effectiveSort.order
       };
-
-      const result = await this.productService.getCatalogProducts(
-        paginationParams,
-        {
-          status: ProductStatus.AVAILABLE,
-          brandIds: this.selectedBrandIds.length > 0 ? this.selectedBrandIds : undefined,
-          conditions: this.selectedConditions.length > 0 ? this.selectedConditions : undefined,
-          storageGbOptions: this.selectedStorageValues.length > 0 ? this.selectedStorageValues : undefined,
-          minPrice: hasPriceFilter ? this.priceRange[0] : undefined,
-          maxPrice: hasPriceFilter ? this.priceRange[1] : undefined,
-          search: this.searchQuery || undefined,
-          ptaStatus: this.selectedPtaStatus || undefined,
-          modelId: this.selectedModelId || undefined
-        }
-      );
-
-      this.products.set(result.data);
+      const result = await this.productService.getModelCatalog(paginationParams, {
+        status: ProductStatus.AVAILABLE,
+        brandIds: this.selectedBrandIds.length > 0 ? this.selectedBrandIds : undefined,
+        conditions: this.selectedConditions.length > 0 ? this.selectedConditions : undefined,
+        storageGbOptions: this.selectedStorageValues.length > 0 ? this.selectedStorageValues : undefined,
+        minPrice: hasPriceFilter ? this.priceRange[0] : undefined,
+        maxPrice: hasPriceFilter ? this.priceRange[1] : undefined,
+        search: this.searchQuery || undefined,
+        ptaStatus: this.selectedPtaStatus || undefined,
+        modelId: this.selectedModelId || undefined
+      });
+      this.models.set(result.data);
       this.totalRecords.set(result.total);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load products';
@@ -502,9 +282,82 @@ export class CatalogComponent implements OnInit, OnDestroy {
     }
   }
 
+  /* ── URL sync ── */
+
+  private applyParams(params: Params): void {
+    this.searchQuery = params['search'] || '';
+    if (params['brand']) {
+      this.selectedBrandIds = (params['brand'] as string).split(',').filter(id => id.trim().length > 0);
+    } else { this.selectedBrandIds = []; }
+    if (params['condition']) {
+      const conditions = params['condition'].split(',') as ProductCondition[];
+      this.selectedConditions = conditions.filter(c => Object.values(ProductCondition).includes(c));
+    } else { this.selectedConditions = []; }
+    if (params['storage']) {
+      this.selectedStorageValues = params['storage'].split(',').map(Number).filter((n: number) => !isNaN(n));
+    } else { this.selectedStorageValues = []; }
+    if (params['pta']) {
+      const pta = params['pta'] as PtaStatus;
+      if (Object.values(PtaStatus).includes(pta)) this.selectedPtaStatus = pta;
+    } else { this.selectedPtaStatus = null; }
+    const min = this.priceMin(), max = this.priceMax();
+    if (params['minPrice']) {
+      const p = Number(params['minPrice']);
+      this.priceRange = [!isNaN(p) ? p : min, this.priceRange[1]];
+    } else { this.priceRange = [min, this.priceRange[1]]; }
+    if (params['maxPrice']) {
+      const p = Number(params['maxPrice']);
+      this.priceRange = [this.priceRange[0], !isNaN(p) ? p : max];
+    } else { this.priceRange = [this.priceRange[0], max]; }
+    if (params['sort']) {
+      const sort = this.sortOptions.find(s => s.value === params['sort']);
+      this.selectedSort = sort || this.sortOptions[0];
+    } else { this.selectedSort = this.sortOptions[0]; }
+    if (params['page']) {
+      const page = Number(params['page']);
+      this.first.set((!isNaN(page) && page > 0) ? (page - 1) * this.pageSize : 0);
+    } else { this.first.set(0); }
+    if (params['view'] === 'list') { this.viewMode.set('list'); } else { this.viewMode.set('grid'); }
+
+    this.selectedConditionPill.set(
+      this.selectedConditions.length === 1 ? this.selectedConditions[0] : 'all'
+    );
+  }
+
+  private buildQueryParams(): Record<string, string> {
+    const params: Record<string, string | null> = {};
+    params['search'] = this.searchQuery || null;
+    params['brand'] = this.selectedBrandIds.length > 0 ? this.selectedBrandIds.join(',') : null;
+    params['condition'] = this.selectedConditions.length > 0 ? this.selectedConditions.join(',') : null;
+    params['storage'] = this.selectedStorageValues.length > 0 ? this.selectedStorageValues.join(',') : null;
+    params['pta'] = this.selectedPtaStatus || null;
+    const min = this.priceMin(), max = this.priceMax();
+    params['minPrice'] = this.priceRange[0] > min ? String(this.priceRange[0]) : null;
+    params['maxPrice'] = this.priceRange[1] < max ? String(this.priceRange[1]) : null;
+    params['sort'] = this.selectedSort.value !== 'popular' ? this.selectedSort.value : null;
+    params['view'] = this.viewMode() !== 'grid' ? this.viewMode() : null;
+    const page = Math.floor(this.first() / this.pageSize) + 1;
+    params['page'] = page > 1 ? String(page) : null;
+    const cleanParams: Record<string, string> = {};
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== null) cleanParams[key] = value;
+    }
+    return cleanParams;
+  }
+
+  private updateUrlParams(): void {
+    this.isNavigatingFromUrl = true;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: this.buildQueryParams(),
+      queryParamsHandling: ''
+    });
+  }
+
+  /* ── Event handlers ── */
+
   onSearchInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchSubject$.next(target.value);
+    this.searchSubject$.next((event.target as HTMLInputElement).value);
   }
 
   clearSearch(): void {
@@ -513,176 +366,220 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   hasActiveFilters(): boolean {
-    const min = this.priceMin();
-    const max = this.priceMax();
-    return !!(
-      this.searchQuery ||
-      this.selectedBrandIds.length > 0 ||
-      this.selectedConditions.length > 0 ||
-      this.selectedStorageValues.length > 0 ||
-      this.selectedPtaStatus ||
-      this.selectedModelId ||
-      this.priceRange[0] > min ||
-      this.priceRange[1] < max
-    );
+    const min = this.priceMin(), max = this.priceMax();
+    return !!(this.searchQuery || this.selectedBrandIds.length > 0 ||
+      this.selectedConditions.length > 0 || this.selectedStorageValues.length > 0 ||
+      this.selectedPtaStatus || this.priceRange[0] > min || this.priceRange[1] < max);
   }
 
   clearFilters(): void {
+    this.filterVersion.update(v => v + 1);
     this.searchQuery = '';
     this.selectedBrandIds = [];
     this.selectedConditions = [];
     this.selectedStorageValues = [];
     this.selectedPtaStatus = null;
     this.selectedModelId = null;
-    this.modelOptions.set([]);
+    this.selectedConditionPill.set('all');
     this.priceRange = [this.priceMin(), this.priceMax()];
-    this.first = 0;
+    this.first.set(0);
     this.updateUrlParams();
-    this.loadProducts();
+    this.loadModels();
   }
 
   removeFilter(filter: ActiveFilter): void {
+    this.filterVersion.update(v => v + 1);
     switch (filter.type) {
-      case 'search':
-        this.searchQuery = '';
-        break;
-      case 'brand':
-        this.selectedBrandIds = this.selectedBrandIds.filter(id => id !== filter.value);
-        break;
-      case 'condition':
-        this.selectedConditions = this.selectedConditions.filter(c => c !== filter.value);
-        break;
-      case 'storage':
-        this.selectedStorageValues = this.selectedStorageValues.filter(s => s !== filter.value);
-        break;
-      case 'price':
-        this.priceRange = [this.priceMin(), this.priceMax()];
-        break;
-      case 'pta':
-        this.selectedPtaStatus = null;
-        break;
+      case 'search': this.searchQuery = ''; break;
+      case 'brand': this.selectedBrandIds = this.selectedBrandIds.filter(id => id !== filter.value); break;
+      case 'condition': this.selectedConditions = this.selectedConditions.filter(c => c !== filter.value); break;
+      case 'storage': this.selectedStorageValues = this.selectedStorageValues.filter(s => s !== filter.value); break;
+      case 'price': this.priceRange = [this.priceMin(), this.priceMax()]; break;
+      case 'pta': this.selectedPtaStatus = null; break;
     }
-
-    this.first = 0;
+    this.first.set(0);
     this.updateUrlParams();
-    this.loadProducts();
+    this.loadModels();
   }
 
   onFilterChange(): void {
     if (this.isInitializing) return;
-    this.first = 0;
-    this.loadModelsForSelectedBrand();
+    this.first.set(0);
+    this.filterVersion.update(v => v + 1);
     this.updateUrlParams();
-    this.loadProducts();
-  }
-
-  private async loadModelsForSelectedBrand(): Promise<void> {
-    if (this.selectedBrandIds.length === 1) {
-      try {
-        const models = await this.modelService.getModelsByBrand(this.selectedBrandIds[0]);
-        this.modelOptions.set([
-          { label: 'All Models', value: null },
-          ...models.map(m => ({ label: m.name, value: m.id }))
-        ]);
-      } catch {
-        this.modelOptions.set([]);
-      }
-    } else {
-      this.selectedModelId = null;
-      this.modelOptions.set([]);
-    }
-  }
-
-  onModelFilterChange(): void {
-    if (this.isInitializing) return;
-    this.first = 0;
-    this.updateUrlParams();
-    this.loadProducts();
-  }
-
-  onPriceRangeChange(): void {
-    if (this.isInitializing) return;
-    this.first = 0;
-    this.updateUrlParams();
-    this.loadProducts();
+    this.loadModels();
   }
 
   onSortChange(): void {
     if (this.isInitializing) return;
-    this.first = 0;
+    this.first.set(0);
+    this.filterVersion.update(v => v + 1);
     this.updateUrlParams();
-    this.loadProducts();
+    this.loadModels();
   }
 
-  onPageChange(event: PaginatorState): void {
-    this.first = event.first ?? 0;
-    this.pageSize = event.rows ?? 12;
-    this.updateUrlParams();
-    this.loadProducts();
-    this.scrollToTop();
-  }
-
-  toggleStorageValue(value: number): void {
-    const idx = this.selectedStorageValues.indexOf(value);
-    if (idx >= 0) {
-      this.selectedStorageValues = this.selectedStorageValues.filter(v => v !== value);
-    } else {
-      this.selectedStorageValues = [...this.selectedStorageValues, value];
-    }
+  toggleBrand(brandId: string): void {
+    const idx = this.selectedBrandIds.indexOf(brandId);
+    this.selectedBrandIds = idx >= 0
+      ? this.selectedBrandIds.filter(id => id !== brandId)
+      : [...this.selectedBrandIds, brandId];
     this.onFilterChange();
   }
 
-  private scrollToTop(): void {
+  setConditionPill(value: string): void {
+    this.selectedConditionPill.set(value);
+    this.selectedConditions = value === 'all' ? [] : [value as ProductCondition];
+    this.onFilterChange();
+  }
+
+  togglePtaStatus(status: PtaStatus): void {
+    this.selectedPtaStatus = this.selectedPtaStatus === status ? null : status;
+    this.onFilterChange();
+  }
+
+  toggleStorage(value: number): void {
+    const idx = this.selectedStorageValues.indexOf(value);
+    this.selectedStorageValues = idx >= 0
+      ? this.selectedStorageValues.filter(v => v !== value)
+      : [...this.selectedStorageValues, value];
+    this.onFilterChange();
+  }
+
+  setPriceQuick(min: number, max: number): void {
+    this.priceRange = [min, max];
+    this.onFilterChange();
+  }
+
+  onPriceInputChange(): void {
+    this.onFilterChange();
+  }
+
+  onMinPriceChange(val: string): void {
+    const parsed = Number(val.replace(/,/g, ''));
+    this.priceRange[0] = isNaN(parsed) ? this.priceMin() : parsed;
+    this.onFilterChange();
+  }
+
+  onMaxPriceChange(val: string): void {
+    const parsed = Number(val.replace(/,/g, ''));
+    this.priceRange[1] = isNaN(parsed) ? this.priceMax() : parsed;
+    this.onFilterChange();
+  }
+
+  /* ── UI toggles ── */
+
+  toggleViewMode(mode: 'grid' | 'list'): void {
+    this.viewMode.set(mode);
+    this.updateUrlParams();
+  }
+
+  toggleFilterGroup(group: string): void {
+    this.collapsedGroups[group] = !this.collapsedGroups[group];
+  }
+
+  isGroupCollapsed(group: string): boolean {
+    return !!this.collapsedGroups[group];
+  }
+
+  toggleFilterDrawer(): void {
+    this.filterDrawerVisible = !this.filterDrawerVisible;
+  }
+
+  toggleRamValue(ram: string): void {
+    const idx = this.selectedRamValues.indexOf(ram);
+    this.selectedRamValues = idx >= 0 ? this.selectedRamValues.filter(r => r !== ram) : [...this.selectedRamValues, ram];
+  }
+
+  toggleBatteryHealth(value: string): void {
+    const idx = this.selectedBatteryHealth.indexOf(value);
+    this.selectedBatteryHealth = idx >= 0 ? this.selectedBatteryHealth.filter(b => b !== value) : [...this.selectedBatteryHealth, value];
+  }
+
+  setMinRating(rating: number): void {
+    this.minRating.set(this.minRating() === rating ? 0 : rating);
+  }
+
+  /* ── Pagination ── */
+
+  goToPage(page: number | string): void {
+    if (typeof page === 'string') return;
+    this.first.set((page - 1) * this.pageSize);
+    this.updateUrlParams();
+    this.loadModels();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  viewProduct(product: Product): void {
-    this.router.navigate(['/product', product.id]);
+  prevPage(): void {
+    const cur = this.currentPage();
+    if (cur > 1) this.goToPage(cur - 1);
   }
 
-  isProductSelected(productId: string): boolean {
-    return this.comparisonService.isSelected(productId);
+  nextPage(): void {
+    const cur = this.currentPage();
+    if (cur < this.totalPages()) this.goToPage(cur + 1);
   }
 
-  toggleCompare(event: Event, product: Product): void {
-    event.stopPropagation();
-    const result = this.comparisonService.toggle(product);
-    if (result === 'full') {
-      this.toastService.warn('Comparison Limit', 'You can compare up to 3 products at a time. Remove a product to add another.');
-    }
+  viewModel(model: ModelCatalogItem): void {
+    this.router.navigate(['/product', model.slug], model.color ? { queryParams: { color: model.color } } : {});
   }
 
-  onCompareToggled(event: { product: Product; result: 'added' | 'removed' | 'full' }): void {
-    if (event.result === 'full') {
-      this.toastService.warn('Comparison Limit', 'You can compare up to 3 products at a time. Remove a product to add another.');
-    }
+  /* ── Helpers ── */
+
+  fmt(n: number): string {
+    return n.toLocaleString('en-PK');
   }
 
-  removeFromCompare(productId: string): void {
-    this.comparisonService.remove(productId);
+  getCondLabel(cond: string): string {
+    if (cond === 'new' || cond === ProductCondition.NEW) return 'New';
+    if (cond === 'used' || cond === ProductCondition.USED) return 'Pre-owned · A';
+    if (cond === 'open_box' || cond === ProductCondition.OPEN_BOX) return 'Open box';
+    return cond;
   }
 
-  clearComparison(): void {
-    this.comparisonService.clear();
+  getCondClass(cond: string): string {
+    if (cond === 'new' || cond === ProductCondition.NEW) return 'new';
+    if (cond === 'used' || cond === ProductCondition.USED) return 'used';
+    return 'open';
   }
 
-  goToComparison(): void {
-    const ids = this.comparisonService.getProductIds();
-    this.router.navigate(['/compare'], { queryParams: { ids: ids.join(',') } });
+  getModelColor(model: ModelCatalogItem): string {
+    const colors: Record<string, string> = {
+      'Google': '#D6F96B', 'Apple': '#C5C5C0', 'Samsung': '#3A3A3A',
+      'OnePlus': '#2E7D5E', 'Xiaomi': '#FF6900', 'Nothing': '#D6F96B',
+    };
+    return colors[model.brandName] || 'var(--accent)';
   }
 
-  getCardOptimizedUrl(url: string): string {
-    return this.imageOptimization.getCardImageUrl(url);
+  getColorDot(color: string): string {
+    const c = color.toLowerCase();
+    if (/black|obsidian|midnight|carbon/i.test(c)) return '#1F1F23';
+    if (/white|snow|starlight|porcelain|silver/i.test(c)) return '#E8E6E1';
+    if (/blue|ocean|navy|sky|cobalt/i.test(c)) return '#4A7FB5';
+    if (/green|mint|alpine|forest/i.test(c)) return '#5F9E6F';
+    if (/red|crimson/i.test(c)) return '#C44B4B';
+    if (/gold|bronze|champagne/i.test(c)) return '#C9A96E';
+    if (/purple|violet|lavender/i.test(c)) return '#8B6BAE';
+    if (/pink|rose|peony|coral/i.test(c)) return '#E4AEB4';
+    if (/yellow|lemon/i.test(c)) return '#E8D44D';
+    if (/orange|tangerine|apricot/i.test(c)) return '#E89B4D';
+    if (/gray|graphite|hazel|titanium/i.test(c)) return '#8A816A';
+    if (/teal|aqua/i.test(c)) return '#4DA8A8';
+    return '#888';
   }
 
-  getConditionLabel(condition: ProductCondition): string {
-    return ProductConditionLabels[condition];
+  gradientId(id: string): string {
+    return 'pb' + id.replace(/[^a-zA-Z0-9]/g, '');
   }
 
-  onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    if (!img.src.includes('photo-1695048133142-1a20484d2569')) {
-      img.src = 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&h=400&fit=crop';
-    }
+  gradientUrl(id: string): string {
+    return 'url(#pb' + id.replace(/[^a-zA-Z0-9]/g, '') + ')';
+  }
+
+  navigateToCatalog(): void {
+    this.router.navigate(['/catalog']);
+  }
+
+  compareSort(a: SortOption, b: SortOption): boolean {
+    return a && b ? a.value === b.value : a === b;
   }
 }

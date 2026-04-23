@@ -11,6 +11,11 @@ export interface PurchaseOrderItem {
   model: string;
   quantity: number;
   unit_cost: number;
+  variant_id?: string | null;
+  storage_gb?: number | null;
+  pta_status?: string | null;
+  condition?: string | null;
+  color?: string | null;
   created_at: string;
 }
 
@@ -21,6 +26,11 @@ export interface PurchaseOrderItemInsert {
   model: string;
   quantity: number;
   unit_cost: number;
+  variant_id?: string | null;
+  storage_gb?: number | null;
+  pta_status?: string | null;
+  condition?: string | null;
+  color?: string | null;
   created_at?: string;
 }
 
@@ -31,4 +41,9 @@ export interface PurchaseOrderItemUpdate {
   model?: string;
   quantity?: number;
   unit_cost?: number;
+  variant_id?: string | null;
+  storage_gb?: number | null;
+  pta_status?: string | null;
+  condition?: string | null;
+  color?: string | null;
 }

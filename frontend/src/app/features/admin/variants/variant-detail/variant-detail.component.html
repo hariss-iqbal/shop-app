@@ -1,0 +1,331 @@
+@if (loading()) {
+  <div class="flex justify-content-center align-items-center min-h-20rem">
+    <p-progressSpinner />
+  </div>
+} @else {
+  @if (variant(); as v) {
+
+  <div class="grid">
+    <!-- Header -->
+    <div class="col-12 flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-3 mb-2">
+      <div>
+        <div class="flex align-items-center gap-2 mb-2">
+          <p-button
+            icon="pi pi-arrow-left"
+            [text]="true"
+            severity="secondary"
+            routerLink="/admin/variants"
+            pTooltip="Back to Variants"
+            tooltipPosition="bottom"
+            aria-label="Back to variants list"
+          />
+          <h1 class="text-3xl font-bold m-0">{{ v.brandName }} {{ v.modelName }}</h1>
+        </div>
+        <div class="flex align-items-center gap-2 flex-wrap">
+          @if (v.storageGb) {
+            <p-tag value="{{ v.storageGb }} GB" severity="info" />
+          }
+          <p-tag [value]="getPtaLabel(v.ptaStatus)" [severity]="getPtaSeverity(v.ptaStatus)" />
+          <p-tag [value]="getConditionLabel(v.condition)" [severity]="getConditionSeverity(v.condition)" />
+          @if (!v.isActive) {
+            <p-tag value="Inactive" severity="secondary" />
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="col-12">
+      <div class="grid">
+        <div class="col-12 sm:col-6 md:col-3">
+          <p-card>
+            <div class="flex flex-column gap-1">
+              <span class="text-color-secondary text-sm">Selling Price</span>
+              @if (editingSellingPrice()) {
+                <div class="flex align-items-center gap-1">
+                  <p-inputNumber
+                    [(ngModel)]="editSellingPrice"
+                    mode="decimal"
+                    [minFractionDigits]="0"
+                    [maxFractionDigits]="0"
+                    [min]="0"
+                    [inputStyleClass]="'w-6rem'"
+                    (keydown.enter)="savePriceEdit()"
+                    (keydown.escape)="cancelPriceEdit()"
+                  />
+                  <p-button
+                    icon="pi pi-check"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    size="small"
+                    [loading]="savingSellingPrice()"
+                    (onClick)="savePriceEdit()"
+                  />
+                  <p-button
+                    icon="pi pi-times"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    size="small"
+                    (onClick)="cancelPriceEdit()"
+                  />
+                </div>
+              } @else {
+                <div class="flex align-items-center gap-2">
+                  <span class="text-2xl font-bold">{{ v.sellingPrice | number:'1.0-0' }}</span>
+                  <p-button
+                    icon="pi pi-pencil"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    size="small"
+                    pTooltip="Edit price"
+                    tooltipPosition="top"
+                    (onClick)="startPriceEdit()"
+                  />
+                </div>
+              }
+            </div>
+          </p-card>
+        </div>
+        <div class="col-12 sm:col-6 md:col-3">
+          <p-card>
+            <div class="flex flex-column gap-1">
+              <span class="text-color-secondary text-sm">Avg Cost Price</span>
+              <span class="text-2xl font-bold">{{ v.avgCostPrice | number:'1.0-0' }}</span>
+            </div>
+          </p-card>
+        </div>
+        <div class="col-12 sm:col-6 md:col-3">
+          <p-card>
+            <div class="flex flex-column gap-1">
+              <span class="text-color-secondary text-sm">Stock Count</span>
+              <span [class]="'text-2xl font-bold ' + (v.stockCount > 0 ? 'text-primary' : 'text-color-secondary')">{{ v.stockCount }}</span>
+            </div>
+          </p-card>
+        </div>
+        <div class="col-12 sm:col-6 md:col-3">
+          <p-card>
+            <div class="flex flex-column gap-1">
+              <span class="text-color-secondary text-sm">Available Colors</span>
+              @if (v.availableColors.length > 0) {
+                <div class="flex flex-wrap gap-1 mt-1">
+                  @for (color of v.availableColors; track color) {
+                    <p-chip [label]="color" styleClass="py-0 px-2 text-xs" />
+                  }
+                </div>
+              } @else {
+                <span class="text-color-secondary">No colors</span>
+              }
+            </div>
+          </p-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Gallery Section -->
+    <div class="col-12">
+      <p-card>
+        <ng-template #header>
+          <div class="flex align-items-center justify-content-between flex-wrap gap-3 p-3">
+            <div class="flex align-items-center gap-3">
+              <span class="text-xl font-bold">Variant Images</span>
+              <p-select
+                [options]="colorOptions()"
+                [(ngModel)]="selectedColorValue"
+                (ngModelChange)="onColorChange($event)"
+                placeholder="Filter by color"
+                styleClass="w-12rem"
+                [disabled]="availableColors().length === 0"
+                optionLabel="label"
+                optionValue="value"
+              />
+              @if (selectedColor()) {
+                <span class="text-sm text-color-secondary">
+                  {{ images().length }} image(s) for {{ selectedColor() }}
+                </span>
+              }
+            </div>
+            <p-fileUpload
+              mode="basic"
+              chooseLabel="Upload Image"
+              icon="pi pi-upload"
+              severity="secondary"
+              [multiple]="true"
+              accept="image/*"
+              [maxFileSize]="10000000"
+              [auto]="true"
+              [customUpload]="true"
+              (uploadHandler)="onImageUpload($event)"
+              [disabled]="uploadingImage()"
+              chooseStyleClass="p-button-outlined"
+            />
+          </div>
+          @if (selectedColor()) {
+            <div class="px-3 pb-2">
+              <p-message severity="info" [text]="'Uploading will assign images to color: ' + selectedColor()" />
+            </div>
+          }
+        </ng-template>
+
+        @if (imagesLoading()) {
+          <div class="flex gap-3 flex-wrap">
+            @for (_ of [1,2,3]; track _) {
+              <p-skeleton width="10rem" height="10rem" borderRadius="8px" />
+            }
+          </div>
+        } @else if (images().length === 0) {
+          <div class="flex flex-column align-items-center gap-3 py-4">
+            <i class="pi pi-image text-4xl text-color-secondary"></i>
+            <span class="text-color-secondary">
+              @if (selectedColor()) {
+                No images for {{ selectedColor() }} yet
+              } @else {
+                No images uploaded yet
+              }
+            </span>
+            <p-message severity="info" [text]="selectedColor() ? 'Upload images to assign them to ' + selectedColor() : 'Upload images to showcase this variant on the storefront'" />
+          </div>
+        } @else {
+          <div class="flex gap-3 flex-wrap">
+            @for (img of images(); track img.id) {
+              <div class="relative border-round surface-border border-1 overflow-hidden" style="width: 10rem; height: 10rem;">
+                <img [src]="img.imageUrl" [alt]="'Variant image'" class="w-full h-full object-cover" />
+                @if (img.isPrimary) {
+                  <p-tag value="Primary" severity="success" styleClass="absolute top-0 left-0 m-1 text-xs" />
+                }
+                @if (img.color) {
+                  <p-tag [value]="img.color" severity="info" styleClass="absolute top-0 right-0 m-1 text-xs" />
+                }
+                <div class="absolute bottom-0 left-0 right-0 flex justify-content-center gap-1 p-1 surface-ground opacity-90">
+                  @if (!img.isPrimary) {
+                    <p-button
+                      icon="pi pi-star"
+                      [rounded]="true"
+                      [text]="true"
+                      size="small"
+                      severity="info"
+                      pTooltip="Set as primary"
+                      tooltipPosition="top"
+                      [loading]="settingPrimaryId() === img.id"
+                      (onClick)="onSetPrimaryImage(img)"
+                    />
+                  }
+                  <p-button
+                    icon="pi pi-trash"
+                    [rounded]="true"
+                    [text]="true"
+                    size="small"
+                    severity="danger"
+                    pTooltip="Delete image"
+                    tooltipPosition="top"
+                    [loading]="deletingImageId() === img.id"
+                    (onClick)="onDeleteImage(img)"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </p-card>
+    </div>
+
+    <!-- Products Table -->
+    <div class="col-12">
+      <p-card>
+        <ng-template #header>
+          <div class="flex align-items-center justify-content-between p-3">
+            <span class="text-xl font-bold">Products ({{ products().length }})</span>
+          </div>
+        </ng-template>
+
+        @if (productsLoading()) {
+          <div class="flex flex-column gap-2">
+            @for (_ of skeletonRows; track $index) {
+              <p-skeleton width="100%" height="2.5rem" borderRadius="4px" />
+            }
+          </div>
+        } @else if (products().length === 0) {
+          <div class="flex flex-column align-items-center gap-3 py-4">
+            <i class="pi pi-inbox text-4xl text-color-secondary"></i>
+            <span class="text-color-secondary">No products under this variant</span>
+          </div>
+        } @else {
+          <p-table
+            [value]="products()"
+            [paginator]="true"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
+            [rowHover]="true"
+            dataKey="id"
+            styleClass="p-datatable-sm"
+            [scrollable]="true"
+            scrollDirection="horizontal"
+            [tableStyle]="{ 'min-width': '40rem' }"
+          >
+            <ng-template #header>
+              <tr>
+                <th>ID</th>
+                <th>IMEI</th>
+                <th>Cost Price</th>
+                <th>Color</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-product>
+              <tr>
+                <td>
+                  <span class="font-mono text-sm">{{ product.id.substring(0, 8) }}...</span>
+                </td>
+                <td>
+                  @if (product.imei) {
+                    <span class="font-mono text-sm">{{ product.imei }}</span>
+                  } @else {
+                    <span class="text-color-secondary">-</span>
+                  }
+                </td>
+                <td>{{ product.costPrice | number:'1.0-0' }}</td>
+                <td>
+                  @if (product.color) {
+                    <p-chip [label]="product.color" styleClass="py-0 px-2 text-xs" />
+                  } @else {
+                    <span class="text-color-secondary">-</span>
+                  }
+                </td>
+                <td>
+                  <p-tag
+                    [value]="getStatusLabel(product.status)"
+                    [severity]="getStatusSeverity(product.status)"
+                  />
+                </td>
+                <td>{{ product.createdAt | date:'mediumDate' }}</td>
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="6" class="text-center p-4">
+                  <div class="flex flex-column align-items-center gap-3">
+                    <i class="pi pi-inbox text-4xl text-color-secondary"></i>
+                    <span class="text-color-secondary">No products found</span>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </p-card>
+    </div>
+  </div>
+
+  } @else {
+    <div class="flex justify-content-center align-items-center min-h-20rem">
+      <p-message severity="error" text="Variant not found" />
+    </div>
+  }
+}

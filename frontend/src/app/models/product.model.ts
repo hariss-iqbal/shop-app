@@ -50,6 +50,8 @@ export interface Product {
   weightGrams: number | null;
   dimensions: string | null;
   isFeatured: boolean;
+  variantId: string | null;
+  variantSlug: string | null;
 }
 
 export interface CreateProductRequest {

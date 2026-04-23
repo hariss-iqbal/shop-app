@@ -1,0 +1,388 @@
+<!-- ══════════════════════════════════════════
+     SmartCell Product Detail Page
+     ══════════════════════════════════════════ -->
+
+<!-- Loading skeleton -->
+@if (loading()) {
+<div class="page-loading">
+  <div class="container">
+    <div class="skeleton-crumbs"></div>
+    <div class="pdp">
+      <div class="skel-gallery"></div>
+      <div class="skel-info">
+        <div class="skel-bar" style="width:40%"></div>
+        <div class="skel-bar lg" style="width:70%"></div>
+        <div class="skel-bar" style="width:50%"></div>
+        <div class="skel-bar lg" style="width:100%"></div>
+        <div class="skel-bar" style="width:60%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Not found -->
+@if (!loading() && notFound()) {
+<div class="not-found">
+  <div class="container">
+    <div class="nf-inner">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <h2>Product not found</h2>
+      <p>This product may have been sold or removed.</p>
+      <a class="btn-back" routerLink="/catalog">Browse all phones</a>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Main page -->
+@if (!loading() && product(); as p) {
+
+
+<!-- Breadcrumbs -->
+<div class="container">
+  <div class="crumbs">
+    <a routerLink="/">Home</a>
+    <span class="sep">/</span>
+    <a routerLink="/catalog">Smartphones</a>
+    <span class="sep">/</span>
+    <span class="cur">{{ p.modelName || p.model }}</span>
+  </div>
+</div>
+
+<!-- 4. PDP Grid -->
+<div class="container pdp">
+  <!-- Gallery -->
+  <div class="gallery">
+    <div class="gallery-main" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()">
+      <!-- Badges -->
+      <div class="gallery-badges">
+        <span class="flag {{ getCondClass(p.condition) }}">{{ getCondLabel(p.condition) }}</span>
+        @if (p.ptaStatus) {
+          <span class="flag {{ getPtaClass(p.ptaStatus) }}">{{ ptaLabel() }}</span>
+        }
+      </div>
+      <!-- Actions -->
+      <div class="gallery-actions">
+        <button class="ga-btn" title="Share">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        </button>
+      </div>
+
+      <!-- Main image -->
+      @if (galleryImages.length > 0) {
+        <img
+          [src]="galleryImages[activeIndex()].detailUrl"
+          [srcset]="galleryImages[activeIndex()].detailSrcSet"
+          [alt]="galleryImages[activeIndex()].alt"
+          class="main-img"
+          [class.loading]="imageLoading()"
+          [style.transform]="getSwipeTransform()"
+          (load)="onImageLoad()"
+        />
+      } @else {
+        <svg viewBox="0 0 220 440" fill="none" class="phone-placeholder">
+          <defs><linearGradient id="phoneBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2F333B"/><stop offset="1" stop-color="#13161B"/></linearGradient></defs>
+          <rect x="6" y="4" width="208" height="432" rx="38" fill="url(#phoneBody)" stroke="#4A5058" stroke-width="1"/>
+          <rect x="14" y="12" width="192" height="416" rx="32" fill="#070809"/>
+          <rect x="18" y="70" width="184" height="92" rx="16" fill="#15191F"/>
+          <circle cx="64" cy="116" r="26" fill="#080A0D" stroke="#2A2F36"/>
+          <circle cx="64" cy="116" r="6" fill="var(--accent)"/>
+          <circle cx="132" cy="116" r="26" fill="#080A0D" stroke="#2A2F36"/>
+          <rect x="170" y="100" width="32" height="32" rx="8" fill="#080A0D" stroke="#2A2F36"/>
+          <rect x="22" y="180" width="176" height="242" rx="24" fill="#0A0D12"/>
+          <circle cx="110" cy="26" r="3" fill="#2A2F36"/>
+        </svg>
+      }
+
+      <!-- Loading spinner -->
+      @if (showLoader()) {
+        <div class="img-loader">
+          <div class="spinner"></div>
+        </div>
+      }
+
+      <!-- Image nav arrows -->
+      @if (galleryImages.length > 1) {
+        <button class="img-arrow prev" (click)="prevImage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="img-arrow next" (click)="nextImage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      }
+
+      <!-- Fullscreen button -->
+      <button class="fs-btn" (click)="openFullscreen()" title="View fullscreen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+
+      <!-- Image counter -->
+      @if (galleryImages.length > 1) {
+        <div class="img-counter">{{ activeIndex() + 1 }} / {{ galleryImages.length }}</div>
+      }
+    </div>
+
+    <!-- Thumbnails -->
+    @if (galleryImages.length > 1) {
+      <div class="gallery-thumbs">
+        @for (img of galleryImages; track img.originalUrl; let i = $index) {
+          <div class="gthumb" [class.on]="i === activeIndex()" (click)="selectImage(i)">
+            <img [src]="img.thumbUrl" [alt]="img.alt" />
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Info panel -->
+  <div class="pdp-info">
+    <div class="pdp-brand">{{ p.brandName }} &middot; SKU {{ sku() }}</div>
+    <h1>{{ p.modelName || p.model }}</h1>
+
+    <!-- Price block -->
+    <div class="price-block">
+      <div class="price-now"><span class="cur">PKR</span>{{ fmt(p.sellingPrice) }}</div>
+      @if (hasDiscount()) {
+        <div class="price-was">PKR {{ fmt(originalPrice()) }}</div>
+        <span class="price-save">Save PKR {{ fmt(discountAmount()) }}</span>
+      }
+    </div>
+
+    <!-- Color selector -->
+    @if (colorVariants().length > 0) {
+      <div class="sel-group">
+        <div class="sel-label">
+          <span>Color</span>
+          <span class="cur-val">{{ selectedColor() }}</span>
+        </div>
+        <div class="sel-color">
+          @for (cv of colorVariants(); track cv.color) {
+            <button
+              [class.on]="cv.color.toLowerCase() === selectedColor()?.toLowerCase()"
+              (click)="selectColor(cv.color)"
+              type="button">
+              <span class="dot" [style.background]="cv.cssColor"></span>
+              <span class="nm">{{ cv.color }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Storage selector -->
+    @if (storageVariants().length > 0) {
+      <div class="sel-group">
+        <div class="sel-label"><span>Storage</span><span class="cur-val">{{ selectedStorageGb() ? selectedStorageGb() + ' GB' : 'Select' }}</span></div>
+        <div class="sel-row">
+          @for (sv of storageVariants(); track sv.storageGb) {
+            <button class="sel-opt" [class.on]="sv.storageGb === selectedStorageGb()" [class.disabled]="!sv.available" [disabled]="!sv.available" (click)="selectStorage(sv)" type="button">
+              {{ sv.storageGb }} GB
+              @if (sv.price !== p.sellingPrice) {
+                <span style="color:var(--fg-3);font-family:var(--mono);font-size:11px">{{ sv.price > p.sellingPrice ? '+' : '-' }}{{ fmt(sv.price > p.sellingPrice ? sv.price - p.sellingPrice : p.sellingPrice - sv.price) }}</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Available variants overlay trigger -->
+    <!-- PTA status (display only) -->
+    @if (p.ptaStatus) {
+      <div class="sel-group">
+        <div class="sel-label"><span>PTA Status</span><span class="cur-val">{{ ptaLabel() }}</span></div>
+        <div class="sel-row">
+          <span class="sel-opt on">{{ ptaLabel() }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- Buy row -->
+    <div class="buy-row" style="grid-template-columns:1fr">
+      <div class="buy-alt" style="margin-bottom:0">
+        <a [href]="'https://wa.me/' + whatsappNumber" target="_blank" class="btn-sec" style="flex:1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Order on WhatsApp
+        </a>
+        <a href="tel:{{ shopPhoneLink() }}" class="btn-sec" style="flex:1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Call to reserve
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick facts -->
+    <div class="quick-facts">
+      <div class="qf">
+        <div class="qf-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2M6 10v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8"/></svg></div>
+        <div><h4 class="qf-title">Delivered tomorrow</h4><p class="qf-sub">Order before 4 PM &middot; TCS</p></div>
+      </div>
+      <div class="qf">
+        <div class="qf-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12 11 14L15 10"/><circle cx="12" cy="12" r="10"/></svg></div>
+        <div><h4 class="qf-title">PTA DIRBS verified</h4><p class="qf-sub">IMEI checked pre-dispatch</p></div>
+      </div>
+    </div>
+
+    <!-- Notice -->
+    <div class="pdp-notice">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div><b style="color:var(--fg)">Not sure?</b> Chat with our team on WhatsApp &mdash; we'll send you a live video of this exact unit before you pay.</div>
+    </div>
+  </div>
+</div>
+<!-- 7. Related products -->
+@if (relatedProducts().length > 0) {
+<section class="tabs-section" style="padding-top:0">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">&mdash; You may also like</span>
+        <h2 class="section-title">Similar <em style="font-family:var(--serif);font-style:italic">{{ p.brandName }}</em> in stock</h2>
+      </div>
+      <a class="section-link" routerLink="/catalog" [queryParams]="{brand: p.brandName}">All {{ p.brandName }}</a>
+    </div>
+    <div class="related-grid">
+      @for (rp of relatedProducts(); track rp.id) {
+        <a class="card" (click)="viewProduct(rp); $event.preventDefault()">
+          <div class="card-media">
+            <div class="card-flags">
+              <div>
+                <span class="flag {{ getCondClass(rp.condition) }}">{{ getCondLabel(rp.condition) }}</span>
+                @if (rp.ptaStatus) {
+                  <span class="flag {{ getPtaClass(rp.ptaStatus) }}" style="margin-left:4px">{{ rp.ptaStatus === 'pta_approved' ? 'PTA' : 'Non-PTA' }}</span>
+                }
+              </div>
+            </div>
+            @if (rp.primaryImageUrl) {
+              <img [src]="rp.primaryImageUrl" [alt]="rp.brandName + ' ' + rp.model" style="width:55%;object-fit:contain;filter:drop-shadow(0 20px 28px rgba(0,0,0,.6))" />
+            } @else {
+              <svg viewBox="0 0 160 320" fill="none" style="width:55%;filter:drop-shadow(0 20px 28px rgba(0,0,0,.6))">
+                <defs><linearGradient [attr.id]="gradientId(rp.id)" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2F333B"/><stop offset="1" stop-color="#12151A"/></linearGradient></defs>
+                <rect x="6" y="4" width="148" height="312" rx="28" [attr.fill]="gradientUrl(rp.id)" stroke="#4A5058"/>
+                <rect x="12" y="10" width="136" height="300" rx="22" fill="#0A0C0F"/>
+                <rect x="16" y="56" width="128" height="60" rx="12" fill="#15191F"/>
+                <circle cx="46" cy="86" r="16" fill="#080A0D" stroke="#2A2F36"/>
+                <circle cx="46" cy="86" r="5" [attr.fill]="getProductColor(rp)"/>
+                <circle cx="88" cy="86" r="16" fill="#080A0D" stroke="#2A2F36"/>
+                <rect x="118" y="74" width="22" height="22" rx="6" fill="#080A0D"/>
+                <rect x="20" y="128" width="120" height="176" rx="18" fill="#0A0D12"/>
+              </svg>
+            }
+          </div>
+          <div class="card-body">
+            <div class="card-brand">{{ rp.brandName }}</div>
+            <h3 class="card-name">{{ rp.model }}</h3>
+            <div class="card-specs">
+              @for (sp of getProductSpecs(rp); track sp) {
+                <span class="spec">{{ sp }}</span>
+              }
+            </div>
+            <div class="card-price">
+              <div class="pk"><span class="cur">PKR</span>{{ fmt(rp.sellingPrice) }}</div>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  </div>
+</section>
+}
+
+<!-- 8. Footer -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="logo" routerLink="/">
+          <span class="logo-mark">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M4 10 C4 6, 7 4, 11 4 L21 4 C25 4, 28 6, 28 10 L28 22 C28 26, 25 28, 21 28 L11 28 C7 28, 4 26, 4 22 Z" fill="var(--accent)"/>
+              <path d="M20 11.5 C19 10.5, 17.5 10, 16 10 C13.5 10, 12 11, 12 12.8 C12 16.5, 21 15, 21 19.2 C21 21, 19 22, 16 22 C14 22, 12.3 21.3, 11 20" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+              <circle cx="25" cy="7" r="2" fill="var(--accent)" stroke="var(--bg)" stroke-width="1.5"/>
+            </svg>
+          </span>
+          <span class="logo-wm">smartcell<i class="dot"></i></span>
+        </a>
+        <p>Pakistan's Pixel-first phone shop. Honest grading, PTA-verified, 7-day return.</p>
+      </div>
+      <div class="foot-col"><h5>Shop</h5><ul><li><a routerLink="/catalog">All smartphones</a></li><li><a routerLink="/catalog" [queryParams]="{brand:'Google'}">Google Pixel</a></li><li><a routerLink="/catalog" [queryParams]="{brand:'Apple'}">iPhone</a></li><li><a routerLink="/catalog" [queryParams]="{brand:'Samsung'}">Samsung</a></li></ul></div>
+      <div class="foot-col"><h5>Customer care</h5><ul><li><a href="#">Track order</a></li><li><a href="#">Trade in</a></li><li><a href="#">Warranty</a></li><li><a href="#">Return policy</a></li></ul></div>
+      <div class="foot-col"><h5>Visit us</h5><ul><li style="color:var(--fg-2)">Lahore, Pakistan</li>@if (shopPhoneDisplay()) {<li><a href="tel:{{ shopPhoneLink() }}">{{ shopPhoneDisplay() }}</a></li>}@if (shopEmail()) {<li><a href="mailto:{{ shopEmail() }}">{{ shopEmail() }}</a></li>}</ul></div>
+    </div>
+    <div class="foot-bot">
+      <div>&copy; 2026 Smart Cell</div>
+      <div class="pills"><span class="pill">COD &middot; PKR</span><span class="pill">Alfalah &middot; Meezan</span><span class="pill">TCS &middot; Leopards</span></div>
+      <div>Made in Lahore</div>
+    </div>
+  </div>
+</footer>
+
+<!-- 9. Mobile sticky bar -->
+@if (showStickyBar()) {
+<div class="sticky-bar">
+  <div class="pk"><span class="cur">PKR</span>{{ fmt(p.sellingPrice) }}</div>
+  <button class="btn-buy" (click)="openWhatsAppInquiry()" type="button">Order on WhatsApp</button>
+</div>
+}
+
+<!-- 9b. Search overlay -->
+@if (searchOpen()) {
+<div class="search-overlay" (click)="closeSearch()">
+  <div class="search-box" (click)="$event.stopPropagation()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input #searchInput type="text" placeholder="Search phones, specs…" [ngModel]="searchQuery()" (ngModelChange)="onSearchInput($event)" (keydown.enter)="submitSearch()" />
+    <button (click)="closeSearch()" type="button">Cancel</button>
+  </div>
+  @if (searchLoading()) {
+    <div class="search-dropdown" (click)="$event.stopPropagation()">
+      <div class="search-loading">Searching…</div>
+    </div>
+  }
+  @if (!searchLoading() && searchResults().length > 0) {
+    <div class="search-dropdown" (click)="$event.stopPropagation()">
+      @for (item of searchResults(); track item.modelId) {
+        <a class="search-result" (click)="goToResult(item)">
+          <div class="sr-info">
+            <span class="sr-brand">{{ item.brandName }}</span>
+            <span class="sr-name">{{ item.modelName }}</span>
+          </div>
+          <div class="sr-meta">
+            <span class="sr-price">PKR {{ fmt(item.sellingPrice) }}</span>
+            <span class="sr-stock">{{ item.stockCount }} in stock</span>
+          </div>
+        </a>
+      }
+      <button class="search-show-all" (click)="submitSearch()">
+        Show all results for "{{ searchQuery() }}"
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  }
+</div>
+}
+
+<!-- 11. Fullscreen overlay -->
+@if (fullscreen() && galleryImages.length > 0) {
+<div class="fs-overlay" (click)="closeFullscreen()">
+  <button class="fs-close" (click)="closeFullscreen(); $event.stopPropagation()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <img
+    [src]="galleryImages[activeIndex()].originalUrl"
+    [alt]="galleryImages[activeIndex()].alt"
+    class="fs-image"
+    (click)="$event.stopPropagation()"
+  />
+  @if (galleryImages.length > 1) {
+    <button class="fs-arrow fs-prev" (click)="prevImage(); $event.stopPropagation()">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <button class="fs-arrow fs-next" (click)="nextImage(); $event.stopPropagation()">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  }
+  <div class="fs-counter">{{ activeIndex() + 1 }} / {{ galleryImages.length }}</div>
+</div>
+}
+}

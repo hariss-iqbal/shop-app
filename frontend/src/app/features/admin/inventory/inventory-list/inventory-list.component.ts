@@ -34,6 +34,7 @@ import { PrintLabelDialogComponent } from '../print-label-dialog/print-label-dia
 import { InventoryImageDialogComponent } from '../inventory-image-dialog/inventory-image-dialog.component';
 import { DialogModule } from 'primeng/dialog';
 import { InventoryFormComponent } from '../inventory-form/inventory-form.component';
+import { AddToExistingDialogComponent, PrefillData } from '../add-to-existing-dialog/add-to-existing-dialog.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -58,7 +59,8 @@ import { InventoryFormComponent } from '../inventory-form/inventory-form.compone
     PrintLabelDialogComponent,
     InventoryImageDialogComponent,
     DialogModule,
-    InventoryFormComponent
+    InventoryFormComponent,
+    AddToExistingDialogComponent
   ],
   templateUrl: './inventory-list.component.html'
 })
@@ -74,6 +76,7 @@ export class InventoryListComponent implements OnInit {
   ) { }
 
   @ViewChild('cm') cm!: ContextMenu;
+  @ViewChild('addToExistingDialog') addToExistingDialog!: AddToExistingDialogComponent;
 
   readonly ProductStatus = ProductStatus;
   readonly ProductTypeLabels = ProductTypeLabels;
@@ -594,6 +597,15 @@ export class InventoryListComponent implements OnInit {
 
       await this.productService.updateProduct(product.id, updatePayload);
 
+      // Sync selling price to variant for phone products
+      if (product.variantId && newSelling !== product.sellingPrice) {
+        try {
+          await this.productService.updateVariantSellingPrice(product.variantId, newSelling);
+        } catch {
+          // Variant update failed — product was still updated
+        }
+      }
+
       this.products.update(products =>
         products.map(p => p.id === product.id
           ? {
@@ -675,5 +687,13 @@ export class InventoryListComponent implements OnInit {
     if (this.lastLazyLoadEvent) {
       this.loadProducts(this.lastLazyLoadEvent);
     }
+  }
+
+  openAddToExisting(): void {
+    this.addToExistingDialog.show();
+  }
+
+  onExistingSelected(prefill: PrefillData): void {
+    this.router.navigate(['/admin/inventory/new'], { state: { prefill } });
   }
 }

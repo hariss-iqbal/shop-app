@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { Product, ProductDetail, ProductDetailImage, ProductListResponse, ProductFilter, CreateProductRequest, UpdateProductRequest } from '../../models/product.model';
-import { ProductStatus } from '../../enums';
+import { Variant, VariantImage, AddStockRequest } from '../../models/variant.model';
+import { ProductCondition, ProductStatus } from '../../enums';
 import { ProductType } from '../../enums/product-type.enum';
 import { ProductSpecsScraperService, FetchProductSpecsResponse } from './product-specs-scraper.service';
 
@@ -18,6 +19,41 @@ export interface CatalogPaginationParams {
   rows: number;
   sortField?: string;
   sortOrder?: number;
+}
+
+export interface ModelCatalogItem {
+  variantId: string;
+  modelId: string;
+  modelName: string;
+  brandId: string;
+  brandName: string;
+  storageGb: number | null;
+  ptaStatus: string | null;
+  condition: string;
+  color: string;
+  sellingPrice: number;
+  avgCostPrice: number;
+  stockCount: number;
+  primaryImageUrl: string | null;
+  slug: string;
+}
+
+export interface ModelCatalogResponse {
+  data: ModelCatalogItem[];
+  total: number;
+}
+
+export interface ModelVariant {
+  id: string;
+  storageGb: number | null;
+  ptaStatus: string | null;
+  condition: string;
+  sellingPrice: number;
+  avgCostPrice: number;
+  stockCount: number;
+  availableColors: string[];
+  primaryImageUrl: string | null;
+  slug: string;
 }
 
 function buildDisplayName(modelName: string | null, model: string, storageGb: number | null): string {
@@ -280,6 +316,115 @@ export class ProductService {
     };
   }
 
+  async getModelCatalog(
+    params: CatalogPaginationParams,
+    filter?: ProductFilter
+  ): Promise<ModelCatalogResponse> {
+    const { first, rows, sortField, sortOrder } = params;
+    const searchTerm = filter?.search?.toLowerCase().trim() || undefined;
+
+    let brandIds: string[] | undefined;
+    if (filter?.brandIds && filter.brandIds.length > 0) {
+      brandIds = filter.brandIds;
+    } else if (filter?.brandId) {
+      brandIds = [filter.brandId];
+    }
+
+    const rpcParams: Record<string, unknown> = {
+      p_brand_ids: brandIds || null,
+      p_conditions: filter?.conditions?.length ? filter.conditions : null,
+      p_storage_options: filter?.storageGbOptions?.length ? filter.storageGbOptions : null,
+      p_min_price: filter?.minPrice ?? null,
+      p_max_price: filter?.maxPrice ?? null,
+      p_search: searchTerm || null,
+      p_pta_status: filter?.ptaStatus || null,
+      p_sort_field: sortField === 'selling_price' ? 'selling_price' : sortField === 'model' ? 'model_name' : 'created_at',
+      p_sort_order: sortOrder === 1 ? 1 : -1,
+      p_limit: rows,
+      p_offset: first
+    };
+
+    const [dataResult, countResult] = await Promise.all([
+      this.supabase.rpc('get_model_catalog', rpcParams),
+      this.supabase.rpc('get_model_catalog_count', {
+        p_brand_ids: rpcParams['p_brand_ids'],
+        p_conditions: rpcParams['p_conditions'],
+        p_storage_options: rpcParams['p_storage_options'],
+        p_min_price: rpcParams['p_min_price'],
+        p_max_price: rpcParams['p_max_price'],
+        p_search: rpcParams['p_search'],
+        p_pta_status: rpcParams['p_pta_status']
+      })
+    ]);
+
+    if (dataResult.error) throw new Error(dataResult.error.message);
+    if (countResult.error) throw new Error(countResult.error.message);
+
+    const items: ModelCatalogItem[] = (dataResult.data || []).map((row: Record<string, unknown>) => ({
+      variantId: row['variant_id'] as string,
+      modelId: row['model_id'] as string,
+      modelName: row['model_name'] as string,
+      brandId: row['brand_id'] as string,
+      brandName: row['brand_name'] as string,
+      storageGb: row['storage_gb'] as number | null,
+      ptaStatus: row['pta_status'] as string | null,
+      condition: row['condition'] as string,
+      color: row['color'] as string,
+      sellingPrice: Number(row['selling_price']),
+      avgCostPrice: Number(row['avg_cost_price']),
+      stockCount: Number(row['stock_count']),
+      primaryImageUrl: row['primary_image_url'] as string | null,
+      slug: row['slug'] as string,
+    }));
+
+    return {
+      data: items,
+      total: Number(countResult.data) || 0
+    };
+  }
+
+  async getModelVariants(modelId: string): Promise<ModelVariant[]> {
+    const { data, error } = await this.supabase.rpc('get_model_variants', {
+      p_model_id: modelId
+    });
+
+    if (error) throw new Error(error.message);
+
+    return (data || []).map((row: Record<string, unknown>) => ({
+      id: row['id'] as string,
+      storageGb: row['storage_gb'] as number | null,
+      ptaStatus: row['pta_status'] as string | null,
+      condition: row['condition'] as string,
+      sellingPrice: Number(row['selling_price']),
+      avgCostPrice: Number(row['avg_cost_price']),
+      stockCount: Number(row['stock_count']),
+      availableColors: (row['available_colors'] as string[]) || [],
+      primaryImageUrl: row['primary_image_url'] as string | null,
+      slug: row['slug'] as string
+    }));
+  }
+
+  async getProductByModel(modelId: string): Promise<ProductDetail | null> {
+    const { data, error } = await this.supabase
+      .from('products')
+      .select(`
+        *,
+        brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
+        supplier:suppliers!supplier_id(id, name),
+        images:product_images(id, image_url, is_primary, display_order)
+      `)
+      .eq('model_id', modelId)
+      .eq('status', ProductStatus.AVAILABLE)
+      .order('selling_price', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!data) return null;
+    return this.mapToProductDetail(data);
+  }
+
   async getProductById(id: string): Promise<Product | null> {
     const { data, error } = await this.supabase
       .from('products')
@@ -315,16 +460,13 @@ export class ProductService {
       `)
       .eq('id', id)
       .eq('status', ProductStatus.AVAILABLE)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
-      }
       throw new Error(error.message);
     }
 
-    return this.mapToProductDetail(data);
+    return data ? this.mapToProductDetail(data) : null;
   }
 
   private mapToProductDetail(data: Record<string, unknown>): ProductDetail {
@@ -348,6 +490,33 @@ export class ProductService {
       ...product,
       images
     };
+  }
+
+  async getAvailableProductByVariant(variantId: string, preferredColor?: string | null): Promise<Product | null> {
+    const { data, error } = await this.supabase
+      .from('products')
+      .select(`
+        *,
+        brand:brands!brand_id(id, name, logo_url),
+        phone_model:models!model_id(id, name),
+        supplier:suppliers!supplier_id(id, name),
+        images:product_images(id, image_url, is_primary, display_order)
+      `)
+      .eq('variant_id', variantId)
+      .eq('status', ProductStatus.AVAILABLE)
+      .order('selling_price', { ascending: true });
+
+    if (error) throw new Error(error.message);
+    if (!data?.length) return null;
+
+    if (preferredColor) {
+      const match = data.find(p =>
+        (p['color'] as string)?.toLowerCase() === preferredColor.toLowerCase()
+      );
+      if (match) return this.mapToProduct(match);
+    }
+
+    return this.mapToProduct(data[0]);
   }
 
   async createProduct(request: CreateProductRequest): Promise<Product> {
@@ -384,6 +553,30 @@ export class ProductService {
     if (request.dimensions !== undefined) insertData['dimensions'] = request.dimensions;
     if (request.isFeatured !== undefined) insertData['is_featured'] = request.isFeatured;
 
+    // For phones with a model_id, auto-resolve or create variant
+    const isPhone = (request.productType ?? ProductType.PHONE) === ProductType.PHONE;
+    if (isPhone && request.modelId) {
+      const variantId = await this.resolveVariant(
+        request.modelId,
+        request.storageGb ?? null,
+        request.ptaStatus ?? null,
+        request.condition,
+        request.sellingPrice
+      );
+      if (variantId) {
+        insertData['variant_id'] = variantId;
+        // Use variant's selling_price if variant already exists
+        const { data: variantData } = await this.supabase
+          .from('variants')
+          .select('selling_price')
+          .eq('id', variantId)
+          .single();
+        if (variantData) {
+          insertData['selling_price'] = variantData.selling_price;
+        }
+      }
+    }
+
     const { data, error } = await this.supabase
       .from('products')
       .insert(insertData)
@@ -396,6 +589,59 @@ export class ProductService {
 
     const product = await this.getProductById(data.id);
     return product!;
+  }
+
+  private async resolveVariant(
+    modelId: string,
+    storageGb: number | null,
+    ptaStatus: string | null,
+    condition: ProductCondition,
+    sellingPrice: number
+  ): Promise<string | null> {
+    // Try to find existing variant
+    let query = this.supabase
+      .from('variants')
+      .select('id, selling_price')
+      .eq('model_id', modelId)
+      .eq('condition', condition);
+
+    if (storageGb !== null) {
+      query = query.eq('storage_gb', storageGb);
+    } else {
+      query = query.is('storage_gb', null);
+    }
+    if (ptaStatus !== null) {
+      query = query.eq('pta_status', ptaStatus);
+    } else {
+      query = query.is('pta_status', null);
+    }
+
+    const { data: existing } = await query.maybeSingle();
+
+    if (existing) {
+      return existing.id as string;
+    }
+
+    // Create new variant
+    const { data: newVariant, error } = await this.supabase
+      .from('variants')
+      .insert({
+        model_id: modelId,
+        storage_gb: storageGb,
+        pta_status: ptaStatus,
+        condition,
+        selling_price: sellingPrice,
+        is_active: false
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Failed to create variant:', error.message);
+      return null;
+    }
+
+    return newVariant?.id as string;
   }
 
   async updateProduct(id: string, request: UpdateProductRequest): Promise<Product> {
@@ -515,9 +761,10 @@ export class ProductService {
 
   async getDistinctStorageOptions(): Promise<number[]> {
     const { data, error } = await this.supabase
-      .from('products')
+      .from('variants')
       .select('storage_gb')
-      .not('storage_gb', 'is', null);
+      .not('storage_gb', 'is', null)
+      .eq('is_active', true);
 
     if (error) {
       throw new Error(error.message);
@@ -557,9 +804,9 @@ export class ProductService {
 
   async getPriceRange(): Promise<{ min: number; max: number }> {
     const { data, error } = await this.supabase
-      .from('products')
+      .from('variants')
       .select('selling_price')
-      .eq('status', ProductStatus.AVAILABLE);
+      .eq('is_active', true);
 
     if (error) {
       throw new Error(error.message);
@@ -644,7 +891,156 @@ export class ProductService {
       warrantyMonths: (data['warranty_months'] as number) ?? null,
       weightGrams: (data['weight_grams'] as number) ?? null,
       dimensions: (data['dimensions'] as string) ?? null,
-      isFeatured: (data['is_featured'] as boolean) ?? false
+      isFeatured: (data['is_featured'] as boolean) ?? false,
+      variantId: (data['variant_id'] as string) ?? null,
+      variantSlug: (data['variant_slug'] as string) ?? null
     };
+  }
+
+  // ============================================================
+  // Variant-specific methods
+  // ============================================================
+
+  async getVariantById(id: string): Promise<Variant | null> {
+    const { data, error } = await this.supabase.rpc('get_variant_detail', {
+      p_variant_id: id
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data?.found) return null;
+
+    return this.mapVariantResponse(data.variant);
+  }
+
+  async getVariantBySlug(slug: string): Promise<{ variant: Variant; images: VariantImage[] } | null> {
+    const { data, error } = await this.supabase.rpc('get_variant_by_slug', {
+      p_slug: slug
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data?.found) return null;
+
+    const variant = this.mapVariantResponse(data.variant);
+    const images: VariantImage[] = (data.images || []).map((img: Record<string, unknown>) => ({
+      id: img['id'] as string,
+      variantId: variant.id,
+      imageUrl: img['imageUrl'] as string,
+      isPrimary: img['isPrimary'] as boolean,
+      displayOrder: img['displayOrder'] as number
+    }));
+
+    return { variant, images };
+  }
+
+  private mapVariantResponse(v: Record<string, unknown>): Variant {
+    return {
+      id: v['id'] as string,
+      modelId: v['modelId'] as string,
+      modelName: v['modelName'] as string,
+      brandId: v['brandId'] as string,
+      brandName: v['brandName'] as string,
+      storageGb: v['storageGb'] as number | null,
+      ptaStatus: v['ptaStatus'] as string | null,
+      condition: v['condition'] as ProductCondition,
+      sellingPrice: Number(v['sellingPrice']),
+      avgCostPrice: Number(v['avgCostPrice']),
+      stockCount: Number(v['stockCount']),
+      availableColors: (v['availableColors'] as string[]) || [],
+      isActive: v['isActive'] as boolean,
+      primaryImageUrl: v['primaryImageUrl'] as string | null,
+      slug: v['slug'] as string,
+      createdAt: v['createdAt'] as string,
+      updatedAt: (v['updatedAt'] as string) ?? null
+    };
+  }
+
+  async getVariantImages(variantId: string, color?: string | null): Promise<VariantImage[]> {
+    let query = this.supabase
+      .from('variant_images')
+      .select('*')
+      .eq('variant_id', variantId);
+
+    if (color) {
+      query = query.eq('color', color);
+    }
+
+    const { data, error } = await query
+      .order('is_primary', { ascending: false })
+      .order('display_order', { ascending: true });
+
+    if (error) throw new Error(error.message);
+
+    return (data || []).map((img: Record<string, unknown>) => ({
+      id: img['id'] as string,
+      variantId: img['variant_id'] as string,
+      imageUrl: img['image_url'] as string,
+      isPrimary: img['is_primary'] as boolean,
+      displayOrder: img['display_order'] as number,
+      color: (img['color'] as string) || null
+    }));
+  }
+
+  async updateVariantSellingPrice(id: string, price: number): Promise<void> {
+    const { error } = await this.supabase
+      .from('variants')
+      .update({ selling_price: price })
+      .eq('id', id);
+
+    if (error) throw new Error(error.message);
+
+    // Also update selling_price on all products in this variant
+    await this.supabase
+      .from('products')
+      .update({ selling_price: price })
+      .eq('variant_id', id)
+      .eq('product_type', 'phone');
+  }
+
+  async addStock(request: AddStockRequest): Promise<{ success: boolean; productsCreated: number; productIds: string[] }> {
+    const { data, error } = await this.supabase.rpc('add_stock', {
+      p_variant_id: request.variantId,
+      p_color: request.color,
+      p_cost_price: request.costPrice,
+      p_quantity: request.quantity,
+      p_supplier_id: request.supplierId || null,
+      p_notes: request.notes || null,
+      p_purchase_date: request.purchaseDate || null
+    });
+
+    if (error) throw new Error(error.message);
+
+    return {
+      success: data.success,
+      productsCreated: data.productsCreated,
+      productIds: data.productIds || []
+    };
+  }
+
+  async getVariantsForModel(modelId: string): Promise<Variant[]> {
+    const { data, error } = await this.supabase.rpc('get_model_variants_for_admin', {
+      p_model_id: modelId
+    });
+
+    if (error) throw new Error(error.message);
+
+    return (data?.variants || []).map((v: Record<string, unknown>) => ({
+      id: v['id'] as string,
+      modelId,
+      modelName: '',
+      brandId: '',
+      brandName: '',
+      storageGb: v['storageGb'] as number | null,
+      ptaStatus: v['ptaStatus'] as string | null,
+      condition: v['condition'] as ProductCondition,
+      sellingPrice: Number(v['sellingPrice']),
+      avgCostPrice: Number(v['avgCostPrice']),
+      stockCount: Number(v['stockCount']),
+      availableColors: (v['availableColors'] as string[]) || [],
+      isActive: v['isActive'] as boolean,
+      primaryImageUrl: v['primaryImageUrl'] as string | null,
+      slug: v['slug'] as string || '',
+      createdAt: '',
+      updatedAt: null
+    }));
   }
 }

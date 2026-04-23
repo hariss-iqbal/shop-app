@@ -1,19 +1,13 @@
-import { Component, HostListener, Inject, PLATFORM_ID, computed, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { Component, ElementRef, HostListener, ViewChild, computed, signal, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd, Event } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { DrawerModule } from 'primeng/drawer';
-import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { BadgeModule } from 'primeng/badge';
 import { SkipLinkComponent } from '../../../shared/components/skip-link.component';
 import { BackToTopComponent } from '../../../shared/components/back-to-top.component';
 import { ThemeService } from '../../../shared';
-import { ProductComparisonService } from '../../../shared/services/product-comparison.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { ViewportScroller } from '@angular/common';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-public-layout',
@@ -22,13 +16,7 @@ import { ShopDetailsService } from '../../../core/services/shop-details.service'
     RouterLink,
     RouterLinkActive,
     FormsModule,
-    ButtonModule,
-    DrawerModule,
-    TooltipModule,
     InputTextModule,
-    IconFieldModule,
-    InputIconModule,
-    BadgeModule,
     SkipLinkComponent,
     BackToTopComponent
   ],
@@ -36,66 +24,59 @@ import { ShopDetailsService } from '../../../core/services/shop-details.service'
   styleUrls: ['./public-layout.component.scss']
 })
 export class PublicLayoutComponent {
+  @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
+
   constructor(
-    @Inject(PLATFORM_ID) private platformId: Object,
     private router: Router,
     public themeService: ThemeService,
-    public comparisonService: ProductComparisonService,
     public shopDetailsService: ShopDetailsService
-  ) { }
-  private isBrowser = isPlatformBrowser(this.platformId);
+  ) {
+    const scroller = inject(ViewportScroller);
+    router.events.pipe(
+      filter((e: Event): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe((e: NavigationEnd) => {
+      scroller.scrollToPosition([0, 0]);
+      this.showFooter.set(!e.urlAfterRedirects.startsWith('/catalog'));
+    });
+  }
 
   currentYear = new Date().getFullYear();
-  mobileMenuOpen = signal(false);
-  mobileSearchOpen = signal(false);
-  searchQuery = '';
+  searchOpen = signal(false);
+  searchQuery = signal('');
+  showFooter = signal(true);
 
   shopName = this.shopDetailsService.shopName;
-  phoneDisplay = this.shopDetailsService.phoneDisplay;
-  phoneLink = this.shopDetailsService.phoneLink;
-  email = this.shopDetailsService.email;
   whatsappNumber = this.shopDetailsService.whatsappNumber;
-  address = this.shopDetailsService.address;
-  weekdayHours = this.shopDetailsService.weekdayHours;
   facebookUrl = computed(() => this.shopDetailsService.facebookUrl() || '#');
   instagramUrl = computed(() => this.shopDetailsService.instagramUrl() || '#');
   twitterUrl = computed(() => this.shopDetailsService.twitterUrl() || '#');
 
-  hasEmail = this.shopDetailsService.hasEmail;
-
-  get mobileMenuVisible(): boolean {
-    return this.mobileMenuOpen();
+  openSearch(): void {
+    this.searchOpen.set(true);
+    setTimeout(() => this.searchInput?.nativeElement?.focus(), 50);
   }
 
-  set mobileMenuVisible(value: boolean) {
-    this.mobileMenuOpen.set(value);
+  closeSearch(): void {
+    this.searchOpen.set(false);
+    this.searchQuery.set('');
   }
 
-  closeMobileMenu(): void {
-    this.mobileMenuOpen.set(false);
-  }
-
-  performSearch(): void {
-    if (this.searchQuery.trim()) {
-      this.router.navigate(['/'], {
-        queryParams: { search: this.searchQuery.trim() }
-      });
-      this.searchQuery = '';
+  submitSearch(): void {
+    const q = this.searchQuery().trim();
+    if (q) {
+      this.router.navigate(['/catalog'], { queryParams: { search: q } });
+      this.closeSearch();
     }
+  }
+
+  navigateToCatalog(): void {
+    this.router.navigate(['/catalog']);
   }
 
   @HostListener('window:keydown.escape')
   onEscapeKey(): void {
-    if (this.mobileMenuOpen()) {
-      this.closeMobileMenu();
-      // Return focus to menu button
-      if (this.isBrowser) {
-        const menuButton = document.querySelector('[aria-controls="mobile-nav-sidebar"]') as HTMLElement;
-        menuButton?.focus();
-      }
-    }
-    if (this.mobileSearchOpen()) {
-      this.mobileSearchOpen.set(false);
+    if (this.searchOpen()) {
+      this.closeSearch();
     }
   }
 }

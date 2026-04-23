@@ -405,4 +405,155 @@ export class ProductImageService {
     }
     return this.cloudinary.getPublicIdFromUrl(image.imageUrl);
   }
+
+  // ============================================================
+  // Variant image methods
+  // ============================================================
+
+  async uploadVariantImage(
+    variantId: string,
+    file: File,
+    isPrimary: boolean = false,
+    color?: string | null,
+    onProgress?: (progress: UploadProgress) => void
+  ): Promise<{ id: string; imageUrl: string }> {
+    const validation = this.validateFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
+    onProgress?.({ fileName: file.name, progress: 0, status: 'uploading' });
+
+    try {
+      onProgress?.({ fileName: file.name, progress: 20, status: 'uploading' });
+
+      const folder = `${CLOUDINARY_FOLDER}/variants`;
+      const result = await this.cloudinary.uploadImage(file, folder);
+
+      onProgress?.({ fileName: file.name, progress: 70, status: 'uploading' });
+
+      // Get current max display_order
+      const { data: existing } = await this.supabase
+        .from('variant_images')
+        .select('display_order')
+        .eq('variant_id', variantId)
+        .order('display_order', { ascending: false })
+        .limit(1);
+
+      const nextOrder = (existing?.[0]?.display_order ?? -1) + 1;
+
+      const { data, error } = await this.supabase
+        .from('variant_images')
+        .insert({
+          variant_id: variantId,
+          image_url: result.secureUrl,
+          storage_path: result.publicId,
+          public_id: result.publicId,
+          is_primary: isPrimary,
+          display_order: nextOrder,
+          color: color || null
+        })
+        .select('id, image_url')
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      // If primary, update variant primary_image_url
+      if (isPrimary) {
+        await this.supabase
+          .from('variants')
+          .update({ primary_image_url: result.secureUrl })
+          .eq('id', variantId);
+
+        // Unset other primaries
+        await this.supabase
+          .from('variant_images')
+          .update({ is_primary: false })
+          .eq('variant_id', variantId)
+          .neq('id', data.id);
+      }
+
+      onProgress?.({ fileName: file.name, progress: 100, status: 'completed' });
+
+      return { id: data.id, imageUrl: data.image_url };
+    } catch (err) {
+      onProgress?.({
+        fileName: file.name,
+        progress: 0,
+        status: 'error',
+        error: err instanceof Error ? err.message : 'Upload failed'
+      });
+      throw err;
+    }
+  }
+
+  async deleteVariantImage(imageId: string, variantId: string): Promise<void> {
+    const { data: image } = await this.supabase
+      .from('variant_images')
+      .select('public_id, is_primary, image_url')
+      .eq('id', imageId)
+      .single();
+
+    if (image?.public_id) {
+      await this.cloudinary.deleteImage(image.public_id).catch(() => {});
+    }
+
+    const { error } = await this.supabase
+      .from('variant_images')
+      .delete()
+      .eq('id', imageId);
+
+    if (error) throw new Error(error.message);
+
+    // If deleted was primary, promote next image
+    if (image?.is_primary) {
+      const { data: next } = await this.supabase
+        .from('variant_images')
+        .select('id, image_url')
+        .eq('variant_id', variantId)
+        .order('display_order', { ascending: true })
+        .limit(1);
+
+      if (next?.[0]) {
+        await this.supabase
+          .from('variant_images')
+          .update({ is_primary: true })
+          .eq('id', next[0].id);
+
+        await this.supabase
+          .from('variants')
+          .update({ primary_image_url: next[0].image_url })
+          .eq('id', variantId);
+      } else {
+        await this.supabase
+          .from('variants')
+          .update({ primary_image_url: null })
+          .eq('id', variantId);
+      }
+    }
+  }
+
+  async setPrimaryVariantImage(imageId: string, variantId: string): Promise<void> {
+    // Unset all primaries for this variant
+    await this.supabase
+      .from('variant_images')
+      .update({ is_primary: false })
+      .eq('variant_id', variantId);
+
+    // Set new primary
+    const { data, error } = await this.supabase
+      .from('variant_images')
+      .update({ is_primary: true })
+      .eq('id', imageId)
+      .select('image_url')
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    // Update variant primary_image_url
+    await this.supabase
+      .from('variants')
+      .update({ primary_image_url: data?.image_url })
+      .eq('id', variantId);
+  }
 }

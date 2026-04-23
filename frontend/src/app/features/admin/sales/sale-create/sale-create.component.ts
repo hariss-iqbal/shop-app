@@ -301,10 +301,12 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
           brandName: p.brand_name || '',
           brandLogoUrl: p.brand_logo_url || null,
           model: p.model,
+          modelId: p.model_id || null,
+          modelName: p.model_name || null,
           storageGb: p.storage_gb,
           color: p.color,
           imei: p.imei,
-          sellingPrice: p.selling_price,
+          sellingPrice: p.variant_selling_price ?? p.selling_price,
           costPrice: p.cost_price,
           condition: p.condition,
           status: p.status,
@@ -315,7 +317,9 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
           primaryImageUrl: null,
           createdAt: p.created_at,
           updatedAt: null,
-          profitMargin: 0
+          profitMargin: 0,
+          variantId: p.variant_id || null,
+          variantAvgCostPrice: p.variant_avg_cost_price ?? null
         }));
 
       this.showSearchResults = true;
@@ -380,10 +384,15 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         weightGrams: product.weightGrams ?? product.weight_grams ?? null,
         dimensions: product.dimensions ?? null,
         isFeatured: product.isFeatured ?? product.is_featured ?? false,
+        variantId: product.variantId ?? product.variant_id ?? null,
+        variantSlug: product.variantSlug ?? null,
       };
 
       // Use TaxCalculationService to properly calculate tax (F-012)
       const cartItem = this.taxCalculationService.productToCartItem(minimalProduct);
+
+      // Store variant avg cost price for floor price check
+      (cartItem as any).variantAvgCostPrice = product.variantAvgCostPrice ?? product.variant_avg_cost_price ?? null;
 
       // Add to cart - simple array push
       this.cartItems = [...this.cartItems, cartItem];
@@ -460,6 +469,19 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
       item.taxAmount = taxCalc.taxAmount;
     }
     this.updateCartSummary();
+  }
+
+  isBelowCostPrice(item: CartItem): boolean {
+    const avgCost = (item as any).variantAvgCostPrice;
+    return avgCost > 0 && item.salePrice < avgCost;
+  }
+
+  getFloorPriceWarning(item: CartItem): string {
+    const avgCost = (item as any).variantAvgCostPrice;
+    if (avgCost > 0 && item.salePrice < avgCost) {
+      return `Sale price is below avg cost (PKR ${Number(avgCost).toLocaleString('en-PK')})`;
+    }
+    return '';
   }
 
   getItemProfit(item: CartItem): number {

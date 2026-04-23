@@ -12,6 +12,11 @@ export interface PurchaseOrderItem {
   quantity: number;
   unitCost: number;
   lineTotal: number;
+  variantId?: string | null;
+  storageGb?: number | null;
+  ptaStatus?: string | null;
+  condition?: string | null;
+  color?: string | null;
   createdAt: string;
 }
 
@@ -34,6 +39,11 @@ export interface CreatePurchaseOrderItemRequest {
   model: string;
   quantity: number;
   unitCost: number;
+  variantId?: string | null;
+  storageGb?: number | null;
+  ptaStatus?: string | null;
+  condition?: string | null;
+  color?: string | null;
 }
 
 export interface CreatePurchaseOrderRequest {

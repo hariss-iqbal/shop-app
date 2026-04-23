@@ -68,6 +68,10 @@ export class SupplierListComponent implements OnInit {
     this.table?.filterGlobal(target.value, 'contains');
   }
 
+  viewDetails(supplier: Supplier): void {
+    this.router.navigate(['/admin/suppliers', supplier.id]);
+  }
+
   onEdit(supplier: Supplier): void {
     this.router.navigate(['/admin/suppliers', supplier.id, 'edit']);
   }

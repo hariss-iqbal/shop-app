@@ -1,6 +1,7 @@
 export * from './brand.model';
 export * from './product.model';
 export * from './product-image.model';
+export * from './variant.model';
 export * from './supplier.model';
 export * from './purchase-order.model';
 export * from './sale.model';
@@ -23,3 +24,4 @@ export * from './store-location.model';
 export * from './location-inventory.model';
 export * from './inventory-transfer.model';
 export * from './user-location-assignment.model';
+export * from './phone-model.model';

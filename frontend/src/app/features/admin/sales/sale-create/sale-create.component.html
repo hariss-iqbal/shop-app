@@ -180,6 +180,9 @@
                   (ngModelChange)="onSalePriceChange()"
                   inputStyleClass="w-8rem"
                 />
+                @if (isBelowCostPrice(item)) {
+                  <small class="text-orange-500 block mt-1">{{ getFloorPriceWarning(item) }}</small>
+                }
               </td>
               <td>
                 <p-button

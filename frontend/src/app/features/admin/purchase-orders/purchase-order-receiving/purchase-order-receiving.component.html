@@ -58,6 +58,8 @@
 
     <p-accordion [multiple]="true" [value]="activeAccordionValues()">
       @for (item of purchaseOrder.items; track item.id; let itemIdx = $index) {
+        @let itemHasVariant = hasVariant(itemIdx);
+        @let itemVariant = getVariantForItem(itemIdx);
         <p-accordion-panel [value]="itemIdx.toString()">
           <p-accordion-header>
             <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-2 w-full pr-3">
@@ -68,6 +70,14 @@
                   severity="info"
                   [rounded]="true"
                 />
+                @if (itemHasVariant) {
+                  <p-tag
+                    value="Variant"
+                    severity="success"
+                    [rounded]="true"
+                    [pTooltip]="'Linked to variant: ' + (itemVariant?.storageGb ? itemVariant?.storageGb + 'GB' : 'N/A') + ' / ' + getPtaStatusLabel(itemVariant?.ptaStatus) + ' / ' + getConditionLabel(itemVariant?.condition)"
+                  />
+                }
                 @if (getLineItemValidCount(itemIdx) === item.quantity) {
                   <i class="pi pi-check-circle text-green-500" pTooltip="All units ready"></i>
                 } @else {
@@ -95,6 +105,26 @@
             </div>
           </p-accordion-header>
           <p-accordion-content>
+            <!-- Variant info banner for variant-linked items -->
+            @if (itemHasVariant && itemVariant) {
+              <div class="flex flex-wrap align-items-center gap-2 mb-3 p-3 surface-100 border-round">
+                <i class="pi pi-info-circle text-primary"></i>
+                <span class="text-600 text-sm">Variant:</span>
+                @if (itemVariant.storageGb) {
+                  <p-tag [value]="itemVariant.storageGb + 'GB'" severity="info" [rounded]="true" />
+                }
+                @if (itemVariant.ptaStatus) {
+                  <p-tag [value]="getPtaStatusLabel(itemVariant.ptaStatus)" severity="success" [rounded]="true" />
+                }
+                @if (itemVariant.condition) {
+                  <p-tag [value]="getConditionLabel(itemVariant.condition)" severity="warn" [rounded]="true" />
+                }
+                <span class="text-600 text-sm ml-2">
+                  Selling price: <strong>{{ itemVariant.sellingPrice | appCurrency:'1.2-2' }}</strong> (auto-set from variant)
+                </span>
+              </div>
+            }
+
             <div class="grid">
               @for (unitIdx of getUnitRange(item.quantity); track unitIdx) {
                 @let formIdx = getFormIndex(itemIdx, unitIdx);
@@ -116,38 +146,67 @@
                   }
 
                   <div class="grid">
-                    <!-- Row 1: Condition, Selling Price, Color, IMEI -->
-                    <div class="col-12 md:col-6 lg:col-3">
-                      <label class="block font-medium mb-2" [for]="'condition-' + formIdx">
-                        Condition <span class="text-red-500">*</span>
-                      </label>
-                      <p-select
-                        [options]="conditionOptions"
-                        [formControl]="getFormControl(formIdx, 'condition')"
-                        placeholder="Select condition"
-                        optionLabel="label"
-                        optionValue="value"
-                        styleClass="w-full"
-                        appendTo="body"
-                        [inputId]="'condition-' + formIdx"
-                        (onChange)="onConditionChange(formIdx)"
-                      />
-                    </div>
+                    <!-- Row 1: Condition, Selling Price (or variant price reference), Color, IMEI -->
 
-                    <div class="col-12 md:col-6 lg:col-3">
-                      <label class="block font-medium mb-2" [for]="'sellingPrice-' + formIdx">
-                        Selling Price <span class="text-red-500">*</span>
-                      </label>
-                      <p-inputNumber
-                        [formControl]="getFormControl(formIdx, 'sellingPrice')"
-                        mode="currency"
-                        currency="PKR"
-                        locale="en-US"
-                        [inputId]="'sellingPrice-' + formIdx"
-                        styleClass="w-full"
-                        placeholder="0.00"
-                      />
-                    </div>
+                    <!-- Condition: read-only badge when variant-linked, editable otherwise -->
+                    @if (itemHasVariant) {
+                      <div class="col-12 md:col-6 lg:col-3">
+                        <label class="block font-medium mb-2">Condition</label>
+                        <p-tag
+                          [value]="getConditionLabel(getFormControl(formIdx, 'condition')?.value)"
+                          severity="info"
+                          styleClass="w-full text-center py-2"
+                        />
+                        <input type="hidden" [formControl]="getFormControl(formIdx, 'condition')" />
+                      </div>
+                    } @else {
+                      <div class="col-12 md:col-6 lg:col-3">
+                        <label class="block font-medium mb-2" [for]="'condition-' + formIdx">
+                          Condition <span class="text-red-500">*</span>
+                        </label>
+                        <p-select
+                          [options]="conditionOptions"
+                          [formControl]="getFormControl(formIdx, 'condition')"
+                          placeholder="Select condition"
+                          optionLabel="label"
+                          optionValue="value"
+                          styleClass="w-full"
+                          appendTo="body"
+                          [inputId]="'condition-' + formIdx"
+                          (onChange)="onConditionChange(formIdx)"
+                        />
+                      </div>
+                    }
+
+                    <!-- Selling Price: hidden for variant items (auto-filled), editable for legacy -->
+                    @if (itemHasVariant) {
+                      <div class="col-12 md:col-6 lg:col-3">
+                        <label class="block font-medium mb-2">Selling Price</label>
+                        <div class="flex align-items-center surface-100 border-round px-3 py-2">
+                          <i class="pi pi-lock text-400 mr-2 text-sm"></i>
+                          <span class="font-semibold text-900">
+                            {{ itemVariant!.sellingPrice | appCurrency:'1.2-2' }}
+                          </span>
+                          <span class="text-500 text-sm ml-2">(from variant)</span>
+                        </div>
+                        <input type="hidden" [formControl]="getFormControl(formIdx, 'sellingPrice')" />
+                      </div>
+                    } @else {
+                      <div class="col-12 md:col-6 lg:col-3">
+                        <label class="block font-medium mb-2" [for]="'sellingPrice-' + formIdx">
+                          Selling Price <span class="text-red-500">*</span>
+                        </label>
+                        <p-inputNumber
+                          [formControl]="getFormControl(formIdx, 'sellingPrice')"
+                          mode="currency"
+                          currency="PKR"
+                          locale="en-US"
+                          [inputId]="'sellingPrice-' + formIdx"
+                          styleClass="w-full"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    }
 
                     <div class="col-12 md:col-6 lg:col-3">
                       <label class="block font-medium mb-2" [for]="'color-' + formIdx">Color</label>
@@ -177,16 +236,35 @@
                     </div>
 
                     <!-- Row 2: Storage, RAM, Battery Health, Notes -->
-                    <div class="col-12 md:col-6 lg:col-3">
-                      <label class="block font-medium mb-2" [for]="'storageGb-' + formIdx">Storage (GB)</label>
-                      <p-inputNumber
-                        [formControl]="getFormControl(formIdx, 'storageGb')"
-                        [inputId]="'storageGb-' + formIdx"
-                        styleClass="w-full"
-                        placeholder="e.g., 128"
-                        [min]="0"
-                      />
-                    </div>
+
+                    <!-- Storage: read-only for variant items, editable for legacy -->
+                    @if (itemHasVariant) {
+                      <div class="col-12 md:col-6 lg:col-3">
+                        <label class="block font-medium mb-2">Storage (GB)</label>
+                        @if (itemVariant!.storageGb) {
+                          <div class="flex align-items-center surface-100 border-round px-3 py-2">
+                            <i class="pi pi-lock text-400 mr-2 text-sm"></i>
+                            <span class="font-semibold text-900">{{ itemVariant!.storageGb }}GB</span>
+                          </div>
+                        } @else {
+                          <div class="flex align-items-center surface-100 border-round px-3 py-2">
+                            <span class="text-500">N/A</span>
+                          </div>
+                        }
+                        <input type="hidden" [formControl]="getFormControl(formIdx, 'storageGb')" />
+                      </div>
+                    } @else {
+                      <div class="col-12 md:col-6 lg:col-3">
+                        <label class="block font-medium mb-2" [for]="'storageGb-' + formIdx">Storage (GB)</label>
+                        <p-inputNumber
+                          [formControl]="getFormControl(formIdx, 'storageGb')"
+                          [inputId]="'storageGb-' + formIdx"
+                          styleClass="w-full"
+                          placeholder="e.g., 128"
+                          [min]="0"
+                        />
+                      </div>
+                    }
 
                     <div class="col-12 md:col-6 lg:col-3">
                       <label class="block font-medium mb-2" [for]="'ramGb-' + formIdx">RAM (GB)</label>

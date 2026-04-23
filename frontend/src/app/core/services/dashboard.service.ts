@@ -137,27 +137,27 @@ export class DashboardService {
 
   private async getStockValue(): Promise<number> {
     const { data, error } = await this.supabase
-      .from('products')
-      .select('cost_price')
-      .eq('status', ProductStatus.AVAILABLE);
+      .from('variants')
+      .select('avg_cost_price, stock_count')
+      .eq('is_active', true);
 
     if (error) {
       throw new Error(error.message);
     }
-    return data?.reduce((sum, p) => sum + (p.cost_price || 0), 0) || 0;
+    return data?.reduce((sum, v) => sum + ((v.avg_cost_price || 0) * (v.stock_count || 0)), 0) || 0;
   }
 
   private async getPotentialProfit(): Promise<number> {
     const { data, error } = await this.supabase
-      .from('products')
-      .select('selling_price, cost_price')
-      .eq('status', ProductStatus.AVAILABLE);
+      .from('variants')
+      .select('selling_price, avg_cost_price, stock_count')
+      .eq('is_active', true);
 
     if (error) {
       throw new Error(error.message);
     }
     return data?.reduce(
-      (sum, p) => sum + ((p.selling_price || 0) - (p.cost_price || 0)),
+      (sum, v) => sum + (((v.selling_price || 0) - (v.avg_cost_price || 0)) * (v.stock_count || 0)),
       0
     ) || 0;
   }

@@ -25,23 +25,23 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        loadComponent: () => import('./features/public/homepage/homepage.component')
+          .then(m => m.HomepageComponent)
+      },
+      {
+        path: 'catalog',
         loadComponent: () => import('./features/public/catalog/catalog.component')
           .then(m => m.CatalogComponent)
       },
       {
-        path: 'catalog',
-        redirectTo: '',
-        pathMatch: 'full'
-      },
-      {
-        path: 'product/:id',
-        loadComponent: () => import('./features/public/product-detail/product-detail.component')
+        path: 'product-old/:id',
+        loadComponent: () => import('./features/public/product-detail-deprecated/product-detail.component')
           .then(m => m.ProductDetailComponent)
       },
       {
-        path: 'phone/:id',
-        redirectTo: 'product/:id',
-        pathMatch: 'full'
+        path: 'product/:slug',
+        loadComponent: () => import('./features/public/product-detail/product-detail.component')
+          .then(m => m.ProductDetailComponent)
       },
       {
         path: 'compare',
@@ -59,6 +59,16 @@ export const routes: Routes = [
           .then(m => m.AboutComponent)
       }
     ]
+  },
+  {
+    path: 'model/:modelId',
+    redirectTo: 'product/:modelId',
+    pathMatch: 'full'
+  },
+  {
+    path: 'phone/:id',
+    redirectTo: 'product/:id',
+    pathMatch: 'full'
   },
   {
     path: 'receipt/:receiptNumber',
@@ -122,6 +132,18 @@ export const routes: Routes = [
         canActivate: [brandsGuard]
       },
       {
+        path: 'variants',
+        loadComponent: () => import('./features/admin/variants/variant-list/variant-list.component')
+          .then(m => m.VariantListComponent),
+        canActivate: [brandsGuard]
+      },
+      {
+        path: 'variants/:id',
+        loadComponent: () => import('./features/admin/variants/variant-detail/variant-detail.component')
+          .then(m => m.VariantDetailComponent),
+        canActivate: [brandsGuard]
+      },
+      {
         path: 'suppliers',
         loadComponent: () => import('./features/admin/suppliers/supplier-list/supplier-list.component')
           .then(m => m.SupplierListComponent),
@@ -137,6 +159,12 @@ export const routes: Routes = [
         path: 'suppliers/:id/edit',
         loadComponent: () => import('./features/admin/suppliers/supplier-form/supplier-form.component')
           .then(m => m.SupplierFormComponent),
+        canActivate: [suppliersGuard]
+      },
+      {
+        path: 'suppliers/:id',
+        loadComponent: () => import('./features/admin/suppliers/supplier-detail/supplier-detail.component')
+          .then(m => m.SupplierDetailComponent),
         canActivate: [suppliersGuard]
       },
       {

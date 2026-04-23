@@ -200,6 +200,11 @@ export class PurchaseOrderService {
         notes: productRecord.notes?.trim() || null
       };
 
+      // If variant_id is provided from PO item, link product to variant
+      if (item.variant_id) {
+        (productInsert as any).variant_id = item.variant_id;
+      }
+
       productInserts.push(productInsert);
     }
 
