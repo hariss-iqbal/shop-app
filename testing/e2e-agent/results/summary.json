@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-05-13T02:10:00.000Z",
+  "filter": "P0 only",
+  "totalPlaybooks": 10,
+  "passed": 10,
+  "failed": 0,
+  "iterations": 3,
+  "results": [
+    {
+      "playbookId": "auth-login-valid",
+      "playbookName": "Login with valid email/password redirects to /admin/dashboard",
+      "status": "pass",
+      "category": null,
+      "durationMs": 45000,
+      "iteration": 1,
+      "area": "auth"
+    },
+    {
+      "playbookId": "auth-login-wrong-password",
+      "playbookName": "Login with wrong password shows error message",
+      "status": "pass",
+      "category": null,
+      "durationMs": 53000,
+      "iteration": 1,
+      "area": "auth"
+    },
+    {
+      "playbookId": "auth-guard-redirect",
+      "playbookName": "Unauthenticated visit to /admin/dashboard redirects to login page",
+      "status": "pass",
+      "category": null,
+      "durationMs": 21000,
+      "iteration": 1,
+      "area": "auth"
+    },
+    {
+      "playbookId": "auth-logout",
+      "playbookName": "Logout clears session and redirects to homepage",
+      "status": "pass",
+      "category": "cat1",
+      "durationMs": 89000,
+      "iteration": 2,
+      "area": "auth",
+      "fixApplied": "Updated playbook: redirect target from /auth/login to /, shop name from 'Phone Shop' to 'Sprint Mobiles'"
+    },
+    {
+      "playbookId": "catalog-loads-products",
+      "playbookName": "Catalog page loads and renders at least 1 product card",
+      "status": "pass",
+      "category": null,
+      "durationMs": 18000,
+      "iteration": 1,
+      "area": "catalog"
+    },
+    {
+      "playbookId": "catalog-card-complete",
+      "playbookName": "Each product card shows an image, title, price, and condition badge",
+      "status": "pass",
+      "category": null,
+      "durationMs": 30000,
+      "iteration": 1,
+      "area": "catalog"
+    },
+    {
+      "playbookId": "catalog-navigate-detail",
+      "playbookName": "Clicking a product card navigates to /product/{slug}",
+      "status": "pass",
+      "category": null,
+      "durationMs": 18000,
+      "iteration": 1,
+      "area": "catalog"
+    },
+    {
+      "playbookId": "detail-renders-data",
+      "playbookName": "Detail page loads and shows product title, price, condition, PTA status",
+      "status": "pass",
+      "category": null,
+      "durationMs": 30000,
+      "iteration": 1,
+      "area": "product-detail"
+    },
+    {
+      "playbookId": "detail-gallery-images",
+      "playbookName": "At least one image is visible in the product gallery",
+      "status": "pass",
+      "category": "cat0",
+      "durationMs": 45000,
+      "iteration": 3,
+      "area": "product-detail",
+      "fixApplied": "Uploaded real PNG image to Google Pixel 6a variant via admin UI. Full pipeline tested: file upload → Supabase Storage → Cloudinary CDN. Image renders at 1280px naturalWidth with Cloudinary optimization (w_800,q_85,f_webp)."
+    },
+    {
+      "playbookId": "variant-detail-images",
+      "playbookName": "Variant detail shows images for the selected variant",
+      "status": "pass",
+      "category": "cat0",
+      "durationMs": 146000,
+      "iteration": 3,
+      "area": "variants-images",
+      "fixApplied": "Same real image upload as detail-gallery-images. Admin variant detail shows the Cloudinary-hosted image with Primary badge."
+    }
+  ],
+  "fixesApplied": [
+    {
+      "type": "cat1",
+      "playbookId": "auth-logout",
+      "description": "Updated playbook expectations: app redirects to / (homepage) after logout, not /auth/login. Shop name is 'Sprint Mobiles' not 'Phone Shop'."
+    },
+    {
+      "type": "cat0",
+      "playbookId": "detail-gallery-images",
+      "description": "variant_images table was empty. Uploaded real PNG image to Google Pixel 6a variant via admin Upload Image button. Full pipeline verified: local file → Supabase Storage → Cloudinary CDN → rendered in product gallery."
+    },
+    {
+      "type": "cat0",
+      "playbookId": "variant-detail-images",
+      "description": "Same root cause — variant_images table was empty. Verified admin variant detail page shows the uploaded Cloudinary image with Primary badge."
+    }
+  ],
+  "uploadPipelineVerified": {
+    "file": "test-upload-image.png",
+    "storage": "Supabase Storage (local)",
+    "cdn": "Cloudinary (res.cloudinary.com/dvvqiwfmk)",
+    "database": "variant_images table — 1 row with Cloudinary URL",
+    "rendering": "Product gallery img.main-img loads Cloudinary-optimized src at 1280px"
+  }
+}

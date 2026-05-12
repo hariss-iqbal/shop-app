@@ -1,0 +1,68 @@
+{
+  "id": "catalog-card-complete",
+  "testNumber": 6,
+  "area": "catalog",
+  "name": "Each product card shows an image, title, price, and condition badge",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-card-has-name",
+      "action": "evaluate",
+      "script": "(() => { const cards = document.querySelectorAll('.cat-product-grid .card'); return { count: cards.length, withName: document.querySelectorAll('.card-name').length }; })()",
+      "assertResult": {
+        "field": "withName",
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "Cards have product names"
+    },
+    {
+      "id": "assert-card-has-price",
+      "action": "evaluate",
+      "script": "(() => document.querySelectorAll('.card-price').length)()",
+      "assertResult": {
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "Cards have prices"
+    },
+    {
+      "id": "assert-card-has-condition",
+      "action": "evaluate",
+      "script": "(() => document.querySelectorAll('.cond-pill').length)()",
+      "assertResult": {
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "Cards have condition badges"
+    },
+    {
+      "id": "assert-images-not-broken",
+      "action": "evaluate",
+      "script": "(() => { const imgs = document.querySelectorAll('.card-media img'); let broken = 0; for (const img of imgs) { if (img.complete && img.naturalWidth === 0) broken++; } return { total: imgs.length, broken }; })()",
+      "assertResult": {
+        "field": "broken",
+        "assertion": "equals",
+        "expected": 0
+      },
+      "description": "No broken images on catalog cards"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Product cards are the first impression — broken images or missing info means lost sales"
+}

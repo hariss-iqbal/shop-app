@@ -1,0 +1,50 @@
+{
+  "playbookId": "catalog-navigate-detail",
+  "actions": [
+    {
+      "step": 0,
+      "stepId": "navigate-catalog",
+      "tool": "browser_navigate",
+      "input": { "url": "http://localhost:4200/catalog" },
+      "timestamp": "2026-05-12T20:24:57.000Z",
+      "snapshotSummary": "Navigated to catalog page, 12 product cards loaded with filters sidebar visible",
+      "failed": false
+    },
+    {
+      "step": 1,
+      "stepId": "wait-cards",
+      "tool": "browser_snapshot",
+      "input": {},
+      "timestamp": "2026-05-12T20:25:00.000Z",
+      "snapshotSummary": "Product cards already present in DOM - 12 cards shown (1-12 of 24 items), no skeletons",
+      "failed": false
+    },
+    {
+      "step": 2,
+      "stepId": "click-first-card",
+      "tool": "browser_click",
+      "input": { "target": "e166", "element": "First product card - Google Pixel 6a" },
+      "timestamp": "2026-05-12T20:25:05.000Z",
+      "snapshotSummary": "Clicked first card, page navigated to /product/google-google-pixel-6a-128gb-open-box-pta-approved?color=Sage",
+      "failed": false
+    },
+    {
+      "step": 3,
+      "stepId": "wait-detail",
+      "tool": "browser_wait_for",
+      "input": { "time": 3 },
+      "timestamp": "2026-05-12T20:25:08.000Z",
+      "snapshotSummary": "Waited 3 seconds for product detail page to fully render",
+      "failed": false
+    },
+    {
+      "step": 4,
+      "stepId": "assert-on-product-page",
+      "tool": "browser_evaluate",
+      "input": { "function": "() => window.location.href.includes('/product/')" },
+      "timestamp": "2026-05-12T20:25:12.000Z",
+      "snapshotSummary": "Assertion passed - URL http://localhost:4200/product/google-google-pixel-6a-128gb-open-box-pta-approved?color=Sage contains /product/",
+      "failed": false
+    }
+  ]
+}

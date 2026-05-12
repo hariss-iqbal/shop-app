@@ -926,7 +926,8 @@ export class ProductService {
       variantId: variant.id,
       imageUrl: img['imageUrl'] as string,
       isPrimary: img['isPrimary'] as boolean,
-      displayOrder: img['displayOrder'] as number
+      displayOrder: img['displayOrder'] as number,
+      color: (img['color'] as string) || null
     }));
 
     return { variant, images };

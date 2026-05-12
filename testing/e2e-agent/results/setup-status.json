@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-05-13T20:10:30Z",
+  "supabase": { "running": true, "url": "http://localhost:54321" },
+  "frontend": { "running": true, "url": "http://localhost:4200" },
+  "testAccount": { "exists": true, "canLogin": true },
+  "seedData": { "hasProducts": true, "productCount": 24 },
+  "ready": true,
+  "issues": []
+}

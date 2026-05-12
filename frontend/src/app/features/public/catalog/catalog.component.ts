@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil, skip } from 'rxjs/operators';
 import { ProductService, CatalogPaginationParams, ModelCatalogItem } from '../../../core/services/product.service';
 import { BrandService } from '../../../core/services/brand.service';
+import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
@@ -173,6 +174,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private productService: ProductService,
     private brandService: BrandService,
+    private imageOptimization: ImageOptimizationService,
     private toastService: ToastService,
     private seoService: SeoService,
     private shopDetailsService: ShopDetailsService,
@@ -573,6 +575,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   gradientUrl(id: string): string {
     return 'url(#pb' + id.replace(/[^a-zA-Z0-9]/g, '') + ')';
+  }
+
+  cardImageUrl(url: string): string {
+    return this.imageOptimization.getCardImageUrl(url);
   }
 
   navigateToCatalog(): void {

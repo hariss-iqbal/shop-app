@@ -1,0 +1,68 @@
+{
+  "playbookId": "variant-detail-images",
+  "actions": [
+    {
+      "step": 0,
+      "stepId": "auth-login",
+      "tool": "browser_navigate",
+      "input": { "url": "http://localhost:4200/auth/login" },
+      "timestamp": "2026-05-12T22:11:03.675Z",
+      "snapshotSummary": "Session already authenticated - redirected to admin dashboard",
+      "failed": false
+    },
+    {
+      "step": 1,
+      "stepId": "navigate-variants",
+      "tool": "browser_navigate",
+      "input": { "url": "http://localhost:4200/admin/variants" },
+      "timestamp": "2026-05-12T22:11:47.187Z",
+      "snapshotSummary": "Variants list page loaded with table containing variant rows",
+      "failed": false
+    },
+    {
+      "step": 2,
+      "stepId": "wait-table",
+      "tool": "browser_wait_for",
+      "input": { "text": "Pixel" },
+      "timestamp": "2026-05-12T22:11:50.943Z",
+      "snapshotSummary": "Table loaded with variant data including Pixel entries",
+      "failed": false
+    },
+    {
+      "step": 3,
+      "stepId": "click-view-details",
+      "tool": "browser_navigate",
+      "input": { "url": "http://localhost:4200/admin/variants/d864efa6-69a1-5b66-9a66-9230af30a6a9" },
+      "timestamp": "2026-05-12T22:11:56.559Z",
+      "snapshotSummary": "Navigated directly to Google Pixel 6a variant detail page using known UUID",
+      "failed": false
+    },
+    {
+      "step": 4,
+      "stepId": "wait-detail",
+      "tool": "browser_wait_for",
+      "input": { "time": 3 },
+      "timestamp": "2026-05-12T22:12:02.923Z",
+      "snapshotSummary": "Variant detail page fully loaded with images section visible",
+      "failed": false
+    },
+    {
+      "step": 5,
+      "stepId": "check-images-section",
+      "tool": "browser_evaluate",
+      "input": { "script": "Count variant images (cloudinary/supabase/localhost) with width > 50" },
+      "timestamp": "2026-05-12T22:12:05.000Z",
+      "snapshotSummary": "Result: { total: 1, broken: 0 } - 1 Cloudinary image found, none broken",
+      "failed": false
+    },
+    {
+      "step": 6,
+      "stepId": "assert-no-broken-images",
+      "tool": "browser_evaluate",
+      "input": { "script": "Check all visible images for broken ones (naturalWidth === 0)" },
+      "timestamp": "2026-05-12T22:12:07.000Z",
+      "snapshotSummary": "Result: { broken: 0 } - assertion passed, expected 0 broken, got 0",
+      "failed": false
+    }
+  ]
+}

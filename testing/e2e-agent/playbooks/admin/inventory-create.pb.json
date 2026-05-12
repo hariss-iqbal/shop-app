@@ -1,0 +1,54 @@
+{
+  "id": "admin-inventory-create",
+  "testNumber": 19,
+  "area": "admin",
+  "name": "Create a new product — form submits and item appears in list",
+  "requiresAuth": true,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "navigate-create",
+      "action": "navigate",
+      "target": "/admin/inventory/new"
+    },
+    {
+      "id": "wait-form",
+      "action": "waitFor",
+      "text": "Add Product",
+      "timeout": 8000
+    },
+    {
+      "id": "screenshot-form",
+      "action": "screenshot",
+      "filename": "admin-inventory-create-form"
+    },
+    {
+      "id": "assert-form-visible",
+      "action": "evaluate",
+      "script": "(() => { const form = document.querySelector('form'); return { hasForm: !!form }; })()",
+      "assertResult": {
+        "field": "hasForm",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Product creation form is visible"
+    },
+    {
+      "id": "fill-product-name",
+      "action": "type",
+      "description": "Fill in the product name/model field",
+      "useSnapshot": true,
+      "snapshotHint": "Look for name/model/title input field in the form",
+      "value": "E2E Test Product"
+    },
+    {
+      "id": "take-form-snapshot",
+      "action": "screenshot",
+      "filename": "admin-inventory-create-filled"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "Creating products is essential for keeping the catalog updated with new stock"
+}

@@ -1,0 +1,37 @@
+{
+  "id": "admin-sales-list",
+  "testNumber": 21,
+  "area": "admin",
+  "name": "Sales page loads and shows transaction rows or empty state",
+  "requiresAuth": true,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "navigate-sales",
+      "action": "navigate",
+      "target": "/admin/sales"
+    },
+    {
+      "id": "wait-content",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "screenshot-sales",
+      "action": "screenshot",
+      "filename": "admin-sales"
+    },
+    {
+      "id": "assert-page-loaded",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/admin/sales"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "Sales tracking is how the business monitors revenue and processes transactions"
+}

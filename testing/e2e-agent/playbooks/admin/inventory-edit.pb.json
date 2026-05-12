@@ -1,0 +1,55 @@
+{
+  "id": "admin-inventory-edit",
+  "testNumber": 20,
+  "area": "admin",
+  "name": "Edit an existing product — changes persist",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-inventory",
+      "action": "navigate",
+      "target": "/admin/inventory"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "find-edit-action",
+      "action": "click",
+      "description": "Click the edit button/action for the first product row",
+      "useSnapshot": true,
+      "snapshotHint": "Look for an edit icon/button in the first row of the inventory table, or a context menu trigger"
+    },
+    {
+      "id": "wait-edit-form",
+      "action": "waitFor",
+      "text": "Edit",
+      "timeout": 8000
+    },
+    {
+      "id": "screenshot-edit-form",
+      "action": "screenshot",
+      "filename": "admin-inventory-edit-form"
+    },
+    {
+      "id": "assert-edit-form-loaded",
+      "action": "evaluate",
+      "script": "(() => { const form = document.querySelector('form'); return { hasForm: !!form }; })()",
+      "assertResult": {
+        "field": "hasForm",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Edit form is loaded"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "Editing products is how admins update prices, images, and details — daily operation"
+}

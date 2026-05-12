@@ -1,0 +1,36 @@
+{
+  "id": "catalog-loads-products",
+  "testNumber": 5,
+  "area": "catalog",
+  "name": "Catalog page loads and renders at least 1 product card",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-grid",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-cards-exist",
+      "action": "evaluate",
+      "script": "(() => document.querySelectorAll('.cat-product-grid .card').length)()",
+      "assertResult": {
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "At least 1 product card is visible"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Customers cannot buy phones they cannot see — catalog is the primary storefront"
+}

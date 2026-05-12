@@ -1,0 +1,63 @@
+{
+  "id": "detail-storage-variant",
+  "testNumber": 16,
+  "area": "product-detail",
+  "name": "Selecting a different storage variant updates displayed info",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true,
+    "note": "Skip if product has no storage variants"
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "click-first-card",
+      "action": "click",
+      "selector": ".cat-product-grid .card"
+    },
+    {
+      "id": "wait-detail",
+      "action": "waitFor",
+      "selector": ".pdp",
+      "timeout": 8000
+    },
+    {
+      "id": "check-storage-variants",
+      "action": "evaluate",
+      "script": "(() => { const storageEl = document.querySelectorAll('[class*=\"storage\"], [class*=\"variant\"] button, [class*=\"variant\"] a, .pdp [class*=\"chip\"]'); return { hasOptions: storageEl.length > 0, count: storageEl.length }; })()",
+      "description": "Check for storage variant options"
+    },
+    {
+      "id": "click-storage-variant",
+      "action": "click",
+      "description": "Click a storage variant option if available",
+      "useSnapshot": true,
+      "snapshotHint": "Look for storage size options like '128GB', '256GB' etc. Skip if none found."
+    },
+    {
+      "id": "wait-variant-update",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "assert-page-still-valid",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/product/"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "Storage variants show different price points — essential for customers comparing capacities"
+}

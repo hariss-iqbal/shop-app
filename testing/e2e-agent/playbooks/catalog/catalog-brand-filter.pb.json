@@ -1,0 +1,51 @@
+{
+  "id": "catalog-brand-filter",
+  "testNumber": 8,
+  "area": "catalog",
+  "name": "Brand filter hides products from other brands",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 2,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "open-filters",
+      "action": "click",
+      "description": "Open the filter sidebar/panel",
+      "useSnapshot": true,
+      "snapshotHint": "Look for a filter button or .filter-fab button"
+    },
+    {
+      "id": "select-brand",
+      "action": "click",
+      "description": "Click a brand filter chip/checkbox in the filter panel",
+      "useSnapshot": true,
+      "snapshotHint": "Look for brand names in the filter sidebar — .filters section"
+    },
+    {
+      "id": "wait-filter-apply",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "assert-filtered",
+      "action": "evaluate",
+      "script": "(() => { const brands = document.querySelectorAll('.card-brand'); const uniqueBrands = new Set(); brands.forEach(b => uniqueBrands.add(b.textContent.trim())); return { count: uniqueBrands.size, brands: [...uniqueBrands] }; })()",
+      "description": "After filtering, all visible cards should be the selected brand"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Brand filter is essential for customers comparing specific brands like Apple or Samsung"
+}

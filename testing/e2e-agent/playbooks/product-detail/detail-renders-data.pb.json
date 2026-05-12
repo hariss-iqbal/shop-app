@@ -1,0 +1,70 @@
+{
+  "id": "detail-renders-data",
+  "testNumber": 12,
+  "area": "product-detail",
+  "name": "Detail page loads and shows product title, price, condition, PTA status",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "click-first-card",
+      "action": "click",
+      "selector": ".cat-product-grid .card"
+    },
+    {
+      "id": "wait-detail",
+      "action": "waitFor",
+      "selector": ".pdp",
+      "timeout": 8000
+    },
+    {
+      "id": "assert-has-price",
+      "action": "evaluate",
+      "script": "(() => { const priceEl = document.querySelector('.pdp .price-amount') || document.querySelector('.pdp .card-price'); return { hasPrice: !!priceEl, text: priceEl?.textContent?.trim() }; })()",
+      "assertResult": {
+        "field": "hasPrice",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Product detail has a price"
+    },
+    {
+      "id": "assert-has-condition",
+      "action": "evaluate",
+      "script": "(() => { const pageText = document.querySelector('.pdp')?.textContent || ''; return { hasCondition: /new|open.box|pre.owned|used/i.test(pageText) }; })()",
+      "assertResult": {
+        "field": "hasCondition",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Product detail shows condition"
+    },
+    {
+      "id": "assert-has-pta",
+      "action": "evaluate",
+      "script": "(() => { const pageText = document.querySelector('.pdp')?.textContent || ''; return { hasPta: /pta|approved|non.pta/i.test(pageText) }; })()",
+      "assertResult": {
+        "field": "hasPta",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Product detail shows PTA status"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Product detail is where customers decide to buy — missing data or broken images means lost sales"
+}

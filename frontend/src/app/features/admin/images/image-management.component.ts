@@ -179,15 +179,14 @@ export class ImageManagementComponent implements OnInit {
 
       const result = await this.productService.getProducts(params, { productType: 'phone' as any });
 
-      // Fetch image counts for each product
+      // Fetch variant image counts for each product
       const productsWithImages: ProductWithImages[] = await Promise.all(
         result.data.map(async (product) => {
-          const imageResult = await this.productImageService.getImagesByProductId(product.id);
-          return {
-            ...product,
-            imageCount: imageResult.total,
-            images: imageResult.data
-          };
+          if (product.variantId) {
+            const images = await this.productImageService.getImagesByVariantId(product.variantId);
+            return { ...product, imageCount: images.length, images };
+          }
+          return { ...product, imageCount: 0, images: [] };
         })
       );
 
@@ -311,16 +310,18 @@ export class ImageManagementComponent implements OnInit {
     this.pendingFiles.set([]);
     this.pendingPreviews.set([]);
     this.dialogVisible.set(true);
-    this.loadProductImages(product.id);
+    if (product.variantId) {
+      this.loadVariantImages(product.variantId);
+    }
   }
 
-  private async loadProductImages(productId: string): Promise<void> {
+  private async loadVariantImages(variantId: string): Promise<void> {
     this.loadingImages.set(true);
     try {
-      const result = await this.productImageService.getImagesByProductId(productId);
-      this.productImages.set(result.data);
+      const images = await this.productImageService.getImagesByVariantId(variantId);
+      this.productImages.set(images);
     } catch (error) {
-      this.toastService.error('Error', 'Failed to load product images');
+      this.toastService.error('Error', 'Failed to load variant images');
     } finally {
       this.loadingImages.set(false);
     }
@@ -355,15 +356,19 @@ export class ImageManagementComponent implements OnInit {
   async uploadImages(): Promise<void> {
     const product = this.selectedProduct();
     const files = this.pendingFiles();
-    if (!product || files.length === 0) return;
+    if (!product?.variantId || files.length === 0) return;
 
     this.uploading.set(true);
     this.uploadProgress.set(0);
 
     try {
+      const existingCount = this.productImages().length;
       let completed = 0;
       for (const file of files) {
-        await this.productImageService.uploadImage(product.id, file);
+        const isFirst = existingCount === 0 && completed === 0;
+        await this.productImageService.uploadVariantImage(
+          product.variantId, file, isFirst, product.color
+        );
         completed++;
         this.uploadProgress.set(Math.round((completed / files.length) * 100));
       }
@@ -373,13 +378,13 @@ export class ImageManagementComponent implements OnInit {
       this.pendingPreviews.set([]);
 
       // Refresh images in dialog
-      await this.loadProductImages(product.id);
+      await this.loadVariantImages(product.variantId);
 
-      // Update the product in allProducts
+      // Update image counts for all products sharing this variant
       const newCount = this.productImages().length;
       this.allProducts.update(products =>
         products.map(p => {
-          if (p.id === product.id) {
+          if (p.variantId === product.variantId) {
             return { ...p, imageCount: newCount };
           }
           return p;
@@ -397,7 +402,7 @@ export class ImageManagementComponent implements OnInit {
   async onImageDrop(event: CdkDragDrop<ProductImage[]>): Promise<void> {
     if (event.previousIndex === event.currentIndex) return;
     const product = this.selectedProduct();
-    if (!product) return;
+    if (!product?.variantId) return;
 
     const imagesCopy = [...this.productImages()];
     moveItemInArray(imagesCopy, event.previousIndex, event.currentIndex);
@@ -406,11 +411,11 @@ export class ImageManagementComponent implements OnInit {
     this.reordering.set(true);
     try {
       const imageIds = imagesCopy.map(img => img.id);
-      await this.productImageService.reorderImages(product.id, { imageIds });
+      await this.productImageService.reorderVariantImages(product.variantId, imageIds);
       this.toastService.success('Reordered', 'Image order updated');
     } catch (error) {
       this.toastService.error('Error', 'Failed to reorder images');
-      await this.loadProductImages(product.id);
+      await this.loadVariantImages(product.variantId);
     } finally {
       this.reordering.set(false);
     }
@@ -418,17 +423,17 @@ export class ImageManagementComponent implements OnInit {
 
   async deleteImage(image: ProductImage): Promise<void> {
     const product = this.selectedProduct();
-    if (!product) return;
+    if (!product?.variantId) return;
 
     try {
-      await this.productImageService.deleteImage(image.id);
+      await this.productImageService.deleteVariantImage(image.id, product.variantId);
       this.toastService.success('Deleted', 'Image deleted');
-      await this.loadProductImages(product.id);
+      await this.loadVariantImages(product.variantId);
 
       const newCount = this.productImages().length;
       this.allProducts.update(products =>
         products.map(p => {
-          if (p.id === product.id) {
+          if (p.variantId === product.variantId) {
             return { ...p, imageCount: newCount };
           }
           return p;
@@ -445,7 +450,7 @@ export class ImageManagementComponent implements OnInit {
     if (newIndex < 0 || newIndex >= images.length) return;
 
     const product = this.selectedProduct();
-    if (!product) return;
+    if (!product?.variantId) return;
 
     const imagesCopy = [...images];
     moveItemInArray(imagesCopy, index, newIndex);
@@ -454,18 +459,21 @@ export class ImageManagementComponent implements OnInit {
     this.reordering.set(true);
     try {
       const imageIds = imagesCopy.map(img => img.id);
-      await this.productImageService.reorderImages(product.id, { imageIds });
+      await this.productImageService.reorderVariantImages(product.variantId, imageIds);
     } catch (error) {
       this.toastService.error('Error', 'Failed to reorder images');
-      await this.loadProductImages(product.id);
+      await this.loadVariantImages(product.variantId);
     } finally {
       this.reordering.set(false);
     }
   }
 
   async setPrimary(image: ProductImage): Promise<void> {
+    const product = this.selectedProduct();
+    if (!product?.variantId) return;
+
     try {
-      await this.productImageService.setPrimary(image.id);
+      await this.productImageService.setPrimaryVariantImage(image.id, product.variantId);
       this.productImages.update(images =>
         images.map(img => ({ ...img, isPrimary: img.id === image.id }))
       );

@@ -1,0 +1,56 @@
+{
+  "id": "variant-detail-images",
+  "testNumber": 25,
+  "area": "variants-images",
+  "name": "Variant detail shows images for the selected variant — at least 1 image loads",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true,
+    "note": "Requires at least 1 variant with images uploaded"
+  },
+  "steps": [
+    {
+      "id": "navigate-variants",
+      "action": "navigate",
+      "target": "/admin/variants"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "click-view-details",
+      "action": "click",
+      "description": "Click the first variant's View Details button",
+      "useSnapshot": true,
+      "snapshotHint": "View Details button in first variant row"
+    },
+    {
+      "id": "wait-detail",
+      "action": "wait",
+      "time": 3
+    },
+    {
+      "id": "check-images-section",
+      "action": "evaluate",
+      "script": "(() => { const imgs = document.querySelectorAll('img'); const variantImages = []; for (const img of imgs) { if (img.src && (img.src.includes('cloudinary') || img.src.includes('supabase') || img.src.includes('localhost')) && img.offsetWidth > 50) { variantImages.push({ src: img.src.substring(0, 80), width: img.offsetWidth, broken: img.complete && img.naturalWidth === 0 }); } } return { total: variantImages.length, broken: variantImages.filter(i => i.broken).length }; })()",
+      "description": "Count variant images on the detail page"
+    },
+    {
+      "id": "assert-no-broken-images",
+      "action": "evaluate",
+      "script": "(() => { const imgs = document.querySelectorAll('img'); let broken = 0; for (const img of imgs) { if (img.offsetWidth > 0 && img.complete && img.naturalWidth === 0) broken++; } return { broken }; })()",
+      "assertResult": {
+        "field": "broken",
+        "assertion": "equals",
+        "expected": 0
+      },
+      "description": "No broken images on variant detail page"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Variant images are the primary product photos — broken images mean customers cannot evaluate products"
+}

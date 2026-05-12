@@ -1,0 +1,44 @@
+{
+  "id": "catalog-navigate-detail",
+  "testNumber": 11,
+  "area": "catalog",
+  "name": "Clicking a product card navigates to /product/{slug}",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "click-first-card",
+      "action": "click",
+      "description": "Click the first product card",
+      "selector": ".cat-product-grid .card"
+    },
+    {
+      "id": "wait-detail",
+      "action": "wait",
+      "time": 3
+    },
+    {
+      "id": "assert-on-product-page",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/product/"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Product detail page is where purchase decisions happen — broken navigation means lost customers"
+}

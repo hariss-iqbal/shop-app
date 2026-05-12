@@ -271,8 +271,8 @@ export class CloudinaryService {
    */
   getCardImageUrl(publicId: string): string {
     return this.getTransformedUrl(publicId, {
-      width: 300,
-      height: 200,
+      width: 400,
+      height: 400,
       crop: 'fill',
       quality: 80,
       format: 'webp'

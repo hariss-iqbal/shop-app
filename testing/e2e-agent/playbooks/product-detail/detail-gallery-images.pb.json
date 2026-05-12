@@ -1,0 +1,64 @@
+{
+  "id": "detail-gallery-images",
+  "testNumber": 13,
+  "area": "product-detail",
+  "name": "At least one image is visible in the product gallery",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "click-first-card",
+      "action": "click",
+      "selector": ".cat-product-grid .card"
+    },
+    {
+      "id": "wait-gallery",
+      "action": "waitFor",
+      "selector": ".gallery-main",
+      "timeout": 8000
+    },
+    {
+      "id": "wait-image-load",
+      "action": "wait",
+      "time": 3
+    },
+    {
+      "id": "assert-main-image",
+      "action": "evaluate",
+      "script": "(() => { const main = document.querySelector('.gallery-main .main-img'); if (!main) return { hasImage: false, reason: 'no .main-img element' }; return { hasImage: !!main.src && main.src.length > 0, src: main.src?.substring(0, 80), naturalWidth: main.naturalWidth, complete: main.complete }; })()",
+      "assertResult": {
+        "field": "hasImage",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Main gallery image exists and has a valid src"
+    },
+    {
+      "id": "assert-no-broken-images",
+      "action": "evaluate",
+      "script": "(() => { const imgs = document.querySelectorAll('.gallery img'); let broken = 0; for (const img of imgs) { if (img.complete && img.naturalWidth === 0) broken++; } return { total: imgs.length, broken }; })()",
+      "assertResult": {
+        "field": "broken",
+        "assertion": "equals",
+        "expected": 0
+      },
+      "description": "No broken images in the gallery"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Images are the #1 sales driver — if gallery images don't load, customers cannot evaluate the product"
+}

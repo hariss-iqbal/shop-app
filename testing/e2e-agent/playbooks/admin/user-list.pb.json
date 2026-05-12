@@ -1,0 +1,36 @@
+{
+  "id": "admin-user-list",
+  "testNumber": 22,
+  "area": "admin",
+  "name": "User management page loads and shows user list",
+  "requiresAuth": true,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "navigate-users",
+      "action": "navigate",
+      "target": "/admin/users"
+    },
+    {
+      "id": "wait-content",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-users-visible",
+      "action": "evaluate",
+      "script": "(() => { const rows = document.querySelectorAll('p-table tbody tr'); return { count: rows.length }; })()",
+      "assertResult": {
+        "field": "count",
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "At least 1 user row visible (the admin test account)"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "User management ensures only authorized staff can access admin — security critical"
+}

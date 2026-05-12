@@ -1,0 +1,51 @@
+{
+  "id": "catalog-condition-filter",
+  "testNumber": 9,
+  "area": "catalog",
+  "name": "Condition filter (New/Open Box/Pre-owned) hides other conditions",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "open-filters",
+      "action": "click",
+      "description": "Open the filter panel",
+      "useSnapshot": true,
+      "snapshotHint": "Filter button or .filter-fab"
+    },
+    {
+      "id": "select-condition",
+      "action": "click",
+      "description": "Click a condition filter option (e.g. 'New')",
+      "useSnapshot": true,
+      "snapshotHint": "Look for condition pills — .fgroup with condition labels like 'New', 'Open Box', 'Pre-owned'"
+    },
+    {
+      "id": "wait-filter",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "assert-conditions-match",
+      "action": "evaluate",
+      "script": "(() => { const pills = document.querySelectorAll('.cond-pill'); const conditions = new Set(); pills.forEach(p => conditions.add(p.textContent.trim())); return { conditions: [...conditions], count: pills.length }; })()",
+      "description": "After filtering, visible condition pills should only show the selected condition"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Condition filter is critical for price-sensitive customers choosing between new and used"
+}

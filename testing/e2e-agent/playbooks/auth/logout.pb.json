@@ -1,0 +1,40 @@
+{
+  "id": "auth-logout",
+  "testNumber": 4,
+  "area": "auth",
+  "name": "Logout clears session and redirects to homepage",
+  "requiresAuth": true,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "wait-dashboard",
+      "action": "waitFor",
+      "text": "Dashboard",
+      "timeout": 10000
+    },
+    {
+      "id": "find-logout",
+      "action": "click",
+      "description": "Find and click the logout/sign out button in the admin sidebar or header",
+      "useSnapshot": true,
+      "snapshotLabel": "Logout"
+    },
+    {
+      "id": "wait-homepage",
+      "action": "waitFor",
+      "text": "Sprint Mobiles",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-on-homepage",
+      "action": "assert",
+      "type": "url",
+      "assertion": "equals",
+      "expected": "/"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Auth is critical — users cannot access admin panel without working login"
+}

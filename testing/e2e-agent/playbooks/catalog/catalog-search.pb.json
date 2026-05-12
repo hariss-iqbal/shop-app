@@ -1,0 +1,66 @@
+{
+  "id": "catalog-search",
+  "testNumber": 7,
+  "area": "catalog",
+  "name": "Search bar filters products by model name",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 2,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "count-before-search",
+      "action": "evaluate",
+      "script": "(() => document.querySelectorAll('.cat-product-grid .card').length)()",
+      "assertResult": {
+        "assertion": "gte",
+        "expected": 2
+      },
+      "description": "At least 2 products before search"
+    },
+    {
+      "id": "take-snapshot",
+      "action": "screenshot",
+      "filename": "catalog-before-search"
+    },
+    {
+      "id": "find-search-input",
+      "action": "click",
+      "description": "Click the search input field in the catalog",
+      "useSnapshot": true,
+      "snapshotHint": "Look for an input with placeholder containing 'search' or the search icon button"
+    },
+    {
+      "id": "type-search",
+      "action": "type",
+      "description": "Type a product name in the search field",
+      "useSnapshot": true,
+      "value": "iPhone"
+    },
+    {
+      "id": "wait-filter",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "count-after-search",
+      "action": "evaluate",
+      "script": "(() => document.querySelectorAll('.cat-product-grid .card').length)()",
+      "description": "Count products after search — should be fewer than before"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Search is the primary way customers find specific phones — broken search means browsing friction"
+}

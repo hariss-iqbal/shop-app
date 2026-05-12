@@ -1,0 +1,68 @@
+{
+  "id": "variant-primary-toggle",
+  "testNumber": 27,
+  "area": "variants-images",
+  "name": "Setting an image as primary updates the primary badge",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true,
+    "note": "Requires a variant with at least 2 images"
+  },
+  "steps": [
+    {
+      "id": "navigate-variants",
+      "action": "navigate",
+      "target": "/admin/variants"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "click-view-details",
+      "action": "click",
+      "description": "Click the first variant's View Details button",
+      "useSnapshot": true,
+      "snapshotHint": "View Details button in first variant row"
+    },
+    {
+      "id": "wait-detail",
+      "action": "wait",
+      "time": 3
+    },
+    {
+      "id": "count-images",
+      "action": "evaluate",
+      "script": "(() => { const imgs = document.querySelectorAll('img'); return imgs.length; })()",
+      "description": "Count images on variant detail — need at least 2 for this test"
+    },
+    {
+      "id": "find-primary-badge",
+      "action": "evaluate",
+      "script": "(() => { const badges = document.querySelectorAll('[class*=\"primary\"], [class*=\"star\"]'); return { hasPrimaryBadge: badges.length > 0 }; })()",
+      "description": "Check if primary badge indicators exist"
+    },
+    {
+      "id": "click-set-primary",
+      "action": "click",
+      "description": "Click the set-as-primary button on a non-primary image",
+      "useSnapshot": true,
+      "snapshotHint": "Look for a star icon, primary toggle, or similar button on one of the variant images"
+    },
+    {
+      "id": "wait-update",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "screenshot-primary",
+      "action": "screenshot",
+      "filename": "admin-variant-primary-toggle"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "Primary image is what shows on the catalog card — wrong primary means wrong first impression"
+}

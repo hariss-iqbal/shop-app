@@ -1,0 +1,66 @@
+{
+  "id": "detail-thumbnail-switch",
+  "testNumber": 14,
+  "area": "product-detail",
+  "name": "Clicking a thumbnail switches the main image",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true,
+    "minImages": 2
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "click-first-card",
+      "action": "click",
+      "selector": ".cat-product-grid .card"
+    },
+    {
+      "id": "wait-gallery",
+      "action": "waitFor",
+      "selector": ".gallery-thumbs",
+      "timeout": 8000
+    },
+    {
+      "id": "get-main-src-before",
+      "action": "evaluate",
+      "script": "(() => document.querySelector('.gallery-main .main-img')?.src || '')()"
+    },
+    {
+      "id": "click-second-thumb",
+      "action": "click",
+      "description": "Click the second thumbnail in the gallery",
+      "useSnapshot": true,
+      "snapshotHint": "Look for .gthumb elements in .gallery-thumbs — click the second one"
+    },
+    {
+      "id": "wait-switch",
+      "action": "wait",
+      "time": 1
+    },
+    {
+      "id": "get-main-src-after",
+      "action": "evaluate",
+      "script": "(() => { const main = document.querySelector('.gallery-main .main-img'); return { src: main?.src || '', visible: main ? main.offsetWidth > 0 : false }; })()",
+      "assertResult": {
+        "field": "visible",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Main image is still visible after thumbnail click"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Thumbnail navigation lets customers inspect product details — broken switching frustrates buyers"
+}

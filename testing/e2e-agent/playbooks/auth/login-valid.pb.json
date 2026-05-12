@@ -1,0 +1,57 @@
+{
+  "id": "auth-login-valid",
+  "testNumber": 1,
+  "area": "auth",
+  "name": "Login with valid email/password redirects to /admin/dashboard",
+  "requiresAuth": false,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "navigate-login",
+      "action": "navigate",
+      "target": "/auth/login"
+    },
+    {
+      "id": "wait-form",
+      "action": "waitFor",
+      "text": "Sign in",
+      "timeout": 5000
+    },
+    {
+      "id": "fill-email",
+      "action": "type",
+      "selector": "#email",
+      "value": "admin@gmail.com"
+    },
+    {
+      "id": "fill-password",
+      "action": "type",
+      "selector": "#password",
+      "value": "password123"
+    },
+    {
+      "id": "click-signin",
+      "action": "click",
+      "description": "Click the Sign In button",
+      "useSnapshot": true,
+      "snapshotLabel": "Sign In"
+    },
+    {
+      "id": "wait-dashboard",
+      "action": "waitFor",
+      "text": "Dashboard",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-url",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/admin"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Auth is critical — users cannot access admin panel without working login"
+}

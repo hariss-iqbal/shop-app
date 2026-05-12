@@ -974,11 +974,16 @@ export class InventoryFormComponent implements OnInit {
         this.toastService.success('Success', 'Product added successfully');
 
         // Upload pending images if any
-        if (this.pendingImages().length > 0 && createdProduct?.id) {
+        if (this.pendingImages().length > 0 && createdProduct?.variantId) {
           this.isUploadingImages.set(true);
           try {
+            let uploaded = 0;
             for (const file of this.pendingImages()) {
-              await this.productImageService.uploadImage(createdProduct.id, file);
+              const isFirst = uploaded === 0;
+              await this.productImageService.uploadVariantImage(
+                createdProduct.variantId, file, isFirst, createdProduct.color
+              );
+              uploaded++;
             }
             this.toastService.success('Images Uploaded', `${this.pendingImages().length} image(s) uploaded successfully`);
           } catch (imgError) {

@@ -254,7 +254,7 @@
                 </span>
               }
               @if (m.primaryImageUrl) {
-                <img [src]="m.primaryImageUrl" [alt]="m.brandName + ' ' + m.modelName" />
+                <img [src]="cardImageUrl(m.primaryImageUrl)" [alt]="m.brandName + ' ' + m.modelName" />
               } @else {
                 <svg viewBox="0 0 160 320" fill="none">
                   <defs>

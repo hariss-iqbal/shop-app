@@ -19,8 +19,8 @@ export interface OptimizedImageUrls {
 const CARD_WIDTHS = [300, 600, 900];
 const DETAIL_WIDTHS = [400, 800, 1200];
 const THUMBNAIL_WIDTH = 80;
-const CARD_IMAGE_WIDTH = 300;
-const CARD_IMAGE_HEIGHT = 300;
+const CARD_IMAGE_WIDTH = 400;
+const CARD_IMAGE_HEIGHT = 400;
 const DETAIL_IMAGE_WIDTH = 800;
 
 @Injectable({

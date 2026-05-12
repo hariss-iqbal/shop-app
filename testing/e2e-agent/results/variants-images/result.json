@@ -1,0 +1,28 @@
+{
+  "playbookId": "variant-detail-images",
+  "testNumber": 25,
+  "area": "variants-images",
+  "status": "pass",
+  "startedAt": "2026-05-12T22:11:03.000Z",
+  "finishedAt": "2026-05-12T22:12:10.000Z",
+  "durationMs": 67000,
+  "failedStep": null,
+  "errorMessage": null,
+  "failureCategory": null,
+  "analysis": null,
+  "fixApplied": null,
+  "iteration": 3,
+  "evidence": {
+    "screenshotPath": "testing/e2e-agent/results/variants-images/variant-detail-images.png",
+    "consoleErrors": [],
+    "networkErrors": []
+  },
+  "steps": [
+    { "id": "navigate-variants", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "wait-table", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "click-view-details", "status": "pass", "durationMs": 5000, "error": null },
+    { "id": "wait-detail", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "check-images-section", "status": "pass", "durationMs": 2000, "error": null },
+    { "id": "assert-no-broken-images", "status": "pass", "durationMs": 1000, "error": null }
+  ]
+}

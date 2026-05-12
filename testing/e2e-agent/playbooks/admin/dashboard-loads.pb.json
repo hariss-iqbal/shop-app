@@ -1,0 +1,32 @@
+{
+  "id": "admin-dashboard-loads",
+  "testNumber": 17,
+  "area": "admin",
+  "name": "Dashboard loads without console errors",
+  "requiresAuth": true,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "wait-dashboard",
+      "action": "waitFor",
+      "text": "Dashboard",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-on-dashboard",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/admin/dashboard"
+    },
+    {
+      "id": "check-console-errors",
+      "action": "screenshot",
+      "filename": "admin-dashboard"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Dashboard is the admin landing page — if it fails, the entire admin panel is inaccessible"
+}

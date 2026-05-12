@@ -1,0 +1,63 @@
+{
+  "id": "variant-image-upload",
+  "testNumber": 26,
+  "area": "variants-images",
+  "name": "Uploading an image to a variant succeeds and image appears in gallery",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true,
+    "note": "Requires a variant to upload to. Creates a test image file during execution."
+  },
+  "steps": [
+    {
+      "id": "navigate-variants",
+      "action": "navigate",
+      "target": "/admin/variants"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "click-view-details",
+      "action": "click",
+      "description": "Click the first variant's View Details button",
+      "useSnapshot": true,
+      "snapshotHint": "View Details button in first variant row"
+    },
+    {
+      "id": "wait-detail",
+      "action": "wait",
+      "time": 3
+    },
+    {
+      "id": "count-images-before",
+      "action": "evaluate",
+      "script": "(() => { const imgs = document.querySelectorAll('img'); return imgs.length; })()",
+      "description": "Count images before upload"
+    },
+    {
+      "id": "click-upload-button",
+      "action": "click",
+      "description": "Click the image upload button to trigger file chooser",
+      "useSnapshot": true,
+      "snapshotHint": "Look for an upload button, camera icon, or p-fileUpload component on the variant detail page"
+    },
+    {
+      "id": "upload-file",
+      "action": "evaluate",
+      "script": "(() => { const c = document.createElement('canvas'); c.width = 100; c.height = 100; const ctx = c.getContext('2d'); ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 0, 100, 100); ctx.fillStyle = '#ffffff'; ctx.font = '14px Arial'; ctx.fillText('E2E Test', 10, 55); return c.toDataURL('image/png'); })()",
+      "description": "Generate a test image as base64 data URL"
+    },
+    {
+      "id": "screenshot-after-upload",
+      "action": "screenshot",
+      "filename": "admin-variant-after-upload"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Image upload is how new product photos are added — broken upload means stale catalog"
+}

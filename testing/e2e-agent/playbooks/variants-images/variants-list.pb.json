@@ -1,0 +1,42 @@
+{
+  "id": "variants-list",
+  "testNumber": 23,
+  "area": "variants-images",
+  "name": "Variants list page loads and shows variant rows with color chips and prices",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-variants",
+      "action": "navigate",
+      "target": "/admin/variants"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-variant-rows",
+      "action": "evaluate",
+      "script": "(() => { const rows = document.querySelectorAll('p-table tbody tr'); return { count: rows.length }; })()",
+      "assertResult": {
+        "field": "count",
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "At least 1 variant row in the table"
+    },
+    {
+      "id": "screenshot-variants",
+      "action": "screenshot",
+      "filename": "admin-variants-list"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Variants are how products are organized — variants drive catalog structure and pricing"
+}

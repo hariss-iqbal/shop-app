@@ -1,0 +1,62 @@
+{
+  "id": "catalog-sort-price",
+  "testNumber": 10,
+  "area": "catalog",
+  "name": "Sorting by price Low→High reorders cards correctly",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 2,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "get-prices-before",
+      "action": "evaluate",
+      "script": "(() => { const prices = [...document.querySelectorAll('.price-amount')].map(e => parseFloat(e.textContent.replace(/[^0-9.]/g, '')) || 0); return prices.slice(0, 5); })()",
+      "description": "Capture prices before sorting"
+    },
+    {
+      "id": "open-sort",
+      "action": "click",
+      "description": "Click the sort dropdown to open it",
+      "useSnapshot": true,
+      "snapshotHint": "Look for a p-select or dropdown with sort options like 'Most popular', 'Newest', 'Price'"
+    },
+    {
+      "id": "select-sort-low-high",
+      "action": "click",
+      "description": "Select 'Price: Low to High' sort option",
+      "useSnapshot": true,
+      "snapshotHint": "Look for option text containing 'Low' and 'High' or price arrow up"
+    },
+    {
+      "id": "wait-sort",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "get-prices-after",
+      "action": "evaluate",
+      "script": "(() => { const prices = [...document.querySelectorAll('.price-amount')].map(e => parseFloat(e.textContent.replace(/[^0-9.]/g, '')) || 0); const sorted = [...prices].sort((a, b) => a - b); return { prices: prices.slice(0, 5), isSorted: JSON.stringify(prices.slice(0, 10)) === JSON.stringify(sorted.slice(0, 10)) }; })()",
+      "assertResult": {
+        "field": "isSorted",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Prices should be in ascending order after sort"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Price sorting is the second most used catalog feature after search"
+}

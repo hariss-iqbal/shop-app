@@ -1,0 +1,74 @@
+{
+  "playbookId": "detail-gallery-images",
+  "actions": [
+    {
+      "step": 0,
+      "stepId": "navigate-catalog",
+      "tool": "browser_navigate",
+      "input": { "url": "http://localhost:4200/catalog" },
+      "timestamp": "2026-05-12T22:08:53.000Z",
+      "snapshotSummary": "Navigated to catalog page, title: Phone Shop",
+      "failed": false
+    },
+    {
+      "step": 1,
+      "stepId": "wait-cards",
+      "tool": "browser_wait_for",
+      "input": { "text": "Google" },
+      "timestamp": "2026-05-12T22:08:56.000Z",
+      "snapshotSummary": "Catalog loaded with 12 product cards visible, Google Pixel 6a is first card",
+      "failed": false
+    },
+    {
+      "step": 2,
+      "stepId": "click-first-card",
+      "tool": "browser_click",
+      "input": { "target": "e166", "element": "Google Pixel 6a product card" },
+      "timestamp": "2026-05-12T22:09:02.000Z",
+      "snapshotSummary": "Clicked first catalog card, navigated to /product/google-google-pixel-6a-128gb-open-box-pta-approved?color=Sage",
+      "failed": false
+    },
+    {
+      "step": 3,
+      "stepId": "wait-gallery",
+      "tool": "browser_wait_for",
+      "input": { "text": "Google Pixel 6a" },
+      "timestamp": "2026-05-12T22:09:10.000Z",
+      "snapshotSummary": "Product detail page loaded with heading 'Google Pixel 6a', gallery image visible with alt text",
+      "failed": false
+    },
+    {
+      "step": 4,
+      "stepId": "wait-image-load",
+      "tool": "browser_wait_for",
+      "input": { "time": 3 },
+      "timestamp": "2026-05-12T22:09:14.000Z",
+      "snapshotSummary": "Waited 3 seconds for image to fully load",
+      "failed": false
+    },
+    {
+      "step": 5,
+      "stepId": "assert-main-image",
+      "tool": "browser_evaluate",
+      "input": {
+        "script": "querySelector('.gallery-main img.main-img') - check hasImage",
+        "result": { "hasImage": true, "src": "https://res.cloudinary.com/dvvqiwfmk/image/upload/w_800,q_85,f_webp/v1778623667/phone-images/variant...", "naturalWidth": 1280, "complete": true }
+      },
+      "timestamp": "2026-05-12T22:09:20.000Z",
+      "snapshotSummary": "Main gallery image found: Cloudinary CDN URL, naturalWidth=1280, complete=true. Assertion passed: hasImage equals true.",
+      "failed": false
+    },
+    {
+      "step": 6,
+      "stepId": "assert-no-broken-images",
+      "tool": "browser_evaluate",
+      "input": {
+        "script": "querySelectorAll('.gallery img') - check broken count",
+        "result": { "total": 1, "broken": 0 }
+      },
+      "timestamp": "2026-05-12T22:09:25.000Z",
+      "snapshotSummary": "1 gallery image found, 0 broken. Assertion passed: broken equals 0.",
+      "failed": false
+    }
+  ]
+}

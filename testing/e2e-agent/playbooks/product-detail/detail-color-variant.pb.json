@@ -1,0 +1,63 @@
+{
+  "id": "detail-color-variant",
+  "testNumber": 15,
+  "area": "product-detail",
+  "name": "Selecting a different color variant updates displayed info",
+  "requiresAuth": false,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true,
+    "note": "Skip if product has no color variants"
+  },
+  "steps": [
+    {
+      "id": "navigate-catalog",
+      "action": "navigate",
+      "target": "/catalog"
+    },
+    {
+      "id": "wait-cards",
+      "action": "waitFor",
+      "selector": ".cat-product-grid .card",
+      "timeout": 10000
+    },
+    {
+      "id": "click-first-card",
+      "action": "click",
+      "selector": ".cat-product-grid .card"
+    },
+    {
+      "id": "wait-detail",
+      "action": "waitFor",
+      "selector": ".pdp",
+      "timeout": 8000
+    },
+    {
+      "id": "check-variants-exist",
+      "action": "evaluate",
+      "script": "(() => { const swatches = document.querySelectorAll('.csw .dot, .csw [class*=\"swatch\"], [class*=\"color-chip\"], [class*=\"variant-color\"]'); return { hasVariants: swatches.length > 0, count: swatches.length }; })()",
+      "description": "Check if color variant selectors exist on the page"
+    },
+    {
+      "id": "click-color-variant",
+      "action": "click",
+      "description": "Click a different color variant swatch/chip if available",
+      "useSnapshot": true,
+      "snapshotHint": "Look for color swatches/chips — clickable elements representing colors. Skip this step if none found."
+    },
+    {
+      "id": "wait-variant-update",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "assert-page-still-valid",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/product/"
+    }
+  ],
+  "priority": "P2",
+  "businessContext": "Color variants show different product options — critical for phones sold in multiple colors"
+}

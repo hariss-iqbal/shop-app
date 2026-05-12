@@ -237,12 +237,17 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const primaryImage = images.find(img => img.isPrimary) || images[0];
+    // Filter images by product color: prefer exact match, then generic (null), then all
+    const colorMatch = images.filter(img => img.color?.toLowerCase() === product.color?.toLowerCase());
+    const genericImages = images.filter(img => !img.color);
+    const filteredImages = colorMatch.length > 0 ? colorMatch : genericImages.length > 0 ? genericImages : images;
+
+    const primaryImage = filteredImages.find(img => img.isPrimary) || filteredImages[0];
     const detail: ProductDetail = {
       ...product,
       variantId: variant.id,
       variantSlug: variant.slug,
-      images: images.map(img => ({
+      images: filteredImages.map(img => ({
         id: img.id,
         imageUrl: img.imageUrl,
         isPrimary: img.isPrimary,
@@ -326,12 +331,18 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       const variant = await this.productService.getVariantById(variantId);
       if (!variant) return;
 
-      // Get variant images
-      const images = await this.productService.getVariantImages(variantId);
-      const primaryImage = images.find(img => img.isPrimary) || images[0];
+      // Get variant images and filter by current product color
+      const allImages = await this.productService.getVariantImages(variantId);
 
       // Find an available product in this variant to set as current product
       const currentProduct = this.product();
+      const currentColor = currentProduct?.color;
+      const colorMatch = allImages.filter(img => img.color?.toLowerCase() === currentColor?.toLowerCase());
+      const genericImages = allImages.filter(img => !img.color);
+      const images = colorMatch.length > 0 ? colorMatch : genericImages.length > 0 ? genericImages : allImages;
+
+      const primaryImage = images.find(img => img.isPrimary) || images[0];
+
       const updatedProduct: ProductDetail = {
         ...(currentProduct!),
         variantId: variant.id,

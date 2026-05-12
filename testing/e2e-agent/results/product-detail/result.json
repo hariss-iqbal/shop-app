@@ -1,0 +1,29 @@
+{
+  "playbookId": "detail-gallery-images",
+  "testNumber": 13,
+  "area": "product-detail",
+  "status": "pass",
+  "startedAt": "2026-05-12T22:08:53.000Z",
+  "finishedAt": "2026-05-12T22:09:42.000Z",
+  "durationMs": 49000,
+  "failedStep": null,
+  "errorMessage": null,
+  "failureCategory": null,
+  "analysis": null,
+  "fixApplied": null,
+  "iteration": 3,
+  "evidence": {
+    "screenshotPath": "testing/e2e-agent/results/product-detail/detail-gallery-images-iter3.png",
+    "consoleErrors": [],
+    "networkErrors": []
+  },
+  "steps": [
+    { "id": "navigate-catalog", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "wait-cards", "status": "pass", "durationMs": 4000, "error": null },
+    { "id": "click-first-card", "status": "pass", "durationMs": 2000, "error": null },
+    { "id": "wait-gallery", "status": "pass", "durationMs": 4000, "error": null },
+    { "id": "wait-image-load", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "assert-main-image", "status": "pass", "durationMs": 1000, "error": null },
+    { "id": "assert-no-broken-images", "status": "pass", "durationMs": 1000, "error": null }
+  ]
+}

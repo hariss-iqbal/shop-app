@@ -1,0 +1,37 @@
+{
+  "id": "admin-inventory-list",
+  "testNumber": 18,
+  "area": "admin",
+  "name": "Inventory list page loads and shows product rows",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-inventory",
+      "action": "navigate",
+      "target": "/admin/inventory"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-rows",
+      "action": "evaluate",
+      "script": "(() => { const rows = document.querySelectorAll('p-table tbody tr'); return { count: rows.length }; })()",
+      "assertResult": {
+        "field": "count",
+        "assertion": "gte",
+        "expected": 1
+      },
+      "description": "At least 1 product row in inventory table"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Inventory is the core admin function — managing products is the primary reason admin exists"
+}

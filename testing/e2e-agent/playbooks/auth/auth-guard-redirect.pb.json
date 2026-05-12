@@ -1,0 +1,32 @@
+{
+  "id": "auth-guard-redirect",
+  "testNumber": 3,
+  "area": "auth",
+  "name": "Unauthenticated visit to /admin/dashboard redirects to login page",
+  "requiresAuth": false,
+  "preconditions": {
+    "requiresSeedData": false
+  },
+  "steps": [
+    {
+      "id": "navigate-admin",
+      "action": "navigate",
+      "target": "/admin/dashboard"
+    },
+    {
+      "id": "wait-redirect",
+      "action": "waitFor",
+      "text": "Sign in",
+      "timeout": 5000
+    },
+    {
+      "id": "assert-on-login",
+      "action": "assert",
+      "type": "url",
+      "assertion": "contains",
+      "expected": "/auth/login"
+    }
+  ],
+  "priority": "P0",
+  "businessContext": "Auth is critical — users cannot access admin panel without working login"
+}

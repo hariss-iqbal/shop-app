@@ -1,0 +1,17 @@
+{
+  "maxIterations": 3,
+  "baseUrl": "http://localhost:4200",
+  "auth": {
+    "email": "admin@gmail.com",
+    "password": "password123"
+  },
+  "playbooksDir": "testing/e2e-agent/playbooks",
+  "resultsDir": "testing/e2e-agent/results",
+  "screenshotOnFailure": true,
+  "discoverNewTests": true,
+  "priority": {
+    "description": "Run only specific priority levels and areas. Set runPriorities to control which levels execute. Set runAreas to filter by area. Empty arrays = run all.",
+    "runPriorities": ["P0", "P1", "P2", "P3"],
+    "runAreas": []
+  }
+}

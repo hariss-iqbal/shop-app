@@ -410,6 +410,38 @@ export class ProductImageService {
   // Variant image methods
   // ============================================================
 
+  async getImagesByVariantId(variantId: string): Promise<ProductImage[]> {
+    const { data, error } = await this.supabase
+      .from('variant_images')
+      .select('*')
+      .eq('variant_id', variantId)
+      .order('is_primary', { ascending: false })
+      .order('display_order', { ascending: true });
+
+    if (error) throw new Error(error.message);
+
+    return (data || []).map(d => ({
+      id: d.id,
+      productId: d.variant_id,
+      imageUrl: d.image_url,
+      storagePath: d.storage_path || '',
+      publicId: d.public_id,
+      isPrimary: d.is_primary,
+      displayOrder: d.display_order,
+      createdAt: d.created_at
+    }));
+  }
+
+  async reorderVariantImages(_variantId: string, imageIds: string[]): Promise<void> {
+    const updatePromises = imageIds.map((imageId, index) =>
+      this.supabase
+        .from('variant_images')
+        .update({ display_order: index })
+        .eq('id', imageId)
+    );
+    await Promise.all(updatePromises);
+  }
+
   async uploadVariantImage(
     variantId: string,
     file: File,
@@ -442,6 +474,10 @@ export class ProductImageService {
 
       const nextOrder = (existing?.[0]?.display_order ?? -1) + 1;
 
+      // Auto-set primary if this is the first image for the variant
+      const isFirstImage = !existing || existing.length === 0;
+      const shouldSetPrimary = isPrimary || isFirstImage;
+
       const { data, error } = await this.supabase
         .from('variant_images')
         .insert({
@@ -449,7 +485,7 @@ export class ProductImageService {
           image_url: result.secureUrl,
           storage_path: result.publicId,
           public_id: result.publicId,
-          is_primary: isPrimary,
+          is_primary: shouldSetPrimary,
           display_order: nextOrder,
           color: color || null
         })
@@ -459,7 +495,7 @@ export class ProductImageService {
       if (error) throw new Error(error.message);
 
       // If primary, update variant primary_image_url
-      if (isPrimary) {
+      if (shouldSetPrimary) {
         await this.supabase
           .from('variants')
           .update({ primary_image_url: result.secureUrl })

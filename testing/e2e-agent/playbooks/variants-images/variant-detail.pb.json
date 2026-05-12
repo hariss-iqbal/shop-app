@@ -1,0 +1,55 @@
+{
+  "id": "variant-detail",
+  "testNumber": 24,
+  "area": "variants-images",
+  "name": "Clicking a variant opens detail page with images, stats, and color filter",
+  "requiresAuth": true,
+  "preconditions": {
+    "minProductCount": 1,
+    "requiresSeedData": true
+  },
+  "steps": [
+    {
+      "id": "navigate-variants",
+      "action": "navigate",
+      "target": "/admin/variants"
+    },
+    {
+      "id": "wait-table",
+      "action": "waitFor",
+      "selector": "p-table",
+      "timeout": 10000
+    },
+    {
+      "id": "click-view-details",
+      "action": "click",
+      "description": "Click the 'View Details' button for the first variant",
+      "useSnapshot": true,
+      "snapshotHint": "Look for a button/link in the first variant row that says 'View Details' or has an eye icon"
+    },
+    {
+      "id": "wait-detail",
+      "action": "waitFor",
+      "text": "Storage",
+      "timeout": 8000
+    },
+    {
+      "id": "screenshot-variant-detail",
+      "action": "screenshot",
+      "filename": "admin-variant-detail"
+    },
+    {
+      "id": "assert-detail-loaded",
+      "action": "evaluate",
+      "script": "(() => { const page = document.querySelector('body'); const text = page?.textContent || ''; return { hasStats: /selling.price|cost.price|stock|color/i.test(text), hasContent: text.length > 100 }; })()",
+      "assertResult": {
+        "field": "hasStats",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Variant detail page shows stats cards"
+    }
+  ],
+  "priority": "P1",
+  "businessContext": "Variant detail shows all data for a product variant — images, stats, pricing"
+}

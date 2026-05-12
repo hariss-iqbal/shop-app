@@ -1,0 +1,27 @@
+{
+  "playbookId": "catalog-navigate-detail",
+  "testNumber": 11,
+  "area": "catalog",
+  "status": "pass",
+  "startedAt": "2026-05-12T20:24:57.000Z",
+  "finishedAt": "2026-05-12T20:25:15.000Z",
+  "durationMs": 18000,
+  "failedStep": null,
+  "errorMessage": null,
+  "failureCategory": null,
+  "analysis": null,
+  "fixApplied": null,
+  "iteration": 1,
+  "evidence": {
+    "screenshotPath": "testing/e2e-agent/results/catalog/catalog-navigate-detail-product-page.png",
+    "consoleErrors": [],
+    "networkErrors": []
+  },
+  "steps": [
+    { "id": "navigate-catalog", "status": "pass", "durationMs": 2000, "error": null },
+    { "id": "wait-cards", "status": "pass", "durationMs": 0, "error": null },
+    { "id": "click-first-card", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "wait-detail", "status": "pass", "durationMs": 3000, "error": null },
+    { "id": "assert-on-product-page", "status": "pass", "durationMs": 500, "error": null }
+  ]
+}
