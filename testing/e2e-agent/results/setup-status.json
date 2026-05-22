@@ -1,9 +1,23 @@
 {
-  "timestamp": "2026-05-13T20:10:30Z",
-  "supabase": { "running": true, "url": "http://localhost:54321" },
+  "timestamp": "2026-05-20T00:00:00.000Z",
+  "supabase": { "running": true, "url": "http://127.0.0.1:54321" },
   "frontend": { "running": true, "url": "http://localhost:4200" },
   "testAccount": { "exists": true, "canLogin": true },
-  "seedData": { "hasProducts": true, "productCount": 24 },
+  "seedData": {
+    "hasProducts": true,
+    "productCount": 59,
+    "variantCount": 22,
+    "variantsWithStock": 21,
+    "distinctModels": 19,
+    "distinctConditions": 2,
+    "distinctStorageSizes": 4,
+    "distinctPtaStatuses": 2
+  },
+  "testImage": {
+    "exists": true,
+    "path": "testing/e2e-agent/test-upload-image.png",
+    "format": "PNG 600x600 RGB"
+  },
   "ready": true,
   "issues": []
 }

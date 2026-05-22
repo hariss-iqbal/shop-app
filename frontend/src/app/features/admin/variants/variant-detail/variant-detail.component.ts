@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
@@ -8,7 +8,7 @@ import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TagModule } from 'primeng/tag';
 import { ChipModule } from 'primeng/chip';
-import { FileUploadModule } from 'primeng/fileupload';
+import { FileUploadModule, FileUpload } from 'primeng/fileupload';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -69,6 +69,12 @@ export class VariantDetailComponent implements OnInit {
     private confirmDialogService: ConfirmDialogService
   ) {}
 
+  // p-fileUpload in custom-upload mode doesn't clear itself after the handler
+  // runs; without clearing, its internal file/input state goes stale and the
+  // next selection (especially of the same file) won't re-trigger the upload —
+  // forcing a page reload. We clear it after every attempt.
+  @ViewChild(FileUpload) fileUpload?: FileUpload;
+
   variantId = signal<string>('');
   variant = signal<Variant | null>(null);
   allImages = signal<VariantImage[]>([]);
@@ -115,6 +121,15 @@ export class VariantDetailComponent implements OnInit {
 
     this.variantId.set(id);
     await this.loadVariant(id);
+
+    // Preselect the color filter when arriving from a specific color row in the
+    // variant list, so any uploaded image is assigned to that color by default.
+    const colorParam = this.route.snapshot.queryParamMap.get('color');
+    if (colorParam && this.availableColors().includes(colorParam)) {
+      this.selectedColorValue.set(colorParam);
+      this.selectedColor.set(colorParam);
+      this.applyColorFilter();
+    }
   }
 
   async loadVariant(id: string): Promise<void> {
@@ -256,11 +271,30 @@ export class VariantDetailComponent implements OnInit {
       await this.loadImages(this.variantId());
       this.toastService.success('Uploaded', `${files.length} image(s) uploaded`);
     } catch (error) {
-      this.toastService.error('Error', 'Failed to upload image');
+      this.toastService.error('Error', this.toUploadErrorMessage(error));
       console.error('Failed to upload image:', error);
     } finally {
       this.uploadingImage.set(false);
+      // Reset the upload component so the next selection always re-triggers,
+      // even if it's the same file or the previous attempt failed.
+      this.fileUpload?.clear();
     }
+  }
+
+  // Turn low-level upload failures into a clear, actionable message. The Supabase
+  // global fetch timeout rejects with a DOMException whose message is the cryptic
+  // "signal timed out"; map any timeout/abort to plain language the user can act on.
+  private toUploadErrorMessage(error: unknown): string {
+    const name = (error as { name?: string })?.name ?? '';
+    const raw = error instanceof Error ? error.message : '';
+    const isTimeout =
+      name === 'TimeoutError' ||
+      name === 'AbortError' ||
+      /timed out|signal timed out|stalled|aborted/i.test(raw);
+    if (isTimeout) {
+      return 'Upload timed out — the server stopped responding. Please check your connection and try again.';
+    }
+    return raw || 'Failed to upload image';
   }
 
   async onDeleteImage(image: VariantImage): Promise<void> {

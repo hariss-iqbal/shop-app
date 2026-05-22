@@ -47,10 +47,56 @@
   <!-- Search overlay -->
   @if (searchOpen()) {
   <div class="search-overlay" (click)="closeSearch()">
-    <div class="search-box" (click)="$event.stopPropagation()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input #searchInput type="text" placeholder="Search phones, specs&#8230;" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" (keydown.enter)="submitSearch()" />
-      <button (click)="closeSearch()" type="button">Cancel</button>
+    <div class="search-panel" (click)="$event.stopPropagation()">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input #searchInput type="text" placeholder="Search phones, specs&#8230;"
+               autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="search-results-list"
+               [attr.aria-expanded]="searchQuery().trim().length >= MIN_SEARCH_CHARS"
+               [ngModel]="searchQuery()"
+               (ngModelChange)="onSearchInput($event)"
+               (keydown.enter)="onSearchEnter()"
+               (keydown.arrowdown)="$event.preventDefault(); moveActive(1)"
+               (keydown.arrowup)="$event.preventDefault(); moveActive(-1)" />
+        <button (click)="closeSearch()" type="button">Cancel</button>
+      </div>
+
+      @if (searchQuery().trim().length >= MIN_SEARCH_CHARS) {
+        <div class="search-results">
+          @if (searching()) {
+            <div class="search-state">Searching&#8230;</div>
+          } @else if (results().length) {
+            <ul class="search-results-list" id="search-results-list" role="listbox">
+              @for (item of results(); track item.variantId; let i = $index) {
+                <li class="search-result-row" role="option"
+                    [class.active]="activeIndex() === i"
+                    [attr.aria-selected]="activeIndex() === i"
+                    (mouseenter)="activeIndex.set(i)"
+                    (click)="selectResult(item)">
+                  @if (item.primaryImageUrl) {
+                    <img class="search-result-thumb" [src]="thumbUrl(item.primaryImageUrl)" [alt]="item.brandName + ' ' + item.modelName" />
+                  } @else {
+                    <span class="search-result-thumb placeholder">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+                    </span>
+                  }
+                  <span class="search-result-info">
+                    <span class="search-result-name">{{ item.modelName }}</span>
+                    <span class="search-result-meta">{{ item.brandName }}@if (item.storageGb) { &middot; {{ item.storageGb }} GB}@if (item.color) { &middot; {{ item.color }}}</span>
+                  </span>
+                  <span class="search-result-price">PKR {{ fmt(item.sellingPrice) }}</span>
+                </li>
+              }
+            </ul>
+            <button class="search-results-footer" type="button" (click)="submitSearch()">
+              <span>See all results for &ldquo;{{ searchQuery().trim() }}&rdquo;</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          } @else {
+            <div class="search-state">No phones match &ldquo;{{ searchQuery().trim() }}&rdquo;</div>
+          }
+        </div>
+      }
     </div>
   </div>
   }
@@ -91,7 +137,7 @@
           </div>
           <p class="text-color-secondary line-height-3 mt-0 mb-4" style="font-size: 0.875rem;">
             Your trusted destination for quality mobile products. We offer new, used, and open box
-            devices at competitive prices with a 30-day quality guarantee.
+            devices at competitive prices.
           </p>
           <!-- Social Media Icons -->
           <div class="flex align-items-center gap-2">

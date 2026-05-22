@@ -55,6 +55,13 @@ export class SupabaseAuthService implements OnDestroy {
   // Inactivity timeout in milliseconds (default: 30 minutes)
   private readonly INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
+  // Background recovery for transient permission-load failures, so a brief
+  // backend hiccup doesn't leave an admin stuck with default (cashier) access
+  // until they manually reload.
+  private roleRecoveryTimer: ReturnType<typeof setTimeout> | null = null;
+  private roleRecoveryAttempts = 0;
+  private readonly MAX_ROLE_RECOVERY_ATTEMPTS = 5;
+
   // Activity tracking
   private inactivityTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
@@ -113,6 +120,7 @@ export class SupabaseAuthService implements OnDestroy {
     this.authSubscription?.unsubscribe();
     this.unsubscribeApprovalChannel();
     this.cleanupActivityTracking();
+    this.cancelRoleRecovery();
   }
 
   // ============ localStorage Methods ============
@@ -241,9 +249,11 @@ export class SupabaseAuthService implements OnDestroy {
 
         if (event === 'SIGNED_IN' && session) {
           this.saveSessionToStorage(session);
-          await this.loadUserRole();
+          const roleResult = await this.loadUserRole();
           this._loading.set(false);
-          if (!this._isApproved()) {
+          // Only sign out on a definitive "not approved" answer, never on a
+          // transient permission-check failure.
+          if (roleResult.definitive && !this._isApproved()) {
             await this.signOutAndRedirectToPending();
             return;
           }
@@ -285,9 +295,11 @@ export class SupabaseAuthService implements OnDestroy {
         this.saveSessionToStorage(session);
         this._session.set(session);
         this._user.set(session.user);
-        await this.loadUserRole();
+        const roleResult = await this.loadUserRole();
 
-        if (!this._isApproved()) {
+        // Only sign out if we DEFINITIVELY know the user isn't approved.
+        // A transient permission-check failure must never log out a valid session.
+        if (roleResult.definitive && !this._isApproved()) {
           // Session exists but user not approved — sign out silently
           await this.signOutAndRedirectToPending();
           return;
@@ -303,8 +315,18 @@ export class SupabaseAuthService implements OnDestroy {
 
       this.finalizeInitialization(session);
     } catch (err) {
-      // AbortErrors from Supabase's Web Locks API are benign — don't treat as auth failure
-      if (err instanceof DOMException && err.name === 'AbortError') {
+      // AbortErrors and Web Locks acquisition timeouts from Supabase's auth lock
+      // are benign (they happen during navigation or cross-tab refresh races) —
+      // don't treat them as an auth failure and, crucially, don't clear the
+      // stored session, otherwise the user gets bounced to login intermittently.
+      const name = (err as { name?: string })?.name;
+      const message = (err as { message?: string })?.message ?? '';
+      const isBenignLockError =
+        (err instanceof DOMException && err.name === 'AbortError') ||
+        name === 'AbortError' ||
+        name === 'NavigatorLockAcquireTimeoutError' ||
+        message.includes('Navigator LockManager');
+      if (isBenignLockError) {
         this._roleInitialized.set(true);
         this.finalizeInitialization(null);
         return;
@@ -330,30 +352,117 @@ export class SupabaseAuthService implements OnDestroy {
     }
   }
 
-  private async loadUserRole(): Promise<void> {
+  /**
+   * Loads the current user's role and permissions via the get_my_permissions RPC.
+   *
+   * Returns `{ definitive: true }` only when the RPC actually answered (so callers
+   * can safely act on the approval status). On a transient failure (gateway 502/503,
+   * timeout, network blip, token-refresh race) it returns `{ definitive: false }`
+   * WITHOUT flipping `isApproved` to false — otherwise a momentary backend hiccup
+   * would force-sign-out a legitimately approved admin and bounce them to
+   * /pending-approval or the public site. The RPC is retried a few times with
+   * backoff to ride out brief outages.
+   */
+  private async loadUserRole(isRecovery = false): Promise<{ definitive: boolean }> {
     this._roleLoading.set(true);
 
     try {
-      const { data, error } = await this.supabaseService.client.rpc('get_my_permissions');
+      const result = await this.fetchPermissionsWithRetry();
 
-      if (error || !data) {
-        console.warn('Failed to get permissions, defaulting to cashier:', error?.message);
-        this.setRole(UserRole.CASHIER);
-        this._isApproved.set(false);
-      } else {
-        const role = (data.role as UserRole) || UserRole.CASHIER;
-        const permissions = data.permissions as Record<Permission, boolean>;
-        this._userRole.set(role);
-        this._permissions.set(permissions);
-        this._isApproved.set(!!data.isApproved);
+      if (!result.ok) {
+        console.warn('Could not load permissions (transient); keeping current session:', result.error);
+        // Couldn't determine permissions. Don't downgrade approval destructively.
+        // Ensure the UI has a safe default role only if we have nothing yet.
+        if (this._userRole() === null) {
+          this.setRole(UserRole.CASHIER);
+        }
+        // Keep trying in the background so the admin auto-recovers full access
+        // once the backend settles, without needing a manual reload.
+        if (!isRecovery) {
+          this.scheduleRoleRecovery();
+        }
+        return { definitive: false };
       }
-    } catch (err) {
-      console.error('Failed to load permissions:', err);
-      this.setRole(UserRole.CASHIER);
+
+      this.roleRecoveryAttempts = 0;
+      const data = result.data;
+      const role = (data.role as UserRole) || UserRole.CASHIER;
+      const permissions = data.permissions as Record<Permission, boolean>;
+      this._userRole.set(role);
+      this._permissions.set(permissions);
+      this._isApproved.set(!!data.isApproved);
+      return { definitive: true };
     } finally {
       this._roleLoading.set(false);
       this._roleInitialized.set(true);
     }
+  }
+
+  /**
+   * Schedules a bounded background retry of the permission load after a transient
+   * failure. Uses linear backoff and stops once a definitive answer is obtained,
+   * the session ends, or the attempt cap is reached.
+   */
+  private scheduleRoleRecovery(): void {
+    if (!this.isBrowser()) return;
+    if (this.roleRecoveryTimer) return; // a recovery is already pending
+    if (this.roleRecoveryAttempts >= this.MAX_ROLE_RECOVERY_ATTEMPTS) return;
+
+    this.roleRecoveryAttempts++;
+    const backoff = Math.min(2000 * this.roleRecoveryAttempts, 10000);
+
+    this.roleRecoveryTimer = setTimeout(async () => {
+      this.roleRecoveryTimer = null;
+      if (!this._session()) return; // signed out in the meantime
+
+      const result = await this.loadUserRole(true);
+      if (result.definitive) {
+        if (!this._isApproved()) {
+          await this.signOutAndRedirectToPending();
+        }
+      } else {
+        this.scheduleRoleRecovery();
+      }
+    }, backoff);
+  }
+
+  private cancelRoleRecovery(): void {
+    if (this.roleRecoveryTimer) {
+      clearTimeout(this.roleRecoveryTimer);
+      this.roleRecoveryTimer = null;
+    }
+    this.roleRecoveryAttempts = 0;
+  }
+
+  /**
+   * Calls get_my_permissions, retrying on transient errors with linear backoff.
+   */
+  private async fetchPermissionsWithRetry(
+    maxAttempts = 3
+  ): Promise<{ ok: true; data: any } | { ok: false; error?: string }> {
+    let lastError: string | undefined;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const { data, error } = await this.supabaseService.client.rpc('get_my_permissions');
+        if (!error && data) {
+          return { ok: true, data };
+        }
+        lastError = error?.message;
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+      }
+
+      if (attempt < maxAttempts) {
+        await this.delay(300 * attempt);
+      }
+    }
+
+    return { ok: false, error: lastError };
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private setRole(role: UserRole): void {
@@ -362,6 +471,7 @@ export class SupabaseAuthService implements OnDestroy {
   }
 
   private clearRole(): void {
+    this.cancelRoleRecovery();
     this._userRole.set(null);
     this._permissions.set(null);
     this._isApproved.set(false);
@@ -493,10 +603,11 @@ export class SupabaseAuthService implements OnDestroy {
         this.saveSessionToStorage(data.session);
       }
 
-      await this.loadUserRole();
+      const roleResult = await this.loadUserRole();
 
-      if (!this._isApproved()) {
-        // User is not approved — sign out silently, return special indicator
+      if (roleResult.definitive && !this._isApproved()) {
+        // User is definitively not approved — sign out silently, return indicator.
+        // A transient permission-check failure must not block a valid login.
         await this.signOutAndRedirectToPending();
         return { success: true };
       }

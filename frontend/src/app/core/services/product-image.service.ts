@@ -494,13 +494,7 @@ export class ProductImageService {
 
       if (error) throw new Error(error.message);
 
-      // If primary, update variant primary_image_url
       if (shouldSetPrimary) {
-        await this.supabase
-          .from('variants')
-          .update({ primary_image_url: result.secureUrl })
-          .eq('id', variantId);
-
         // Unset other primaries
         await this.supabase
           .from('variant_images')
@@ -555,16 +549,6 @@ export class ProductImageService {
           .from('variant_images')
           .update({ is_primary: true })
           .eq('id', next[0].id);
-
-        await this.supabase
-          .from('variants')
-          .update({ primary_image_url: next[0].image_url })
-          .eq('id', variantId);
-      } else {
-        await this.supabase
-          .from('variants')
-          .update({ primary_image_url: null })
-          .eq('id', variantId);
       }
     }
   }
@@ -577,19 +561,11 @@ export class ProductImageService {
       .eq('variant_id', variantId);
 
     // Set new primary
-    const { data, error } = await this.supabase
+    const { error } = await this.supabase
       .from('variant_images')
       .update({ is_primary: true })
-      .eq('id', imageId)
-      .select('image_url')
-      .single();
+      .eq('id', imageId);
 
     if (error) throw new Error(error.message);
-
-    // Update variant primary_image_url
-    await this.supabase
-      .from('variants')
-      .update({ primary_image_url: data?.image_url })
-      .eq('id', variantId);
   }
 }

@@ -8,7 +8,6 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 import { definePreset } from '@primeuix/themes';
 import { routes } from './app.routes';
-import { provideSupabase } from './core/providers/supabase.provider';
 import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 import { ShopDetailsService } from './core/services/shop-details.service';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
@@ -53,13 +52,36 @@ export const appConfig: ApplicationConfig = {
     })),
     provideAnimationsAsync(),
     provideHttpClient(withFetch(), withInterceptors([errorInterceptor])),
-    provideSupabase(),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     {
       provide: APP_INITIALIZER,
       useFactory: () => {
         const shopDetailsService = inject(ShopDetailsService);
-        return () => shopDetailsService.getShopDetails().catch(() => null);
+        return () => {
+          const t0 = performance.now();
+          const ms = () => Math.round(performance.now() - t0);
+          console.info('[app-init] loading shop details…');
+
+          // Fire the load ONCE. It finishes in the background and populates the
+          // cached signal, which components read reactively — so we do NOT need
+          // to block bootstrap until it resolves.
+          const load = shopDetailsService.getShopDetails()
+            .then((d) => { console.info(`[app-init] shop details ready (${ms()}ms)`); return d; })
+            .catch((err) => { console.warn(`[app-init] shop details failed (${ms()}ms):`, err); return null; });
+
+          // Give it a brief chance to land before first paint (avoids a flash of
+          // default values), but NEVER block bootstrap longer than this cap.
+          // Without the cap, a hung Supabase call (e.g. another tab holding the
+          // cross-tab auth lock) leaves a blank white screen because Angular never
+          // bootstraps.
+          const BOOTSTRAP_CAP_MS = 2000;
+          return Promise.race([
+            load,
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), BOOTSTRAP_CAP_MS))
+          ]).then(() => {
+            console.info(`[app-init] bootstrapping app (${ms()}ms)`);
+          });
+        };
       },
       multi: true
     },

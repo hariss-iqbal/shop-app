@@ -251,86 +251,8 @@
 </section>
 -->
 
-<!-- Pixel spotlight -->
-<section class="spotlight">
-  <div class="container spotlight-wrap">
-    <div>
-      <div class="spotlight-eye">
-        <span class="badge">Spotlight</span>
-        <span class="eyebrow" style="color:var(--fg-3)">{{ spotlightModels().length > 0 ? spotlightModels()[0].modelName : 'Pixel' }} · Featured</span>
-      </div>
-      <h2>Pakistan's deepest <em>Pixel</em> catalog.</h2>
-      <p>We stock more Pixel SKUs than any retailer in Pakistan. Every phone is opened, tested on a 34-point checklist, and re-sealed — then shipped with our 7-day return window.</p>
-      <ul class="spotlight-list">
-        <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
-          All variants: 4a, 6a, 7, 7a, 8, 8 Pro, 9, 9 Pro, 9 Pro XL
-        </li>
-        <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
-          PTA-approved and Non-PTA options
-        </li>
-        <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
-          Original box &amp; accessories when available
-        </li>
-        <li>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
-          Installments available via third party
-        </li>
-      </ul>
-      <div class="hero-ctas">
-        <a (click)="navigateToCatalog()" class="btn btn-primary">
-          Browse all Phones
-          <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-    </div>
-
-    <div class="pixel-stage">
-      <div class="pixel-slab">
-        <div class="grid"></div>
-        <div class="pixel-chips">
-          @for (m of spotlightModels().slice(0, 6); track m.modelId; let first = $first) {
-            <span class="pixel-chip" [class.active]="first">{{ m.modelName }}</span>
-          }
-          @if (spotlightModels().length === 0) {
-            <span class="pixel-chip active">Pixel</span>
-          }
-        </div>
-        <div class="pixel-visual">
-          <svg viewBox="0 0 240 480" fill="none">
-            <defs>
-              <linearGradient id="ps1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#2F333B"/><stop offset="1" stop-color="#12151A"/>
-              </linearGradient>
-            </defs>
-            <rect x="6" y="4" width="228" height="472" rx="40" fill="url(#ps1)" stroke="#4A5058"/>
-            <rect x="14" y="12" width="212" height="456" rx="34" fill="#070809"/>
-            <rect x="18" y="70" width="204" height="92" rx="16" fill="#15191F"/>
-            <circle cx="64" cy="116" r="26" fill="#080A0D" stroke="#2A2F36"/>
-            <circle cx="64" cy="116" r="14" fill="#16191F"/>
-            <circle cx="64" cy="116" r="6" fill="var(--accent)"/>
-            <circle cx="132" cy="116" r="26" fill="#080A0D" stroke="#2A2F36"/>
-            <rect x="170" y="100" width="32" height="32" rx="8" fill="#080A0D" stroke="#2A2F36"/>
-            <rect x="22" y="180" width="196" height="272" rx="24" fill="#0A0D12"/>
-            <circle cx="120" cy="26" r="3" fill="#2A2F36"/>
-          </svg>
-        </div>
-        <div class="pixel-foot">
-          <div>
-            <span class="from">Starting at</span>
-            <div class="pixel-price"><span class="cur">PKR</span>{{ spotlightModels().length > 0 ? fmt(spotlightModels()[0].sellingPrice) : '—' }}</div>
-          </div>
-          <a (click)="navigateToCatalog()" class="btn btn-primary" style="height:42px">
-            View
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- Pixel spotlight banner -->
+<app-promo-banner />
 
 <!-- FAQ -->
 <section class="section">
@@ -343,11 +265,22 @@
     </div>
     <div class="faq-list">
       @for (faq of faqs; track faq.question; let i = $index) {
-        <div class="faq" (click)="toggleFaq(i)">
-          <h4 class="faq-q">{{ faq.question }}</h4>
-          <span class="faq-plus" [class.rotated]="faq.open">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-          </span>
+        <div class="faq" [class.open]="faq.open">
+          <div class="faq-head" role="button" tabindex="0"
+               [attr.aria-expanded]="faq.open"
+               (click)="toggleFaq(i)"
+               (keydown.enter)="toggleFaq(i)"
+               (keydown.space)="$event.preventDefault(); toggleFaq(i)">
+            <h4 class="faq-q">{{ faq.question }}</h4>
+            <span class="faq-plus" [class.rotated]="faq.open">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+          </div>
+          <div class="faq-a-wrap">
+            <div class="faq-a-inner">
+              <p class="faq-a">{{ faq.answer }}</p>
+            </div>
+          </div>
         </div>
       }
     </div>

@@ -108,8 +108,47 @@ input, select { font-family:inherit; font-size:inherit; color:inherit; }
 .card-media::before { content:""; position:absolute; inset:0; background:radial-gradient(300px 200px at 50% 100%, var(--glow-1), transparent 70%); pointer-events:none; }
 .card-media svg { width:55%; filter:drop-shadow(0 20px 28px rgba(0,0,0,.6)); transition:transform .3s; }
 .card:hover .card-media svg { transform:scale(1.04) translateY(-2px); }
-.card-media img { width:100%; height:100%; object-fit:cover; transition:transform .3s; }
-.card:hover .card-media img { transform:scale(1.04); }
+
+/* ── Card image slideshow (crossfade) ── */
+.cm-slides { position:absolute; inset:0; transition:transform .3s; }
+.card:hover .cm-slides { transform:scale(1.04); }
+.cm-slide { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .45s ease; }
+.cm-slide.on { opacity:1; }
+
+/* Overlay prev/next — hidden by default, revealed on hover (desktop) or while playing (touch) */
+.cm-nav {
+  position:absolute; top:50%; transform:translateY(-50%); z-index:4;
+  width:30px; height:30px; padding:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(10,12,16,.55); color:#fff;
+  border:1px solid rgba(255,255,255,.2); backdrop-filter:blur(6px);
+  cursor:pointer; opacity:0; transition:opacity .2s, background .2s;
+}
+.cm-nav.prev { left:8px; }
+.cm-nav.next { right:8px; }
+.cm-nav:hover { background:rgba(10,12,16,.85); }
+.cm-nav svg { display:block; }
+.card:hover .cm-nav,
+.card.playing .cm-nav,
+.is-touch .card .cm-nav { opacity:1; }
+
+/* Slide position dots */
+.cm-dots {
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%); z-index:4;
+  display:flex; align-items:center; gap:5px; padding:4px 7px; border-radius:20px;
+  background:rgba(10,12,16,.45); backdrop-filter:blur(4px);
+  opacity:0; transition:opacity .2s;
+}
+.cm-dot { width:5px; height:5px; border-radius:50%; background:rgba(255,255,255,.5); transition:width .25s, background .25s; }
+.cm-dot.on { width:14px; border-radius:3px; background:#fff; }
+.card:hover .cm-dots,
+.card.playing .cm-dots,
+.is-touch .card .cm-dots { opacity:1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-slide { transition:none; }
+  .cm-slides, .card:hover .cm-slides { transition:none; }
+}
 
 /* ── Condition pill (top-left on image) ── */
 .cond-pill { position:absolute; top:12px; left:12px; z-index:2; padding:5px 10px; border-radius:6px; font-family:var(--mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; font-weight:600; display:inline-flex; align-items:center; gap:5px; }
@@ -165,14 +204,6 @@ input, select { font-family:inherit; font-size:inherit; color:inherit; }
 .btn-primary:hover { background:#E4FF82; }
 .btn-secondary { background:transparent; color:var(--fg); border-color:var(--line-2); }
 .btn-secondary:hover { border-color:var(--fg-3); background:var(--bg-3); }
-
-/* ── Pagination ── */
-.pager { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:48px; padding-top:32px; border-top:1px solid var(--line); }
-.pager button { min-width:38px; height:38px; padding:0 10px; border-radius:9px; border:1px solid var(--line); background:var(--bg-2); font-family:var(--mono); font-size:13px; color:var(--fg-2); transition:all .15s; }
-.pager button:hover:not(:disabled) { border-color:var(--fg-3); color:var(--fg); }
-.pager button.on { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
-.pager button:disabled { opacity:.4; cursor:not-allowed; }
-.pager .dots { color:var(--fg-3); padding:0 4px; }
 
 /* ═══════════════════════════════════════
    LIST VIEW — CardD (horizontal)

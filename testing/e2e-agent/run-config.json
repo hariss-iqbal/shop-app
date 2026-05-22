@@ -1,5 +1,5 @@
 {
-  "maxIterations": 3,
+  "maxIterations": 20,
   "baseUrl": "http://localhost:4200",
   "auth": {
     "email": "admin@gmail.com",
@@ -8,10 +8,10 @@
   "playbooksDir": "testing/e2e-agent/playbooks",
   "resultsDir": "testing/e2e-agent/results",
   "screenshotOnFailure": true,
-  "discoverNewTests": true,
+  "discoverNewTests": false,
   "priority": {
-    "description": "Run only specific priority levels and areas. Set runPriorities to control which levels execute. Set runAreas to filter by area. Empty arrays = run all.",
+    "description": "Overnight expanded run: all areas covered (public catalog, product detail, admin variants, admin business modules, auth, deep flows).",
     "runPriorities": ["P0", "P1", "P2", "P3"],
-    "runAreas": []
+    "runAreas": ["catalog", "product-detail", "variants-images", "variants-admin", "auth", "admin", "public", "admin-deep", "public-deep"]
   }
 }

@@ -188,7 +188,7 @@
         </button>
         <span class="toolbar-count">
           @if (!loading()) {
-            Showing <b>{{ showingFrom() }}–{{ showingTo() }}</b> of <b>{{ totalRecords() }}</b> items
+            Showing <b>{{ totalRecords() }}</b> items
           }
         </span>
       </div>
@@ -239,9 +239,14 @@
         }
       </div>
     } @else {
-      <div class="cat-product-grid" [class.list]="viewMode() === 'list'" role="list">
-        @for (m of models(); track m.variantId) {
-          <a class="card" (click)="viewModel(m)" role="listitem">
+      <div class="cat-product-grid" [class.list]="viewMode() === 'list'" [class.is-touch]="isTouchDevice" role="list">
+        @for (m of models(); track m.variantId + '::' + (m.color || '')) {
+          @let key = m.variantId + '::' + (m.color || '');
+          <a class="card" #cardEl [attr.data-variant]="key" [attr.data-imgs]="m.imageUrls.length"
+            [class.playing]="isPlaying(key)"
+            (mouseenter)="onCardHover(key, m.imageUrls.length)"
+            (mouseleave)="onCardLeave(key)"
+            (click)="viewModel(m)" role="listitem">
             <div class="card-media">
               <!-- Condition pill top-left -->
               <span class="cond-pill" [class.box]="m.condition === 'new'" [class.open]="m.condition !== 'new'">
@@ -253,8 +258,28 @@
                   {{ m.ptaStatus === 'pta_approved' ? 'PTA APPROVED' : 'NON-PTA' }}
                 </span>
               }
-              @if (m.primaryImageUrl) {
-                <img [src]="cardImageUrl(m.primaryImageUrl)" [alt]="m.brandName + ' ' + m.modelName" />
+              @if (m.imageUrls.length > 0) {
+                <div class="cm-slides">
+                  @for (url of m.imageUrls; track $index) {
+                    <img class="cm-slide" [class.on]="$index === getCardIndex(key)"
+                      [src]="cardImageUrl(url)" [alt]="m.brandName + ' ' + m.modelName" loading="lazy" />
+                  }
+                </div>
+                @if (m.imageUrls.length > 1) {
+                  <button type="button" class="cm-nav prev" aria-label="Previous image"
+                    (click)="cardPrev($event, key, m.imageUrls.length)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                  </button>
+                  <button type="button" class="cm-nav next" aria-label="Next image"
+                    (click)="cardNext($event, key, m.imageUrls.length)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                  <div class="cm-dots">
+                    @for (url of m.imageUrls; track $index) {
+                      <span class="cm-dot" [class.on]="$index === getCardIndex(key)"></span>
+                    }
+                  </div>
+                }
               } @else {
                 <svg viewBox="0 0 160 320" fill="none">
                   <defs>
@@ -307,21 +332,6 @@
             </div>
           </a>
         }
-      </div>
-    }
-
-    <!-- Pagination -->
-    @if (totalRecords() > pageSize) {
-      <div class="pager">
-        <button (click)="prevPage()" [disabled]="currentPage() === 1">‹ Prev</button>
-        @for (page of pages(); track page) {
-          @if (page === '…') {
-            <span class="dots">…</span>
-          } @else {
-            <button [class.on]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
-          }
-        }
-        <button (click)="nextPage()" [disabled]="currentPage() === totalPages()">Next ›</button>
       </div>
     }
   </main>

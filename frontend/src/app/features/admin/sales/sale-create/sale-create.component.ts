@@ -616,6 +616,8 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
   }
 
   async onCompleteSale(): Promise<void> {
+    if (this.saving) return;
+
     if (!this.isFormValid()) {
       return;
     }

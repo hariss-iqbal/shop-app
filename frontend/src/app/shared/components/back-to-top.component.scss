@@ -1,11 +1,11 @@
 .back-to-top-button {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: 5.75rem;   /* stacked above the 56px WhatsApp FAB (bottom 1.5rem) */
+  right: 1.75rem;    /* centred over the WhatsApp FAB (right 1.5rem) */
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--primary-color);
+  background: var(--primary-color, #1f2937);
   color: white;
   border: none;
   cursor: pointer;
@@ -46,8 +46,8 @@
 
 @media (max-width: 576px) {
   .back-to-top-button {
-    bottom: 1rem;
-    right: 1rem;
+    bottom: 5.5rem;    /* above the WhatsApp FAB on small screens */
+    right: 1.9rem;
     width: 44px;
     height: 44px;
   }

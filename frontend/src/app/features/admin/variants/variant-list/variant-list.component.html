@@ -10,8 +10,8 @@
 
   <div class="col-12">
     <p-card>
-      <!-- Search Row -->
-      <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-3 mb-3">
+      <!-- Filters Row -->
+      <div class="flex align-items-center gap-2 flex-wrap mb-3">
         <div class="flex align-items-center gap-2">
           <p-iconfield>
             <p-inputicon styleClass="pi pi-search" />
@@ -40,10 +40,6 @@
             />
           }
         </div>
-      </div>
-
-      <!-- Filter Dropdowns Row -->
-      <div class="flex align-items-center gap-2 flex-wrap mb-3">
         <p-select
           [options]="brandOptions()"
           [(ngModel)]="brandFilter"
@@ -114,7 +110,7 @@
             </th>
             <th>Avg Cost</th>
             <th>Stock</th>
-            <th>Colors</th>
+            <th>Color</th>
             <th>Active</th>
             <th>Actions</th>
           </tr>
@@ -154,7 +150,7 @@
               />
             </td>
             <td>
-              @if (editingVariantId() === variant.id) {
+              @if (editingVariantId() === variant.variantId) {
                 <div class="flex align-items-center gap-1">
                   <p-inputNumber
                     [(ngModel)]="editSellingPrice"
@@ -165,7 +161,7 @@
                     [inputStyleClass]="'w-6rem p-inputtext-sm'"
                     (keydown.enter)="savePriceEdit(variant)"
                     (keydown.escape)="cancelPriceEdit()"
-                    (onClick)="$event.stopPropagation()"
+                    (click)="$event.stopPropagation()"
                   />
                   <p-button
                     icon="pi pi-check"
@@ -175,8 +171,8 @@
                     size="small"
                     pTooltip="Save"
                     tooltipPosition="top"
-                    [loading]="savingPriceId() === variant.id"
-                    (onClick)="savePriceEdit(variant)"
+                    [loading]="savingPriceId() === variant.variantId"
+                    (onClick)="savePriceEdit(variant); $event.stopPropagation()"
                   />
                   <p-button
                     icon="pi pi-times"
@@ -203,25 +199,18 @@
               </span>
             </td>
             <td>
-              @if (variant.availableColors.length > 0) {
-                <div class="flex flex-wrap gap-1">
-                  @for (color of variant.availableColors.slice(0, 3); track color) {
-                    <p-chip [label]="color" styleClass="py-0 px-2 text-xs" />
-                  }
-                  @if (variant.availableColors.length > 3) {
-                    <p-chip label="+{{ variant.availableColors.length - 3 }}" styleClass="py-0 px-2 text-xs" severity="info" />
-                  }
-                </div>
+              @if (variant.color) {
+                <p-chip [label]="variant.color" styleClass="py-0 px-2 text-xs" />
               } @else {
-                <span class="text-color-secondary">-</span>
+                <span class="text-color-secondary">—</span>
               }
             </td>
             <td>
               <p-toggleswitch
                 [ngModel]="variant.isActive"
                 (ngModelChange)="toggleActive(variant, $event)"
-                [disabled]="togglingId() === variant.id"
-                (onClick)="$event.stopPropagation()"
+                [disabled]="togglingId() === variant.variantId"
+                (click)="$event.stopPropagation()"
                 aria-label="Toggle active status"
               />
             </td>
@@ -234,8 +223,9 @@
                 size="small"
                 pTooltip="View Details"
                 tooltipPosition="top"
-                [routerLink]="['/admin/variants', variant.id]"
-                (onClick)="$event.stopPropagation()"
+                [routerLink]="['/admin/variants', variant.variantId]"
+                [queryParams]="variant.color ? { color: variant.color } : {}"
+                (click)="$event.stopPropagation()"
               />
             </td>
           </tr>

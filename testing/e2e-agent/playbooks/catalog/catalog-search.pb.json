@@ -2,7 +2,7 @@
   "id": "catalog-search",
   "testNumber": 7,
   "area": "catalog",
-  "name": "Search bar filters products by model name",
+  "name": "Search bar filters products by model name and asserts the result set actually narrows",
   "requiresAuth": false,
   "preconditions": {
     "minProductCount": 2,
@@ -21,17 +21,29 @@
       "timeout": 10000
     },
     {
+      "id": "wait-data-loaded",
+      "action": "evaluate",
+      "script": "(() => { const cards = document.querySelectorAll('.cat-product-grid .card'); const named = Array.from(cards).filter(c => (c.querySelector('.card-name')?.textContent || '').trim().length > 0); return { dataLoaded: named.length === cards.length && cards.length > 0, total: cards.length }; })()",
+      "assertResult": {
+        "field": "dataLoaded",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Wait until cards have populated names (not skeleton)"
+    },
+    {
       "id": "count-before-search",
       "action": "evaluate",
-      "script": "(() => document.querySelectorAll('.cat-product-grid .card').length)()",
+      "script": "(() => ({ count: document.querySelectorAll('.cat-product-grid .card').length }))()",
       "assertResult": {
+        "field": "count",
         "assertion": "gte",
         "expected": 2
       },
       "description": "At least 2 products before search"
     },
     {
-      "id": "take-snapshot",
+      "id": "take-snapshot-before",
       "action": "screenshot",
       "filename": "catalog-before-search"
     },
@@ -55,12 +67,44 @@
       "time": 2
     },
     {
-      "id": "count-after-search",
+      "id": "take-snapshot-after",
+      "action": "screenshot",
+      "filename": "catalog-after-search"
+    },
+    {
+      "id": "assert-search-actually-filtered",
       "action": "evaluate",
-      "script": "(() => document.querySelectorAll('.cat-product-grid .card').length)()",
-      "description": "Count products after search — should be fewer than before"
+      "script": "(() => { const cards = Array.from(document.querySelectorAll('.cat-product-grid .card')); const names = cards.map(c => (c.querySelector('.card-name')?.textContent || '').trim()); const allMatch = names.length > 0 && names.every(n => n.toLowerCase().includes('iphone')); return { count: cards.length, names, allMatch }; })()",
+      "assertResult": {
+        "field": "allMatch",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "After typing 'iPhone' the catalog must show only iPhone-named cards (and at least 1)"
+    },
+    {
+      "id": "clear-search",
+      "action": "evaluate",
+      "script": "(() => { const inputs = document.querySelectorAll('input[type=\"text\"], input[type=\"search\"], input:not([type])'); for (const input of inputs) { if ((input.placeholder || '').toLowerCase().includes('search') || input.value === 'iPhone') { const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set; nativeInputValueSetter.call(input, ''); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); break; } } return { cleared: true }; })()",
+      "description": "Programmatically clear the search input"
+    },
+    {
+      "id": "wait-restore",
+      "action": "wait",
+      "time": 2
+    },
+    {
+      "id": "assert-search-cleared-restores",
+      "action": "evaluate",
+      "script": "(() => ({ count: document.querySelectorAll('.cat-product-grid .card').length }))()",
+      "assertResult": {
+        "field": "count",
+        "assertion": "gte",
+        "expected": 2
+      },
+      "description": "After clearing the search the catalog returns to >= 2 cards"
     }
   ],
   "priority": "P1",
-  "businessContext": "Search is the primary way customers find specific phones — broken search means browsing friction"
+  "businessContext": "Search is the primary way customers find specific phones — broken search means browsing friction. This version asserts (a) result set narrows to only matching names and (b) clearing the search restores the full list."
 }

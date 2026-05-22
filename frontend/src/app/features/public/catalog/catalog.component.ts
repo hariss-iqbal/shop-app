@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, signal, computed, ViewChildren, QueryList, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -33,7 +33,7 @@ interface ActiveFilter {
   templateUrl: './catalog.component.html',
   styleUrls: ['./catalog.component.scss']
 })
-export class CatalogComponent implements OnInit, OnDestroy {
+export class CatalogComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
@@ -59,13 +59,30 @@ export class CatalogComponent implements OnInit, OnDestroy {
   selectedModelId: string | null = null;
   priceRange: [number, number] = [0, 1000];
   selectedSort: SortOption;
-  first = signal(0);
-  pageSize = 12;
+
+  /** The catalog shows every matching variant on a single page (no pagination). */
+  private readonly FETCH_LIMIT = 1000;
+  /** sessionStorage key + max age for restoring scroll to the last-clicked card. */
+  private readonly SCROLL_ANCHOR_KEY = 'catalog-scroll-anchor';
+  private readonly SCROLL_ANCHOR_MAX_AGE = 30 * 60 * 1000;
 
   /* ── UI state ── */
   viewMode = signal<'grid' | 'list'>('grid');
   filterDrawerVisible = false;
   collapsedGroups: Record<string, boolean> = {};
+
+  /* ── Card image slideshow ──
+   * Each card with >1 image runs a crossfade slideshow while "active":
+   * on hover (desktop) or while in view (touch). Buttons show during the same
+   * window. activeIndex per card lives in cardImageIndex (keyed by variantId). */
+  cardImageIndex = signal<Record<string, number>>({});
+  playingCards = signal<Set<string>>(new Set());
+  isTouchDevice = false;
+  private prefersReducedMotion = false;
+  private slideTimers = new Map<string, ReturnType<typeof setInterval>>();
+  private cardObserver?: IntersectionObserver;
+  private readonly SLIDE_INTERVAL = 1200;
+  @ViewChildren('cardEl') cardEls!: QueryList<ElementRef<HTMLElement>>;
 
   /* ── Sort options ── */
   sortOptions: SortOption[] = [
@@ -144,29 +161,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return filters;
   });
 
-  totalPages = computed(() => Math.ceil(this.totalRecords() / this.pageSize));
-  currentPage = computed(() => Math.floor(this.first() / this.pageSize) + 1);
-  showingFrom = computed(() => this.loading() ? 0 : this.first() + 1);
-  showingTo = computed(() => Math.min(this.first() + this.pageSize, this.totalRecords()));
-
-  pages = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
-    const result: (number | string)[] = [];
-    if (total <= 7) {
-      for (let i = 1; i <= total; i++) result.push(i);
-    } else {
-      result.push(1);
-      if (current > 3) result.push('…');
-      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
-        result.push(i);
-      }
-      if (current < total - 2) result.push('…');
-      result.push(total);
-    }
-    return result;
-  });
-
   storageOptions = computed(() => this.availableStorageOptions().map(gb => `${gb}GB`));
 
   constructor(
@@ -189,14 +183,41 @@ export class CatalogComponent implements OnInit, OnDestroy {
       description: 'Browse our wide selection of new, used, and open box phones. Filter by brand, condition, storage, and price.',
       url: '/catalog'
     });
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      this.isTouchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+      this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
     this.setupSearchDebounce();
     this.subscribeToQueryParams();
     this.loadInitialData();
   }
 
+  ngAfterViewInit(): void {
+    // On touch devices there is no hover, so drive the slideshow from visibility:
+    // a card auto-plays while it is meaningfully in view, and stops when it leaves.
+    if (!this.isTouchDevice || this.prefersReducedMotion || typeof IntersectionObserver === 'undefined') return;
+    this.cardObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const el = entry.target as HTMLElement;
+        const id = el.dataset['variant'];
+        const total = Number(el.dataset['imgs'] || '0');
+        if (!id) continue;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+          this.startSlideshow(id, total);
+        } else {
+          this.stopSlideshow(id);
+        }
+      }
+    }, { threshold: [0, 0.6] });
+    this.observeCards();
+    this.cardEls.changes.pipe(takeUntil(this.destroy$)).subscribe(() => this.observeCards());
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.stopAllSlideshows();
+    this.cardObserver?.disconnect();
   }
 
   /* ── Data loading ── */
@@ -204,7 +225,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   private setupSearchDebounce(): void {
     this.searchSubject$
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => { this.first.set(0); this.filterVersion.update(v => v + 1); this.updateUrlParams(); this.loadModels(); });
+      .subscribe(() => { this.filterVersion.update(v => v + 1); this.updateUrlParams(); this.loadModels(); });
   }
 
   private subscribeToQueryParams(): void {
@@ -223,6 +244,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.applyParams(this.route.snapshot.queryParams);
     this.isInitializing = false;
     await this.loadModels();
+    // After the very first load (e.g. coming back from a product page), bring the
+    // card the user last clicked back into view.
+    this.restoreScrollAnchor();
   }
 
   async loadBrands(): Promise<void> {
@@ -260,7 +284,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
         ? { field: 'selling_price' as const, order: 1 as const }
         : { field: this.selectedSort.field, order: this.selectedSort.order };
       const paginationParams: CatalogPaginationParams = {
-        first: this.first(), rows: this.pageSize,
+        first: 0, rows: this.FETCH_LIMIT,
         sortField: effectiveSort.field, sortOrder: effectiveSort.order
       };
       const result = await this.productService.getModelCatalog(paginationParams, {
@@ -274,6 +298,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
         ptaStatus: this.selectedPtaStatus || undefined,
         modelId: this.selectedModelId || undefined
       });
+      this.stopAllSlideshows();
+      this.cardImageIndex.set({});
       this.models.set(result.data);
       this.totalRecords.set(result.total);
     } catch (error) {
@@ -315,10 +341,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
       const sort = this.sortOptions.find(s => s.value === params['sort']);
       this.selectedSort = sort || this.sortOptions[0];
     } else { this.selectedSort = this.sortOptions[0]; }
-    if (params['page']) {
-      const page = Number(params['page']);
-      this.first.set((!isNaN(page) && page > 0) ? (page - 1) * this.pageSize : 0);
-    } else { this.first.set(0); }
     if (params['view'] === 'list') { this.viewMode.set('list'); } else { this.viewMode.set('grid'); }
 
     this.selectedConditionPill.set(
@@ -338,8 +360,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
     params['maxPrice'] = this.priceRange[1] < max ? String(this.priceRange[1]) : null;
     params['sort'] = this.selectedSort.value !== 'popular' ? this.selectedSort.value : null;
     params['view'] = this.viewMode() !== 'grid' ? this.viewMode() : null;
-    const page = Math.floor(this.first() / this.pageSize) + 1;
-    params['page'] = page > 1 ? String(page) : null;
     const cleanParams: Record<string, string> = {};
     for (const [key, value] of Object.entries(params)) {
       if (value !== null) cleanParams[key] = value;
@@ -384,7 +404,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.selectedModelId = null;
     this.selectedConditionPill.set('all');
     this.priceRange = [this.priceMin(), this.priceMax()];
-    this.first.set(0);
     this.updateUrlParams();
     this.loadModels();
   }
@@ -399,14 +418,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
       case 'price': this.priceRange = [this.priceMin(), this.priceMax()]; break;
       case 'pta': this.selectedPtaStatus = null; break;
     }
-    this.first.set(0);
     this.updateUrlParams();
     this.loadModels();
   }
 
   onFilterChange(): void {
     if (this.isInitializing) return;
-    this.first.set(0);
     this.filterVersion.update(v => v + 1);
     this.updateUrlParams();
     this.loadModels();
@@ -414,7 +431,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   onSortChange(): void {
     if (this.isInitializing) return;
-    this.first.set(0);
     this.filterVersion.update(v => v + 1);
     this.updateUrlParams();
     this.loadModels();
@@ -501,28 +517,139 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.minRating.set(this.minRating() === rating ? 0 : rating);
   }
 
-  /* ── Pagination ── */
-
-  goToPage(page: number | string): void {
-    if (typeof page === 'string') return;
-    this.first.set((page - 1) * this.pageSize);
-    this.updateUrlParams();
-    this.loadModels();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  prevPage(): void {
-    const cur = this.currentPage();
-    if (cur > 1) this.goToPage(cur - 1);
-  }
-
-  nextPage(): void {
-    const cur = this.currentPage();
-    if (cur < this.totalPages()) this.goToPage(cur + 1);
-  }
+  /* ── Scroll restoration ──
+   * Remember which card the user opened, then bring that exact element back into
+   * view on return. Anchoring to the element (not a pixel offset) survives layout
+   * shifts from lazy-loaded images and responsive reflow. */
 
   viewModel(model: ModelCatalogItem): void {
+    this.saveScrollAnchor(model.variantId);
     this.router.navigate(['/product', model.slug], model.color ? { queryParams: { color: model.color } } : {});
+  }
+
+  private saveScrollAnchor(variantId: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(this.SCROLL_ANCHOR_KEY, JSON.stringify({
+        url: this.router.url,
+        variantId,
+        scrollY: window.scrollY,
+        ts: Date.now(),
+      }));
+    } catch { /* storage may be unavailable / full — restoration is best-effort */ }
+  }
+
+  private restoreScrollAnchor(): void {
+    if (typeof window === 'undefined') return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem(this.SCROLL_ANCHOR_KEY); } catch { return; }
+    if (!raw) return;
+    // One-shot: consume immediately so a later fresh visit starts at the top.
+    try { sessionStorage.removeItem(this.SCROLL_ANCHOR_KEY); } catch { /* ignore */ }
+
+    let anchor: { url: string; variantId: string; scrollY: number; ts: number };
+    try { anchor = JSON.parse(raw); } catch { return; }
+    // Only restore when returning to the same filtered view, and not if it's stale.
+    if (anchor.url !== this.router.url) return;
+    if (Date.now() - anchor.ts > this.SCROLL_ANCHOR_MAX_AGE) return;
+
+    // Wait two frames so the grid has painted before scrolling.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const card = document.querySelector(`[data-variant="${CSS.escape(anchor.variantId)}"]`);
+      if (card) {
+        card.scrollIntoView({ block: 'center', behavior: 'auto' });
+      } else {
+        window.scrollTo(0, anchor.scrollY);
+      }
+    }));
+  }
+
+  /* ── Card image slideshow ── */
+
+  getCardIndex(id: string): number {
+    return this.cardImageIndex()[id] ?? 0;
+  }
+
+  isPlaying(id: string): boolean {
+    return this.playingCards().has(id);
+  }
+
+  /** Desktop: start/stop on hover (ignored on touch — handled by IntersectionObserver). */
+  onCardHover(id: string, total: number): void {
+    if (this.isTouchDevice) return;
+    this.startSlideshow(id, total);
+  }
+
+  onCardLeave(id: string): void {
+    if (this.isTouchDevice) return;
+    this.stopSlideshow(id);
+  }
+
+  cardNext(event: Event, id: string, total: number): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (total <= 1) return;
+    // User took manual control — stop autoplay for this focus instance. It only
+    // resumes on the next focus-in (mouseenter / scroll back into view).
+    this.pauseSlideshow(id);
+    this.setCardIndex(id, (this.getCardIndex(id) + 1) % total);
+  }
+
+  cardPrev(event: Event, id: string, total: number): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (total <= 1) return;
+    this.pauseSlideshow(id);
+    const cur = this.getCardIndex(id);
+    this.setCardIndex(id, cur === 0 ? total - 1 : cur - 1);
+  }
+
+  startSlideshow(id: string, total: number): void {
+    if (total <= 1 || this.prefersReducedMotion) return;
+    this.clearTimer(id);
+    const timer = setInterval(
+      () => this.setCardIndex(id, (this.getCardIndex(id) + 1) % total),
+      this.SLIDE_INTERVAL
+    );
+    this.slideTimers.set(id, timer);
+    if (!this.playingCards().has(id)) {
+      this.playingCards.update(s => new Set(s).add(id));
+    }
+  }
+
+  /** Focus-out (mouse leave / scrolled out of view): stop autoplay and reset to the first image. */
+  stopSlideshow(id: string): void {
+    this.pauseSlideshow(id);
+    if (this.getCardIndex(id) !== 0) this.setCardIndex(id, 0);
+  }
+
+  /** Stop autoplay but keep the current slide — used when the user takes manual control. */
+  private pauseSlideshow(id: string): void {
+    this.clearTimer(id);
+    if (this.playingCards().has(id)) {
+      this.playingCards.update(s => { const n = new Set(s); n.delete(id); return n; });
+    }
+  }
+
+  private setCardIndex(id: string, index: number): void {
+    this.cardImageIndex.update(m => ({ ...m, [id]: index }));
+  }
+
+  private clearTimer(id: string): void {
+    const t = this.slideTimers.get(id);
+    if (t) { clearInterval(t); this.slideTimers.delete(id); }
+  }
+
+  private stopAllSlideshows(): void {
+    this.slideTimers.forEach(t => clearInterval(t));
+    this.slideTimers.clear();
+    if (this.playingCards().size > 0) this.playingCards.set(new Set());
+  }
+
+  private observeCards(): void {
+    if (!this.cardObserver) return;
+    this.cardObserver.disconnect();
+    this.cardEls.forEach(ref => this.cardObserver!.observe(ref.nativeElement));
   }
 
   /* ── Helpers ── */

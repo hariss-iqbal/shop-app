@@ -272,6 +272,8 @@ export class ModelListComponent implements OnInit, AfterViewChecked {
   }
 
   async saveModel(): Promise<void> {
+    if (this.saving()) return;
+
     const modelName = this.selectedModelName;
     if (!modelName) {
       this.toastService.warn('Warning', 'Please search and select a model');

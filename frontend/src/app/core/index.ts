@@ -20,7 +20,6 @@ export * from './services/refund.service';
 export * from './services/receipt-sequence.service';
 export * from './interceptors/error.interceptor';
 export * from './services/pwa.service';
-export * from './providers/supabase.provider';
 export * from './guards/auth.guard';
 export * from './guards/role.guard';
 export * from './services/input-sanitization.service';

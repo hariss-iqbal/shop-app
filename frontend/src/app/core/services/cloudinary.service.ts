@@ -214,8 +214,44 @@ export class CloudinaryService {
   ): Promise<Response> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      let settled = false;
 
+      // A stalled connection (CDN hiccup, exhausted socket pool, dropped TCP that
+      // never RSTs) makes the XHR fire NO load/error/timeout event — the promise
+      // never settles and the upload "hangs forever" (spinner spins until the page
+      // is reloaded). A single fixed timeout is a poor bound: too short kills a
+      // healthy large upload on a slow link; too long (we had 2 minutes) means the
+      // user stares at a spinner that effectively never ends.
+      //
+      // Instead use a STALL watchdog: abort only when no progress and no response
+      // arrive within STALL_TIMEOUT. The timer resets on every progress tick, so a
+      // slow-but-advancing upload is left alone, while a truly stuck connection is
+      // surfaced quickly as a real, retryable error. An absolute cap is kept purely
+      // as a last-resort backstop.
+      const STALL_TIMEOUT = 30000; // 30s without any progress => treat as stalled
+      let stallTimer: ReturnType<typeof setTimeout> | undefined;
+
+      const cleanup = () => {
+        settled = true;
+        if (stallTimer !== undefined) clearTimeout(stallTimer);
+      };
+
+      const armStall = () => {
+        if (stallTimer !== undefined) clearTimeout(stallTimer);
+        stallTimer = setTimeout(() => {
+          if (settled) return;
+          cleanup();
+          try { xhr.abort(); } catch { /* ignore */ }
+          reject(new Error(
+            'Upload stalled — the image server stopped responding. ' +
+            'Please check your connection and try again.'
+          ));
+        }, STALL_TIMEOUT);
+      };
+
+      // Reset the watchdog while bytes are still being sent...
       xhr.upload.addEventListener('progress', (event) => {
+        armStall();
         if (event.lengthComputable && onProgress) {
           onProgress({
             loaded: event.loaded,
@@ -224,8 +260,12 @@ export class CloudinaryService {
           });
         }
       });
+      // ...and while the response body is being received.
+      xhr.addEventListener('progress', () => armStall());
 
       xhr.addEventListener('load', () => {
+        if (settled) return;
+        cleanup();
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(new Response(xhr.responseText, {
             status: xhr.status,
@@ -237,15 +277,28 @@ export class CloudinaryService {
       });
 
       xhr.addEventListener('error', () => {
+        if (settled) return;
+        cleanup();
         reject(new Error('Network error during upload'));
       });
 
+      xhr.addEventListener('timeout', () => {
+        if (settled) return;
+        cleanup();
+        reject(new Error('Upload timed out. Please check your connection and try again.'));
+      });
+
       xhr.addEventListener('abort', () => {
+        if (settled) return;
+        cleanup();
         reject(new Error('Upload was cancelled'));
       });
 
+      xhr.timeout = 120000; // absolute backstop only; the stall watchdog fires first
+
       xhr.open('POST', url);
       xhr.send(formData);
+      armStall(); // start the watchdog immediately, even if no event ever fires
     });
   }
 

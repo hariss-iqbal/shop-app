@@ -147,20 +147,28 @@
                 </span>
               }
             </div>
-            <p-fileUpload
-              mode="basic"
-              chooseLabel="Upload Image"
-              icon="pi pi-upload"
-              severity="secondary"
-              [multiple]="true"
-              accept="image/*"
-              [maxFileSize]="10000000"
-              [auto]="true"
-              [customUpload]="true"
-              (uploadHandler)="onImageUpload($event)"
-              [disabled]="uploadingImage()"
-              chooseStyleClass="p-button-outlined"
-            />
+            <div class="flex align-items-center gap-2">
+              @if (uploadingImage()) {
+                <span class="flex align-items-center gap-2 text-sm text-color-secondary" aria-live="polite">
+                  <i class="pi pi-spin pi-spinner"></i>
+                  Uploading…
+                </span>
+              }
+              <p-fileUpload
+                mode="basic"
+                chooseLabel="Upload Image"
+                icon="pi pi-upload"
+                severity="secondary"
+                [multiple]="true"
+                accept="image/*"
+                [maxFileSize]="10000000"
+                [auto]="true"
+                [customUpload]="true"
+                (uploadHandler)="onImageUpload($event)"
+                [disabled]="uploadingImage()"
+                chooseStyleClass="p-button-outlined"
+              />
+            </div>
           </div>
           @if (selectedColor()) {
             <div class="px-3 pb-2">

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { environment } from '../../../environments/environment';
+import { SupabaseService } from './supabase.service';
 
 /**
  * QR Code data payload structure
@@ -84,11 +85,13 @@ export class ReceiptBarcodeService {
   private readonly QR_API_BASE = 'https://api.qrserver.com/v1/create-qr-code';
   private readonly DEFAULT_QR_SIZE = 200;
 
-  constructor() {
-    this.supabase = createClient(
-      environment.supabase.url,
-      environment.supabase.anonKey
-    );
+  constructor(private supabaseService: SupabaseService) {
+    // Reuse the single shared Supabase client. Creating a separate client here
+    // would spin up a second GoTrue auth instance under the same storage key,
+    // causing "Multiple GoTrueClient instances" warnings and Web Locks
+    // contention (NavigatorLockAcquireTimeoutError) that intermittently break
+    // session refresh and blank out the admin panel.
+    this.supabase = this.supabaseService.client;
     this.DEFAULT_STORE_ID = environment.storeId || 'DEFAULT';
   }
 
@@ -172,7 +175,7 @@ export class ReceiptBarcodeService {
           receipt_items (id)
         `)
         .eq('receipt_number', receiptNumber.trim())
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return {
@@ -247,7 +250,7 @@ export class ReceiptBarcodeService {
           receipt_items (id)
         `)
         .eq('receipt_number', receiptNumber)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         return {

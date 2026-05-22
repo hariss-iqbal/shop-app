@@ -2,47 +2,61 @@
   "id": "detail-thumbnail-switch",
   "testNumber": 14,
   "area": "product-detail",
-  "name": "Clicking a thumbnail switches the main image",
+  "name": "Clicking a thumbnail switches the main image (Pixel 7a — seeded with 3 images)",
   "requiresAuth": false,
   "preconditions": {
     "minProductCount": 1,
     "requiresSeedData": true,
-    "minImages": 2
+    "minImages": 2,
+    "note": "Pixel 7a variant c2b09ec4-... was seeded with 3 variant_images rows specifically for this test"
   },
   "steps": [
     {
-      "id": "navigate-catalog",
+      "id": "navigate-pdp-direct",
       "action": "navigate",
-      "target": "/catalog"
+      "target": "/product/google-google-pixel-7a-128gb-open-box-pta-approved?color=Charcoal",
+      "description": "Jump straight to the known multi-image PDP (Pixel 7a Charcoal)"
     },
     {
-      "id": "wait-cards",
+      "id": "wait-pdp",
       "action": "waitFor",
-      "selector": ".cat-product-grid .card",
+      "selector": ".pdp",
       "timeout": 10000
     },
     {
-      "id": "click-first-card",
-      "action": "click",
-      "selector": ".cat-product-grid .card"
-    },
-    {
-      "id": "wait-gallery",
+      "id": "wait-gallery-thumbs",
       "action": "waitFor",
       "selector": ".gallery-thumbs",
-      "timeout": 8000
+      "timeout": 8000,
+      "description": "Thumbnails strip only renders when there are 2+ images"
+    },
+    {
+      "id": "assert-multiple-thumbs",
+      "action": "evaluate",
+      "script": "(() => ({ count: document.querySelectorAll('.gallery-thumbs .gthumb').length }))()",
+      "assertResult": {
+        "field": "count",
+        "assertion": "gte",
+        "expected": 2
+      },
+      "description": "Gallery has at least 2 thumbnails"
     },
     {
       "id": "get-main-src-before",
       "action": "evaluate",
-      "script": "(() => document.querySelector('.gallery-main .main-img')?.src || '')()"
+      "script": "(() => ({ src: document.querySelector('.gallery-main .main-img')?.src || '' }))()",
+      "description": "Capture main image src before thumbnail click"
     },
     {
       "id": "click-second-thumb",
-      "action": "click",
-      "description": "Click the second thumbnail in the gallery",
-      "useSnapshot": true,
-      "snapshotHint": "Look for .gthumb elements in .gallery-thumbs — click the second one"
+      "action": "evaluate",
+      "script": "(() => { const thumbs = document.querySelectorAll('.gallery-thumbs .gthumb'); const second = thumbs[1]; if (second) { second.click(); return { clicked: true, index: 1 }; } return { clicked: false }; })()",
+      "assertResult": {
+        "field": "clicked",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Click the second thumbnail"
     },
     {
       "id": "wait-switch",
@@ -50,17 +64,22 @@
       "time": 1
     },
     {
-      "id": "get-main-src-after",
+      "id": "assert-main-image-changed",
       "action": "evaluate",
-      "script": "(() => { const main = document.querySelector('.gallery-main .main-img'); return { src: main?.src || '', visible: main ? main.offsetWidth > 0 : false }; })()",
+      "script": "(() => { const main = document.querySelector('.gallery-main .main-img'); const activeThumb = document.querySelector('.gallery-thumbs .gthumb.on'); const activeIndex = Array.from(document.querySelectorAll('.gallery-thumbs .gthumb')).indexOf(activeThumb); return { src: main?.src || '', visible: main ? main.offsetWidth > 0 : false, activeIndex }; })()",
       "assertResult": {
-        "field": "visible",
+        "field": "activeIndex",
         "assertion": "equals",
-        "expected": true
+        "expected": 1
       },
-      "description": "Main image is still visible after thumbnail click"
+      "description": "Second thumbnail is now the active one (has .on class)"
+    },
+    {
+      "id": "screenshot-after-switch",
+      "action": "screenshot",
+      "filename": "pdp-after-thumb-switch"
     }
   ],
   "priority": "P1",
-  "businessContext": "Thumbnail navigation lets customers inspect product details — broken switching frustrates buyers"
+  "businessContext": "Thumbnail navigation lets customers inspect product details. This now asserts the active thumb actually changes via the .on class state, not just that the main image still renders."
 }

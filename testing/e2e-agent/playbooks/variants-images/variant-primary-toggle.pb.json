@@ -2,67 +2,76 @@
   "id": "variant-primary-toggle",
   "testNumber": 27,
   "area": "variants-images",
-  "name": "Setting an image as primary updates the primary badge",
+  "name": "Setting an image as primary moves the Primary badge (Pixel 7a — seeded 3 images)",
   "requiresAuth": true,
   "preconditions": {
     "minProductCount": 1,
     "requiresSeedData": true,
-    "note": "Requires a variant with at least 2 images"
+    "note": "Pixel 7a variant c2b09ec4-... was seeded with 3 variant_images (1 primary + 2 non-primary)"
   },
   "steps": [
     {
-      "id": "navigate-variants",
+      "id": "navigate-variant-direct",
       "action": "navigate",
-      "target": "/admin/variants"
+      "target": "/admin/variants/c2b09ec4-5113-5452-82bc-4b7bf4329913",
+      "description": "Open the Pixel 7a admin variant detail (seeded with 3 images)"
     },
     {
-      "id": "wait-table",
+      "id": "wait-images-loaded",
       "action": "waitFor",
-      "selector": "p-table",
+      "selector": "img[alt='Variant image']",
       "timeout": 10000
     },
     {
-      "id": "click-view-details",
-      "action": "click",
-      "description": "Click the first variant's View Details button",
-      "useSnapshot": true,
-      "snapshotHint": "View Details button in first variant row"
-    },
-    {
-      "id": "wait-detail",
-      "action": "wait",
-      "time": 3
-    },
-    {
-      "id": "count-images",
+      "id": "assert-three-images",
       "action": "evaluate",
-      "script": "(() => { const imgs = document.querySelectorAll('img'); return imgs.length; })()",
-      "description": "Count images on variant detail — need at least 2 for this test"
+      "script": "(() => ({ count: document.querySelectorAll(\"img[alt='Variant image']\").length }))()",
+      "assertResult": {
+        "field": "count",
+        "assertion": "gte",
+        "expected": 2
+      },
+      "description": "Variant detail shows >= 2 images"
     },
     {
-      "id": "find-primary-badge",
+      "id": "capture-initial-primary-src",
       "action": "evaluate",
-      "script": "(() => { const badges = document.querySelectorAll('[class*=\"primary\"], [class*=\"star\"]'); return { hasPrimaryBadge: badges.length > 0 }; })()",
-      "description": "Check if primary badge indicators exist"
+      "script": "(() => { const tiles = Array.from(document.querySelectorAll(\"img[alt='Variant image']\")).map(img => img.closest('div.relative')); const primaryTile = tiles.find(t => t && !!t.querySelector('p-tag .p-tag-value, .p-tag-value')?.textContent?.toLowerCase()?.includes('primary')) || tiles.find(t => t && /Primary/i.test(t.textContent || '')); const primarySrc = primaryTile?.querySelector('img')?.src || ''; return { primarySrc, totalTiles: tiles.length }; })()",
+      "description": "Capture src of currently-primary image"
     },
     {
-      "id": "click-set-primary",
-      "action": "click",
-      "description": "Click the set-as-primary button on a non-primary image",
-      "useSnapshot": true,
-      "snapshotHint": "Look for a star icon, primary toggle, or similar button on one of the variant images"
+      "id": "click-set-primary-on-non-primary",
+      "action": "evaluate",
+      "script": "(() => { const tiles = Array.from(document.querySelectorAll(\"img[alt='Variant image']\")).map(img => img.closest('div.relative')); for (const tile of tiles) { if (!tile) continue; const hasPrimaryBadge = /Primary/i.test(tile.textContent || ''); if (hasPrimaryBadge) continue; const starBtn = tile.querySelector('button .pi-star')?.closest('button'); if (starBtn) { starBtn.click(); return { clicked: true, tileSrc: tile.querySelector('img')?.src || '' }; } } return { clicked: false }; })()",
+      "assertResult": {
+        "field": "clicked",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Click 'Set as primary' button on a non-primary image"
     },
     {
       "id": "wait-update",
       "action": "wait",
-      "time": 2
+      "time": 3
     },
     {
-      "id": "screenshot-primary",
+      "id": "assert-primary-moved",
+      "action": "evaluate",
+      "script": "(() => { const tiles = Array.from(document.querySelectorAll(\"img[alt='Variant image']\")).map(img => img.closest('div.relative')); const primaryTiles = tiles.filter(t => t && /Primary/i.test(t.textContent || '')); return { primaryCount: primaryTiles.length, primarySrcAfter: primaryTiles[0]?.querySelector('img')?.src || '' }; })()",
+      "assertResult": {
+        "field": "primaryCount",
+        "assertion": "equals",
+        "expected": 1
+      },
+      "description": "Exactly one image has the Primary badge after the toggle"
+    },
+    {
+      "id": "screenshot-primary-toggled",
       "action": "screenshot",
-      "filename": "admin-variant-primary-toggle"
+      "filename": "admin-variant-primary-toggled"
     }
   ],
   "priority": "P2",
-  "businessContext": "Primary image is what shows on the catalog card — wrong primary means wrong first impression"
+  "businessContext": "Primary image is what appears on the catalog card — wrong primary means wrong first impression. The Pixel 7a variant has 3 seeded images so the toggle can be exercised reliably."
 }

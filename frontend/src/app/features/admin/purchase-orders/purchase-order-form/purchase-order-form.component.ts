@@ -446,6 +446,8 @@ export class PurchaseOrderFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
+    if (this.loading()) return;
+
     if (this.form.invalid || this.lineItems.length === 0) {
       this.form.markAllAsTouched();
       this.lineItems.controls.forEach(control => control.markAllAsTouched());

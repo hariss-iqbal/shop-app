@@ -45,3 +45,7 @@ temp/
 
 
 .playwright-mcp/
+supabase/.temp/
+
+# Testing
+testing/

@@ -337,7 +337,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       // Find an available product in this variant to set as current product
       const currentProduct = this.product();
       const currentColor = currentProduct?.color;
-      const colorMatch = allImages.filter(img => img.color?.toLowerCase() === currentColor?.toLowerCase());
+      const newColors = ((variant as any).availableColors ?? []) as string[];
+      const matchedColor = currentColor && newColors.some(c => c?.toLowerCase() === currentColor.toLowerCase())
+        ? currentColor
+        : (newColors.length > 0 ? newColors[0] : null);
+      const colorMatch = allImages.filter(img => img.color?.toLowerCase() === matchedColor?.toLowerCase());
       const genericImages = allImages.filter(img => !img.color);
       const images = colorMatch.length > 0 ? colorMatch : genericImages.length > 0 ? genericImages : allImages;
 
@@ -352,6 +356,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         ptaStatus: variant.ptaStatus as any,
         sellingPrice: variant.sellingPrice,
         costPrice: variant.avgCostPrice,
+        color: matchedColor ?? null,
         images: images.map(img => ({
           id: img.id,
           imageUrl: img.imageUrl,
@@ -367,7 +372,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       this.product.set(updatedProduct);
       this.buildGalleryImages(updatedProduct);
       this.updateSeoTags(updatedProduct);
-      const colorParam = currentProduct?.color ? `?color=${encodeURIComponent(currentProduct.color)}` : '';
+      const colorParam = matchedColor ? `?color=${encodeURIComponent(matchedColor)}` : '';
       this.location.replaceState(`/product/${variant.slug}${colorParam}`);
       window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
     } catch {
@@ -403,11 +408,10 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.imageLoading.set(true);
     this.showLoader.set(!this.loadedImages.has(index));
     this.activeIndex.set(index);
-    requestAnimationFrame(() => {
-      const container = document.querySelector('.gallery-thumbs');
-      const active = container?.querySelector('.gthumb.on');
-      if (active && container) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    });
+    // NOTE: do NOT call element.scrollIntoView() here. The thumbnail strip is a
+    // wrapping grid (not a horizontal scroller), so scrollIntoView only ever
+    // scrolled the whole window vertically — making the page jump and cutting off
+    // the main image on every prev/next. All thumbnails are already visible.
   }
 
   openFullscreen(): void {

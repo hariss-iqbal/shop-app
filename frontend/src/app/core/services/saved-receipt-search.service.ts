@@ -53,11 +53,13 @@ export class SavedReceiptSearchService {
   }
 
   async getDefaultSavedSearch(): Promise<SavedReceiptSearch | null> {
+    // maybeSingle() returns null (HTTP 200) when no default exists, whereas
+    // single() returns HTTP 406 — avoid the spurious error response/console noise.
     const { data, error } = await this.supabase
       .from('saved_receipt_searches')
       .select('*')
       .eq('is_default', true)
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -66,7 +68,7 @@ export class SavedReceiptSearchService {
       throw new Error(error.message);
     }
 
-    return this.mapToSavedSearch(data);
+    return data ? this.mapToSavedSearch(data) : null;
   }
 
   async createSavedSearch(request: CreateSavedSearchRequest): Promise<SavedReceiptSearch> {

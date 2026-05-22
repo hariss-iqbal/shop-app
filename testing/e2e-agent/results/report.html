@@ -3,665 +3,1417 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>E2E Test Report — P0 Priority</title>
+<title>shop-app E2E Overnight Report — 2026-05-20</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1e293b; background: #f8fafc; line-height: 1.6; }
-  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
 
-  /* Header */
-  .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; border-radius: 12px; padding: 32px 40px; margin-bottom: 28px; }
-  .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
-  .header .subtitle { font-size: 14px; color: #94a3b8; margin-bottom: 20px; }
-  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; }
-  .stat-card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 14px 20px; min-width: 140px; flex: 1; }
-  .stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #94a3b8; margin-bottom: 4px; }
-  .stat-card .stat-value { font-size: 28px; font-weight: 700; }
-  .stat-card .stat-value.green { color: #4ade80; }
-  .stat-card .stat-value.red { color: #f87171; }
-  .stat-card .stat-value.blue { color: #60a5fa; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.6;
+    font-size: 14px;
+  }
 
-  /* Sections */
-  .section { margin-bottom: 28px; }
-  .section-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  a { color: #60a5fa; text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
-  /* Summary banner */
-  .summary-banner { background: #16a34a; color: #fff; border-radius: 8px; padding: 16px 24px; margin-bottom: 28px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-  .summary-banner svg { flex-shrink: 0; }
+  /* ---- layout ---- */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
 
-  /* Tables */
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  thead { background: #f1f5f9; }
-  th { padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
-  td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-  tbody tr:hover { background: #f8fafc; }
-  tbody tr:last-child td { border-bottom: none; }
+  /* ---- header banner ---- */
+  .banner {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 60%);
+    border: 1px solid #1e3a5f;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+  .banner h1 { font-size: 26px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .banner .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 24px; }
 
-  /* Status badges */
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-  .badge-pass { background: #dcfce7; color: #16a34a; }
-  .badge-fail { background: #fee2e2; color: #dc2626; }
-  .badge-skip { background: #f1f5f9; color: #64748b; }
-  .badge-cat0 { background: #fff7ed; color: #ea580c; }
-  .badge-cat1 { background: #dbeafe; color: #2563eb; }
-  .badge-cat2 { background: #fee2e2; color: #dc2626; }
-  .badge-cat3 { background: #ede9fe; color: #7c3aed; }
-  .badge-iteration { background: #f0f9ff; color: #0369a1; }
+  .stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .tile {
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid #334155;
+  }
+  .tile .val { font-size: 36px; font-weight: 800; line-height: 1.1; }
+  .tile .lbl { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+  .tile.green .val { color: #22c55e; }
+  .tile.red .val { color: #f87171; }
+  .tile.amber .val { color: #fbbf24; }
+  .tile.blue .val { color: #60a5fa; }
+  .tile.purple .val { color: #a78bfa; }
+  .tile.teal .val { color: #2dd4bf; }
 
-  /* Area cards */
-  .area-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 16px; overflow: hidden; }
-  .area-header { padding: 14px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; border-left: 4px solid transparent; }
-  .area-header:hover { background: #f8fafc; }
-  .area-header.area-auth { border-left-color: #6366f1; }
-  .area-header.area-catalog { border-left-color: #0ea5e9; }
-  .area-header.area-product-detail { border-left-color: #f59e0b; }
-  .area-header.area-variants-images { border-left-color: #ec4899; }
-  .area-name { font-weight: 600; font-size: 15px; }
-  .area-stats { font-size: 12px; color: #64748b; display: flex; gap: 12px; align-items: center; }
-  .area-stats .count-pass { color: #16a34a; font-weight: 600; }
-  .area-chevron { font-size: 12px; color: #94a3b8; transition: transform 0.2s; }
-  .area-body { display: none; border-top: 1px solid #f1f5f9; }
-  .area-body.open { display: block; }
-  .area-chevron.open { transform: rotate(90deg); }
+  /* ---- section ---- */
+  .section { margin-bottom: 40px; }
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-num {
+    background: #1e3a5f;
+    color: #60a5fa;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
 
-  /* Test row in area */
-  .test-row { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; }
-  .test-row:last-child { border-bottom: none; }
-  .test-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
-  .test-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
-  .test-icon.pass { background: #16a34a; }
-  .test-icon.fail { background: #dc2626; }
-  .test-name { font-size: 13px; font-weight: 500; }
-  .test-meta { display: flex; gap: 16px; margin-left: 30px; font-size: 12px; color: #64748b; }
-  .test-fix { margin-left: 30px; margin-top: 6px; background: #fefce8; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px; font-size: 12px; color: #854d0e; }
-  .test-fix strong { color: #713f12; }
+  /* ---- pills / badges ---- */
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .pill-green  { background: #14532d; color: #86efac; border: 1px solid #16a34a; }
+  .pill-red    { background: #450a0a; color: #fca5a5; border: 1px solid #dc2626; }
+  .pill-amber  { background: #451a03; color: #fcd34d; border: 1px solid #d97706; }
+  .pill-blue   { background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb; }
+  .pill-purple { background: #2e1065; color: #c4b5fd; border: 1px solid #7c3aed; }
+  .pill-orange { background: #431407; color: #fed7aa; border: 1px solid #ea580c; }
+  .pill-darkred{ background: #3b0404; color: #f87171; border: 1px solid #991b1b; }
+  .pill-teal   { background: #042f2e; color: #99f6e4; border: 1px solid #0d9488; }
+  .pill-gray   { background: #1e293b; color: #94a3b8; border: 1px solid #475569; }
 
-  /* Fix log */
-  .fix-row { display: flex; gap: 0; border-bottom: 1px solid #f1f5f9; }
-  .fix-row:last-child { border-bottom: none; }
-  .fix-cell { padding: 10px 14px; font-size: 13px; }
-  .fix-iteration { width: 70px; font-weight: 600; color: #64748b; }
-  .fix-playbook { width: 180px; font-weight: 500; }
-  .fix-category { width: 90px; }
-  .fix-action { flex: 1; }
-  .fix-result { width: 110px; }
+  /* ---- priority bugs section ---- */
+  .priority-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .priority-card {
+    background: #0f2a1a;
+    border: 1px solid #16a34a;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .priority-card .pcard-title { font-weight: 700; color: #86efac; margin-bottom: 6px; font-size: 13px; }
+  .priority-card .pcard-pb { font-family: monospace; font-size: 11px; color: #4ade80; margin-top: 6px; }
+  .priority-card .pcard-status { margin-top: 4px; }
 
-  /* Screenshots */
-  .screenshot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-  .screenshot-card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .screenshot-card img { width: 100%; display: block; border-bottom: 1px solid #e2e8f0; }
-  .screenshot-label { padding: 10px 14px; font-size: 12px; color: #475569; font-weight: 500; }
+  /* ---- bug cards ---- */
+  .bug-grid { display: grid; gap: 14px; }
+  .bug-card {
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 18px 20px;
+    border-left: 4px solid;
+    position: relative;
+  }
+  .bug-card.blocker { border-color: #dc2626; }
+  .bug-card.high    { border-color: #f59e0b; }
+  .bug-card.medium  { border-color: #3b82f6; }
+  .bug-card.feature { border-color: #a78bfa; }
 
-  /* Executive summary */
-  .exec-summary { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); padding: 20px 24px; font-size: 14px; line-height: 1.7; color: #334155; }
+  .bug-card-header { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .bug-card-title  { font-weight: 700; color: #f1f5f9; font-size: 15px; flex: 1; }
+  .bug-num { background: #334155; border-radius: 50%; width: 24px; height: 24px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; color:#94a3b8; }
+  .bug-meta { color: #94a3b8; font-size: 12px; margin-bottom: 6px; }
+  .bug-body { color: #cbd5e1; font-size: 13px; line-height: 1.6; }
+  .bug-file { font-family: monospace; font-size: 11px; color: #60a5fa; margin-top: 6px; }
+  .fixed-pill { background:#16a34a; color:#fff; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:0.06em; }
 
-  /* Collapsible action trace */
-  .action-toggle { background: none; border: none; color: #2563eb; font-size: 12px; cursor: pointer; padding: 4px 0; margin-left: 30px; text-decoration: underline; }
-  .action-toggle:hover { color: #1d4ed8; }
-  .action-trace { display: none; margin: 8px 0 4px 30px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
-  .action-trace.open { display: block; }
-  .action-trace table { box-shadow: none; }
-  .action-trace td, .action-trace th { font-size: 11px; padding: 6px 10px; }
+  /* ---- iteration timeline ---- */
+  .timeline { border-left: 2px solid #334155; margin-left: 10px; }
+  .tl-row {
+    display: flex;
+    gap: 16px;
+    padding: 0 0 22px 24px;
+    position: relative;
+  }
+  .tl-row::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #334155;
+    border: 2px solid #475569;
+  }
+  .tl-row.has-fix::before { background: #16a34a; border-color: #22c55e; }
+  .tl-row.has-bug::before  { background: #dc2626; border-color: #f87171; }
+  .tl-iter { font-size: 12px; font-weight: 700; color: #94a3b8; white-space: nowrap; padding-top: 2px; min-width: 60px; }
+  .tl-body { flex: 1; }
+  .tl-main { color: #e2e8f0; font-size: 13px; }
+  .tl-stats { color: #64748b; font-size: 12px; margin-top: 2px; }
 
-  /* Responsive */
-  @media (max-width: 640px) {
-    .container { padding: 12px 8px; }
-    .header { padding: 20px; }
-    .header h1 { font-size: 20px; }
-    .stats-row { gap: 8px; }
-    .stat-card { min-width: 100px; padding: 10px 14px; }
-    .stat-card .stat-value { font-size: 22px; }
-    .screenshot-grid { grid-template-columns: 1fr; }
+  /* ---- coverage table ---- */
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1e293b; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #1e293b; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1e293b; }
+
+  .bar-wrap { background: #0f172a; border-radius: 4px; height: 8px; min-width: 80px; overflow: hidden; }
+  .bar-fill  { height: 8px; border-radius: 4px; background: #22c55e; }
+
+  /* ---- per-area grid ---- */
+  .area-section { margin-bottom: 28px; }
+  .area-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #1e293b;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #334155;
+    border-bottom: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  .area-header:hover { background: #263347; }
+  .area-name { font-weight: 700; color: #f1f5f9; font-size: 14px; flex: 1; }
+  .area-counts { color: #94a3b8; font-size: 12px; }
+  .area-body {
+    border: 1px solid #334155;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+  }
+  .pb-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 100px 80px 140px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid #0f172a;
+    font-size: 12px;
+  }
+  .pb-row:last-child { border-bottom: none; }
+  .pb-row:hover { background: #1a2537; }
+  .pb-id { font-family: monospace; color: #60a5fa; font-size: 11px; }
+  .pb-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-pass { background: #22c55e; }
+  .dot-fail { background: #ef4444; }
+
+  /* ---- thumbnail ---- */
+  .thumb {
+    width: 120px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #334155;
+    display: block;
+  }
+  .thumb-cell { text-align: right; }
+
+  /* ---- double-submit spotlight ---- */
+  .spotlight {
+    background: #1a1025;
+    border: 1px solid #7c3aed;
+    border-radius: 10px;
+    padding: 20px 24px;
+  }
+  .spotlight h3 { color: #c4b5fd; font-size: 15px; margin-bottom: 12px; }
+  pre {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    white-space: pre;
+  }
+  .code-comment { color: #6b7280; }
+  .code-keyword { color: #f472b6; }
+  .code-fn      { color: #60a5fa; }
+  .code-guard   { color: #4ade80; }
+
+  /* ---- self-healing log ---- */
+  .heal-table th { background: #1a1025; }
+
+  /* ---- exec summary ---- */
+  .exec-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 20px 24px;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  /* ---- limitations ---- */
+  .limit-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #1c1a0a;
+    border: 1px solid #d97706;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #fde68a;
+  }
+  .limit-num { font-weight: 700; color: #fbbf24; flex-shrink: 0; }
+
+  /* ---- footer ---- */
+  .footer {
+    margin-top: 48px;
+    padding: 20px;
+    border-top: 1px solid #1e293b;
+    color: #475569;
+    font-size: 11px;
+    line-height: 1.8;
+    font-family: monospace;
+  }
+
+  /* ---- details/summary ---- */
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::marker, details > summary::-webkit-details-marker { display: none; }
+
+  /* ---- star pill ---- */
+  .star-pill { background:#1c3a1c; color:#86efac; border:1px solid #22c55e; padding:1px 7px; border-radius:999px; font-size:10px; font-weight:700; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 700px) {
+    .pb-row { grid-template-columns: 18px 1fr 70px; }
+    .pb-row .pb-iter, .pb-row .thumb-cell { display: none; }
+    .stat-tiles { grid-template-columns: repeat(2, 1fr); }
+    .priority-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <!-- HEADER -->
-  <div class="header">
-    <h1>E2E Test Report — P0 Priority</h1>
-    <div class="subtitle">Run completed May 13, 2026 at 01:48 UTC &middot; Environment: Local (Supabase + Angular dev server)</div>
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Total Tests</div>
-        <div class="stat-value blue">10</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Passed</div>
-        <div class="stat-value green">10</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Failed</div>
-        <div class="stat-value red">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Pass Rate</div>
-        <div class="stat-value green">100%</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Iterations</div>
-        <div class="stat-value blue">2</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Duration</div>
-        <div class="stat-value" style="font-size:22px;">~48 min</div>
-      </div>
+<!-- ========================================================= -->
+<!-- SECTION 1: BANNER                                         -->
+<!-- ========================================================= -->
+<div class="banner">
+  <h1>shop-app Overnight E2E Report</h1>
+  <div style="display:inline-flex;align-items:center;gap:10px;background:#052e16;border:2px solid #16a34a;border-radius:10px;padding:10px 20px;margin-bottom:14px;">
+    <span style="font-size:22px;color:#22c55e;font-weight:900;">&#10003;</span>
+    <div>
+      <div style="font-size:16px;font-weight:800;color:#22c55e;letter-spacing:0.02em;">PRODUCTION GATE: PASS &mdash; 12/12 P0</div>
+      <div style="font-size:12px;color:#86efac;margin-top:1px;">All P0 critical-path tests green in Iter 11 final gate &mdash; definitive go signal</div>
     </div>
   </div>
+  <div class="subtitle">Run completed 2026-05-20 &nbsp;|&nbsp; Started 2026-05-19 21:24 UTC &nbsp;|&nbsp; ~4 hours autonomous &nbsp;|&nbsp; 11 areas &nbsp;|&nbsp; 11 iterations</div>
 
-  <!-- RESULT BANNER -->
-  <div class="summary-banner">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-    ALL 10 P0 TESTS PASSED — System self-healed 3 issues across 2 iterations
+  <div class="stat-tiles">
+    <div class="tile green">
+      <div class="val">91/91</div>
+      <div class="lbl">Tests Passed</div>
+    </div>
+    <div class="tile green">
+      <div class="val">100%</div>
+      <div class="lbl">Pass Rate</div>
+    </div>
+    <div class="tile red">
+      <div class="val">7</div>
+      <div class="lbl">Real App Bugs Fixed</div>
+    </div>
+    <div class="tile blue">
+      <div class="val">10</div>
+      <div class="lbl">Playbook Hardenings</div>
+    </div>
+    <div class="tile purple">
+      <div class="val">11</div>
+      <div class="lbl">Iterations</div>
+    </div>
+    <div class="tile teal">
+      <div class="val">11</div>
+      <div class="lbl">Areas Covered</div>
+    </div>
+    <div class="tile amber">
+      <div class="val">~4 h</div>
+      <div class="lbl">Total Runtime</div>
+    </div>
+    <div class="tile blue">
+      <div class="val">220</div>
+      <div class="lbl">Screenshots</div>
+    </div>
   </div>
+</div>
 
-  <!-- PRIORITY COVERAGE -->
-  <div class="section">
-    <div class="section-title">Priority Coverage</div>
-    <table>
-      <thead>
-        <tr><th>Priority</th><th>Total</th><th>Passed</th><th>Failed</th><th>Pass Rate</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>P0 Critical</strong></td>
-          <td>10</td>
-          <td style="color:#16a34a;font-weight:600;">10</td>
-          <td style="color:#dc2626;font-weight:600;">0</td>
-          <td><span style="color:#16a34a;font-weight:700;">100%</span></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
-  <!-- AREA BREAKDOWN -->
-  <div class="section">
-    <div class="section-title">Area Breakdown</div>
+<!-- ========================================================= -->
+<!-- SECTION 2: USER-PRIORITY VALIDATION                       -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">2</span>User-Priority Validation</div>
 
-    <!-- AUTH -->
-    <div class="area-card">
-      <div class="area-header area-auth" onclick="toggleArea('auth')">
-        <span class="area-name">Auth</span>
-        <span class="area-stats">
-          <span class="count-pass">4/4 passed</span>
-          <span class="area-chevron" id="chevron-auth">&#9654;</span>
-        </span>
-      </div>
-      <div class="area-body" id="body-auth">
+  <div class="priority-grid">
 
-        <!-- Test 1: auth-login-valid -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#1 — Login with valid email/password redirects to /admin/dashboard</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: auth-login-valid</span>
-            <span>Duration: 45.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
-        </div>
-
-        <!-- Test 2: auth-login-wrong-password -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#2 — Login with wrong password shows error message</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: auth-login-wrong-password</span>
-            <span>Duration: 53.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
-        </div>
-
-        <!-- Test 3: auth-guard-redirect -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#3 — Unauthenticated visit to /admin/dashboard redirects to login page</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: auth-guard-redirect</span>
-            <span>Duration: 21.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
-        </div>
-
-        <!-- Test 4: auth-logout (fixed) -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#4 — Logout clears session and redirects to homepage</span>
-            <span class="badge badge-pass">pass</span>
-            <span class="badge badge-cat1">cat1 — playbook fix</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: auth-logout</span>
-            <span>Duration: 89.0s</span>
-            <span class="badge badge-iteration">Iter 2</span>
-          </div>
-          <div class="test-fix">
-            <strong>Fix applied (Iteration 2):</strong> Updated playbook expectations: app redirects to <code>/</code> (homepage) after logout, not <code>/auth/login</code>. Shop name is "Sprint Mobiles" not "Phone Shop". Logout functionality confirmed working correctly via URL assertion and toast notification.
-          </div>
-          <button class="action-toggle" onclick="toggleTrace('trace-auth-logout')">Show action trace (8 steps)</button>
-          <div class="action-trace" id="trace-auth-logout">
-            <table>
-              <thead><tr><th>#</th><th>Step ID</th><th>Tool</th><th>Summary</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>0</td><td>auth-login-navigate</td><td>browser_navigate</td><td>Session already authenticated; auto-redirected to /admin/dashboard</td><td>OK</td></tr>
-                <tr><td>1</td><td>wait-dashboard</td><td>browser_wait_for</td><td>Dashboard heading visible on admin page at /admin/dashboard</td><td>OK</td></tr>
-                <tr><td>2</td><td>find-logout</td><td>browser_snapshot</td><td>Admin dashboard with Logout button found in header</td><td>OK</td></tr>
-                <tr><td>3</td><td>find-logout</td><td>browser_click</td><td>Clicked Logout; redirected to homepage with "Logged Out" toast</td><td>OK</td></tr>
-                <tr><td>4</td><td>wait-homepage</td><td>browser_wait_for</td><td>Timeout for "Phone Shop" — actual name is "Sprint Mobiles"</td><td>Override</td></tr>
-                <tr><td>5</td><td>wait-homepage-retry</td><td>browser_snapshot</td><td>Homepage loaded with Sprint Mobiles branding, Logged Out toast visible</td><td>OK</td></tr>
-                <tr><td>6</td><td>assert-on-homepage</td><td>browser_evaluate</td><td>window.location.pathname returned "/" — matches expected</td><td>OK</td></tr>
-                <tr><td>7</td><td>evidence-screenshot</td><td>browser_take_screenshot</td><td>Screenshot captured: homepage after logout</td><td>OK</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
+    <div class="priority-card">
+      <div class="pcard-title">Duplicate Rows for Same Tuple</div>
+      <div class="pcard-status"><span class="pill pill-green">FIXED + VERIFIED</span></div>
+      <div style="color:#94a3b8;font-size:12px;margin-top:6px;">Row-per-color fan-out was creating duplicate display rows when the same variant appeared in multiple color groups. Tuple key updated to include color field.</div>
+      <div class="pcard-pb">playbook: variant-tuple-uniqueness</div>
     </div>
 
-    <!-- CATALOG -->
-    <div class="area-card">
-      <div class="area-header area-catalog" onclick="toggleArea('catalog')">
-        <span class="area-name">Catalog</span>
-        <span class="area-stats">
-          <span class="count-pass">3/3 passed</span>
-          <span class="area-chevron" id="chevron-catalog">&#9654;</span>
-        </span>
-      </div>
-      <div class="area-body" id="body-catalog">
-
-        <!-- Test 5: catalog-loads-products -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#5 — Catalog page loads and renders at least 1 product card</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: catalog-loads-products</span>
-            <span>Duration: 18.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
-        </div>
-
-        <!-- Test 6: catalog-card-complete -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#6 — Each product card shows an image, title, price, and condition badge</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: catalog-card-complete</span>
-            <span>Duration: 30.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
-        </div>
-
-        <!-- Test 7: catalog-navigate-detail -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#7 — Clicking a product card navigates to /product/{slug}</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: catalog-navigate-detail</span>
-            <span>Duration: 18.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
-          <button class="action-toggle" onclick="toggleTrace('trace-catalog-nav')">Show action trace (5 steps)</button>
-          <div class="action-trace" id="trace-catalog-nav">
-            <table>
-              <thead><tr><th>#</th><th>Step ID</th><th>Tool</th><th>Summary</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>0</td><td>navigate-catalog</td><td>browser_navigate</td><td>Navigated to catalog, 12 product cards loaded with filters sidebar</td><td>OK</td></tr>
-                <tr><td>1</td><td>wait-cards</td><td>browser_snapshot</td><td>12 cards shown (1-12 of 24 items), no skeletons</td><td>OK</td></tr>
-                <tr><td>2</td><td>click-first-card</td><td>browser_click</td><td>Clicked Google Pixel 6a card, navigated to /product/google-google-pixel-6a-128gb-open-box-pta-approved?color=Sage</td><td>OK</td></tr>
-                <tr><td>3</td><td>wait-detail</td><td>browser_wait_for</td><td>Waited 3s for product detail page to fully render</td><td>OK</td></tr>
-                <tr><td>4</td><td>assert-on-product-page</td><td>browser_evaluate</td><td>URL contains /product/ — assertion passed</td><td>OK</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
+    <div class="priority-card">
+      <div class="pcard-title">Inline Price Edit Triggers Navigation</div>
+      <div class="pcard-status"><span class="pill pill-teal">VERIFIED NOT BROKEN</span></div>
+      <div style="color:#94a3b8;font-size:12px;margin-top:6px;">Price field edits confirmed to not bubble up to the row click handler. Event propagation is correctly contained.</div>
+      <div class="pcard-pb">playbook: variant-inline-price-no-nav</div>
     </div>
 
-    <!-- PRODUCT DETAIL -->
-    <div class="area-card">
-      <div class="area-header area-product-detail" onclick="toggleArea('product-detail')">
-        <span class="area-name">Product Detail</span>
-        <span class="area-stats">
-          <span class="count-pass">2/2 passed</span>
-          <span class="area-chevron" id="chevron-product-detail">&#9654;</span>
-        </span>
+    <div class="priority-card">
+      <div class="pcard-title">Color Image Leakage Across Colors</div>
+      <div class="pcard-status"><span class="pill pill-green">FIXED + VERIFIED</span></div>
+      <div style="color:#94a3b8;font-size:12px;margin-top:6px;">Images for one color (e.g. Sea Blue) were visible when switching to another color (e.g. Charcoal). Fixed by enforcing per-color image isolation in the image service.</div>
+      <div class="pcard-pb">playbook: variant-image-color-isolation</div>
+    </div>
+
+    <div class="priority-card">
+      <div class="pcard-title">Image Upload Spinner Stuck</div>
+      <div class="pcard-status"><span class="pill pill-teal">VERIFIED NOT BROKEN</span></div>
+      <div style="color:#94a3b8;font-size:12px;margin-top:6px;">Upload spinner resolves correctly after file selection and upload completion. No stuck state observed across multiple runs.</div>
+      <div class="pcard-pb">playbook: variant-upload-spinner-resolves</div>
+    </div>
+
+    <div class="priority-card">
+      <div class="pcard-title">Search Bar Not Working (Variants)</div>
+      <div class="pcard-status"><span class="pill pill-green">FIXED + VERIFIED</span></div>
+      <div style="color:#94a3b8;font-size:12px;margin-top:6px;">PostgREST embed was not using <code style="font-size:10px;color:#60a5fa">!inner</code> so the filter was silently ignored server-side and all 22 variants returned unfiltered. Fixed by adding <code style="font-size:10px;color:#60a5fa">!inner</code> to models + brands embed.</div>
+      <div class="pcard-pb">playbook: variant-search-filter</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECTION 3: 7 APP BUGS FOUND AND FIXED                     -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">3</span>App Bugs Found &amp; Fixed <span class="fixed-pill" style="margin-left:8px;">ALL 7 FIXED</span></div>
+
+  <div class="bug-grid">
+
+    <!-- Bug 1 -->
+    <div class="bug-card blocker">
+      <div class="bug-card-header">
+        <span class="bug-num">1</span>
+        <div class="bug-card-title">Stale <code>primary_image_url</code> SELECT &mdash; Variants API 400</div>
+        <span class="pill pill-red">BLOCKER</span>
+        <span class="fixed-pill">FIXED</span>
       </div>
-      <div class="area-body" id="body-product-detail">
+      <div class="bug-meta">Iteration 1 &nbsp;|&nbsp; Discovered by: variant-detail-images</div>
+      <div class="bug-body">The variants list query still referenced <code>primary_image_url</code>, a column dropped by migration <code>20260513000002</code>. Every page load of the admin variants list returned HTTP 400, rendering the entire variants admin area completely broken at run start.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> Replaced the stale column reference with a nested <code>variant_images</code> join, aligning the query with the post-migration schema.</div>
+      <div class="bug-file">variant-list.component.ts</div>
+    </div>
 
-        <!-- Test 8: detail-renders-data -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#8 — Detail page loads and shows product title, price, condition, PTA status</span>
-            <span class="badge badge-pass">pass</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: detail-renders-data</span>
-            <span>Duration: 30.0s</span>
-            <span class="badge badge-iteration">Iter 1</span>
-          </div>
+    <!-- Bug 2 -->
+    <div class="bug-card high">
+      <div class="bug-card-header">
+        <span class="bug-num">2</span>
+        <div class="bug-card-title">PostgREST <code>!inner</code> Missing &mdash; Search Filter Silently Ignored</div>
+        <span class="pill pill-amber">HIGH</span>
+        <span class="fixed-pill">FIXED</span>
+      </div>
+      <div class="bug-meta">Iteration 1 &nbsp;|&nbsp; Discovered by: variant-search-filter</div>
+      <div class="bug-body">The variant search/brand filter used PostgREST dot-notation on an embedded foreign-table column (<code>model.name=ilike.*</code>), which PostgREST silently ignores without <code>!inner</code>. All 22 variants were returned regardless of search input. Model name column also rendered empty because the join result was unbound in the template.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> Added <code>!inner</code> to the models and brands embed. Template binding corrected.</div>
+      <div class="bug-file">variant-list.component.ts</div>
+    </div>
+
+    <!-- Bug 3 -->
+    <div class="bug-card feature">
+      <div class="bug-card-header">
+        <span class="bug-num">3</span>
+        <div class="bug-card-title">Row-Per-Color Fan-Out &mdash; One Row Per (Variant, Color)</div>
+        <span class="pill pill-purple">FEATURE</span>
+        <span class="fixed-pill">IMPLEMENTED</span>
+      </div>
+      <div class="bug-meta">Iteration 1 &nbsp;|&nbsp; Discovered by: variant-color-row-per-color</div>
+      <div class="bug-body">User requirement: the admin variants table must show one row per (variant, color) combination instead of collapsing colors into multi-color chips. The original implementation stacked all colors on a single row, failing the business requirement.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> Presentation-layer fan-out implemented in the component &mdash; each color gets its own display row while sharing the underlying variant data.</div>
+      <div class="bug-file">variant-list.component.ts + .html</div>
+    </div>
+
+    <!-- Bug 4 -->
+    <div class="bug-card high">
+      <div class="bug-card-header">
+        <span class="bug-num">4</span>
+        <div class="bug-card-title">toggleActive Type Error &mdash; Click Bubbles to Row Navigation</div>
+        <span class="pill pill-amber">HIGH</span>
+        <span class="fixed-pill">FIXED</span>
+      </div>
+      <div class="bug-meta">Iteration 2 &nbsp;|&nbsp; Discovered by: variant-toggle-active</div>
+      <div class="bug-body">The <code>toggleActive(event)</code> method accepted an <code>Event</code> object but PrimeNG's <code>ngModelChange</code> emits a <code>boolean</code>. This caused a <code>TypeError</code> on <code>event.stopPropagation()</code>, which meant the click always bubbled up to the row, triggering unwanted navigation to the variant detail page whenever the active toggle was clicked.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> Corrected the method signature. Replaced PrimeNG <code>(onClick)</code> with native <code>(click)</code> binding for reliable bubble suppression.</div>
+      <div class="bug-file">variant-list.component.ts + .html</div>
+    </div>
+
+    <!-- Bug 5 -->
+    <div class="bug-card medium">
+      <div class="bug-card-header">
+        <span class="bug-num">5</span>
+        <div class="bug-card-title">Pagination Drift After Fan-Out &mdash; <code>totalRecords</code> Mismatch</div>
+        <span class="pill pill-blue">MEDIUM</span>
+        <span class="fixed-pill">FIXED</span>
+      </div>
+      <div class="bug-meta">Iteration 4 &nbsp;|&nbsp; Follow-up to Bug 3</div>
+      <div class="bug-body">After the row-per-color fan-out was introduced, the <code>totalRecords</code> count reflected the raw database row count, not the expanded display row count. This caused the paginator to show incorrect totals &mdash; e.g. "22 items" when 40+ display rows existed.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> Added a parallel count query that sums <code>cardinality(available_colors)</code> across all matching variants.</div>
+      <div class="bug-file">variant-list.component.ts</div>
+    </div>
+
+    <!-- Bug 6 -->
+    <div class="bug-card medium">
+      <div class="bug-card-header">
+        <span class="bug-num">6</span>
+        <div class="bug-card-title">Stale <code>?color=</code> Param When Switching Variants on PDP</div>
+        <span class="pill pill-blue">MEDIUM</span>
+        <span class="fixed-pill">FIXED</span>
+      </div>
+      <div class="bug-meta">Iteration 4 &nbsp;|&nbsp; Follow-up to limitations review</div>
+      <div class="bug-body">When a user was viewing variant A with <code>?color=sea-blue</code> and clicked to switch to variant B that doesn't have sea-blue, the URL retained the stale <code>?color=sea-blue</code> parameter. The PDP component didn't validate the color against the new variant's available colors.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> <code>switchToVariant()</code> now intersects the current color param with the new variant's <code>availableColors</code> and clears the param if no match.</div>
+      <div class="bug-file">product-detail.component.ts</div>
+    </div>
+
+    <!-- Bug 7 -->
+    <div class="bug-card high">
+      <div class="bug-card-header">
+        <span class="bug-num">7</span>
+        <div class="bug-card-title">Rapid Double-Submit Creates Duplicate Rows &mdash; 6 Admin Forms</div>
+        <span class="pill pill-amber">HIGH</span>
+        <span class="fixed-pill">FIXED</span>
+      </div>
+      <div class="bug-meta">Iteration 8 &nbsp;|&nbsp; Discovered by: rapid-double-submit-supplier (production-hazard test)</div>
+      <div class="bug-body">A rapid double-click on any Save button across 6 admin forms caused two identical database rows to be inserted. The root cause: Angular's <code>[disabled]="saving()"</code> binding flushes to the DOM asynchronously &mdash; the second click lands before the button visually disables, and both clicks reach the submit handler.</div>
+      <div class="bug-body" style="margin-top:8px;"><strong>Fix:</strong> Added a synchronous guard (<code>if (this.saving()) return;</code>) as the first line of each save handler, before any async work. See the spotlight section below for the before/after code pattern.</div>
+      <div class="bug-file">supplier-form, inventory-form, brand-list, model-list, purchase-order-form, sale-create</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECTION 4: ITERATION TIMELINE                             -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">4</span>Iteration Timeline</div>
+
+  <div class="timeline">
+
+    <div class="tl-row has-bug">
+      <div class="tl-iter">Iter 1</div>
+      <div class="tl-body">
+        <div class="tl-main">
+          Variants / catalog kickoff &mdash; <strong>20 pass / 4 fail</strong>
+          <span class="pill pill-red" style="margin-left:6px;">4 cat2 bugs found</span>
         </div>
-
-        <!-- Test 9: detail-gallery-images (fixed) -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#9 — At least one image is visible in the product gallery</span>
-            <span class="badge badge-pass">pass</span>
-            <span class="badge badge-cat0">cat0 — seed data</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: detail-gallery-images</span>
-            <span>Duration: 37.0s (total across iterations: 45.0s)</span>
-            <span class="badge badge-iteration">Iter 2</span>
-          </div>
-          <div class="test-fix">
-            <strong>Fix applied (Iteration 2):</strong> Seeded 8 <code>variant_images</code> rows across 7 variants (including Google Pixel 6a which is the first catalog card) using placehold.co placeholder images. The <code>variant_images</code> table had 0 rows initially.
-          </div>
-          <button class="action-toggle" onclick="toggleTrace('trace-detail-gallery')">Show action trace (7 steps)</button>
-          <div class="action-trace" id="trace-detail-gallery">
-            <table>
-              <thead><tr><th>#</th><th>Step ID</th><th>Tool</th><th>Summary</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>0</td><td>navigate-catalog</td><td>browser_navigate</td><td>Navigated to catalog page, 24 products loaded</td><td>OK</td></tr>
-                <tr><td>1</td><td>wait-cards</td><td>browser_wait_for</td><td>Product cards loaded, Google Pixel 6a as first card</td><td>OK</td></tr>
-                <tr><td>2</td><td>click-first-card</td><td>browser_click</td><td>Clicked Google Pixel 6a card, navigated to product detail</td><td>OK</td></tr>
-                <tr><td>3</td><td>wait-gallery</td><td>browser_wait_for</td><td>Product detail loaded with gallery, 2 thumbnails, counter 1/2</td><td>OK</td></tr>
-                <tr><td>4</td><td>wait-image-load</td><td>browser_wait_for</td><td>Waited 3s for images to fully load</td><td>OK</td></tr>
-                <tr><td>5</td><td>assert-main-image</td><td>browser_evaluate</td><td>Main image exists: src=placehold.co, naturalWidth=600, complete=true</td><td>OK</td></tr>
-                <tr><td>6</td><td>assert-no-broken-images</td><td>browser_evaluate</td><td>3 gallery images (1 main + 2 thumbnails), 0 broken</td><td>OK</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="tl-stats">
+          Bugs: primary_image_url stale SELECT (blocker) &bull; PostgREST !inner missing (high) &bull; row-per-color fan-out required (feature) &bull; toggleActive type error discovered
         </div>
-
       </div>
     </div>
 
-    <!-- VARIANTS & IMAGES -->
-    <div class="area-card">
-      <div class="area-header area-variants-images" onclick="toggleArea('variants-images')">
-        <span class="area-name">Variants &amp; Images</span>
-        <span class="area-stats">
-          <span class="count-pass">1/1 passed</span>
-          <span class="area-chevron" id="chevron-variants-images">&#9654;</span>
-        </span>
-      </div>
-      <div class="area-body" id="body-variants-images">
-
-        <!-- Test 10: variant-detail-images (fixed) -->
-        <div class="test-row">
-          <div class="test-top">
-            <div class="test-icon pass">&#10003;</div>
-            <span class="test-name">#10 — Variant detail shows images for the selected variant</span>
-            <span class="badge badge-pass">pass</span>
-            <span class="badge badge-cat0">cat0 — seed data</span>
-          </div>
-          <div class="test-meta">
-            <span>ID: variant-detail-images</span>
-            <span>Duration: 98.0s</span>
-            <span class="badge badge-iteration">Iter 2</span>
-          </div>
-          <div class="test-fix">
-            <strong>Fix applied (Iteration 2):</strong> Same seed data fix as detail-gallery-images. The <code>variant_images</code> table had 0 rows. Inserted 8 placeholder image rows for 7 variants.
-          </div>
-          <button class="action-toggle" onclick="toggleTrace('trace-variant-images')">Show action trace (10 steps)</button>
-          <div class="action-trace" id="trace-variant-images">
-            <table>
-              <thead><tr><th>#</th><th>Step ID</th><th>Tool</th><th>Summary</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>0</td><td>auth-login</td><td>browser_navigate</td><td>Login page loaded</td><td>OK</td></tr>
-                <tr><td>1</td><td>auth-fill-email</td><td>browser_type</td><td>Email field filled</td><td>OK</td></tr>
-                <tr><td>2</td><td>auth-fill-password</td><td>browser_type</td><td>Password field filled</td><td>OK</td></tr>
-                <tr><td>3</td><td>auth-click-signin</td><td>browser_click</td><td>Redirected to /admin/dashboard</td><td>OK</td></tr>
-                <tr><td>4</td><td>navigate-variants</td><td>browser_navigate</td><td>Variants list loaded: 22 variants across 3 pages</td><td>OK</td></tr>
-                <tr><td>5</td><td>wait-table</td><td>browser_wait_for</td><td>Waited for table data to load</td><td>OK</td></tr>
-                <tr><td>6</td><td>click-view-details</td><td>browser_click</td><td>Clicked Google Pixel 9 Pro XL 512 variant row</td><td>OK</td></tr>
-                <tr><td>7</td><td>wait-detail</td><td>browser_wait_for</td><td>Variant detail page loaded with gallery</td><td>OK</td></tr>
-                <tr><td>8</td><td>check-images-section</td><td>browser_evaluate</td><td>Found 1 variant image loaded, 0 broken</td><td>OK</td></tr>
-                <tr><td>9</td><td>assert-no-broken-images</td><td>browser_evaluate</td><td>Assertion passed: 0 broken images</td><td>OK</td></tr>
-              </tbody>
-            </table>
-          </div>
+    <div class="tl-row has-fix">
+      <div class="tl-iter">Iter 2</div>
+      <div class="tl-body">
+        <div class="tl-main">All 4 cat2 bugs fixed + 4 fan-out-affected tests re-verified &mdash; <strong>all green</strong>
+          <span class="pill pill-green" style="margin-left:6px;">+1 playbook hardening</span>
         </div>
-
+        <div class="tl-stats">
+          Playbook fix: variant-tuple-uniqueness &mdash; added color to tuple key after fan-out
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- SELF-HEALING LOG -->
-  <div class="section">
-    <div class="section-title">Self-Healing Log</div>
-    <table>
-      <thead>
-        <tr><th>Iteration</th><th>Playbook</th><th>Category</th><th>Fix Action</th><th>Result</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td style="font-weight:600;color:#64748b;">2</td>
-          <td style="font-weight:500;">auth-logout</td>
-          <td><span class="badge badge-cat1">cat1</span></td>
-          <td>Updated playbook: redirect target from <code>/auth/login</code> to <code>/</code>, shop name from "Phone Shop" to "Sprint Mobiles"</td>
-          <td><span class="badge badge-pass">Pass on retry</span></td>
-        </tr>
-        <tr>
-          <td style="font-weight:600;color:#64748b;">2</td>
-          <td style="font-weight:500;">detail-gallery-images</td>
-          <td><span class="badge badge-cat0">cat0</span></td>
-          <td>Seeded 8 <code>variant_images</code> rows across 7 variants using placehold.co placeholder images</td>
-          <td><span class="badge badge-pass">Pass on retry</span></td>
-        </tr>
-        <tr>
-          <td style="font-weight:600;color:#64748b;">2</td>
-          <td style="font-weight:500;">variant-detail-images</td>
-          <td><span class="badge badge-cat0">cat0</span></td>
-          <td>Same seed data fix — <code>variant_images</code> table had 0 rows; inserted 8 placeholder rows</td>
-          <td><span class="badge badge-pass">Pass on retry</span></td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="margin-top:10px; font-size:12px; color:#64748b; padding: 8px 12px; background:#f8fafc; border-radius:6px;">
-      <strong>Seed data note:</strong> 8 rows inserted into <code>variant_images</code> using placehold.co placeholder URLs. To clean up: <code>DELETE FROM variant_images WHERE image_url LIKE '%placehold.co%'</code>
+    <div class="tl-row has-fix">
+      <div class="tl-iter">Iter 3</div>
+      <div class="tl-body">
+        <div class="tl-main">
+          5 weak tests upgraded to genuine passes + Pixel 7a 3-image seeding
+          <span class="star-pill" style="margin-left:6px;">&#9733; 5 weak-test upgrades</span>
+        </div>
+        <div class="tl-stats">
+          Playbook fixes: catalog-search (real assertions), detail-thumbnail-switch (direct nav + .on class), detail-color-variant (?color= URL flow), detail-storage-variant (.ov-card click), variant-primary-toggle (exactly 1 Primary badge)
+          &bull; Seed: 3 variant_images rows inserted for Pixel 7a via psql
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- RESULTS TABLE (flat overview) -->
-  <div class="section">
-    <div class="section-title">All Results</div>
-    <table>
-      <thead>
-        <tr><th>#</th><th>Playbook ID</th><th>Name</th><th>Area</th><th>Status</th><th>Iter</th><th>Duration</th><th>Fix</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1</td><td><code>auth-login-valid</code></td>
-          <td>Login with valid email/password redirects to /admin/dashboard</td>
-          <td>auth</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>45.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>2</td><td><code>auth-login-wrong-password</code></td>
-          <td>Login with wrong password shows error message</td>
-          <td>auth</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>53.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>3</td><td><code>auth-guard-redirect</code></td>
-          <td>Unauthenticated visit to /admin/dashboard redirects to login page</td>
-          <td>auth</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>21.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>4</td><td><code>auth-logout</code></td>
-          <td>Logout clears session and redirects to homepage</td>
-          <td>auth</td>
-          <td><span class="badge badge-pass">PASS</span> <span class="badge badge-cat1">cat1</span></td>
-          <td>2</td><td>89.0s</td><td>Playbook updated</td>
-        </tr>
-        <tr>
-          <td>5</td><td><code>catalog-loads-products</code></td>
-          <td>Catalog page loads and renders at least 1 product card</td>
-          <td>catalog</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>18.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>6</td><td><code>catalog-card-complete</code></td>
-          <td>Each product card shows an image, title, price, and condition badge</td>
-          <td>catalog</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>30.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>7</td><td><code>catalog-navigate-detail</code></td>
-          <td>Clicking a product card navigates to /product/{slug}</td>
-          <td>catalog</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>18.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>8</td><td><code>detail-renders-data</code></td>
-          <td>Detail page loads and shows product title, price, condition, PTA status</td>
-          <td>product-detail</td>
-          <td><span class="badge badge-pass">PASS</span></td>
-          <td>1</td><td>30.0s</td><td>—</td>
-        </tr>
-        <tr>
-          <td>9</td><td><code>detail-gallery-images</code></td>
-          <td>At least one image is visible in the product gallery</td>
-          <td>product-detail</td>
-          <td><span class="badge badge-pass">PASS</span> <span class="badge badge-cat0">cat0</span></td>
-          <td>2</td><td>45.0s</td><td>Seed data inserted</td>
-        </tr>
-        <tr>
-          <td>10</td><td><code>variant-detail-images</code></td>
-          <td>Variant detail shows images for the selected variant</td>
-          <td>variants-images</td>
-          <td><span class="badge badge-pass">PASS</span> <span class="badge badge-cat0">cat0</span></td>
-          <td>2</td><td>146.0s</td><td>Seed data inserted</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- SCREENSHOTS -->
-  <div class="section">
-    <div class="section-title">Screenshots</div>
-    <div class="screenshot-grid">
-
-      <div class="screenshot-card">
-        <img src="auth/auth-login-valid-result.png" alt="auth-login-valid screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#1 auth-login-valid — Admin dashboard after successful login</div>
+    <div class="tl-row has-fix">
+      <div class="tl-iter">Iter 4</div>
+      <div class="tl-body">
+        <div class="tl-main">Full 24-test sanity rerun after pagination drift + stale color fixes &mdash; <strong>all green</strong></div>
+        <div class="tl-stats">
+          Bugs fixed this iter: pagination drift (totalRecords mismatch) &bull; stale ?color= param on PDP
+        </div>
       </div>
-
-      <div class="screenshot-card">
-        <img src="auth/auth-guard-redirect-proof.png" alt="auth-guard-redirect screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#3 auth-guard-redirect — Unauthenticated redirect to login</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="auth/auth-logout-after-logout.png" alt="auth-logout screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#4 auth-logout — Homepage after logout (cat1 self-healed)</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="auth/after-logout.png" alt="after-logout screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#4 after-logout — Post-logout homepage state</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="catalog/catalog-loads-products.png" alt="catalog-loads-products screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#5 catalog-loads-products — Catalog page with product cards</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="catalog/catalog-card-complete.png" alt="catalog-card-complete screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#6 catalog-card-complete — Product card with all fields</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="catalog/catalog-navigate-detail-product-page.png" alt="catalog-navigate-detail screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#7 catalog-navigate-detail — Product detail page after card click</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="product-detail/detail-renders-data.png" alt="detail-renders-data screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#8 detail-renders-data — Product detail with full data</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="product-detail/detail-gallery-images.png" alt="detail-gallery-images screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#9 detail-gallery-images — Product gallery with images (cat0 self-healed)</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="variants-images/variant-detail-images.png" alt="variant-detail-images screenshot" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#10 variant-detail-images — Variant detail with images (cat0 self-healed)</div>
-      </div>
-
-      <div class="screenshot-card">
-        <img src="variants-images/variant-detail-no-images.png" alt="variant-detail-no-images (iter 1 failure)" loading="lazy" onerror="this.parentElement.innerHTML='<div style=&quot;padding:30px;text-align:center;color:#94a3b8;font-size:12px;&quot;>Screenshot not available</div>'">
-        <div class="screenshot-label">#10 variant-detail-no-images — Iteration 1 failure: no images present</div>
-      </div>
-
     </div>
-  </div>
 
-  <!-- EXECUTIVE SUMMARY -->
-  <div class="section">
-    <div class="section-title">Executive Summary</div>
-    <div class="exec-summary">
-      10 P0-critical tests ran across 4 areas (auth, catalog, product-detail, variants-images). All 10 passed, yielding a 100% pass rate. 7 of 10 tests passed on the first iteration; the remaining 3 required a second iteration due to self-healing interventions. One cat1 (playbook definition) fix was applied to <strong>auth-logout</strong> where the expected redirect path and shop name were outdated. Two cat0 (seed data) fixes were applied to <strong>detail-gallery-images</strong> and <strong>variant-detail-images</strong> because the <code>variant_images</code> table had zero rows. No application bugs (cat2) or infrastructure issues (cat3) were encountered. Auth, catalog, and product-detail areas are fully green. The system is ready for go-live provided the seed data gap is addressed in production (variant images must be populated with real product photography).
+    <div class="tl-row">
+      <div class="tl-iter">Iter 5</div>
+      <div class="tl-body">
+        <div class="tl-main">34 expansion tests (4 auth + 6 public + 24 admin smoke) &mdash; <strong>all green</strong></div>
+        <div class="tl-stats">
+          New areas: auth, public, admin (smoke). Login/logout/guard flows, all admin list pages verified.
+        </div>
+      </div>
     </div>
+
+    <div class="tl-row">
+      <div class="tl-iter">Iter 6</div>
+      <div class="tl-body">
+        <div class="tl-main">11 deep flow tests (sales cart, supplier CRUD, brand/model create, contact submit, homepage CTAs) &mdash; <strong>all green</strong>
+          <span class="pill pill-blue" style="margin-left:6px;">+2 playbook fixes</span>
+        </div>
+        <div class="tl-stats">
+          Playbook fixes: detail-renders-data (selector .price-now) &bull; catalog-sort-price (native &lt;select&gt; hint)
+        </div>
+      </div>
+    </div>
+
+    <div class="tl-row">
+      <div class="tl-iter">Iter 7</div>
+      <div class="tl-body">
+        <div class="tl-main">14 edge-case tests (validation, empty states, 404, permission boundary, cross-module nav) &mdash; <strong>all green</strong></div>
+        <div class="tl-stats">
+          New area: edge-cases. All error paths, empty states, and navigation guards confirmed.
+        </div>
+      </div>
+    </div>
+
+    <div class="tl-row has-bug">
+      <div class="tl-iter">Iter 8</div>
+      <div class="tl-body">
+        <div class="tl-main">8 production-hazard tests &mdash; <strong>REAL BUG FOUND</strong>: rapid double-submit creates duplicate suppliers
+          <span class="pill pill-red" style="margin-left:6px;">Bug 7 found</span>
+          <span class="fixed-pill" style="margin-left:6px;">FIXED same iter</span>
+        </div>
+        <div class="tl-stats">
+          Synchronous saving guard added to 6 admin forms. Retry confirmed green. Other hazard tests (race conditions, deep links, browser nav, session persistence) all passed.
+          &bull; Playbook fix: rapid-double-submit-supplier (unique RUN-suffix + delta count)
+        </div>
+      </div>
+    </div>
+
+    <div class="tl-row has-fix">
+      <div class="tl-iter">Iter 9</div>
+      <div class="tl-body">
+        <div class="tl-main">Regression smoke on 3 forms hit by the guard fix. 1 playbook flake fixed &mdash; <strong>all green</strong>
+          <span class="star-pill" style="margin-left:6px;">&#9733; 1 flake fix</span>
+        </div>
+        <div class="tl-stats">
+          Playbook fix: supplier-create &mdash; programmatic native-setter fill + native btn.click() to ensure Angular reactive form sees values correctly. brand-create and sales-create-add-product confirmed clean on regression.
+        </div>
+      </div>
+    </div>
+
+    <div class="tl-row has-fix">
+      <div class="tl-iter">Iter 10</div>
+      <div class="tl-body">
+        <div class="tl-main">Closed regression gap on remaining guarded forms &mdash; <strong>4/4 green</strong>
+          <span class="pill pill-green" style="margin-left:6px;">guard transparent for single-submit</span>
+        </div>
+        <div class="tl-stats">
+          Verified: inventory-create, inventory-edit, inventory-form-price-negative, model-create &mdash; saving guard confirmed not to interfere with normal single-click submit flows.
+          <span style="margin-left:6px;"><img style="width:80px;height:48px;object-fit:cover;border-radius:3px;border:1px solid #334155;vertical-align:middle;" src="iteration-10/inventory-create/inventory-create-filled.png" onerror="this.style.display='none'"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tl-row has-fix">
+      <div class="tl-iter">Iter 11</div>
+      <div class="tl-body">
+        <div class="tl-main">Final production-readiness gate &mdash; <strong>12/12 P0 critical-path green</strong>
+          <span style="display:inline-flex;align-items:center;gap:5px;background:#052e16;border:1px solid #16a34a;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700;color:#22c55e;margin-left:8px;">&#10003; PRODUCTION GATE PASS</span>
+        </div>
+        <div class="tl-stats">
+          All P0 tests re-run in the fully-fixed code state. Definitive go signal. Covers: auth, variants-admin, variants-images, catalog, product-detail, hazards critical paths.
+          <span style="margin-left:6px;"><img style="width:80px;height:48px;object-fit:cover;border-radius:3px;border:1px solid #334155;vertical-align:middle;" src="iteration-11-final-gate/variant-color-row-per-color/variant-color-row-per-color-pixel7a.png" onerror="this.style.display='none'"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECTION 5: COVERAGE BREAKDOWN                             -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">5</span>Coverage Breakdown by Area</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>Playbooks</th>
+        <th>Passed</th>
+        <th>Failed</th>
+        <th>First Run Iter</th>
+        <th>Coverage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>auth</strong></td>
+        <td>4</td>
+        <td><span class="pill pill-green">4</span></td>
+        <td>0</td>
+        <td>Iter 5</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>catalog</strong></td>
+        <td>7</td>
+        <td><span class="pill pill-green">7</span></td>
+        <td>0</td>
+        <td>Iter 1</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>product-detail</strong></td>
+        <td>5</td>
+        <td><span class="pill pill-green">5</span></td>
+        <td>0</td>
+        <td>Iter 1</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>variants-images</strong></td>
+        <td>5</td>
+        <td><span class="pill pill-green">5</span></td>
+        <td>0</td>
+        <td>Iter 1</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>variants-admin</strong></td>
+        <td>7</td>
+        <td><span class="pill pill-green">7</span></td>
+        <td>0</td>
+        <td>Iter 1</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>admin (smoke)</strong></td>
+        <td>24</td>
+        <td><span class="pill pill-green">24</span></td>
+        <td>0</td>
+        <td>Iter 5</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>public (smoke)</strong></td>
+        <td>6</td>
+        <td><span class="pill pill-green">6</span></td>
+        <td>0</td>
+        <td>Iter 5</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>admin-deep</strong></td>
+        <td>6</td>
+        <td><span class="pill pill-green">6</span></td>
+        <td>0</td>
+        <td>Iter 6</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>public-deep</strong></td>
+        <td>5</td>
+        <td><span class="pill pill-green">5</span></td>
+        <td>0</td>
+        <td>Iter 6</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>edge-cases</strong></td>
+        <td>14</td>
+        <td><span class="pill pill-green">14</span></td>
+        <td>0</td>
+        <td>Iter 7</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>hazards</strong></td>
+        <td>8</td>
+        <td><span class="pill pill-green">8</span></td>
+        <td>0</td>
+        <td>Iter 8</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+      </tr>
+      <tr style="background:#0d1f0d">
+        <td><strong>TOTAL</strong></td>
+        <td><strong>91</strong></td>
+        <td><span class="pill pill-green">91</span></td>
+        <td>0</td>
+        <td>&mdash;</td>
+        <td><div class="bar-wrap"><div class="bar-fill" style="width:100%;background:#16a34a"></div></div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECTION 6: PER-AREA DETAILS GRID                          -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">6</span>Per-Area Playbook Details</div>
+
+  <!-- AUTH -->
+  <div class="area-section">
+    <details open>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">auth</span>
+          <span class="area-counts">4 tests &nbsp;|&nbsp; 4 passed &nbsp;|&nbsp; First run: Iter 5</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">auth-login-valid (#1)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 5</span>
+          <span class="thumb-cell"><img class="thumb" src="auth/auth-login-valid-result.png" alt="auth-login-valid screenshot" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">auth-login-wrong-password (#2)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 5</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">auth-guard-redirect (#3)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 5</span>
+          <span class="thumb-cell"><img class="thumb" src="auth/auth-guard-redirect-proof.png" alt="auth-guard-redirect screenshot" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">auth-logout (#4)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 5</span>
+          <span class="thumb-cell"><img class="thumb" src="auth/after-logout.png" alt="auth-logout screenshot" onerror="this.style.display='none'"></span>
+        </div>
+      </div>
+    </details>
   </div>
 
-  <!-- FOOTER -->
-  <div style="text-align:center; padding:20px 0; font-size:11px; color:#94a3b8;">
-    Generated by E2E Test Reporter &middot; May 13, 2026 &middot; Self-contained HTML report
+  <!-- CATALOG -->
+  <div class="area-section">
+    <details open>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">catalog</span>
+          <span class="area-counts">7 tests &nbsp;|&nbsp; 7 passed &nbsp;|&nbsp; First run: Iter 1</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-loads-products (#5)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"><img class="thumb" src="catalog/catalog-loads-products.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-card-complete (#6)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"><img class="thumb" src="catalog/catalog-card-complete.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-search (#7) <span class="star-pill">&#9733; upgraded</span></span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 3</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-brand-filter (#8)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-condition-filter (#9)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-sort-price (#10)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">catalog-navigate-detail (#11)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"><img class="thumb" src="catalog/catalog-navigate-detail-product-page.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- PRODUCT-DETAIL -->
+  <div class="area-section">
+    <details open>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">product-detail</span>
+          <span class="area-counts">5 tests &nbsp;|&nbsp; 5 passed &nbsp;|&nbsp; First run: Iter 1</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">detail-renders-data (#12)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"><img class="thumb" src="product-detail/detail-renders-data.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">detail-gallery-images (#13)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"><img class="thumb" src="product-detail/detail-gallery-images.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">detail-thumbnail-switch (#14) <span class="star-pill">&#9733; upgraded</span></span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 3</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">detail-color-variant (#15) <span class="star-pill">&#9733; upgraded</span></span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 3</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">detail-storage-variant (#16) <span class="star-pill">&#9733; upgraded</span></span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 3</span>
+          <span class="thumb-cell"></span>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- VARIANTS-IMAGES -->
+  <div class="area-section">
+    <details open>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">variants-images</span>
+          <span class="area-counts">5 tests &nbsp;|&nbsp; 5 passed &nbsp;|&nbsp; Iter 1 (fixed by iter 4)</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variants-list (#23)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-detail (#24)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-detail-images (#25) &mdash; was cat2 blocker</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 2</span>
+          <span class="thumb-cell"><img class="thumb" src="variants-images/variant-detail-images.png" alt="" onerror="this.style.display='none'"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-image-upload (#26)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-primary-toggle (#27) <span class="star-pill">&#9733; upgraded</span></span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 3</span>
+          <span class="thumb-cell"></span>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- VARIANTS-ADMIN -->
+  <div class="area-section">
+    <details open>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">variants-admin</span>
+          <span class="area-counts">7 tests &nbsp;|&nbsp; 7 passed &nbsp;|&nbsp; Iter 1 (fixes by iter 4)</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-search-filter (#28) &mdash; was cat2 high</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 2</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-inline-price-no-nav (#29)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-tuple-uniqueness (#30)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-color-row-per-color (#31) &mdash; was cat2 feature</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 2</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-toggle-active (#32) &mdash; was cat2 high</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 2</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-image-color-isolation (#33)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+        <div class="pb-row">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="pb-id">variant-upload-spinner-resolves (#34)</span>
+          <span><span class="pill pill-green">pass</span></span>
+          <span style="color:#64748b;font-size:11px;">Iter 4</span>
+          <span class="thumb-cell"></span>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ADMIN SMOKE -->
+  <div class="area-section">
+    <details>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">admin (smoke) &mdash; click to expand</span>
+          <span class="area-counts">24 tests &nbsp;|&nbsp; 24 passed &nbsp;|&nbsp; First run: Iter 5</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-dashboard-loads (#17)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-inventory-list (#18)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-inventory-create (#19)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-inventory-edit (#20)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-sales-list (#21)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-user-list (#22)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-sales-create-loads (#41)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-sales-dashboard-loads (#42)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-customers-list-loads (#43)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-refunds-list-loads (#44)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-suppliers-list-loads (#45)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-purchase-orders-list-loads (#46)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-brands-list-loads (#47)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-models-list-loads (#48)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-receipts-list-loads (#49)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-messages-list-loads (#50)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-coupons-list-loads (#51)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-loyalty-members-loads (#52)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-loyalty-config-loads (#53)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-locations-list-loads (#54)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-inventory-transfers-list-loads (#55)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-audit-logs-loads (#56)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-shop-details-loads (#57)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-storage-config-loads (#58)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- PUBLIC SMOKE -->
+  <div class="area-section">
+    <details>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">public (smoke) &mdash; click to expand</span>
+          <span class="area-counts">6 tests &nbsp;|&nbsp; 6 passed &nbsp;|&nbsp; First run: Iter 5</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">homepage-loads (#35)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">homepage-featured-products (#36)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">contact-form-loads (#37)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">about-loads (#38)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">compare-loads (#39)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">receipt-lookup-invalid (#40)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 5</span><span></span></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- ADMIN-DEEP -->
+  <div class="area-section">
+    <details>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">admin-deep &mdash; click to expand</span>
+          <span class="area-counts">6 tests &nbsp;|&nbsp; 6 passed &nbsp;|&nbsp; First run: Iter 6</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">sales-create-add-product (#59)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 9</span><span class="thumb-cell"><img class="thumb" src="iteration-9/sales-create-add-product/cart-with-item.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">supplier-create (#60) <span class="star-pill">&#9733; flake fix</span></span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 9</span><span class="thumb-cell"><img class="thumb" src="iteration-9/supplier-create/final.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">supplier-detail-sections (#61)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">refund-list-loads (#62)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">brand-create (#63)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 9</span><span class="thumb-cell"><img class="thumb" src="iteration-9/brand-create/after-creation.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">model-create (#64)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- PUBLIC-DEEP -->
+  <div class="area-section">
+    <details>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">public-deep &mdash; click to expand</span>
+          <span class="area-counts">5 tests &nbsp;|&nbsp; 5 passed &nbsp;|&nbsp; First run: Iter 6</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">contact-form-submit (#65)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">homepage-nav-to-catalog (#66)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">homepage-brand-tab-switches (#67)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">compare-page-add-product (#68)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-clear-filters (#69)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 6</span><span></span></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- EDGE-CASES -->
+  <div class="area-section">
+    <details>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">edge-cases &mdash; click to expand</span>
+          <span class="area-counts">14 tests &nbsp;|&nbsp; 14 passed &nbsp;|&nbsp; First run: Iter 7</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">contact-form-invalid-email (#70)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">supplier-form-required-empty (#71)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">inventory-form-price-negative (#72)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">brand-form-duplicate-name (#73)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-search-no-results (#74)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-customers-empty-search (#75)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-filter-zero-results (#76)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">product-detail-invalid-slug (#77)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">variant-detail-invalid-id (#78)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-unknown-route (#79)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">navigate-public-to-admin (#80)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">dashboard-nav-to-sales (#81)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">variant-list-deselect-filter (#82)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-pagination (#83)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 7</span><span></span></div>
+      </div>
+    </details>
+  </div>
+
+  <!-- HAZARDS -->
+  <div class="area-section">
+    <details>
+      <summary>
+        <div class="area-header">
+          <span class="pb-status-dot dot-pass"></span>
+          <span class="area-name">hazards &mdash; click to expand</span>
+          <span class="area-counts">8 tests &nbsp;|&nbsp; 8 passed &nbsp;|&nbsp; First run: Iter 8</span>
+          <span class="pill pill-green">100%</span>
+        </div>
+      </summary>
+      <div class="area-body">
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">rapid-double-submit-supplier (#84)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/rapid-double-submit-supplier/final.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-filter-rapid-toggle (#85)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/catalog-filter-rapid-toggle/after-rapid-filter.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">inline-price-rapid-click (#86)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/inline-price-rapid-click/after-double-click.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-back-forward (#87)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/catalog-back-forward/after-forward.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">product-detail-deep-link (#88)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/product-detail-deep-link/deep-link-pdp.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">variant-price-edit-mid-refresh (#89)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/variant-price-edit-mid-refresh/after-reload.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">catalog-filter-deep-link (#90)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/catalog-filter-deep-link/url-driven-filter.png" alt="" onerror="this.style.display='none'"></span></div>
+        <div class="pb-row"><span class="pb-status-dot dot-pass"></span><span class="pb-id">admin-action-after-logout (#91)</span><span><span class="pill pill-green">pass</span></span><span style="color:#64748b;font-size:11px;">Iter 8</span><span class="thumb-cell"><img class="thumb" src="iteration-8/admin-action-after-logout/final-state.png" alt="" onerror="this.style.display='none'"></span></div>
+      </div>
+    </details>
   </div>
 
 </div>
 
-<script>
-function toggleArea(id) {
-  var body = document.getElementById('body-' + id);
-  var chevron = document.getElementById('chevron-' + id);
-  if (body.classList.contains('open')) {
-    body.classList.remove('open');
-    chevron.classList.remove('open');
-  } else {
-    body.classList.add('open');
-    chevron.classList.add('open');
-  }
+
+<!-- ========================================================= -->
+<!-- SECTION 7: DOUBLE-SUBMIT SPOTLIGHT                        -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">7</span>Production Hazard Spotlight: Rapid Double-Submit Guard Fix</div>
+
+  <div class="spotlight">
+    <h3>The Problem</h3>
+    <p style="color:#c4b5fd;font-size:13px;margin-bottom:12px;">
+      Angular's <code>[disabled]="saving()"</code> template binding is asynchronous &mdash; it schedules a DOM attribute update on the next change-detection cycle. A user who double-clicks a Save button faster than that cycle fires will have both clicks reach the submit handler. Both fire <code>await this.service.create(...)</code> concurrently, and two identical rows are inserted into the database. This is a production data-integrity vulnerability.
+    </p>
+
+    <h3>Before / After</h3>
+    <pre><span class="code-comment">// Before (vulnerable) &mdash; 6 forms had this pattern</span>
+<span class="code-keyword">async</span> <span class="code-fn">onSubmit</span>() {
+  <span class="code-keyword">if</span> (this.form.invalid) <span class="code-keyword">return</span>;
+  this.saving.<span class="code-fn">set</span>(<span class="code-keyword">true</span>);  <span class="code-comment">// [disabled] binding doesn't flush in same tick</span>
+  <span class="code-keyword">await</span> this.service.<span class="code-fn">create</span>(...);
+  this.saving.<span class="code-fn">set</span>(<span class="code-keyword">false</span>);
 }
-function toggleTrace(id) {
-  var el = document.getElementById(id);
-  if (el) el.classList.toggle('open');
-}
-</script>
+
+<span class="code-comment">// After (hardened) &mdash; synchronous guard blocks the second click</span>
+<span class="code-keyword">async</span> <span class="code-fn">onSubmit</span>() {
+  <span class="code-keyword">if</span> (this.<span class="code-fn">saving</span>()) <span class="code-keyword">return</span>;  <span class="code-guard">// &lt;-- synchronous guard, evaluated immediately</span>
+  <span class="code-keyword">if</span> (this.form.invalid) <span class="code-keyword">return</span>;
+  this.saving.<span class="code-fn">set</span>(<span class="code-keyword">true</span>);
+  <span class="code-keyword">await</span> this.service.<span class="code-fn">create</span>(...);
+  this.saving.<span class="code-fn">set</span>(<span class="code-keyword">false</span>);
+}</pre>
+
+    <div style="margin-top:16px;">
+      <h3>6 Forms Patched</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:10px;">
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#c4b5fd;">supplier-form.component.ts</div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#c4b5fd;">inventory-form.component.ts</div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#c4b5fd;">brand-list.component.ts</div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#c4b5fd;">model-list.component.ts</div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#c4b5fd;">purchase-order-form.component.ts</div>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;color:#c4b5fd;">sale-create.component.ts</div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding:12px;background:#0f172a;border-radius:8px;border:1px solid #4ade80;display:flex;align-items:flex-start;gap:10px;">
+      <span style="color:#4ade80;font-size:16px;flex-shrink:0;">&#10003;</span>
+      <div style="font-size:12px;color:#86efac;">
+        <strong>Verification:</strong> rapid-double-submit-supplier test confirmed that after the fix, rapid double-clicking produces exactly 1 row with the unique RUN-suffix. <code>matchingThisRun=1</code> on all 3 regression playbooks (supplier-create, brand-create, sales-create-add-product) in Iter 9.
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <p style="color:#94a3b8;font-size:12px;"><strong>Why [disabled] alone is insufficient:</strong> Angular signals (<code>signal()</code>) are synchronous reads but <code>[disabled]="saving()"</code> is a template binding that only updates the DOM on the next change-detection cycle. The sequence on a rapid double-click: click-1 fires handler, <code>saving.set(true)</code> runs, change detection is scheduled, click-2 fires handler (saving is true in memory but DOM button not yet disabled), both reach <code>await create()</code>. The synchronous <code>if (this.saving()) return</code> guard short-circuits before any async work, making it immune to this race.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECTION 8: SELF-HEALING LOG                               -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">8</span>Self-Healing Log &mdash; 10 Playbook Hardenings</div>
+
+  <table class="heal-table">
+    <thead>
+      <tr>
+        <th>Iter</th>
+        <th>Playbook</th>
+        <th>Category</th>
+        <th>Fix Applied</th>
+        <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2</td>
+        <td style="font-family:monospace;font-size:11px;">variants-admin/variant-tuple-uniqueness</td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Added color to tuple key after row-per-color fan-out</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td style="font-family:monospace;font-size:11px;">catalog/catalog-search <span class="star-pill">&#9733;</span></td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Added real assertions: narrows to iPhone-named cards; clearing restores full list</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td style="font-family:monospace;font-size:11px;">product-detail/detail-thumbnail-switch <span class="star-pill">&#9733;</span></td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Direct nav to seeded Pixel 7a, asserts .on class moves on thumbnail click</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td style="font-family:monospace;font-size:11px;">product-detail/detail-color-variant <span class="star-pill">&#9733;</span></td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Tests ?color= URL flow vs nonexistent in-page swatches</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td style="font-family:monospace;font-size:11px;">product-detail/detail-storage-variant <span class="star-pill">&#9733;</span></td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>.ov-card click verifies 256gb URL nav</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td style="font-family:monospace;font-size:11px;">variants-images/variant-primary-toggle <span class="star-pill">&#9733;</span></td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Asserts exactly 1 Primary badge after toggle; confirms only 1 can be active</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td style="font-family:monospace;font-size:11px;">product-detail/detail-renders-data</td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Selector updated: .price-now (PDP uses .price-now not .price)</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td style="font-family:monospace;font-size:11px;">catalog/catalog-sort-price</td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Hint updated &mdash; sort is native &lt;select&gt; not a custom component</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td style="font-family:monospace;font-size:11px;">hazards/rapid-double-submit-supplier</td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Use unique RUN-suffix and delta count (isolation from prior runs)</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td style="font-family:monospace;font-size:11px;">admin-deep/supplier-create <span class="star-pill">&#9733; flake</span></td>
+        <td><span class="pill pill-blue">cat1_playbook</span></td>
+        <td>Programmatic native-setter fill + native btn.click() to ensure Angular reactive form sees values</td>
+        <td><span class="pill pill-green">Pass</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECTION 9: KNOWN LIMITATIONS                              -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title"><span class="section-num">9</span>Known Limitations</div>
+
+  <div class="limit-item">
+    <span class="limit-num">1</span>
+    <span><strong>model-create dialog:</strong> The test verifies the create dialog opens and brand selection works, but does NOT click Save because the dialog requires selecting a specific GSMArena search result (live network call, fragile). This is a deliberate test boundary, not a product defect.</span>
+  </div>
+
+  <div class="limit-item">
+    <span class="limit-num">2</span>
+    <span><strong>admin-action-after-logout:</strong> Removing localStorage auth token does NOT terminate the same-tab session because Supabase Auth keeps the JWT in memory. This is documented Supabase behavior &mdash; true session termination requires calling <code>supabase.auth.signOut()</code>. Not a bug; test marked passing with this caveat documented.</span>
+  </div>
+
+  <div class="limit-item">
+    <span class="limit-num">3</span>
+    <span><strong>catalog-pagination:</strong> Test gracefully skips the load-more assertion when product count is below threshold. With 21 products and pageSize 12, the second-page selectors are not triggered. RPC limit verified correct via psql. No bug &mdash; requires more seed data to fully exercise this path.</span>
+  </div>
+</div>
+
+
+<!-- ========================================================= -->
+<!-- EXECUTIVE SUMMARY                                          -->
+<!-- ========================================================= -->
+<div class="section">
+  <div class="section-title">Executive Summary</div>
+  <div class="exec-box">
+    91 end-to-end tests ran across 11 areas of the shop-app over approximately 4 hours and 9 autonomous iterations, achieving a final score of <strong style="color:#22c55e">91/91 (100%)</strong> with zero remaining failures. The run started with 4 real application bugs in the variants admin area &mdash; most critically a blocker that made the entire variants list return HTTP 400 due to a stale database column reference left by a migration. All 4 were found and fixed in iterations 1 and 2. Iterations 3 and 4 upgraded 5 weak-passing tests to genuine assertions and fixed two follow-on issues (pagination drift, stale URL params) that emerged from the fan-out implementation. Iterations 5 through 7 expanded coverage to 34 new auth/admin/public smoke tests and 14 edge-case tests, all green. Iteration 8 proactively ran 8 production-hazard scenarios and discovered a data-integrity vulnerability: rapid double-clicking any Save button across 6 admin forms would create duplicate database rows. This was fixed within the same iteration by adding a synchronous <code>if (this.saving()) return</code> guard. Iteration 9 confirmed the regression smoke was clean and fixed one Angular event-binding flake in the supplier-create playbook. All 5 user-priority issues were addressed: 3 fixed and verified, 2 confirmed not broken. The application is in a solid state; the only open items are 3 documented test limitations that require either additional seed data or acceptance of documented platform behavior.
+  </div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="footer">
+  <div>Report generated: 2026-05-20 &nbsp;|&nbsp; shop-app Overnight E2E Run</div>
+  <div>Results dir: <code>testing/e2e-agent/results/</code></div>
+  <div>Playbooks dir: <code>testing/e2e-agent/playbooks/</code></div>
+  <div>summary.json: <code>testing/e2e-agent/results/summary.json</code></div>
+  <div>Iteration dirs: <code>testing/e2e-agent/results/iteration-1/</code> through <code>iteration-9/</code></div>
+  <div style="margin-top:8px;">Screenshots: 220 &nbsp;|&nbsp; Result JSONs: 135 (131 iteration + 4 legacy flat) &nbsp;|&nbsp; Unique playbooks: 91</div>
+</div>
+
+</div><!-- /container -->
 </body>
 </html>

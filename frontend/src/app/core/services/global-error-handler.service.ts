@@ -11,10 +11,11 @@ export class GlobalErrorHandler implements ErrorHandler {
   handleError(error: unknown): void {
     const unwrapped = this.unwrapError(error);
 
-    // Silently ignore AbortErrors — these are benign signals from Supabase's
-    // Web Locks API during navigation/route changes and should not trigger
-    // error toasts or change detection cascades.
-    if (this.isAbortError(unwrapped)) {
+    // Silently ignore AbortErrors and Web Locks acquisition timeouts — these are
+    // benign signals from Supabase's auth lock (used during navigation, route
+    // changes, and cross-tab token refresh) and should not trigger error toasts
+    // or change detection cascades.
+    if (this.isAbortError(unwrapped) || this.isLockTimeoutError(unwrapped)) {
       return;
     }
 
@@ -29,6 +30,22 @@ export class GlobalErrorHandler implements ErrorHandler {
         this.errorHandlingService.handleUnexpectedError(unwrapped);
       }
     });
+  }
+
+  private isLockTimeoutError(error: unknown): boolean {
+    if (error instanceof Error && error.name === 'NavigatorLockAcquireTimeoutError') {
+      return true;
+    }
+    if (typeof error === 'object' && error !== null) {
+      const e = error as Record<string, unknown>;
+      if (e['name'] === 'NavigatorLockAcquireTimeoutError') {
+        return true;
+      }
+      if (typeof e['message'] === 'string' && (e['message'] as string).includes('Navigator LockManager')) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private isAbortError(error: unknown): boolean {

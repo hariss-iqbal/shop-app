@@ -2,62 +2,83 @@
   "id": "detail-storage-variant",
   "testNumber": 16,
   "area": "product-detail",
-  "name": "Selecting a different storage variant updates displayed info",
+  "name": "Selecting a different storage variant of Pixel 7 Pro navigates to that storage's PDP",
   "requiresAuth": false,
   "preconditions": {
     "minProductCount": 1,
     "requiresSeedData": true,
-    "note": "Skip if product has no storage variants"
+    "note": "Pixel 7 Pro has 128GB (non_pta) and 256GB (pta_approved) variants — exposed via the .ov-grid section on PDP"
   },
   "steps": [
     {
-      "id": "navigate-catalog",
+      "id": "navigate-pdp",
       "action": "navigate",
-      "target": "/catalog"
+      "target": "/product/google-google-pixel-7-pro-128gb-open-box-non-pta",
+      "description": "Land on Pixel 7 Pro 128GB"
     },
     {
-      "id": "wait-cards",
+      "id": "wait-pdp",
       "action": "waitFor",
-      "selector": ".cat-product-grid .card",
+      "selector": ".pdp",
       "timeout": 10000
     },
     {
-      "id": "click-first-card",
-      "action": "click",
-      "selector": ".cat-product-grid .card"
-    },
-    {
-      "id": "wait-detail",
+      "id": "wait-other-variants",
       "action": "waitFor",
-      "selector": ".pdp",
+      "selector": ".ov-grid",
       "timeout": 8000
     },
     {
-      "id": "check-storage-variants",
+      "id": "assert-multi-storage-card-exists",
       "action": "evaluate",
-      "script": "(() => { const storageEl = document.querySelectorAll('[class*=\"storage\"], [class*=\"variant\"] button, [class*=\"variant\"] a, .pdp [class*=\"chip\"]'); return { hasOptions: storageEl.length > 0, count: storageEl.length }; })()",
-      "description": "Check for storage variant options"
+      "script": "(() => { const cards = Array.from(document.querySelectorAll('.ov-grid .ov-card:not(.current)')); const storages = cards.map(c => Array.from(c.querySelectorAll('.ov-chip')).find(ch => /GB/.test(ch.textContent || ''))?.textContent?.trim() || ''); const has256 = storages.some(s => s.includes('256')); return { otherCount: cards.length, storages, has256 }; })()",
+      "assertResult": {
+        "field": "has256",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Other variants section contains a 256 GB card"
     },
     {
-      "id": "click-storage-variant",
-      "action": "click",
-      "description": "Click a storage variant option if available",
-      "useSnapshot": true,
-      "snapshotHint": "Look for storage size options like '128GB', '256GB' etc. Skip if none found."
+      "id": "click-256gb-variant",
+      "action": "evaluate",
+      "script": "(() => { const cards = Array.from(document.querySelectorAll('.ov-grid .ov-card:not(.current)')); for (const c of cards) { const chips = Array.from(c.querySelectorAll('.ov-chip')); if (chips.some(ch => /256/.test(ch.textContent || ''))) { c.scrollIntoView({block: 'center'}); c.click(); return { clicked: true }; } } return { clicked: false }; })()",
+      "assertResult": {
+        "field": "clicked",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Click the 256GB variant card specifically"
     },
     {
-      "id": "wait-variant-update",
+      "id": "wait-nav",
       "action": "wait",
       "time": 2
     },
     {
-      "id": "assert-page-still-valid",
-      "action": "assert",
-      "type": "url",
-      "assertion": "contains",
-      "expected": "/product/"
+      "id": "assert-url-has-256gb",
+      "action": "evaluate",
+      "script": "(() => ({ href: location.href, has256gb: /256gb/i.test(location.href) }))()",
+      "assertResult": {
+        "field": "has256gb",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "Navigated to a slug containing '256gb'"
+    },
+    {
+      "id": "assert-page-loaded",
+      "action": "waitFor",
+      "selector": ".pdp",
+      "timeout": 10000,
+      "description": "New PDP renders"
+    },
+    {
+      "id": "screenshot-after-storage-switch",
+      "action": "screenshot",
+      "filename": "pdp-storage-switched"
     }
   ],
   "priority": "P2",
-  "businessContext": "Storage variants show different price points — essential for customers comparing capacities"
+  "businessContext": "Storage tiers of the same model must be discoverable so customers can compare price/capacity. Pixel 7 Pro has 128GB and 256GB."
 }

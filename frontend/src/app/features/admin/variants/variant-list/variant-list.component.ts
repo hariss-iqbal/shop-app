@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
@@ -25,7 +25,10 @@ import { ProductCondition, ProductConditionLabels } from '../../../../enums/prod
 import { PtaStatus, PtaStatusLabels } from '../../../../enums/pta-status.enum';
 
 interface VariantRow {
+  /** Synthetic row key: `${variantId}__${color ?? '__nocolor'}`. Used as the p-table dataKey so rows track per (variant, color). */
   id: string;
+  /** Real variant id — use this for ALL mutations and navigation. */
+  variantId: string;
   modelId: string;
   modelName: string;
   brandId: string;
@@ -37,8 +40,10 @@ interface VariantRow {
   sellingPrice: number;
   avgCostPrice: number;
   stockCount: number;
-  availableColors: string[];
+  /** Single color for this row, or null if the variant has no available_colors. */
+  color: string | null;
   isActive: boolean;
+  /** Color-specific primary image; falls back to generic (color IS NULL) primary, else null. */
   primaryImageUrl: string | null;
 }
 
@@ -70,7 +75,8 @@ export class VariantListComponent implements OnInit {
     private productService: ProductService,
     private brandService: BrandService,
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   variants = signal<VariantRow[]>([]);
@@ -114,12 +120,50 @@ export class VariantListComponent implements OnInit {
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async ngOnInit(): Promise<void> {
+    // Restore filters from the URL synchronously so the p-table's initial
+    // lazy-load (which fires after ngOnInit) applies them on first render.
+    this.restoreFiltersFromUrl();
+
     try {
       const brands = await this.brandService.getBrands();
       this.brands.set(brands);
     } catch (error) {
       console.error('Failed to load brands:', error);
     }
+  }
+
+  /**
+   * Seeds the filter state from the current route's query params. Lets filters
+   * survive navigating to a variant and back (the browser restores the URL with
+   * its query string, and this re-applies them).
+   */
+  private restoreFiltersFromUrl(): void {
+    const params = this.route.snapshot.queryParamMap;
+    this.searchFilter = params.get('q') ?? '';
+    this.brandFilter.set(params.get('brand'));
+    this.conditionFilter.set(params.get('condition'));
+    const active = params.get('active');
+    this.activeFilter.set(active === 'true' ? true : active === 'false' ? false : null);
+  }
+
+  /**
+   * Writes the current filter state into the URL query string. Empty/null
+   * filters are dropped (value null) so the URL stays clean. Uses replaceUrl so
+   * each keystroke/selection doesn't pollute browser history.
+   */
+  private syncFiltersToUrl(): void {
+    const queryParams: Params = {
+      q: this.searchFilter?.trim() || null,
+      brand: this.brandFilter() ?? null,
+      condition: this.conditionFilter() ?? null,
+      active: this.activeFilter() === null ? null : String(this.activeFilter())
+    };
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   async loadVariants(event: TableLazyLoadEvent): Promise<void> {
@@ -140,17 +184,18 @@ export class VariantListComponent implements OnInit {
           condition,
           selling_price,
           is_active,
-          primary_image_url,
+          available_colors,
           created_at,
-          model:models!model_id(
+          model:models!model_id!inner(
             id,
             name,
-            brand:brands!brand_id(
+            brand:brands!brand_id!inner(
               id,
               name,
               logo_url
             )
-          )
+          ),
+          variant_images(image_url, is_primary, color)
         `, { count: 'exact' });
 
       // Active filter
@@ -190,7 +235,31 @@ export class VariantListComponent implements OnInit {
       const end = first + rows - 1;
       query = query.range(first, end);
 
-      const { data, error, count } = await query;
+      // Parallel query: compute true fan-out row total across all filtered variants.
+      // We replicate the same filter predicates (active, brand, condition, search) so the
+      // count matches what the user is filtering on. Variants table is small (~22 rows),
+      // so the extra round-trip is cheap.
+      let countRowQuery = this.supabase
+        .from('variants')
+        .select('available_colors, model:models!model_id!inner(id, name, brand:brands!brand_id!inner(id))');
+
+      if (activeVal !== null && activeVal !== undefined) {
+        countRowQuery = countRowQuery.eq('is_active', activeVal);
+      }
+      if (this.brandFilter()) {
+        countRowQuery = countRowQuery.eq('model.brand_id', this.brandFilter());
+      }
+      if (this.conditionFilter()) {
+        countRowQuery = countRowQuery.eq('condition', this.conditionFilter());
+      }
+      if (searchTerm) {
+        countRowQuery = countRowQuery.ilike('model.name', `%${searchTerm}%`);
+      }
+
+      const [{ data, error, count }, countRowResult] = await Promise.all([
+        query,
+        countRowQuery
+      ]);
 
       if (error) {
         throw new Error(error.message);
@@ -205,34 +274,39 @@ export class VariantListComponent implements OnInit {
         // Fetch aggregate data for this variant
         const variantId = row.id as string;
 
-        const [stockResult, costResult, colorsResult] = await Promise.all([
-          this.supabase
-            .from('products')
-            .select('id', { count: 'exact', head: true })
-            .eq('variant_id', variantId)
-            .eq('status', 'available'),
-          this.supabase
-            .from('products')
-            .select('cost_price')
-            .eq('variant_id', variantId)
-            .eq('status', 'available'),
-          this.supabase
-            .from('products')
-            .select('color')
-            .eq('variant_id', variantId)
-            .eq('status', 'available')
-            .not('color', 'is', null)
-        ]);
+        // One query: pull color + cost_price for every available product on this variant,
+        // then group in JS. Replaces the previous separate count + colorsResult queries.
+        const stockResult = await this.supabase
+          .from('products')
+          .select('color, cost_price')
+          .eq('variant_id', variantId)
+          .eq('status', 'available');
 
-        const stockCount = stockResult.count ?? 0;
-        const costPrices = (costResult.data || []).map((p: Record<string, unknown>) => Number(p['cost_price']));
-        const avgCostPrice = costPrices.length > 0
-          ? Math.round(costPrices.reduce((a, b) => a + b, 0) / costPrices.length)
+        const stockProducts = (stockResult.data || []) as Array<Record<string, unknown>>;
+        const totalStockCount = stockProducts.length;
+        const allCostPrices = stockProducts.map(p => Number(p['cost_price'])).filter(n => !Number.isNaN(n));
+        const avgCostPrice = allCostPrices.length > 0
+          ? Math.round(allCostPrices.reduce((a, b) => a + b, 0) / allCostPrices.length)
           : 0;
-        const availableColors = [...new Set((colorsResult.data || []).map((p: Record<string, unknown>) => p['color'] as string))];
 
-        variantRows.push({
-          id: variantId,
+        // Per-color stock breakdown (key '' = null/no-color products).
+        const stockByColor = new Map<string, number>();
+        for (const p of stockProducts) {
+          const key = (p['color'] as string | null) ?? '';
+          stockByColor.set(key, (stockByColor.get(key) ?? 0) + 1);
+        }
+
+        const variantImagesRaw = (row as unknown as Record<string, unknown>)['variant_images'];
+        const variantImages: Array<Record<string, unknown>> = Array.isArray(variantImagesRaw)
+          ? (variantImagesRaw as Array<Record<string, unknown>>)
+          : [];
+
+        const availableColorsRaw = (row as unknown as Record<string, unknown>)['available_colors'] as string[] | null | undefined;
+        const colors: Array<string | null> = (availableColorsRaw && availableColorsRaw.length > 0)
+          ? availableColorsRaw
+          : [null];
+
+        const baseRow = {
           modelId: modelData?.['id'] as string || '',
           modelName: modelData?.['name'] as string || '',
           brandId: brandData?.['id'] as string || '',
@@ -243,15 +317,48 @@ export class VariantListComponent implements OnInit {
           condition: row.condition as string,
           sellingPrice: Number(row.selling_price),
           avgCostPrice,
-          stockCount,
-          availableColors,
-          isActive: row.is_active as boolean,
-          primaryImageUrl: row.primary_image_url as string | null
-        });
+          isActive: row.is_active as boolean
+        };
+
+        for (const color of colors) {
+          // Color-specific primary; fall back to the generic (color IS NULL) primary.
+          const colorSpecificPrimary = variantImages
+            .find(vi => vi['is_primary'] === true && (vi['color'] as string | null) === color);
+          const genericPrimary = variantImages
+            .find(vi => vi['is_primary'] === true && (vi['color'] as string | null) === null);
+          const primaryImageUrl = (colorSpecificPrimary?.['image_url'] as string | null)
+            ?? (genericPrimary?.['image_url'] as string | null)
+            ?? null;
+
+          // Per-color stock: when color is null we use the empty-key bucket; otherwise the color bucket.
+          // If the variant has colors but a product was somehow saved with NULL color, that stock won't show on any row.
+          // We accept that for now — the admin can fix the product's color in inventory.
+          const stockCount = stockByColor.get(color ?? '') ?? (colors.length === 1 && color === null ? totalStockCount : 0);
+
+          variantRows.push({
+            id: `${variantId}__${color ?? '__nocolor'}`,
+            variantId,
+            color,
+            stockCount,
+            primaryImageUrl,
+            ...baseRow
+          });
+        }
       }
 
       this.variants.set(variantRows);
-      this.totalRecords.set(count ?? 0);
+      // Compute true total displayed-row count from the parallel count-row query: sum of
+      // max(available_colors.length, 1) across all filtered variants.
+      // Note: variant-level pagination is preserved (range applies to variants, not rows),
+      // so a given page may render slightly more than `event.rows` rows when variants have
+      // multiple colors. The paginator's total now accurately reflects fan-out row count.
+      const countRowData = (countRowResult.data ?? []) as Array<Record<string, unknown>>;
+      const totalRowCount = countRowData.reduce((acc, r) => {
+        const colors = (r['available_colors'] as string[] | null | undefined) ?? [];
+        return acc + Math.max(colors.length, 1);
+      }, 0);
+      // Fall back to PostgREST variant count if the count-row query failed for any reason.
+      this.totalRecords.set(countRowResult.error ? (count ?? 0) : totalRowCount);
     } catch (error) {
       this.toastService.error('Error', 'Failed to load variants');
       console.error('Failed to load variants:', error);
@@ -265,6 +372,7 @@ export class VariantListComponent implements OnInit {
       clearTimeout(this.searchTimeout);
     }
     this.searchTimeout = setTimeout(() => {
+      this.syncFiltersToUrl();
       if (this.lastLazyLoadEvent) {
         this.loadVariants({ ...this.lastLazyLoadEvent, first: 0 });
       }
@@ -277,18 +385,24 @@ export class VariantListComponent implements OnInit {
   }
 
   onFilterChange(): void {
+    this.syncFiltersToUrl();
     if (this.lastLazyLoadEvent) {
       this.loadVariants({ ...this.lastLazyLoadEvent, first: 0 });
     }
   }
 
   onRowClick(variant: VariantRow): void {
-    this.router.navigate(['/admin/variants', variant.id]);
+    // Carry the row's color so the detail page can preselect it for image uploads.
+    this.router.navigate(['/admin/variants', variant.variantId], {
+      queryParams: variant.color ? { color: variant.color } : {}
+    });
   }
 
   startPriceEdit(variant: VariantRow, event: Event): void {
     event.stopPropagation();
-    this.editingVariantId.set(variant.id);
+    // editingVariantId tracks by variantId so all rows sharing a variant enter edit mode together —
+    // the price is shared across colors and updating one updates the row group.
+    this.editingVariantId.set(variant.variantId);
     this.editSellingPrice.set(variant.sellingPrice);
   }
 
@@ -309,11 +423,11 @@ export class VariantListComponent implements OnInit {
       return;
     }
 
-    this.savingPriceId.set(variant.id);
+    this.savingPriceId.set(variant.variantId);
     try {
-      await this.productService.updateVariantSellingPrice(variant.id, newPrice);
+      await this.productService.updateVariantSellingPrice(variant.variantId, newPrice);
       this.variants.update(variants =>
-        variants.map(v => v.id === variant.id ? { ...v, sellingPrice: newPrice } : v)
+        variants.map(v => v.variantId === variant.variantId ? { ...v, sellingPrice: newPrice } : v)
       );
       this.toastService.success('Updated', `Selling price updated for ${variant.brandName} ${variant.modelName}`);
       this.cancelPriceEdit();
@@ -325,23 +439,22 @@ export class VariantListComponent implements OnInit {
     }
   }
 
-  async toggleActive(variant: VariantRow, event: Event): Promise<void> {
-    event.stopPropagation();
-    this.togglingId.set(variant.id);
+  async toggleActive(variant: VariantRow, newValue: boolean): Promise<void> {
+    this.togglingId.set(variant.variantId);
     try {
       const { error } = await this.supabase
         .from('variants')
-        .update({ is_active: !variant.isActive })
-        .eq('id', variant.id);
+        .update({ is_active: newValue })
+        .eq('id', variant.variantId);
 
       if (error) throw new Error(error.message);
 
       this.variants.update(variants =>
-        variants.map(v => v.id === variant.id ? { ...v, isActive: !v.isActive } : v)
+        variants.map(v => v.variantId === variant.variantId ? { ...v, isActive: newValue } : v)
       );
       this.toastService.success(
         'Updated',
-        `${variant.brandName} ${variant.modelName} is now ${variant.isActive ? 'inactive' : 'active'}`
+        `${variant.brandName} ${variant.modelName} is now ${newValue ? 'active' : 'inactive'}`
       );
     } catch (error) {
       this.toastService.error('Error', 'Failed to toggle active status');

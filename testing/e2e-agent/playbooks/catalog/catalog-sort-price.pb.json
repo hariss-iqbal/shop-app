@@ -31,7 +31,7 @@
       "action": "click",
       "description": "Click the sort dropdown to open it",
       "useSnapshot": true,
-      "snapshotHint": "Look for a p-select or dropdown with sort options like 'Most popular', 'Newest', 'Price'"
+      "snapshotHint": "The sort control is a native HTML <select> element (not a p-select). Look for a <select> on the catalog page with options like 'Most popular', 'Newest', 'Price: low to high', 'Price: high to low'"
     },
     {
       "id": "select-sort-low-high",

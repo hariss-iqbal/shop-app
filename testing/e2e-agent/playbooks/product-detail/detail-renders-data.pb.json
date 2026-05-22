@@ -34,7 +34,7 @@
     {
       "id": "assert-has-price",
       "action": "evaluate",
-      "script": "(() => { const priceEl = document.querySelector('.pdp .price-amount') || document.querySelector('.pdp .card-price'); return { hasPrice: !!priceEl, text: priceEl?.textContent?.trim() }; })()",
+      "script": "(() => { const priceEl = document.querySelector('.pdp .price-now') || document.querySelector('.pdp .price-amount') || document.querySelector('.pdp .pk') || document.querySelector('.pdp .card-price'); return { hasPrice: !!priceEl, text: priceEl?.textContent?.trim() }; })()",
       "assertResult": {
         "field": "hasPrice",
         "assertion": "equals",

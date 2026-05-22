@@ -148,6 +148,8 @@ export class BrandListComponent implements OnInit, AfterViewChecked {
   }
 
   async saveBrand(): Promise<void> {
+    if (this.saving()) return;
+
     if (!this.newBrandName.trim()) {
       this.toastService.warn('Warning', 'Brand name is required');
       return;

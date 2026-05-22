@@ -2,62 +2,94 @@
   "id": "detail-color-variant",
   "testNumber": 15,
   "area": "product-detail",
-  "name": "Selecting a different color variant updates displayed info",
+  "name": "PDP renders the correct color when navigated via ?color= query param (Pixel 7a Charcoal vs Sea)",
   "requiresAuth": false,
   "preconditions": {
     "minProductCount": 1,
     "requiresSeedData": true,
-    "note": "Skip if product has no color variants"
+    "note": "Pixel 7a variant has 3 colors and exposes them as separate catalog cards. The PDP color is driven by the ?color= URL param since all colors share a single variant slug."
   },
   "steps": [
     {
-      "id": "navigate-catalog",
+      "id": "navigate-charcoal",
       "action": "navigate",
-      "target": "/catalog"
+      "target": "/product/google-google-pixel-7a-128gb-open-box-pta-approved?color=Charcoal",
+      "description": "Land on Pixel 7a Charcoal"
     },
     {
-      "id": "wait-cards",
+      "id": "wait-pdp",
+      "action": "waitFor",
+      "selector": ".pdp",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-color-is-charcoal",
+      "action": "evaluate",
+      "script": "(() => { const colorVal = Array.from(document.querySelectorAll('.vb-row')).find(r => r.querySelector('.lbl')?.textContent?.trim().toLowerCase() === 'color')?.querySelector('.val')?.textContent?.trim() || ''; return { colorVal, isCharcoal: colorVal.toLowerCase().includes('charcoal') }; })()",
+      "assertResult": {
+        "field": "isCharcoal",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "PDP shows 'Charcoal' in the variant box"
+    },
+    {
+      "id": "screenshot-charcoal",
+      "action": "screenshot",
+      "filename": "pdp-pixel7a-charcoal"
+    },
+    {
+      "id": "navigate-sea",
+      "action": "navigate",
+      "target": "/product/google-google-pixel-7a-128gb-open-box-pta-approved?color=Sea",
+      "description": "Same variant slug, different color param"
+    },
+    {
+      "id": "wait-pdp-after-color-change",
+      "action": "waitFor",
+      "selector": ".pdp",
+      "timeout": 10000
+    },
+    {
+      "id": "assert-color-is-sea",
+      "action": "evaluate",
+      "script": "(() => { const colorVal = Array.from(document.querySelectorAll('.vb-row')).find(r => r.querySelector('.lbl')?.textContent?.trim().toLowerCase() === 'color')?.querySelector('.val')?.textContent?.trim() || ''; return { colorVal, isSea: colorVal.toLowerCase().includes('sea') }; })()",
+      "assertResult": {
+        "field": "isSea",
+        "assertion": "equals",
+        "expected": true
+      },
+      "description": "PDP now shows 'Sea' in the variant box"
+    },
+    {
+      "id": "screenshot-sea",
+      "action": "screenshot",
+      "filename": "pdp-pixel7a-sea"
+    },
+    {
+      "id": "verify-distinct-from-catalog",
+      "action": "navigate",
+      "target": "/catalog?brand=Google",
+      "description": "Confirm catalog exposes the colors as separate cards too"
+    },
+    {
+      "id": "wait-cards-after-cat",
       "action": "waitFor",
       "selector": ".cat-product-grid .card",
       "timeout": 10000
     },
     {
-      "id": "click-first-card",
-      "action": "click",
-      "selector": ".cat-product-grid .card"
-    },
-    {
-      "id": "wait-detail",
-      "action": "waitFor",
-      "selector": ".pdp",
-      "timeout": 8000
-    },
-    {
-      "id": "check-variants-exist",
+      "id": "assert-pixel7a-multi-cards",
       "action": "evaluate",
-      "script": "(() => { const swatches = document.querySelectorAll('.csw .dot, .csw [class*=\"swatch\"], [class*=\"color-chip\"], [class*=\"variant-color\"]'); return { hasVariants: swatches.length > 0, count: swatches.length }; })()",
-      "description": "Check if color variant selectors exist on the page"
-    },
-    {
-      "id": "click-color-variant",
-      "action": "click",
-      "description": "Click a different color variant swatch/chip if available",
-      "useSnapshot": true,
-      "snapshotHint": "Look for color swatches/chips — clickable elements representing colors. Skip this step if none found."
-    },
-    {
-      "id": "wait-variant-update",
-      "action": "wait",
-      "time": 2
-    },
-    {
-      "id": "assert-page-still-valid",
-      "action": "assert",
-      "type": "url",
-      "assertion": "contains",
-      "expected": "/product/"
+      "script": "(() => { const cards = Array.from(document.querySelectorAll('.cat-product-grid .card')); const pixel7a = cards.filter(c => /Pixel 7a/i.test(c.querySelector('.card-name')?.textContent || '')); return { pixel7aCardCount: pixel7a.length }; })()",
+      "assertResult": {
+        "field": "pixel7aCardCount",
+        "assertion": "gte",
+        "expected": 2
+      },
+      "description": "At least 2 separate Pixel 7a cards (one per color) visible on catalog"
     }
   ],
   "priority": "P2",
-  "businessContext": "Color variants show different product options — critical for phones sold in multiple colors"
+  "businessContext": "A multi-color model must (a) expose each color as its own catalog card and (b) render the correct color on the PDP when navigated via ?color=. Image isolation across colors is covered by variant-image-color-isolation."
 }

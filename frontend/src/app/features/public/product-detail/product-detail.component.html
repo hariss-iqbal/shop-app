@@ -154,7 +154,7 @@
         @if (p.color) {
           <div class="vb-row">
             <span class="lbl">Color</span>
-            <span class="val"><span class="csw" [style.background]="getProductColor(p)"></span>{{ p.color }}</span>
+            <span class="val">{{ p.color }}<span class="csw" [style.background]="getProductColor(p)"></span></span>
           </div>
         }
         @if (p.ptaStatus) {
@@ -295,7 +295,7 @@
           </span>
           <span class="logo-wm">smartcell<i class="dot"></i></span>
         </a>
-        <p>Pakistan's Pixel-first phone shop. Honest grading, PTA-verified, 7-day return.</p>
+        <p>Pakistan's Pixel-first phone shop. Honest grading, PTA-verified</p>
       </div>
       <div class="foot-col"><h5>Shop</h5><ul><li><a routerLink="/catalog">All smartphones</a></li><li><a routerLink="/catalog" [queryParams]="{brand:'Google'}">Google Pixel</a></li><li><a routerLink="/catalog" [queryParams]="{brand:'Apple'}">iPhone</a></li><li><a routerLink="/catalog" [queryParams]="{brand:'Samsung'}">Samsung</a></li></ul></div>
       <div class="foot-col"><h5>Customer care</h5><ul><li><a href="#">Track order</a></li><li><a href="#">Warranty</a></li><li><a href="#">Return policy</a></li></ul></div>

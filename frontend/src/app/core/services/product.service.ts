@@ -35,6 +35,7 @@ export interface ModelCatalogItem {
   avgCostPrice: number;
   stockCount: number;
   primaryImageUrl: string | null;
+  imageUrls: string[];
   slug: string;
 }
 
@@ -374,6 +375,7 @@ export class ProductService {
       avgCostPrice: Number(row['avg_cost_price']),
       stockCount: Number(row['stock_count']),
       primaryImageUrl: row['primary_image_url'] as string | null,
+      imageUrls: (row['image_urls'] as string[] | null) ?? [],
       slug: row['slug'] as string,
     }));
 

@@ -1,0 +1,124 @@
+:host { display: block; }
+
+/* Align to the page container (same max-width / padding as .container elsewhere) */
+.promo { max-width: 1360px; margin: 0 auto; padding: 28px 32px 4px; }
+
+.promo-card {
+  position: relative;
+  width: 100%;
+  min-height: 420px;
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .14);
+  isolation: isolate;
+}
+/* Left scrim: keeps the static text readable over any sliding content */
+.promo-card::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to right, rgba(0, 0, 0, .30), rgba(0, 0, 0, .08) 40%, transparent 62%);
+}
+
+/* ── Sliding colored track ── */
+.promo-track {
+  position: absolute; inset: 0;
+  display: flex;
+  transition: transform .55s cubic-bezier(.45, 0, .2, 1);
+  will-change: transform;
+}
+.promo-track.no-anim { transition: none; }
+.promo-slide {
+  position: relative; flex: 0 0 100%; height: 100%;
+  display: flex; align-items: center; justify-content: flex-end; gap: 30px;
+  padding-right: 5%; box-sizing: border-box;
+}
+.promo-slide-img {
+  height: 90%; width: auto; max-width: 34%; flex-shrink: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 34px rgba(0, 0, 0, .45));
+}
+
+/* ── Per-slide caption (clean two-line, vertically centred left of the phone) ── */
+.promo-cap {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  text-align: right; flex-shrink: 0; max-width: 34%;
+}
+.cap-model { font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: #fff; }
+.cap-tag { font-size: 12.5px; color: rgba(255, 255, 255, .68); }
+
+/* ── Static text overlay ── */
+.promo-overlay {
+  position: relative; z-index: 2;
+  max-width: 52%; min-height: 420px;
+  padding: 48px 44px; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: center; gap: 14px;
+  color: #fff;
+}
+.promo-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 255, 255, .72);
+}
+.promo-title {
+  margin: 0; font-size: clamp(28px, 3vw, 40px);
+  font-weight: 600; letter-spacing: -.02em; line-height: 1.08; color: #fff;
+}
+.promo-title em { font-family: var(--serif); font-style: italic; font-weight: 400; }
+.promo-sub { margin: 0; max-width: 440px; font-size: 15px; line-height: 1.6; color: rgba(255, 255, 255, .85); }
+.promo-cta {
+  margin-top: 8px; align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 20px; border-radius: 10px;
+  background: #fff; color: #14181f;
+  font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.promo-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
+
+/* ── Controls ── */
+.promo-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: rgba(255, 255, 255, .16); color: #fff;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s ease, background .15s;
+}
+.promo-arrow.left { left: 12px; }
+.promo-arrow.right { right: 12px; }
+.promo-arrow:hover { background: rgba(255, 255, 255, .32); }
+/* arrows revealed only when the banner is hovered or keyboard-focused */
+.promo-card:hover .promo-arrow,
+.promo-card:focus-within .promo-arrow { opacity: 1; }
+.promo-arrow:focus-visible { opacity: 1; outline: 2px solid #fff; outline-offset: 2px; }
+
+.promo-dots {
+  position: absolute; bottom: 18px; left: 44px; display: flex; gap: 7px; z-index: 3;
+}
+.promo-dot {
+  width: 7px; height: 7px; border-radius: 50%; border: none; padding: 0;
+  background: rgba(255, 255, 255, .45); cursor: pointer; transition: all .2s;
+}
+.promo-dot.active { background: #fff; width: 20px; border-radius: 4px; }
+
+/* ── Responsive ── */
+/* ── Small screens: drop the phone + slideshow entirely, show centered text only ── */
+@media (max-width: 900px) {
+  .promo-track,
+  .promo-arrow,
+  .promo-dots { display: none; }
+  .promo-card {
+    min-height: 0;
+    background: linear-gradient(135deg, #1f7d51 0%, #0b3422 100%);
+  }
+  .promo-card::before { display: none; }   /* no scrim needed for centered text */
+  .promo-overlay {
+    position: relative; z-index: 2;
+    max-width: 100%; min-height: 0;
+    align-items: center; text-align: center; justify-content: center;
+    padding: 52px 32px;
+  }
+  .promo-sub { max-width: 520px; }
+  .promo-cta { align-self: center; }
+}
+@media (max-width: 560px) {
+  .promo { padding: 18px 16px 4px; }
+  .promo-overlay { padding: 40px 22px; }
+}

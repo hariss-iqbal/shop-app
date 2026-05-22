@@ -133,6 +133,8 @@ export class SupplierFormComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
+    if (this.saving()) return;
+
     if (this.supplierForm.invalid) {
       this.supplierForm.markAllAsTouched();
       return;
