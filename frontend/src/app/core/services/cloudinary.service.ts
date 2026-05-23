@@ -82,7 +82,7 @@ export class CloudinaryService {
 
       return {
         publicId: data.public_id,
-        secureUrl: data.secure_url,
+        secureUrl: this.toWebDeliverableUrl(data.secure_url),
         width: data.width,
         height: data.height,
         format: data.format,
@@ -94,6 +94,22 @@ export class CloudinaryService {
       }
       throw new Error('Failed to upload image to Cloudinary');
     }
+  }
+
+  /**
+   * Cloudinary keeps HEIC/HEIF uploads in their original format, but most browsers
+   * can't render those in an <img>, so the stored image would show as broken.
+   * Rewrite the delivery URL to force an automatic web-friendly format
+   * (AVIF/WebP/JPEG) so the uploaded image actually displays everywhere.
+   * Non-HEIC URLs are returned unchanged.
+   */
+  private toWebDeliverableUrl(secureUrl: string): string {
+    if (!/\.(heic|heif)$/i.test(secureUrl)) {
+      return secureUrl;
+    }
+    return secureUrl
+      .replace('/image/upload/', '/image/upload/f_auto,q_auto/')
+      .replace(/\.(heic|heif)$/i, '.jpg');
   }
 
   /**
