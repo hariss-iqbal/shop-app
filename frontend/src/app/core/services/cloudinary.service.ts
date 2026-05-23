@@ -32,7 +32,10 @@ export interface UploadProgress {
 
 const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/image/upload';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+// Browsers (esp. on non-Apple platforms) often report an empty type for HEIC/HEIF,
+// so fall back to matching the file extension.
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'];
 
 @Injectable({
   providedIn: 'root'
@@ -192,9 +195,11 @@ export class CloudinaryService {
    * Validate file before upload
    */
   private validateFile(file: File): void {
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    const hasAllowedType = ALLOWED_MIME_TYPES.includes(file.type);
+    const hasAllowedExtension = ALLOWED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext));
+    if (!hasAllowedType && !hasAllowedExtension) {
       throw new Error(
-        `Invalid file type: ${file.type}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+        `Invalid file type: ${file.type || file.name}. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
       );
     }
 

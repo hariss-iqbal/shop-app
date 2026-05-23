@@ -13,7 +13,10 @@ import {
 
 const CLOUDINARY_FOLDER = 'phone-images';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+// Browsers (esp. on non-Apple platforms) often report an empty type for HEIC/HEIF,
+// so fall back to matching the file extension.
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'];
 
 export interface FileValidationResult {
   valid: boolean;
@@ -30,10 +33,12 @@ export class ProductImageService {
   ) { }
 
   validateFile(file: File): FileValidationResult {
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    const hasAllowedType = ALLOWED_MIME_TYPES.includes(file.type);
+    const hasAllowedExtension = ALLOWED_EXTENSIONS.some(ext => file.name.toLowerCase().endsWith(ext));
+    if (!hasAllowedType && !hasAllowedExtension) {
       return {
         valid: false,
-        error: `Invalid file type: ${file.type}. Allowed types: JPEG, PNG, WebP, GIF`
+        error: `Invalid file type: ${file.type || file.name}. Allowed types: JPEG, PNG, WebP, GIF, HEIC, HEIF`
       };
     }
 
