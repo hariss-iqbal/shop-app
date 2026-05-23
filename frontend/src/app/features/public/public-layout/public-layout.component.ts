@@ -10,6 +10,7 @@ import { ShopDetailsService } from '../../../core/services/shop-details.service'
 import { ProductService, ModelCatalogItem, ModelCatalogResponse } from '../../../core/services/product.service';
 import { ImageOptimizationService } from '../../../core/services/image-optimization.service';
 import { ProductFilter } from '../../../models/product.model';
+import { PtaStatus, PtaStatusLabels } from '../../../enums/pta-status.enum';
 import { ViewportScroller } from '@angular/common';
 import { Subject, from, of } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, filter, map, switchMap } from 'rxjs/operators';
@@ -73,7 +74,11 @@ export class PublicLayoutComponent {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(res => {
       this.searching.set(false);
-      this.results.set(res?.data ?? []);
+      // Show suggestions ordered by storage (smallest first; unknown last).
+      const sorted = (res?.data ?? []).slice().sort(
+        (a, b) => (a.storageGb ?? Number.MAX_SAFE_INTEGER) - (b.storageGb ?? Number.MAX_SAFE_INTEGER)
+      );
+      this.results.set(sorted);
       this.totalResults.set(res?.total ?? 0);
     });
   }
@@ -143,6 +148,12 @@ export class PublicLayoutComponent {
       this.router.navigate(['/catalog'], { queryParams: { search: q } });
       this.closeSearch();
     }
+  }
+
+  /** Human-readable PTA status label for a search result. */
+  ptaLabel(status: string | null): string {
+    if (!status) return '';
+    return PtaStatusLabels[status as PtaStatus] ?? status;
   }
 
   thumbUrl(url: string): string {

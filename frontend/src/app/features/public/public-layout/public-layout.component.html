@@ -82,7 +82,7 @@
                   }
                   <span class="search-result-info">
                     <span class="search-result-name">{{ item.modelName }}</span>
-                    <span class="search-result-meta">{{ item.brandName }}@if (item.storageGb) { &middot; {{ item.storageGb }} GB}@if (item.color) { &middot; {{ item.color }}}</span>
+                    <span class="search-result-meta">{{ item.brandName }}@if (item.storageGb) { &middot; {{ item.storageGb }} GB}@if (item.color) { &middot; {{ item.color }}}@if (item.ptaStatus) { &middot; {{ ptaLabel(item.ptaStatus) }}}</span>
                   </span>
                   <span class="search-result-price">PKR {{ fmt(item.sellingPrice) }}</span>
                 </li>
