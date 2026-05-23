@@ -248,10 +248,12 @@
             (mouseleave)="onCardLeave(key)"
             (click)="viewModel(m)" role="listitem">
             <div class="card-media">
-              <!-- Condition pill top-left -->
-              <span class="cond-pill" [class.box]="m.condition === 'new'" [class.open]="m.condition !== 'new'">
-                {{ getCondLabel(m.condition) }}
-              </span>
+              <!-- Condition pill top-left (hidden for pre-owned/used) -->
+              @if (m.condition !== 'used') {
+                <span class="cond-pill" [class.box]="m.condition === 'new'" [class.open]="m.condition !== 'new'">
+                  {{ getCondLabel(m.condition) }}
+                </span>
+              }
               <!-- PTA seal bottom-right -->
               @if (m.ptaStatus) {
                 <span class="pta-seal" [class.approved]="m.ptaStatus === 'pta_approved'" [class.nonpta]="m.ptaStatus !== 'pta_approved'">

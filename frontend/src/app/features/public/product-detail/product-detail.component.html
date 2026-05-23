@@ -45,7 +45,9 @@
     <div class="gallery-main" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd()">
       <!-- Badges -->
       <div class="gallery-badges">
-        <span class="flag {{ getCondClass(p.condition) }}">{{ getCondLabel(p.condition) }}</span>
+        @if (p.condition !== 'used') {
+          <span class="flag {{ getCondClass(p.condition) }}">{{ getCondLabel(p.condition) }}</span>
+        }
         @if (p.ptaStatus) {
           <span class="flag {{ getPtaClass(p.ptaStatus) }}">{{ ptaLabel() }}</span>
         }
