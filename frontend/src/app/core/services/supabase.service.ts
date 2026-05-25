@@ -52,11 +52,23 @@ export class SupabaseService {
             this.processLock(name, acquireTimeout, fn)
         },
         global: {
-          // Global fetch timeout to prevent queries from hanging forever
-          // when the database becomes unresponsive. Without this, a hung
-          // DB connection blocks all subsequent queries and freezes the app.
+          // Per-request timeout — the app's ONLY backstop against a hung Supabase
+          // call serializing every later request behind it (every data request
+          // calls getSession() under the auth lock, so a stuck call freezes the UI
+          // until this aborts). Keep these BELOW human patience (~5s) so the app
+          // self-recovers and retries instead of looking frozen; users reload long
+          // before a 15s timeout fires, which is why it always "needs a reload".
+          //
+          // Auth (token refresh) gets the tightest budget because it is the head of
+          // that serialized queue: a slow refresh blocks ALL data requests behind it.
           fetch: (url: RequestInfo | URL, options?: RequestInit) => {
-            const timeoutSignal = AbortSignal.timeout(15000);
+            const href =
+              typeof url === 'string' ? url
+              : url instanceof URL ? url.href
+              : (url as Request).url;
+            const isAuth = href.includes('/auth/v1/');
+            const timeoutMs = isAuth ? 6000 : 8000;
+            const timeoutSignal = AbortSignal.timeout(timeoutMs);
             const signal = options?.signal
               ? AbortSignal.any([timeoutSignal, options.signal])
               : timeoutSignal;

@@ -41,6 +41,8 @@ export interface Product {
   isTaxExempt: boolean;
   conditionRating: number | null;
   ptaStatus: PtaStatus | null;
+  /** Per-unit: phone shipped with its original box (a selling plus for used phones) */
+  isBoxAvailable: boolean;
   productType: ProductType;
   /** Accessory-specific fields */
   accessoryCategory: string | null;
@@ -76,6 +78,7 @@ export interface CreateProductRequest {
   isTaxExempt?: boolean;
   conditionRating?: number | null;
   ptaStatus?: PtaStatus | null;
+  isBoxAvailable?: boolean;
   productType?: ProductType;
   accessoryCategory?: string | null;
   compatibleModels?: string[] | null;
@@ -108,6 +111,7 @@ export interface UpdateProductRequest {
   isTaxExempt?: boolean;
   conditionRating?: number | null;
   ptaStatus?: PtaStatus | null;
+  isBoxAvailable?: boolean;
   productType?: ProductType;
   accessoryCategory?: string | null;
   compatibleModels?: string[] | null;

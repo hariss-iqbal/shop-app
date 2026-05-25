@@ -511,6 +511,23 @@
                   }
                 </div>
               }
+
+              <!-- Box Available (only for Used phones) -->
+              @if (form.get('condition')?.value === 'used') {
+                <div class="col-12">
+                  <div class="flex align-items-center gap-2">
+                    <p-checkbox
+                      formControlName="isBoxAvailable"
+                      [binary]="true"
+                      inputId="isBoxAvailable"
+                    />
+                    <label for="isBoxAvailable" class="font-medium cursor-pointer">
+                      Box available
+                      <i class="pi pi-info-circle text-500 ml-1 text-sm" pTooltip="Original box is included with this unit. Shows a 'Box Available' chip on the catalog and detail pages." tooltipPosition="top"></i>
+                    </label>
+                  </div>
+                </div>
+              }
             }
 
             <!-- Accessory-Specific Fields -->

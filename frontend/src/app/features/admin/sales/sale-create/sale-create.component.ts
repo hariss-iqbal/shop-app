@@ -374,6 +374,7 @@ export class SaleCreateComponent implements OnInit, OnDestroy {
         primaryImageUrl: null,
         conditionRating: product.conditionRating ?? product.condition_rating ?? null,
         ptaStatus: product.ptaStatus ?? product.pta_status ?? null,
+        isBoxAvailable: product.isBoxAvailable ?? product.is_box_available ?? false,
         createdAt: product.createdAt ?? product.created_at ?? new Date().toISOString(),
         updatedAt: null,
         productType: product.productType ?? product.product_type ?? null,

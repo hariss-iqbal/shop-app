@@ -68,6 +68,18 @@ export class SupabaseAuthService implements OnDestroy {
   private activityHandler: (() => void) | null = null;
   private isActivityTrackingSetup = false;
 
+  // Proactive token refresh when the tab regains focus. A backgrounded tab has its
+  // refresh timer throttled by the browser, so the access token is often already
+  // expired when the user returns — then their first click forces an INLINE refresh
+  // under the auth lock that blocks every data request until it completes (the
+  // "stuck loading until I reload" symptom). Refreshing eagerly on focus moves that
+  // unavoidable refresh into the idle moment BEFORE the click, so getSession() (used
+  // by every data call) returns a fresh token instantly.
+  private visibilityHandler: (() => void) | null = null;
+  private lastProactiveRefresh = 0;
+  private readonly PROACTIVE_REFRESH_MIN_INTERVAL = 30 * 1000; // at most once per 30s
+  private readonly PROACTIVE_REFRESH_LEAD = 2 * 60 * 1000;     // only if token expires within 2 min
+
   readonly user = this._user.asReadonly();
   readonly session = this._session.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -113,6 +125,7 @@ export class SupabaseAuthService implements OnDestroy {
     this.checkInitialSession();
     if (isPlatformBrowser(this.platformId)) {
       this.setupActivityTracking();
+      this.setupProactiveRefresh();
     }
   }
 
@@ -120,6 +133,7 @@ export class SupabaseAuthService implements OnDestroy {
     this.authSubscription?.unsubscribe();
     this.unsubscribeApprovalChannel();
     this.cleanupActivityTracking();
+    this.cleanupProactiveRefresh();
     this.cancelRoleRecovery();
   }
 
@@ -200,6 +214,51 @@ export class SupabaseAuthService implements OnDestroy {
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer);
       this.inactivityTimer = null;
+    }
+  }
+
+  // ============ Proactive Token Refresh ============
+
+  private setupProactiveRefresh(): void {
+    if (!this.isBrowser() || this.visibilityHandler) return;
+
+    const handler = () => {
+      if (document.visibilityState !== 'visible') return;
+      void this.proactivelyRefreshIfNeeded();
+    };
+    this.visibilityHandler = handler;
+    document.addEventListener('visibilitychange', handler);
+    window.addEventListener('focus', handler);
+  }
+
+  private cleanupProactiveRefresh(): void {
+    if (!this.isBrowser() || !this.visibilityHandler) return;
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
+    window.removeEventListener('focus', this.visibilityHandler);
+    this.visibilityHandler = null;
+  }
+
+  /**
+   * Refreshes the access token eagerly when the tab regains focus, but only when it
+   * is at/near expiry — so the refresh happens during the idle moment instead of
+   * blocking the user's first data-loading click. Throttled and best-effort; any
+   * failure is harmless because the auto-refresh ticker and getSession() still run.
+   */
+  private async proactivelyRefreshIfNeeded(): Promise<void> {
+    const session = this._session();
+    if (!session) return;
+
+    const now = Date.now();
+    if (now - this.lastProactiveRefresh < this.PROACTIVE_REFRESH_MIN_INTERVAL) return;
+
+    const expiresAtMs = (session.expires_at ?? 0) * 1000;
+    if (expiresAtMs - now > this.PROACTIVE_REFRESH_LEAD) return;
+
+    this.lastProactiveRefresh = now;
+    try {
+      await this.refreshSession();
+    } catch {
+      // refreshSession() already records the error; the ticker will retry.
     }
   }
 

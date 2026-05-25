@@ -267,6 +267,7 @@ export class InventoryFormComponent implements OnInit {
     condition: [ProductCondition.NEW, Validators.required],
     conditionRating: [10],
     ptaStatus: [null as PtaStatus | null],
+    isBoxAvailable: [false],
     batteryHealth: [null as number | null, [Validators.min(this.constraints.BATTERY_HEALTH_MIN), Validators.max(this.constraints.BATTERY_HEALTH_MAX)]],
     imei: ['', Validators.maxLength(this.constraints.IMEI_MAX)],
     costPrice: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -373,6 +374,7 @@ export class InventoryFormComponent implements OnInit {
       condition: product.condition,
       conditionRating: product.conditionRating,
       ptaStatus: product.ptaStatus,
+      isBoxAvailable: product.isBoxAvailable ?? false,
       batteryHealth: product.batteryHealth,
       imei: product.imei || '',
       costPrice: product.costPrice,
@@ -899,6 +901,7 @@ export class InventoryFormComponent implements OnInit {
           updateRequest.ramGb = formValue.ramGb;
           updateRequest.conditionRating = formValue.conditionRating;
           updateRequest.ptaStatus = formValue.ptaStatus;
+          updateRequest.isBoxAvailable = formValue.condition === ProductCondition.USED ? !!formValue.isBoxAvailable : false;
           updateRequest.batteryHealth = this.showBatteryHealth() ? formValue.batteryHealth : null;
           updateRequest.imei = this.sanitizer.sanitizeOrNull(formValue.imei);
         }
@@ -958,6 +961,7 @@ export class InventoryFormComponent implements OnInit {
           createRequest.ramGb = formValue.ramGb;
           createRequest.conditionRating = formValue.conditionRating;
           createRequest.ptaStatus = formValue.ptaStatus;
+          createRequest.isBoxAvailable = formValue.condition === ProductCondition.USED ? !!formValue.isBoxAvailable : false;
           createRequest.batteryHealth = this.showBatteryHealth() ? formValue.batteryHealth : null;
           createRequest.imei = this.sanitizer.sanitizeOrNull(formValue.imei);
         }

@@ -88,6 +88,7 @@ img { max-width: 100%; display: block; }
 .flag.new { background: var(--accent); color: var(--accent-ink); }
 .flag.used { background: var(--card-flag-bg); color: var(--fg-2); }
 .flag.open { background: #F6C445; color: #1a1a1a; }
+.flag.box { background: #0E8F8F; color: #fff; }
 .flag.pta { background: #0B7A52; color: #fff; }
 .flag.npta { background: #2B5BFF; color: #fff; }
 
@@ -153,6 +154,7 @@ img { max-width: 100%; display: block; }
 .ov-chip .csw { width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); }
 .ov-chip.pta { background: #0B7A52; color: #fff; border-color: transparent; }
 .ov-chip.npta { background: #2B5BFF; color: #fff; border-color: transparent; }
+.ov-chip.box { background: #0E8F8F; color: #fff; border-color: transparent; }
 
 .ov-bot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--line); }
 .ov-price { font-size: 15px; font-weight: 500; }

@@ -30,6 +30,7 @@ export interface ModelCatalogItem {
   storageGb: number | null;
   ptaStatus: string | null;
   condition: string;
+  isBoxAvailable: boolean;
   color: string;
   sellingPrice: number;
   avgCostPrice: number;
@@ -370,6 +371,7 @@ export class ProductService {
       storageGb: row['storage_gb'] as number | null,
       ptaStatus: row['pta_status'] as string | null,
       condition: row['condition'] as string,
+      isBoxAvailable: (row['is_box_available'] as boolean) ?? false,
       color: row['color'] as string,
       sellingPrice: Number(row['selling_price']),
       avgCostPrice: Number(row['avg_cost_price']),
@@ -543,6 +545,7 @@ export class ProductService {
       is_tax_exempt: request.isTaxExempt ?? false,
       condition_rating: request.conditionRating,
       pta_status: request.ptaStatus,
+      is_box_available: request.isBoxAvailable ?? false,
       product_type: request.productType ?? ProductType.PHONE,
       model_id: request.modelId || null
     };
@@ -669,6 +672,7 @@ export class ProductService {
     if (request.isTaxExempt !== undefined) updateData['is_tax_exempt'] = request.isTaxExempt;
     if (request.conditionRating !== undefined) updateData['condition_rating'] = request.conditionRating;
     if (request.ptaStatus !== undefined) updateData['pta_status'] = request.ptaStatus;
+    if (request.isBoxAvailable !== undefined) updateData['is_box_available'] = request.isBoxAvailable;
     if (request.productType !== undefined) updateData['product_type'] = request.productType;
     if (request.accessoryCategory !== undefined) updateData['accessory_category'] = request.accessoryCategory;
     if (request.compatibleModels !== undefined) updateData['compatible_models'] = request.compatibleModels;
@@ -886,6 +890,7 @@ export class ProductService {
       isTaxExempt: (data['is_tax_exempt'] as boolean) ?? false,
       conditionRating: (data['condition_rating'] as number) ?? null,
       ptaStatus: (data['pta_status'] as Product['ptaStatus']) ?? null,
+      isBoxAvailable: (data['is_box_available'] as boolean) ?? false,
       productType: (data['product_type'] as ProductType) ?? ProductType.PHONE,
       accessoryCategory: (data['accessory_category'] as string) ?? null,
       compatibleModels: (data['compatible_models'] as string[]) ?? null,

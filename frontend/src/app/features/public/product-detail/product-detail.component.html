@@ -48,6 +48,9 @@
         @if (p.condition !== 'used') {
           <span class="flag {{ getCondClass(p.condition) }}">{{ getCondLabel(p.condition) }}</span>
         }
+        @if (p.condition === 'used' && p.isBoxAvailable) {
+          <span class="flag box">Box Available</span>
+        }
         @if (p.ptaStatus) {
           <span class="flag {{ getPtaClass(p.ptaStatus) }}">{{ ptaLabel() }}</span>
         }
@@ -237,6 +240,9 @@
             <span class="ov-chip" [class.pta]="p.ptaStatus === 'pta_approved'" [class.npta]="p.ptaStatus !== 'pta_approved'">{{ ptaLabel() }}</span>
           }
           <span class="ov-chip">{{ getCondLabel(p.condition) }}</span>
+          @if (p.condition === 'used' && p.isBoxAvailable) {
+            <span class="ov-chip box">Box Available</span>
+          }
           @if (variantChips().length > 0) {
             @if (currentVariantChip() && currentVariantChip()!.availableColors.length > 1) {
               <span class="ov-chip">{{ currentVariantChip()!.availableColors.length }} colors</span>
