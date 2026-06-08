@@ -97,6 +97,8 @@ export class AdminLayoutComponent implements OnInit, OnDestroy, AfterViewInit {
     { id: 'receipts', label: 'Receipts', icon: 'pi pi-receipt', route: '/admin/receipts', permission: 'canAccessSales' },
     { id: 'receipt-sequences', label: 'Receipt Numbers', icon: 'pi pi-hashtag', route: '/admin/receipt-sequences', permission: 'canAccessReceiptSequences' },
     { id: 'refunds', label: 'Refunds', icon: 'pi pi-refresh', route: '/admin/refunds', permission: 'canProcessRefunds' },
+    { id: 'expenses', label: 'Expenses', icon: 'pi pi-wallet', route: '/admin/expenses', permission: 'canAccessExpenses' },
+    { id: 'grand-profit', label: 'Grand Profit', icon: 'pi pi-chart-line', route: '/admin/grand-profit', permission: 'canAccessReports' },
     { id: 'messages', label: 'Messages', icon: 'pi pi-envelope', route: '/admin/messages', permission: 'canAccessMessages', showBadge: true },
     // { id: 'storage', label: 'Storage', icon: 'pi pi-cloud', route: '/admin/storage', permission: 'canAccessStorage' },
     { id: 'users', label: 'User Management', icon: 'pi pi-users', route: '/admin/users', permission: 'canManageUsers' },

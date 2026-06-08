@@ -163,7 +163,7 @@ input, select { font-family:inherit; font-size:inherit; color:inherit; }
 .box-seal { padding:5px 10px; border-radius:6px; font-family:var(--mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; font-weight:600; background:#0E8F8F; color:#fff; display:inline-flex; align-items:center; gap:5px; }
 
 /* ── PTA seal ── */
-.pta-seal { padding:4px 9px; border-radius:4px; font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; font-weight:600; color:#fff; }
+.pta-seal { padding:5px 10px; border-radius:6px; font-family:var(--mono); font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; font-weight:600; color:#fff; display:inline-flex; align-items:center; gap:5px; }
 .pta-seal.approved { background:#0B7A52; }
 .pta-seal.nonpta { background:#2B5BFF; }
 

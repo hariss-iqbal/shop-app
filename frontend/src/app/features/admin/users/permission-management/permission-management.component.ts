@@ -77,6 +77,7 @@ export class PermissionManagementComponent implements OnInit {
     // Sales & Transactions
     { key: 'canAccessSales', label: 'Access Sales', description: 'Create and view sales transactions', category: 'Sales & Transactions' },
     { key: 'canProcessRefunds', label: 'Process Refunds', description: 'Process customer refunds', category: 'Sales & Transactions' },
+    { key: 'canAccessExpenses', label: 'Access Expenses', description: 'View daily shop expenses (adding/editing is admin/manager only)', category: 'Sales & Transactions' },
     { key: 'canAccessReceiptSequences', label: 'Access Receipt Sequences', description: 'Configure receipt numbering', category: 'Sales & Transactions' },
 
     // Communication

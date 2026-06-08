@@ -102,10 +102,14 @@ export class DashboardComponent implements OnInit {
 
   mostViewedProducts = signal<MostViewedProduct[]>([]);
   mostViewedLoading = signal(false);
-  mostViewedWindowDays: 7 | 30 = 7;
+  mostViewedWindow: 'today' | '7d' | '30d' | 'custom' = '7d';
+  mostViewedCustomStart: Date | null = null;
+  mostViewedCustomEnd: Date | null = null;
   mostViewedWindowOptions = [
-    { label: '7 days', value: 7 },
-    { label: '30 days', value: 30 },
+    { label: 'Today', value: 'today' },
+    { label: '7 days', value: '7d' },
+    { label: '30 days', value: '30d' },
+    { label: 'Custom', value: 'custom' },
   ];
 
   skeletonRows = Array(5);
@@ -264,19 +268,70 @@ export class DashboardComponent implements OnInit {
   }
 
   onMostViewedWindowChange(): void {
+    // For 'custom', wait until both dates are picked before reloading.
+    if (this.mostViewedWindow === 'custom') {
+      if (this.mostViewedCustomStart && this.mostViewedCustomEnd) {
+        this.loadMostViewedProducts();
+      }
+      return;
+    }
     this.loadMostViewedProducts();
+  }
+
+  onMostViewedCustomDateChange(): void {
+    if (this.mostViewedCustomStart && this.mostViewedCustomEnd) {
+      this.loadMostViewedProducts();
+    }
+  }
+
+  private getMostViewedRange(): { since: Date; until: Date | null } {
+    const now = new Date();
+    switch (this.mostViewedWindow) {
+      case 'today': {
+        const start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+        return { since: start, until: null };
+      }
+      case '30d': {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 30);
+        return { since: start, until: null };
+      }
+      case 'custom': {
+        const start = this.mostViewedCustomStart
+          ? new Date(this.mostViewedCustomStart)
+          : new Date(now);
+        start.setHours(0, 0, 0, 0);
+        const end = this.mostViewedCustomEnd
+          ? new Date(this.mostViewedCustomEnd)
+          : new Date(now);
+        end.setHours(23, 59, 59, 999);
+        return { since: start, until: end };
+      }
+      case '7d':
+      default: {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 7);
+        return { since: start, until: null };
+      }
+    }
   }
 
   async loadMostViewedProducts(): Promise<void> {
     this.mostViewedLoading.set(true);
     try {
-      const since = new Date();
-      since.setDate(since.getDate() - this.mostViewedWindowDays);
+      const { since, until } = this.getMostViewedRange();
 
-      const { data, error } = await this.supabase
+      let query = this.supabase
         .from('product_views')
         .select('product_id, products(id, model, selling_price, brand:brands(name))')
         .gte('viewed_at', since.toISOString());
+
+      if (until) {
+        query = query.lte('viewed_at', until.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw new Error(error.message);
 

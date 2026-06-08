@@ -217,23 +217,22 @@ export class SalesDashboardService {
 
     if (cashierIds.length > 0) {
       try {
-        const { data: users } = await this.supabase
-          .from('user_roles')
-          .select('user_id, email, full_name')
-          .in('user_id', cashierIds);
+        // user_roles has no email/full_name; emails live in auth.users and are
+        // exposed via this admin RPC. (full_name is not stored anywhere.)
+        const { data: users, error } = await this.supabase
+          .rpc('get_all_user_roles_with_email');
 
-        if (users) {
-          users.forEach((user: Record<string, unknown>) => {
-            const userId = user['user_id'] as string;
-            const entry = cashierMap.get(userId);
+        if (!error && users) {
+          (users as { user_id: string; email: string }[]).forEach((user) => {
+            const entry = cashierMap.get(user.user_id);
             if (entry) {
-              entry.cashierEmail = user['email'] as string;
-              entry.cashierName = user['full_name'] as string | null;
+              entry.cashierEmail = user.email ?? null;
+              entry.cashierName = null; // no full_name source available
             }
           });
         }
       } catch {
-        // If user_roles table doesn't exist, continue without cashier names
+        // Non-admin viewers can't resolve emails — continue without cashier names
       }
     }
 

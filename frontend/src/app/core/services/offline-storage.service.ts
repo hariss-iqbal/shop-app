@@ -30,8 +30,20 @@ export class OfflineStorageService {
   readonly initError = this._initError.asReadonly();
   readonly isReady = computed(() => this._isInitialized() && !this._initError());
 
+  // Resolves when the async IndexedDB open completes (or fails). All DB ops await
+  // this first — this service is providedIn:'root' and created lazily on first
+  // injection, so consumers (e.g. the sync-status panel) used to read the queue
+  // in the same tick before openDatabase() resolved → "Database not initialized".
+  private initPromise: Promise<void>;
+
   constructor() {
-    this.initDatabase();
+    this.initPromise = this.initDatabase();
+  }
+
+  /** Await initialization, then return the open DB (throws if init genuinely failed). */
+  private async getDb(): Promise<IDBDatabase> {
+    await this.initPromise;
+    return this.ensureDatabase();
   }
 
   private async initDatabase(): Promise<void> {
@@ -111,7 +123,7 @@ export class OfflineStorageService {
   // ==================== Sync Queue Operations ====================
 
   async addToSyncQueue(item: SyncQueueItem): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_QUEUE, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_QUEUE);
@@ -123,7 +135,7 @@ export class OfflineStorageService {
   }
 
   async updateSyncQueueItem(item: SyncQueueItem): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_QUEUE, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_QUEUE);
@@ -135,7 +147,7 @@ export class OfflineStorageService {
   }
 
   async getSyncQueueItem(id: string): Promise<SyncQueueItem | null> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_QUEUE, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_QUEUE);
@@ -147,7 +159,7 @@ export class OfflineStorageService {
   }
 
   async getAllSyncQueueItems(): Promise<SyncQueueItem[]> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_QUEUE, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_QUEUE);
@@ -159,7 +171,7 @@ export class OfflineStorageService {
   }
 
   async getSyncQueueItemsByStatus(status: SyncStatus): Promise<SyncQueueItem[]> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_QUEUE, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_QUEUE);
@@ -190,7 +202,7 @@ export class OfflineStorageService {
   }
 
   async removeSyncQueueItem(id: string): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_QUEUE, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_QUEUE);
@@ -221,7 +233,7 @@ export class OfflineStorageService {
   // ==================== Cached Products Operations ====================
 
   async cacheProduct(product: CachedProduct): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -233,7 +245,7 @@ export class OfflineStorageService {
   }
 
   async cacheProducts(products: CachedProduct[]): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -248,7 +260,7 @@ export class OfflineStorageService {
   }
 
   async getCachedProduct(id: string): Promise<CachedProduct | null> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -260,7 +272,7 @@ export class OfflineStorageService {
   }
 
   async getAllCachedProducts(): Promise<CachedProduct[]> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -272,7 +284,7 @@ export class OfflineStorageService {
   }
 
   async getAvailableCachedProducts(): Promise<CachedProduct[]> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -293,7 +305,7 @@ export class OfflineStorageService {
   }
 
   async removeCachedProduct(id: string): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -305,7 +317,7 @@ export class OfflineStorageService {
   }
 
   async clearCachedProducts(): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_PHONES, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_PHONES);
@@ -319,7 +331,7 @@ export class OfflineStorageService {
   // ==================== Cached Brands Operations ====================
 
   async cacheBrand(brand: CachedBrand): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_BRANDS, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_BRANDS);
@@ -331,7 +343,7 @@ export class OfflineStorageService {
   }
 
   async cacheBrands(brands: CachedBrand[]): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_BRANDS, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_BRANDS);
@@ -346,7 +358,7 @@ export class OfflineStorageService {
   }
 
   async getCachedBrand(id: string): Promise<CachedBrand | null> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_BRANDS, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_BRANDS);
@@ -358,7 +370,7 @@ export class OfflineStorageService {
   }
 
   async getAllCachedBrands(): Promise<CachedBrand[]> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_BRANDS, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_BRANDS);
@@ -370,7 +382,7 @@ export class OfflineStorageService {
   }
 
   async clearCachedBrands(): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.CACHED_BRANDS, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.CACHED_BRANDS);
@@ -384,7 +396,7 @@ export class OfflineStorageService {
   // ==================== Sync Config Operations ====================
 
   async getSyncConfig(): Promise<OfflineSyncConfig> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_CONFIG, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_CONFIG);
@@ -399,7 +411,7 @@ export class OfflineStorageService {
   }
 
   async saveSyncConfig(config: OfflineSyncConfig): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_CONFIG, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_CONFIG);
@@ -411,7 +423,7 @@ export class OfflineStorageService {
   }
 
   async getLastSyncTime(): Promise<string | null> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_CONFIG, 'readonly');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_CONFIG);
@@ -426,7 +438,7 @@ export class OfflineStorageService {
   }
 
   async saveLastSyncTime(timestamp: string): Promise<void> {
-    const db = this.ensureDatabase();
+    const db = await this.getDb();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(OFFLINE_STORES.SYNC_CONFIG, 'readwrite');
       const store = transaction.objectStore(OFFLINE_STORES.SYNC_CONFIG);

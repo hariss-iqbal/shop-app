@@ -109,12 +109,17 @@ export class LoginComponent implements OnInit {
       return this.returnUrl;
     }
 
+    // Admin landing: prefer Variants when the user has brand/variant access
+    if (this.authService.canAccessBrands()) {
+      return '/admin/variants';
+    }
+
     // Otherwise, redirect to the most appropriate page for their role
-    // Cashiers can only access sales, so redirect them there
     if (this.authService.canAccessDashboard()) {
       return '/admin/dashboard';
     }
 
+    // Cashiers can only access sales, so redirect them there
     if (this.authService.canAccessSales()) {
       return '/admin/sales';
     }

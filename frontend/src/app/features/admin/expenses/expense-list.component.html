@@ -1,0 +1,169 @@
+<div class="grid">
+  <!-- Header -->
+  <div class="col-12 flex flex-column md:flex-row md:align-items-center justify-content-between gap-3 mb-2">
+    <div>
+      <h1 class="text-3xl font-bold m-0">Expenses</h1>
+      <p class="m-0 mt-1 text-color-secondary">Daily shop expenses, newest first</p>
+    </div>
+    <div class="flex align-items-center gap-2">
+      <p-select
+        [options]="locations()"
+        [(ngModel)]="selectedLocationId"
+        (onChange)="onLocationChange()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select Shop"
+        [filter]="locations().length > 5"
+        styleClass="w-14rem"
+      >
+        <ng-template let-location pTemplate="selectedItem">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-building text-color-secondary"></i>
+            <span class="font-medium">{{ location.name }}</span>
+          </div>
+        </ng-template>
+        <ng-template let-location pTemplate="item">
+          <div class="flex align-items-center gap-2">
+            <span>{{ location.name }}</span>
+            <span class="text-color-secondary text-sm">({{ location.code }})</span>
+          </div>
+        </ng-template>
+      </p-select>
+      @if (canManage()) {
+        <p-button label="Add Expense" icon="pi pi-plus" (onClick)="openCreateDialog()" />
+      }
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="col-12 mb-2">
+    <div class="grid">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="block text-color-secondary mb-2">Today</span>
+              <span class="text-3xl font-bold text-primary">{{ todayTotal() | appCurrency }}</span>
+            </div>
+            <div class="w-3rem h-3rem border-circle bg-primary-100 flex align-items-center justify-content-center">
+              <i class="pi pi-calendar text-primary text-xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="block text-color-secondary mb-2">This Month</span>
+              <span class="text-3xl font-bold text-orange-500">{{ monthTotal() | appCurrency }}</span>
+            </div>
+            <div class="w-3rem h-3rem border-circle bg-orange-100 flex align-items-center justify-content-center">
+              <i class="pi pi-wallet text-orange-500 text-xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="block text-color-secondary mb-2">Entries</span>
+              <span class="text-3xl font-bold">{{ entryCount() }}</span>
+            </div>
+            <div class="w-3rem h-3rem border-circle bg-blue-100 flex align-items-center justify-content-center">
+              <i class="pi pi-list text-blue-500 text-xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day list -->
+  <div class="col-12">
+    <p-card>
+      @if (loading()) {
+        @for (_ of skeletonRows; track $index) {
+          <div class="flex align-items-center justify-content-between p-3 border-bottom-1 surface-border">
+            <p-skeleton width="40%" height="1.5rem" />
+            <p-skeleton width="20%" height="1.5rem" />
+          </div>
+        }
+      } @else if (dayGroups().length === 0) {
+        <div class="flex flex-column align-items-center gap-3 p-6 text-center">
+          <i class="pi pi-wallet text-4xl text-color-secondary"></i>
+          <span class="text-color-secondary">No expenses recorded yet for this shop</span>
+          @if (canManage()) {
+            <p-button label="Add First Expense" icon="pi pi-plus" (onClick)="openCreateDialog()" />
+          }
+        </div>
+      } @else {
+        @for (group of dayGroups(); track group.date) {
+          <div class="border-bottom-1 surface-border">
+            <!-- Day header (click to expand) -->
+            <button
+              type="button"
+              class="w-full flex align-items-center justify-content-between gap-3 p-3 cursor-pointer border-none bg-transparent text-left hover:surface-100 transition-colors transition-duration-150"
+              (click)="toggleDay(group.date)"
+              [attr.aria-expanded]="isExpanded(group.date)"
+            >
+              <div class="flex align-items-center gap-3">
+                <i class="pi text-color-secondary" [ngClass]="isExpanded(group.date) ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                <div>
+                  <span class="font-semibold text-color">{{ group.date | date:'EEE, d MMM y' }}</span>
+                  <span class="block text-sm text-color-secondary">{{ group.dayName }} · {{ group.items.length }} item(s)</span>
+                </div>
+              </div>
+              <span class="text-xl font-bold text-orange-600">{{ group.total | appCurrency }}</span>
+            </button>
+
+            <!-- Breakdown -->
+            @if (isExpanded(group.date)) {
+              <div class="surface-50">
+                @for (item of group.items; track item.id) {
+                  <div class="flex align-items-center justify-content-between gap-3 px-3 py-2 pl-6 border-top-1 surface-border">
+                    <div class="flex-1 min-w-0">
+                      <span class="block text-color white-space-normal">{{ item.description }}</span>
+                      <span class="block text-xs text-color-secondary">
+                        <i class="pi pi-user text-xs"></i>
+                        {{ item.createdByEmail || 'Unknown' }}
+                        · {{ item.createdAt | date:'shortTime' }}
+                        @if (item.updatedAt) { <span class="font-italic">(edited)</span> }
+                      </span>
+                    </div>
+                    <span class="font-medium text-color">{{ item.amount | appCurrency }}</span>
+                    @if (canManage()) {
+                      <div class="flex align-items-center gap-1">
+                        <p-button
+                          icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary" size="small"
+                          pTooltip="Edit" tooltipPosition="top"
+                          (onClick)="editExpense(item)"
+                        />
+                        <p-button
+                          icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" size="small"
+                          pTooltip="Delete" tooltipPosition="top"
+                          (onClick)="confirmDelete(item)"
+                        />
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </p-card>
+  </div>
+</div>
+
+<!-- Add / Edit dialog -->
+<app-expense-form-dialog
+  [visible]="showFormDialog()"
+  [expense]="selectedExpense()"
+  [locationId]="selectedLocationId"
+  [locationName]="selectedLocation()?.name ?? null"
+  (visibleChange)="showFormDialog.set($event)"
+  (saved)="onExpenseSaved()"
+/>

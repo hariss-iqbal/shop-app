@@ -157,3 +157,13 @@ export const systemSettingsGuard: CanActivateFn = roleGuard('canAccessSystemSett
  * Guard for audit logs access (admin only)
  */
 export const auditLogsGuard: CanActivateFn = roleGuard('canAccessAuditLogs');
+
+/**
+ * Guard for expenses access
+ */
+export const expensesGuard: CanActivateFn = roleGuard('canAccessExpenses');
+
+/**
+ * Guard for reports access (e.g. Grand Profit) — admin/manager by default
+ */
+export const reportsGuard: CanActivateFn = roleGuard('canAccessReports');

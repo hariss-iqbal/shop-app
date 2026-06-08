@@ -14,7 +14,9 @@ import {
   storageGuard,
   receiptSequencesGuard,
   userManagementGuard,
-  auditLogsGuard
+  auditLogsGuard,
+  expensesGuard,
+  reportsGuard
 } from './core';
 
 export const routes: Routes = [
@@ -226,6 +228,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/refunds/refund-list/refund-list.component')
           .then(m => m.RefundListComponent),
         canActivate: [refundsGuard]
+      },
+      {
+        path: 'expenses',
+        loadComponent: () => import('./features/admin/expenses/expense-list.component')
+          .then(m => m.ExpenseListComponent),
+        canActivate: [expensesGuard]
+      },
+      {
+        path: 'grand-profit',
+        loadComponent: () => import('./features/admin/grand-profit/grand-profit.component')
+          .then(m => m.GrandProfitComponent),
+        canActivate: [reportsGuard]
       },
       {
         path: 'messages',

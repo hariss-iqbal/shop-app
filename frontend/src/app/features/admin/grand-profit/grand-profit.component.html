@@ -1,0 +1,165 @@
+<div class="grid">
+  <!-- Header -->
+  <div class="col-12 mb-2">
+    <h1 class="text-3xl font-bold m-0">Grand Profit</h1>
+    <p class="m-0 mt-1 text-color-secondary">Sales profit minus expenses</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="col-12 mb-2">
+    <p-card>
+      <div class="flex flex-column md:flex-row md:align-items-end gap-3">
+        <div class="flex flex-column gap-1">
+          <label class="text-sm text-color-secondary">Shop</label>
+          <p-select
+            [options]="locationOptions()"
+            [(ngModel)]="selectedLocationId"
+            (onChange)="onFilterChange()"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-14rem"
+          />
+        </div>
+        <div class="flex flex-column gap-1">
+          <label class="text-sm text-color-secondary">Date range</label>
+          <p-datepicker
+            [(ngModel)]="dateRange"
+            (onSelect)="onFilterChange()"
+            selectionMode="range"
+            [maxDate]="maxDate"
+            [readonlyInput]="true"
+            dateFormat="dd M yy"
+            [showIcon]="true"
+            appendTo="body"
+            styleClass="w-18rem"
+          />
+        </div>
+        <div class="flex flex-column gap-1">
+          <label class="text-sm text-color-secondary">Group by</label>
+          <p-selectbutton
+            [options]="groupByOptions"
+            [(ngModel)]="groupBy"
+            (onChange)="load()"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+          />
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="col-12 mb-2">
+    <div class="grid">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="block text-color-secondary mb-2">Sales Profit</span>
+              <span class="text-3xl font-bold text-green-600">{{ totalSalesProfit() | appCurrency }}</span>
+            </div>
+            <div class="w-3rem h-3rem border-circle bg-green-100 flex align-items-center justify-content-center">
+              <i class="pi pi-arrow-up text-green-600 text-xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="block text-color-secondary mb-2">Expenses</span>
+              <span class="text-3xl font-bold text-orange-500">{{ totalExpenses() | appCurrency }}</span>
+            </div>
+            <div class="w-3rem h-3rem border-circle bg-orange-100 flex align-items-center justify-content-center">
+              <i class="pi pi-arrow-down text-orange-500 text-xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="h-full">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="block text-color-secondary mb-2">Grand Profit</span>
+              <span class="text-3xl font-bold" [ngClass]="totalGrandProfit() >= 0 ? 'text-primary' : 'text-red-500'">
+                {{ totalGrandProfit() | appCurrency }}
+              </span>
+            </div>
+            <div class="w-3rem h-3rem border-circle bg-primary-100 flex align-items-center justify-content-center">
+              <i class="pi pi-wallet text-primary text-xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakdown table -->
+  <div class="col-12">
+    <p-card>
+      <p-table
+        [value]="rows()"
+        [loading]="loading()"
+        [paginator]="rows().length > 15"
+        [rows]="15"
+        [rowHover]="true"
+        styleClass="p-datatable-sm"
+        [scrollable]="true"
+        scrollDirection="horizontal"
+        [tableStyle]="{ 'min-width': '50rem' }"
+      >
+        <ng-template #header>
+          <tr>
+            <th>{{ groupBy === 'month' ? 'Month' : 'Date' }}</th>
+            <th class="text-right">Sales</th>
+            <th class="text-right">Revenue</th>
+            <th class="text-right">Sales Profit</th>
+            <th class="text-right">Expenses</th>
+            <th class="text-right">Grand Profit</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-row>
+          <tr>
+            <td class="font-medium">
+              {{ row.period | date:(groupBy === 'month' ? 'MMMM y' : 'EEE, d MMM y') }}
+            </td>
+            <td class="text-right">{{ row.salesCount }}</td>
+            <td class="text-right">{{ row.salesRevenue | appCurrency }}</td>
+            <td class="text-right text-green-600">{{ row.salesProfit | appCurrency }}</td>
+            <td class="text-right text-orange-500">{{ row.expensesTotal | appCurrency }}</td>
+            <td class="text-right font-bold" [ngClass]="row.grandProfit >= 0 ? 'text-color' : 'text-red-500'">
+              {{ row.grandProfit | appCurrency }}
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6" class="text-center p-4">
+              <div class="flex flex-column align-items-center gap-3">
+                <i class="pi pi-chart-line text-4xl text-color-secondary"></i>
+                <span class="text-color-secondary">No sales or expenses in this period</span>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #loadingbody>
+          @for (_ of skeletonRows; track $index) {
+            <tr>
+              <td><p-skeleton width="70%" /></td>
+              <td><p-skeleton width="40%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="60%" /></td>
+              <td><p-skeleton width="60%" /></td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</div>

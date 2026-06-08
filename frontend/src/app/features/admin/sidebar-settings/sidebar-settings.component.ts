@@ -68,6 +68,7 @@ export class SidebarSettingsComponent implements OnInit {
 
   readonly routeOptions: RouteOption[] = [
     { label: 'Dashboard', value: '/admin/dashboard' },
+    { label: 'Variants', value: '/admin/variants' },
     { label: 'Inventory', value: '/admin/inventory' },
     { label: 'Sales', value: '/admin/sales' },
     { label: 'Sales Dashboard', value: '/admin/sales-dashboard' }

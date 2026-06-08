@@ -105,19 +105,40 @@ export class StorageConfigService {
   }
 
   private async fetchBucketConfig(): Promise<StorageBucketConfig> {
-    const { data, error } = await this.supabase.storage.getBucket(PHONE_IMAGES_BUCKET);
+    // NOTE: supabase.storage.getBucket() requires the service_role key, so it
+    // fails ("Bucket not found") from the browser with a normal user JWT.
+    // Use an admin-gated SECURITY DEFINER RPC that reads storage.buckets instead.
+    const { data, error } = await this.supabase.rpc('get_storage_bucket_info', {
+      p_bucket_id: PHONE_IMAGES_BUCKET
+    });
 
     if (error) {
       throw new Error(`Failed to fetch bucket config: ${error.message}`);
     }
 
+    const info = data as {
+      success: boolean;
+      error?: string;
+      id?: string;
+      name?: string;
+      public?: boolean;
+      fileSizeLimit?: number | null;
+      allowedMimeTypes?: string[] | null;
+    };
+
+    if (!info?.success) {
+      throw new Error(`Failed to fetch bucket config: ${info?.error || 'unknown error'}`);
+    }
+
+    const sizeLimitBytes = info.fileSizeLimit ?? MAX_FILE_SIZE_BYTES;
+
     return {
-      id: data.id,
-      name: data.name,
-      isPublic: data.public,
-      fileSizeLimitMB: MAX_FILE_SIZE_MB,
-      fileSizeLimitBytes: MAX_FILE_SIZE_BYTES,
-      allowedMimeTypes: [...ALLOWED_MIME_TYPES]
+      id: info.id ?? PHONE_IMAGES_BUCKET,
+      name: info.name ?? PHONE_IMAGES_BUCKET,
+      isPublic: info.public ?? true,
+      fileSizeLimitMB: Math.round(sizeLimitBytes / (1024 * 1024)),
+      fileSizeLimitBytes: sizeLimitBytes,
+      allowedMimeTypes: info.allowedMimeTypes?.length ? info.allowedMimeTypes : [...ALLOWED_MIME_TYPES]
     };
   }
 

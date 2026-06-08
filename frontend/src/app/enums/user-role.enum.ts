@@ -21,6 +21,7 @@ export type Permission =
   | 'canAccessSales'
   | 'canProcessRefunds'
   | 'canAccessReports'
+  | 'canAccessExpenses'
   | 'canAccessMessages'
   | 'canAccessStorage'
   | 'canAccessReceiptSequences'
@@ -44,6 +45,7 @@ export const RolePermissions: Record<UserRole, Record<Permission, boolean>> = {
     canAccessSales: true,
     canProcessRefunds: true,
     canAccessReports: true,
+    canAccessExpenses: true,
     canAccessMessages: true,
     canAccessStorage: true,
     canAccessReceiptSequences: true,
@@ -60,6 +62,7 @@ export const RolePermissions: Record<UserRole, Record<Permission, boolean>> = {
     canAccessSales: true,
     canProcessRefunds: true,
     canAccessReports: true,
+    canAccessExpenses: true,
     canAccessMessages: true,
     canAccessStorage: false,
     canAccessReceiptSequences: false,
@@ -76,6 +79,7 @@ export const RolePermissions: Record<UserRole, Record<Permission, boolean>> = {
     canAccessSales: true,
     canProcessRefunds: false,
     canAccessReports: false,
+    canAccessExpenses: true,
     canAccessMessages: false,
     canAccessStorage: false,
     canAccessReceiptSequences: false,

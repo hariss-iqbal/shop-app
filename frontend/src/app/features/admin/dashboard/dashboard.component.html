@@ -305,14 +305,42 @@
       <ng-template #header>
         <div class="flex flex-column sm:flex-row sm:align-items-center sm:justify-content-between gap-2 px-3 pt-3">
           <h2 class="text-xl font-semibold text-color m-0">Most Viewed Products</h2>
-          <p-selectButton
-            [options]="mostViewedWindowOptions"
-            [(ngModel)]="mostViewedWindowDays"
-            optionLabel="label"
-            optionValue="value"
-            (onChange)="onMostViewedWindowChange()"
-            ariaLabel="Select view window"
-          />
+          <div class="flex flex-column sm:flex-row sm:align-items-center gap-2">
+            <p-selectButton
+              [options]="mostViewedWindowOptions"
+              [(ngModel)]="mostViewedWindow"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="onMostViewedWindowChange()"
+              ariaLabel="Select view window"
+            />
+            @if (mostViewedWindow === 'custom') {
+              <div class="flex flex-column sm:flex-row align-items-start sm:align-items-center gap-2">
+                <p-datepicker
+                  [(ngModel)]="mostViewedCustomStart"
+                  [showIcon]="true"
+                  [maxDate]="mostViewedCustomEnd || today"
+                  dateFormat="yy-mm-dd"
+                  placeholder="Start date"
+                  (onSelect)="onMostViewedCustomDateChange()"
+                  inputStyleClass="w-full sm:w-10rem"
+                  ariaLabel="Most viewed start date"
+                />
+                <span class="text-color-secondary font-medium" aria-hidden="true">to</span>
+                <p-datepicker
+                  [(ngModel)]="mostViewedCustomEnd"
+                  [showIcon]="true"
+                  [minDate]="mostViewedCustomStart!"
+                  [maxDate]="today"
+                  dateFormat="yy-mm-dd"
+                  placeholder="End date"
+                  (onSelect)="onMostViewedCustomDateChange()"
+                  inputStyleClass="w-full sm:w-10rem"
+                  ariaLabel="Most viewed end date"
+                />
+              </div>
+            }
+          </div>
         </div>
       </ng-template>
       @if (mostViewedLoading()) {

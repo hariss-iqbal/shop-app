@@ -614,6 +614,8 @@ export class SupabaseAuthService implements OnDestroy {
       '/admin/dashboard': 'canAccessDashboard',
       '/admin/inventory': 'canAccessInventory',
       '/admin/brands': 'canAccessBrands',
+      '/admin/variants': 'canAccessBrands',
+      '/admin/models': 'canAccessBrands',
       '/admin/purchase-orders': 'canAccessPurchaseOrders',
       '/admin/suppliers': 'canAccessSuppliers',
       '/admin/sales': 'canAccessSales',
