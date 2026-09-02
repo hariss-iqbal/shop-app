@@ -7,15 +7,33 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { PhoneSpecsScraperService } from '../src/services/phone-specs-scraper.service';
+import { WhatsAppBotService } from '../src/services/whatsapp/whatsapp-bot.service';
+import { WhatsAppCloudApiClient } from '../src/services/whatsapp/cloud-api.client';
+import { InboundMessage } from '../src/services/whatsapp/types';
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Capture the raw body so we can verify Meta's X-Hub-Signature-256 on webhooks.
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 
-// Initialize scraper service
+// Initialize services
 const scraperService = new PhoneSpecsScraperService();
+
+// Lazily construct the WhatsApp bot on first webhook hit, so a missing env var
+// can never crash the whole API at import time.
+let _whatsappBot: WhatsAppBotService | null = null;
+function getWhatsappBot(): WhatsAppBotService {
+  if (!_whatsappBot) _whatsappBot = new WhatsAppBotService();
+  return _whatsappBot;
+}
 
 /**
  * GET /health
@@ -119,6 +137,72 @@ app.post('/api/products/clear-cache', (req: Request, res: Response) => {
     success: true,
     message: 'Cache cleared successfully'
   });
+});
+
+/**
+ * GET /api/whatsapp/webhook
+ * Meta webhook verification handshake. Meta calls this once with hub.challenge
+ * when you register the webhook URL. We echo the challenge if the verify token
+ * matches WHATSAPP_VERIFY_TOKEN.
+ */
+app.get('/api/whatsapp/webhook', (req: Request, res: Response) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
+  }
+  return res.sendStatus(403);
+});
+
+/**
+ * POST /api/whatsapp/webhook
+ * Receives inbound WhatsApp messages. We verify the signature, ACK fast (Meta
+ * retries on non-200), then process messages. Replies are sent asynchronously.
+ */
+app.post('/api/whatsapp/webhook', async (req: Request, res: Response) => {
+  // Verify Meta's signature when credentials are configured.
+  const client = WhatsAppCloudApiClient.fromEnv();
+  if (client) {
+    const raw = (req as any).rawBody ?? Buffer.from(JSON.stringify(req.body));
+    const ok = client.verifySignature(raw, req.header('x-hub-signature-256'));
+    if (!ok) {
+      console.warn('[whatsapp] invalid webhook signature');
+      return res.sendStatus(401);
+    }
+  }
+
+  // Process BEFORE responding. On serverless (Vercel), async work left running
+  // after res.send() can be frozen until the next invocation — that is what
+  // made replies arrive batched/delayed. Our handling is fast (one Supabase
+  // read + one Cloud API send), comfortably within Meta's ~5s ACK window.
+  try {
+    const entries = req.body?.entry ?? [];
+    for (const entry of entries) {
+      for (const change of entry.changes ?? []) {
+        const value = change.value ?? {};
+        const contacts = value.contacts ?? [];
+        const profileName = contacts[0]?.profile?.name as string | undefined;
+        for (const m of value.messages ?? []) {
+          if (m.type !== 'text') continue; // first version handles text only
+          const msg: InboundMessage = {
+            from: m.from,
+            messageId: m.id,
+            text: m.text?.body ?? '',
+            profileName,
+            timestamp: m.timestamp,
+          };
+          await getWhatsappBot().handleMessage(msg);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[whatsapp] webhook processing error:', err);
+  }
+
+  // ACK after processing so the reply is guaranteed to be sent this invocation.
+  res.sendStatus(200);
 });
 
 // Export the Express app as a Vercel serverless function

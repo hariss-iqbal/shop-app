@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SmartCell — Consignment (interactive POC)</title>
+<style>
+  :root{--primary:#2563eb;--primary-dark:#1e40af;--in:#9d174d;--bg:#f1f5f9;--card:#fff;
+    --border:#e2e8f0;--text:#0f172a;--muted:#64748b;--success:#16a34a;--danger:#dc2626;--warn:#d97706;}
+  *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{margin:0;background:#e2e8f0;color:var(--text);padding:24px;display:flex;gap:30px;justify-content:center;align-items:flex-start;-webkit-font-smoothing:antialiased;}
+  .guide{max-width:300px;}
+  .guide h1{font-size:19px;margin:0 0 6px}
+  .guide p{font-size:13px;color:#475569;line-height:1.5;margin:0 0 14px}
+  .guide .s{background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:9px;font-size:12.5px;line-height:1.45;cursor:pointer}
+  .guide .s b{color:#0f172a}
+  .guide .s:hover{border-color:var(--primary)}
+  .reset{margin-top:6px;background:#0f172a;color:#fff;border:none;border-radius:9px;padding:10px 14px;font-weight:700;font-size:12.5px;cursor:pointer}
+  .phone{width:390px;height:800px;background:var(--bg);border:11px solid #0f172a;border-radius:44px;overflow:hidden;position:relative;box-shadow:0 20px 44px rgba(2,6,23,.3);}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;background:#0f172a;border-radius:0 0 16px 16px;z-index:30}
+  .sb{height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:700}
+  .scr{height:758px;display:flex;flex-direction:column}
+  .ab{display:flex;align-items:center;gap:10px;padding:6px 14px 12px;background:var(--card);border-bottom:1px solid var(--border)}
+  .ab .bk{font-size:22px;width:24px;cursor:pointer;color:var(--text)}
+  .ab h2{font-size:19px;font-weight:800;margin:0;flex:1}
+  .ab .r{color:var(--primary);font-weight:700;font-size:14px;cursor:pointer}
+  .body{flex:1;overflow:auto;padding:12px 14px 80px}
+  .seg{display:flex;gap:8px;margin-bottom:12px}
+  .seg .o{flex:1;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--border);background:#fff;font-weight:700;font-size:12.5px;color:var(--muted);cursor:pointer}
+  .seg .o.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .seg .o.onin{background:var(--in);border-color:var(--in);color:#fff}
+  .tabs{display:flex;gap:7px;margin-bottom:12px}
+  .tab{padding:7px 12px;border-radius:16px;font-size:12px;font-weight:700;background:#fff;border:1px solid var(--border);color:var(--muted);cursor:pointer}
+  .tab.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .stats{display:flex;gap:10px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border:1px solid var(--border);border-radius:13px;padding:11px}
+  .stat .n{font-size:17px;font-weight:800}.stat .k{font-size:11px;color:var(--muted);margin-top:2px}
+  .stat.amber{background:#fffbeb;border-color:#fde68a}.stat.amber .n{color:var(--warn)}
+  .stat.red{background:#fef2f2;border-color:#fecaca}.stat.red .n{color:var(--danger)}
+  .card{background:#fff;border:1px solid var(--border);border-radius:13px;padding:12px;margin-bottom:10px;cursor:pointer}
+  .card.flat{cursor:default}
+  .ct{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .cm{font-size:15px;font-weight:800}
+  .ci{font-size:11.5px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+  .chip{display:inline-flex;border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:800}
+  .c-amber{background:#fef3c7;color:var(--warn)}.c-red{background:#fee2e2;color:var(--danger)}
+  .c-green{background:#dcfce7;color:var(--success)}.c-pink{background:#fdf2f8;color:var(--in)}
+  .c-grey{background:#f1f5f9;color:var(--muted)}
+  .badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;text-transform:uppercase}
+  .b-ext{background:#ecfeff;color:#0e7490}.b-int{background:#f5f3ff;color:#6d28d9}.b-in{background:#fdf2f8;color:var(--in)}
+  .drow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px}
+  .cb{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);margin-top:9px;padding-top:9px}
+  .price{font-size:15px;font-weight:800}.price small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}
+  .due{font-size:11.5px;font-weight:800;color:var(--danger)}.ok{font-size:11.5px;font-weight:800;color:var(--success)}
+  .mut{font-size:11.5px;font-weight:700;color:var(--muted)}
+  .fab{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;color:#fff;font-weight:800;font-size:14.5px;padding:13px 24px;border-radius:28px;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.25);z-index:20}
+  .fab.out{background:var(--primary)}.fab.in{background:var(--in)}
+  .lbl{font-size:12px;font-weight:700;margin:14px 2px 6px}
+  .inp{width:100%;border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14.5px;background:#fff;outline:none}
+  .inp.big{font-size:20px;font-weight:800}
+  .two{display:flex;gap:10px}.two>div{flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .pc{border:1px solid var(--border);border-radius:16px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--muted);background:#fff;cursor:pointer}
+  .pc.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .pc.onin{background:var(--in);border-color:var(--in);color:#fff}
+  .pick{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:7px;cursor:pointer;background:#fff}
+  .pick.on{border-color:var(--primary);background:#eff6ff}
+  .pick .pm{font-size:13.5px;font-weight:700}.pick .pi{font-size:11px;color:var(--muted);margin-top:1px}
+  .btn{display:block;text-align:center;border-radius:11px;padding:14px;font-weight:800;font-size:15px;margin-top:16px;cursor:pointer;border:none;width:100%}
+  .btn.pri{background:var(--primary);color:#fff}.btn.inb{background:var(--in);color:#fff}
+  .btn.suc{background:var(--success);color:#fff}.btn.out{background:#fff;border:1.5px solid var(--border);color:var(--text)}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+  .hero{background:#fff;border:1px solid var(--border);border-radius:15px;padding:15px;text-align:center;margin-bottom:12px}
+  .hero .m{font-size:17px;font-weight:800}.hero .meta{font-size:11.5px;color:var(--muted);margin-top:2px;font-family:ui-monospace,monospace}
+  .pill{display:inline-block;font-size:12px;font-weight:800;padding:7px 14px;border-radius:18px;margin-top:9px}
+  .sect{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+  .r2{display:flex;justify-content:space-between;font-size:13px;padding:5px 0}.r2 b{font-weight:800}
+  .done{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:11px;font-size:12.5px;font-weight:700;margin-bottom:10px}
+  .net{border-radius:15px;padding:16px;text-align:center;margin-bottom:12px}
+  .net.g{background:#ecfdf5;border:1px solid #a7f3d0}.net.r{background:#fef2f2;border:1px solid #fecaca}
+  .net .big{font-size:24px;font-weight:800}.net.g .big{color:var(--success)}.net.r .big{color:var(--danger)}
+  .net .l{font-size:12.5px;color:#475569;margin-top:2px;font-weight:600}
+  .lr{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+  .lr .ll{font-size:13px;font-weight:700}.lr .ld{font-size:11px;color:var(--muted)}
+  .plus{color:var(--success);font-weight:800}.minus{color:var(--danger);font-weight:800}
+  .toast{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:20px;font-size:12.5px;font-weight:600;z-index:40;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+  <div class="guide">
+    <h1>Consignment — interactive POC</h1>
+    <p>Fully clickable. Tap through any scenario end-to-end; data updates live. Same flows as the real app.</p>
+    <div class="s" onclick="jump('home','out')"><b>1 · OUT → Settle (sold)</b><br>tap a device out to a shop, then mark it sold &amp; collect.</div>
+    <div class="s" onclick="jump('home','out')"><b>2 · OUT → Return</b><br>OUT a device, then take it back into stock.</div>
+    <div class="s" onclick="jump('home','in')"><b>3 · Take IN → Sell</b><br>hold a partner's device, sell it → we owe them.</div>
+    <div class="s" onclick="jump('home','in')"><b>4 · Take IN → Return</b><br>hand an unsold device back to the partner.</div>
+    <div class="s" onclick="go('partners')"><b>5 · Netted statement → Pay/Settle</b><br>one balance per partner across both directions.</div>
+    <button class="reset" onclick="resetDemo()">↺ Reset demo data</button>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="sb"><span>9:41</span><span style="letter-spacing:2px">●●● ☷ ▮</span></div>
+    <div class="scr"><div class="body" id="screen"></div></div>
+    <div id="fab"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+<script>
+const fmt = n => 'Rs ' + Math.round(n||0).toLocaleString('en-US');
+let S, draft;
+function seed(){
+  S = {
+    screen:'home', dir:'out', tab:'active', stack:[], params:{}, nextId:50,
+    partners:[{id:'zain',name:'Zain Telecom',phone:'0300-1234567'},{id:'hub',name:'Mobile Hub',phone:'0301-7654321'}],
+    devices:[
+      {id:'d1',brand:'Google',model:'Pixel 9 Pro XL',storage:512,color:'Obsidian',cost:150000,sell:205000,available:true},
+      {id:'d2',brand:'Apple',model:'iPhone 13',storage:128,color:'Blue',cost:75000,sell:83000,available:true},
+      {id:'d3',brand:'Google',model:'Pixel 8 Pro',storage:256,color:'Black',cost:110000,sell:130000,available:true},
+      {id:'d4',brand:'Google',model:'Pixel 7',storage:128,color:'Hazel',cost:55000,sell:68000,available:true},
+    ],
+    cons:[
+      {id:'o1',dir:'out',status:'out',partnerId:'zain',brand:'Google',model:'Pixel 9 Pro XL',storage:256,color:'Hazel',price:165000,settled:null,received:0,paid:0,days:2},
+      {id:'i1',dir:'in',status:'in_stock',partnerId:'hub',brand:'Samsung',model:'Galaxy S23',storage:256,color:'Black',price:80000,sell:95000,settled:null,received:0,paid:0,days:1},
+    ],
+  };
+  draft = {};
+}
+function bal(pid){
+  let recv=0,pay=0,oc=0,ic=0;
+  S.cons.filter(c=>c.partnerId===pid).forEach(c=>{
+    if(c.dir==='out'){ if(c.status==='out'){oc++;recv+=(c.settled||c.price)-c.received;} if(c.status==='sold'){recv+=(c.settled||c.price)-c.received;} }
+    if(c.dir==='in'){ if(c.status==='in_stock')ic++; if(c.status==='sold')pay+=c.price-c.paid; }
+  });
+  return {recv,pay,net:recv-pay,oc,ic};
+}
+function pName(id){return (S.partners.find(p=>p.id===id)||{}).name||'—';}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+function go(screen,params={}){S.stack.push({screen:S.screen,params:S.params});S.screen=screen;S.params=params;render();}
+function back(){const p=S.stack.pop();if(p){S.screen=p.screen;S.params=p.params;}else S.screen='home';render();}
+function jump(screen,dir){S.stack=[];S.screen=screen;if(dir)S.dir=dir;S.tab='active';render();}
+function resetDemo(){seed();render();toast('Demo reset');}
+
+// ---------- actions ----------
+function createOut(){
+  if(!draft.deviceId){toast('Pick a device');return;}
+  if(!draft.partnerId){toast('Pick a partner shop');return;}
+  const price=+(document.getElementById('outprice').value||0);
+  const d=S.devices.find(x=>x.id===draft.deviceId); d.available=false;
+  const id='o'+(S.nextId++);
+  S.cons.unshift({id,dir:'out',status:'out',partnerId:draft.partnerId,brand:d.brand,model:d.model,storage:d.storage,color:d.color,cost:d.cost,price,settled:null,received:0,paid:0,days:0});
+  draft={}; S.dir='out'; go('outDetail',{id});
+}
+function settleOut(id){
+  const c=S.cons.find(x=>x.id===id);
+  const sp=+(document.getElementById('sprice').value||0), rc=+(document.getElementById('srecv').value||0);
+  c.status='sold'; c.settled=sp; c.received=rc;
+  toast('✓ Sold '+fmt(sp)+' · profit '+fmt(sp-(c.cost||0)));
+  render();
+}
+function returnOut(id){const c=S.cons.find(x=>x.id===id);c.status='returned';const d=S.devices.find(x=>x.brand===c.brand&&x.model===c.model);if(d)d.available=true;toast('↩ Returned to stock');render();}
+function takeIn(){
+  if(!draft.partnerId){toast('Pick the partner');return;}
+  const model=document.getElementById('inmodel').value.trim();
+  if(!model){toast('Enter the model');return;}
+  const price=+(document.getElementById('inprice').value||0);
+  const sell=+(document.getElementById('insell').value||0);
+  const id='i'+(S.nextId++);
+  S.cons.unshift({id,dir:'in',status:'in_stock',partnerId:draft.partnerId,brand:document.getElementById('inbrand').value||'—',model,storage:+(document.getElementById('instore').value||0)||null,color:document.getElementById('incolor').value||'',price,sell,settled:null,received:0,paid:0,days:0});
+  draft={}; S.dir='in'; go('inDetail',{id});
+}
+function sellIn(id){
+  const c=S.cons.find(x=>x.id===id);
+  const sp=+(document.getElementById('insale').value||0);
+  c.status='sold'; c.settled=sp;
+  toast('✓ Sold '+fmt(sp)+' · margin '+fmt(sp-c.price)+' · we owe '+fmt(c.price));
+  render();
+}
+function returnIn(id){const c=S.cons.find(x=>x.id===id);c.status='returned';toast('↩ Returned to partner');render();}
+function payPartner(pid){
+  let amt=+(document.getElementById('payamt').value||0);
+  S.cons.filter(c=>c.partnerId===pid&&c.dir==='in'&&c.status==='sold'&&c.paid<c.price).forEach(c=>{
+    if(amt<=0)return; const owe=c.price-c.paid; const a=Math.min(amt,owe); c.paid+=a; amt-=a;
+  });
+  toast('Paid partner'); render();
+}
+function settleNet(pid){
+  const b=bal(pid);
+  if(b.net>0){ S.cons.filter(c=>c.partnerId===pid&&c.dir==='out').forEach(c=>c.received=(c.settled||c.price)); toast('Settled — '+pName(pid)+' paid '+fmt(b.net)); }
+  else if(b.net<0){ S.cons.filter(c=>c.partnerId===pid&&c.dir==='in'&&c.status==='sold').forEach(c=>c.paid=c.price); toast('Settled — paid '+pName(pid)+' '+fmt(-b.net)); }
+  render();
+}
+
+// ---------- screens ----------
+function render(){
+  const el=document.getElementById('screen'); const fab=document.getElementById('fab');
+  fab.innerHTML=''; fab.className='';
+  el.innerHTML = ({home:home,createOut:createOutScr,outDetail:outDetail,createIn:createInScr,inDetail:inDetail,partners:partners,statement:statement}[S.screen]||home)();
+}
+function ab(title,right){return `<div class="ab">${S.stack.length?`<span class="bk" onclick="back()">←</span>`:''}<h2>${title}</h2>${right||''}</div>`;}
+function statusChip(c){
+  if(c.status==='out')return `<span class="chip ${c.days>=7?'c-red':'c-amber'}">OUT · ${c.days}d</span>`;
+  if(c.status==='in_stock')return `<span class="chip c-pink">IN STOCK</span>`;
+  if(c.status==='sold')return `<span class="chip c-green">SOLD</span>`;
+  return `<span class="chip c-grey">${c.status.toUpperCase()}</span>`;
+}
+function home(){
+  const dir=S.dir;
+  const list=S.cons.filter(c=>c.dir===dir).filter(c=>{
+    if(S.tab==='all')return true;
+    if(S.tab==='active')return c.status==='out'||c.status==='in_stock';
+    return c.status===S.tab;
+  });
+  const active=S.cons.filter(c=>c.dir===dir&&(c.status==='out'||c.status==='in_stock')).length;
+  let head=0; S.cons.filter(c=>c.dir===dir).forEach(c=>{ if(dir==='out'&&(c.status==='out'||c.status==='sold'))head+=(c.settled||c.price)-c.received; if(dir==='in'&&c.status==='sold')head+=c.price-c.paid; });
+  const cards=list.map(c=>{
+    const isIn=c.dir==='in';
+    const right = isIn ? (c.status==='in_stock'?`<span class="ok">● sellable</span>`:c.status==='sold'?(c.price-c.paid>0?`<span class="due">we owe ${fmt(c.price-c.paid)}</span>`:`<span class="ok">✓ settled</span>`):`<span class="mut">↩ returned</span>`)
+      : (((c.settled||c.price)-c.received>0&&c.status!=='returned')?`<span class="due">● ${fmt((c.settled||c.price)-c.received)} to collect</span>`:c.status==='sold'?`<span class="ok">✓ Paid</span>`:c.status==='returned'?`<span class="mut">↩ Returned</span>`:'');
+    const priceTxt = isIn ? (c.status==='sold'?`Sold ${fmt(c.settled)}`:fmt(c.price)) : fmt(c.settled||c.price);
+    const sub = isIn?'we owe if sold':(c.status==='sold'?'sold price':'out price');
+    return `<div class="card" onclick="go('${isIn?'inDetail':'outDetail'}',{id:'${c.id}'})">
+      <div class="ct"><div><div class="cm">${c.brand} ${c.model}${c.storage?' · '+c.storage+'GB':''}${c.color?' · '+c.color:''}</div></div>${statusChip(c)}</div>
+      <div class="drow"><span class="badge ${isIn?'b-in':'b-ext'}">${isIn?'From':'External'}</span><b>${pName(c.partnerId)}</b></div>
+      <div class="cb"><div class="price">${priceTxt}<small>${sub}</small></div>${right}</div></div>`;
+  }).join('') || `<div style="text-align:center;color:var(--muted);margin-top:40px">Nothing here. Tap the button below to add one.</div>`;
+  document.getElementById('fab').className='fab '+dir;
+  document.getElementById('fab').textContent = dir==='out'?'+ OUT a device':'+ Take a device IN';
+  document.getElementById('fab').onclick = ()=>go(dir==='out'?'createOut':'createIn');
+  return ab('Consignment',`<span class="r" onclick="go('partners')">Partners</span>`)+`<div class="body" style="padding:0">
+    <div class="seg"><div class="o ${dir==='out'?'on':''}" onclick="S.dir='out';S.tab='active';render()">Out · ours at others</div><div class="o ${dir==='in'?'onin':''}" onclick="S.dir='in';S.tab='active';render()">In · theirs with us</div></div>
+    <div class="stats"><div class="stat"><div class="n">${active}</div><div class="k">${dir==='in'?'held for others':'active out'}</div></div>
+      <div class="stat ${dir==='in'?'red':'amber'}"><div class="n">${fmt(head)}</div><div class="k">${dir==='in'?'we owe (sold)':'to collect'}</div></div></div>
+    <div class="tabs">${['active','sold','returned','all'].map(t=>`<span class="tab ${S.tab===t?'on':''}" onclick="S.tab='${t}';render()">${t[0].toUpperCase()+t.slice(1)}</span>`).join('')}</div>
+    ${cards}</div>`;
+}
+function createOutScr(){
+  const devs=S.devices.filter(d=>d.available);
+  return ab('OUT a device')+`<div class="body" style="padding:0">
+    <div class="lbl">Device</div>
+    ${devs.map(d=>`<div class="pick ${draft.deviceId===d.id?'on':''}" onclick="draft.deviceId='${d.id}';document.getElementById('outprice').value=${d.sell};render()"><div class="pm">${d.brand} ${d.model} · ${d.storage}GB · ${d.color}</div><div class="pi">cost ${fmt(d.cost)} · asking ${fmt(d.sell)}</div></div>`).join('')||'<div class="hint">No available devices.</div>'}
+    <div class="lbl">Send to (partner)</div>
+    <div class="chips">${S.partners.map(p=>`<span class="pc ${draft.partnerId===p.id?'on':''}" onclick="draft.partnerId='${p.id}';render()">${p.name}</span>`).join('')}</div>
+    <div class="lbl">OUT price (Rs)</div><input class="inp big" id="outprice" value="${draft.deviceId?(S.devices.find(d=>d.id===draft.deviceId)||{}).sell:''}" inputmode="numeric">
+    <div class="btn pri" onclick="createOut()">OUT this device →</div>
+    <div class="hint">Device is reserved &amp; removed from sellable stock until sold or returned.</div></div>`;
+}
+function outDetail(){
+  const c=S.cons.find(x=>x.id===S.params.id); const active=c.status==='out';
+  const owe=(c.settled||c.price)-c.received;
+  return ab('OUT · '+c.model)+`<div class="body" style="padding:0">
+    <div class="hero"><div class="m">${c.brand} ${c.model} · ${c.storage}GB · ${c.color}</div>
+      <span class="pill ${active?'c-amber':c.status==='sold'?'c-green':'c-grey'}">${active?'OUT · '+c.days+' days':c.status.toUpperCase()}</span></div>
+    <div class="card flat"><div class="sect">Destination</div><div style="font-weight:800;font-size:15px">${pName(c.partnerId)} <span class="badge b-ext">External</span></div></div>
+    <div class="card flat"><div class="sect">Money</div>
+      <div class="r2"><span>OUT price</span><b>${fmt(c.price)}</b></div>
+      ${c.settled?`<div class="r2"><span>Sold price</span><b>${fmt(c.settled)}</b></div>`:''}
+      <div class="r2"><span>Received</span><b>${fmt(c.received)}</b></div>
+      <div class="r2"><span style="color:var(--danger);font-weight:800">To collect</span><b style="color:var(--danger)">${fmt(Math.max(owe,0))}</b></div></div>
+    ${active?`
+      <div class="card flat"><div class="sect">Mark sold &amp; record payment</div>
+        <div class="lbl">Sold price</div><input class="inp big" id="sprice" value="${c.price}" inputmode="numeric">
+        <div class="lbl">Amount received</div><input class="inp big" id="srecv" value="${c.price}" inputmode="numeric">
+        <div class="btn suc" onclick="settleOut('${c.id}')">Confirm sale (SOLD)</div></div>
+      <div class="btn out" onclick="returnOut('${c.id}')">↩ Return to stock</div>`
+    :`<div style="text-align:center;color:var(--muted);margin-top:8px">This OUT is ${c.status}. No further actions.</div>`}</div>`;
+}
+function createInScr(){
+  return ab('Take a device IN')+`<div class="body" style="padding:0">
+    <div class="lbl">From which shop</div>
+    <div class="chips">${S.partners.map(p=>`<span class="pc ${draft.partnerId===p.id?'onin':''}" onclick="draft.partnerId='${p.id}';render()">${p.name}</span>`).join('')}</div>
+    <div class="lbl">Brand</div>
+    <div class="chips">${['Google','Apple','Samsung','Nothing','OnePlus'].map(b=>`<span class="pc ${draft.brand===b?'onin':''}" onclick="draft.brand='${b}';document.getElementById('inbrand').value='${b}';render()">${b}</span>`).join('')}</div>
+    <input type="hidden" id="inbrand" value="${draft.brand||''}">
+    <div class="lbl">Model</div><input class="inp" id="inmodel" placeholder="e.g. Pixel 8 Pro" value="${draft.model||''}">
+    <div class="two"><div><div class="lbl">Storage</div><input class="inp" id="instore" placeholder="256" inputmode="numeric"></div><div><div class="lbl">Color</div><input class="inp" id="incolor" placeholder="Black"></div></div>
+    <div class="lbl">IN price — what we'll owe them</div><input class="inp big" id="inprice" placeholder="0" inputmode="numeric">
+    <div class="lbl">Our intended sell price (optional)</div><input class="inp" id="insell" placeholder="0" inputmode="numeric">
+    <div class="btn inb" onclick="takeIn()">Take IN →</div>
+    <div class="hint">Added to sellable stock, flagged consignment. Not counted in our owned-stock value.</div></div>`;
+}
+function inDetail(){
+  const c=S.cons.find(x=>x.id===S.params.id); const inStock=c.status==='in_stock';
+  return ab('IN · '+c.model)+`<div class="body" style="padding:0">
+    <div class="hero"><div class="m">${c.brand} ${c.model}${c.storage?' · '+c.storage+'GB':''}${c.color?' · '+c.color:''}</div>
+      <span class="pill ${inStock?'c-pink':c.status==='sold'?'c-green':'c-grey'}">${inStock?'IN STOCK · held for '+pName(c.partnerId):c.status.toUpperCase()}</span></div>
+    <div class="card flat"><div class="sect">From partner</div><div style="font-weight:800;font-size:15px">${pName(c.partnerId)} <span class="badge b-in">External</span></div></div>
+    <div class="card flat"><div class="sect">Money</div>
+      <div class="r2"><span>IN price (we owe if sold)</span><b>${fmt(c.price)}</b></div>
+      ${c.settled?`<div class="r2"><span>Sold at (our price)</span><b>${fmt(c.settled)}</b></div><div class="r2"><span style="color:var(--success);font-weight:800">Our margin</span><b style="color:var(--success)">${fmt(c.settled-c.price)}</b></div><div class="r2"><span style="color:var(--danger);font-weight:800">We owe partner</span><b style="color:var(--danger)">${fmt(c.price-c.paid)}</b></div>`:''}</div>
+    ${inStock?`
+      <div class="card flat"><div class="sect">Mark sold (record our price)</div>
+        <div class="lbl">Our sale price</div><input class="inp big" id="insale" value="${c.sell||c.price}" inputmode="numeric">
+        <div class="btn suc" onclick="sellIn('${c.id}')">Confirm sale</div></div>
+      <div class="btn out" onclick="returnIn('${c.id}')">↩ Return to partner</div>
+      <div class="hint" style="text-align:center">Can also be sold from the normal POS — that auto-creates what we owe.</div>`
+    :`<div style="text-align:center;color:var(--muted);margin-top:8px">This consignment is ${c.status}.</div>`}</div>`;
+}
+function partners(){
+  const total=S.partners.reduce((s,p)=>s+bal(p.id).net,0);
+  return ab('Partners')+`<div class="body" style="padding:0">
+    <div class="net ${total>=0?'g':'r'}"><div class="big">${total===0?'Rs 0':(total>0?'+':'−')+fmt(Math.abs(total))}</div><div class="l">net across ${S.partners.length} partners · ${total>=0?'in your favour':'you owe overall'}</div></div>
+    ${S.partners.map(p=>{const b=bal(p.id);return `<div class="card" onclick="go('statement',{id:'${p.id}'})"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800;font-size:15px">${p.name}</div><div class="ci">${b.oc} out · ${b.ic} in · ${p.phone}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:15px;color:${b.net>0?'var(--success)':b.net<0?'var(--danger)':'var(--muted)'}">${b.net===0?'Rs 0':fmt(Math.abs(b.net))}</div><div class="ci">${b.net>0?'they owe us':b.net<0?'we owe them':'settled'}</div></div></div></div>`;}).join('')}</div>`;
+}
+function statement(){
+  const p=S.partners.find(x=>x.id===S.params.id); const b=bal(p.id);
+  const rows=S.cons.filter(c=>c.partnerId===p.id).map(c=>{
+    let label,amt,cls;
+    if(c.dir==='out'){label='OUT · '+c.model;amt='+'+fmt((c.settled||c.price)-c.received);cls='plus';if(c.status!=='out'&&c.status!=='sold'){amt='—';cls='ld';}}
+    else{label='IN · '+c.model;if(c.status==='sold'){amt='−'+fmt(c.price-c.paid);cls='minus';}else{amt='—';cls='ld';}}
+    return `<div class="lr"><div><div class="ll">${label}</div><div class="ld">${c.dir} · ${c.status}</div></div><div class="${cls}">${amt}</div></div>`;
+  }).join('');
+  return ab(p.name)+`<div class="body" style="padding:0">
+    <div class="net ${b.net>=0?'g':'r'}"><div class="big">${b.net===0?'Settled':b.net>0?p.name+' owes you '+fmt(b.net):'You owe '+p.name+' '+fmt(-b.net)}</div><div class="l">net of both directions</div></div>
+    <div class="two" style="margin-bottom:12px"><div class="card flat" style="text-align:center"><div class="ci" style="margin:0">They owe us (OUT)</div><div style="font-size:16px;font-weight:800;color:var(--success);margin-top:3px">${fmt(b.recv)}</div></div><div class="card flat" style="text-align:center"><div class="ci" style="margin:0">We owe them (IN)</div><div style="font-size:16px;font-weight:800;color:var(--danger);margin-top:3px">${fmt(b.pay)}</div></div></div>
+    <div class="card flat"><div class="sect">History</div>${rows||'<div class="ld">No transactions yet.</div>'}</div>
+    ${b.net!==0?`<div class="btn pri" onclick="settleNet('${p.id}')">Settle net · ${b.net>0?p.name+' pays '+fmt(b.net):'pay '+fmt(-b.net)}</div>`:''}
+    ${b.pay>0?`<div class="card flat" style="margin-top:10px"><div class="lbl" style="margin-top:0">Pay partner</div><input class="inp" id="payamt" value="${b.pay}" inputmode="numeric"><div class="btn out" onclick="payPartner('${p.id}')">Record payment</div></div>`:''}</div>`;
+}
+seed(); render();
+</script>
+</body>
+</html>

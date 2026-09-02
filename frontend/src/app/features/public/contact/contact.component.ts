@@ -15,6 +15,7 @@ import { RecaptchaService } from '../../../core/services/recaptcha.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { MetaPixelService } from '../../../core/services/meta-pixel.service';
 import { CONTACT_MESSAGE_CONSTRAINTS } from '../../../constants/validation.constants';
 
 @Component({
@@ -43,7 +44,8 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
     private toastService: ToastService,
     private seoService: SeoService,
     @Inject(PLATFORM_ID) private platformId: Object,
-    private shopDetailsService: ShopDetailsService
+    private shopDetailsService: ShopDetailsService,
+    private metaPixel: MetaPixelService
   ) { }
 
   @ViewChild('mapContainer') mapContainer?: ElementRef<HTMLDivElement>;
@@ -261,6 +263,9 @@ export class ContactComponent implements OnInit, AfterViewInit, OnDestroy {
         message: formValue.message,
         honeypot: formValue.website || ''
       });
+
+      // Only after the message is actually stored — a failed submit is not a lead.
+      this.metaPixel.contact('form');
 
       this.toastService.success('Message Sent', 'Thank you! We will get back to you soon.');
       this.submitted.set(true);

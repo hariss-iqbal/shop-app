@@ -1,0 +1,90 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '46rem', maxWidth: '95vw' }"
+  header="Facebook Post"
+  (onHide)="onHide()"
+>
+  @if (context(); as ctx) {
+    <div class="flex flex-column gap-3">
+      <p class="m-0 text-color-secondary text-sm">
+        Post the image below with this caption on the SmartCell page.
+      </p>
+
+      <div class="grid">
+        <!-- Photo: the catalogue image, posted unmodified -->
+        <div class="col-12 md:col-5">
+          <div class="flex flex-column gap-2">
+            <span class="text-sm font-medium">Photo</span>
+            @if (imageUrl(); as img) {
+              <img
+                [src]="img"
+                [alt]="ctx.modelName + ' product photo'"
+                class="w-full border-round border-1 surface-border"
+                style="aspect-ratio: 1; object-fit: cover"
+              />
+              <p-button
+                label="Open image"
+                icon="pi pi-external-link"
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                (onClick)="openImage()"
+              />
+            } @else {
+              <div
+                class="flex flex-column align-items-center justify-content-center gap-2 surface-100 border-round border-1 surface-border text-color-secondary"
+                style="aspect-ratio: 1"
+                data-testid="post-no-image"
+              >
+                <i class="pi pi-image text-3xl"></i>
+                <span class="text-sm">No image for this colour</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Caption: rendered from the template, editable before copying -->
+        <div class="col-12 md:col-7">
+          <div class="flex flex-column gap-2 h-full">
+            <span class="text-sm font-medium">Caption</span>
+            <textarea
+              pTextarea
+              [(ngModel)]="caption"
+              rows="9"
+              class="w-full font-mono text-sm"
+              style="resize: vertical"
+              aria-label="Post caption"
+              data-testid="post-caption"
+            ></textarea>
+
+            @if (unavailablePlaceholders().length) {
+              <p-message severity="info" styleClass="text-xs">
+                @for (p of unavailablePlaceholders(); track p.token) {
+                  <span>{{ p.description }}. Type it in above if you need it.</span>
+                }
+              </p-message>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <ng-template #footer>
+    <p-button
+      label="Close"
+      severity="secondary"
+      [text]="true"
+      (onClick)="visible.set(false)"
+    />
+    <p-button
+      [label]="copied() ? 'Copied' : 'Copy caption'"
+      [icon]="copied() ? 'pi pi-check' : 'pi pi-copy'"
+      (onClick)="copyCaption()"
+      data-testid="post-copy"
+    />
+  </ng-template>
+</p-dialog>

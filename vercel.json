@@ -1,0 +1,20 @@
+{
+  "installCommand": "cd frontend && npm install",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist/phone-shop/browser",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/product/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|facebookcatalog|WhatsApp|whatsapp|Twitterbot|Slackbot|Slack-ImgProxy|LinkedInBot|Discordbot|TelegramBot|Pinterest|redditbot|Applebot|SkypeUriPreview|Viber|Line/).*"
+        }
+      ],
+      "destination": "/api/og?slug=:slug"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

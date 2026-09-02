@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "SmartCell",
+    "slug": "smartcell-admin",
+    "scheme": "smartcelladmin",
+    "version": "1.0.2",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pk.smartcell.admin"
+    },
+    "android": {
+      "package": "pk.smartcell.admin",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-web-browser",
+      "expo-image-picker"
+    ]
+  }
+}

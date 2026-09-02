@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SmartCell — Device OUT (consignment) POC</title>
+<style>
+  :root{
+    --primary:#2563eb; --primary-dark:#1e40af; --bg:#f1f5f9; --card:#fff;
+    --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --success:#16a34a;
+    --danger:#dc2626; --warn:#d97706; --chipbg:#eef2ff; --chiptext:#3730a3;
+    --amberbg:#fef3c7; --greenbg:#dcfce7; --redbg:#fee2e2; --greybg:#f1f5f9;
+  }
+  *{box-sizing:border-box; -webkit-font-smoothing:antialiased; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{margin:0; background:#e2e8f0; color:var(--text); padding:28px;}
+  .poster-title{max-width:880px; margin:0 auto 6px; }
+  .poster-title h1{font-size:22px; margin:0; letter-spacing:-.4px;}
+  .poster-title p{color:#475569; margin:6px 0 22px; font-size:14px; max-width:760px; line-height:1.5}
+  .gallery{display:flex; flex-wrap:wrap; gap:26px 34px; justify-content:center; max-width:900px; margin:0 auto;}
+  .frame{width:380px;}
+  .frame > .label{font-size:13px; font-weight:700; color:#334155; margin:0 0 8px 6px; text-transform:uppercase; letter-spacing:.6px}
+  .frame > .sub{font-size:12px; color:#64748b; margin:-4px 0 10px 6px}
+  .phone{width:380px; height:760px; background:var(--bg); border:11px solid #0f172a; border-radius:42px; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(2,6,23,.28);}
+  .notch{position:absolute; top:0; left:50%; transform:translateX(-50%); width:150px; height:26px; background:#0f172a; border-radius:0 0 16px 16px; z-index:30}
+  .statusbar{height:42px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; font-size:13px; font-weight:700;}
+  .statusbar .r{letter-spacing:2px}
+  .scr{height:718px; overflow:hidden; display:flex; flex-direction:column;}
+  .appbar{display:flex; align-items:center; gap:10px; padding:6px 16px 12px;}
+  .appbar .back{font-size:22px; color:var(--text); width:22px}
+  .appbar h2{font-size:20px; font-weight:800; margin:0; flex:1; letter-spacing:-.3px}
+  .loc{display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--border); border-radius:18px; padding:5px 11px; font-size:12.5px; font-weight:700; color:var(--primary-dark)}
+  .body{flex:1; overflow:auto; padding:4px 14px 16px;}
+  .stats{display:flex; gap:10px; margin-bottom:12px}
+  .stat{flex:1; background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px 13px;}
+  .stat .n{font-size:19px; font-weight:800; letter-spacing:-.4px}
+  .stat .k{font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.3}
+  .stat.amber{background:#fffbeb; border-color:#fde68a}
+  .stat.amber .n{color:var(--warn)}
+  .tabs{display:flex; gap:7px; margin-bottom:12px; overflow:auto}
+  .tab{padding:7px 13px; border-radius:18px; font-size:12.5px; font-weight:700; background:#fff; border:1px solid var(--border); color:var(--muted); white-space:nowrap}
+  .tab.active{background:var(--primary); border-color:var(--primary); color:#fff}
+  .card{background:#fff; border:1px solid var(--border); border-radius:14px; padding:13px; margin-bottom:10px;}
+  .out-card{display:flex; flex-direction:column; gap:8px}
+  .oc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px}
+  .oc-model{font-size:15.5px; font-weight:800; letter-spacing:-.2px}
+  .oc-imei{font-size:12px; color:var(--muted); font-family:ui-monospace,Menlo,monospace; margin-top:2px}
+  .chip{display:inline-flex; align-items:center; gap:4px; border-radius:7px; padding:3px 8px; font-size:11px; font-weight:800;}
+  .chip.blue{background:var(--chipbg); color:var(--chiptext)}
+  .chip.amber{background:var(--amberbg); color:var(--warn)}
+  .chip.green{background:var(--greenbg); color:var(--success)}
+  .chip.red{background:var(--redbg); color:var(--danger)}
+  .chip.grey{background:var(--greybg); color:var(--muted)}
+  .badge{font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.4px}
+  .badge.ext{background:#ecfeff; color:#0e7490; border:1px solid #a5f3fc}
+  .badge.int{background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe}
+  .oc-dest{display:flex; align-items:center; gap:8px; font-size:13.5px}
+  .oc-dest .shop{font-weight:700}
+  .oc-bottom{display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:9px; margin-top:2px}
+  .oc-price{font-size:15px; font-weight:800}
+  .oc-price small{display:block; font-size:11px; color:var(--muted); font-weight:600}
+  .pay{font-size:12px; font-weight:800}
+  .pay.unpaid{color:var(--danger)} .pay.partial{color:var(--warn)} .pay.paid{color:var(--success)}
+  .fab{position:absolute; left:50%; transform:translateX(-50%); bottom:18px; background:var(--primary); color:#fff; font-weight:800; font-size:15px; padding:14px 26px; border-radius:30px; box-shadow:0 10px 24px rgba(37,99,235,.45); z-index:20}
+  .label-s{font-size:12.5px; font-weight:700; color:var(--text); margin:14px 2px 6px}
+  .input{background:#fff; border:1px solid var(--border); border-radius:11px; padding:12px 13px; font-size:14.5px; color:var(--text); display:flex; align-items:center; gap:8px}
+  .input.big{font-size:22px; font-weight:800; padding:14px}
+  .input .ph{color:#94a3b8}
+  .seg{display:flex; gap:8px}
+  .seg .o{flex:1; text-align:center; padding:11px; border-radius:10px; border:1px solid var(--border); background:#fff; font-weight:700; font-size:13.5px; color:var(--muted)}
+  .seg .o.on{background:var(--primary); border-color:var(--primary); color:#fff}
+  .picked{background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:12px; display:flex; gap:11px; align-items:center}
+  .ph-thumb{width:46px;height:46px;border-radius:10px;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-weight:800;color:#4338ca}
+  .hint{font-size:12px; color:var(--muted); margin-top:7px; line-height:1.45}
+  .btn{display:block; text-align:center; border-radius:12px; padding:15px; font-weight:800; font-size:15.5px; margin-top:16px}
+  .btn.primary{background:var(--primary); color:#fff}
+  .btn.success{background:var(--success); color:#fff}
+  .btn.outline{background:#fff; border:1.5px solid var(--border); color:var(--text)}
+  .btn.ghostdanger{color:var(--danger); font-weight:700; font-size:13.5px; margin-top:12px}
+  .hero{background:#fff; border:1px solid var(--border); border-radius:16px; padding:15px; text-align:center; margin-bottom:12px}
+  .hero .m{font-size:19px; font-weight:800}
+  .hero .meta{font-size:12.5px; color:var(--muted); margin-top:3px; font-family:ui-monospace,Menlo,monospace}
+  .hero .cost{margin-top:8px; font-size:13px; color:var(--text)}
+  .big-status{display:inline-flex; gap:6px; align-items:center; font-size:13px; font-weight:800; padding:7px 14px; border-radius:20px; margin-top:10px}
+  .row2{display:flex; justify-content:space-between; font-size:13.5px; padding:6px 0}
+  .row2 .v{font-weight:800}
+  .bar{height:8px; border-radius:6px; background:#e2e8f0; overflow:hidden; margin:8px 0}
+  .bar > i{display:block; height:100%; background:var(--success)}
+  .tl{position:relative; padding-left:22px; margin:6px 0}
+  .tl .dot{position:absolute; left:0; top:3px; width:12px;height:12px;border-radius:50%}
+  .tl .dot.done{background:var(--success)} .tl .dot.now{background:var(--warn)} .tl .dot.todo{background:#cbd5e1}
+  .tl .t{font-size:13px; font-weight:700} .tl .d{font-size:11.5px; color:var(--muted)}
+  .tl .line{position:absolute; left:5px; top:15px; bottom:-10px; width:2px; background:#e2e8f0}
+  .sectit{font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:4px 2px 8px}
+  .result{background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:12px; font-size:13px; color:#065f46; font-weight:700; margin-top:14px}
+  .partner-row{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border)}
+  .pr-name{font-weight:800; font-size:14.5px} .pr-sub{font-size:12px;color:var(--muted)}
+  .pr-bal{font-weight:800; font-size:14.5px; color:var(--danger)}
+  .pr-bal.ok{color:var(--success)}
+  .legend{max-width:860px;margin:26px auto 0;font-size:12.5px;color:#475569;background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;line-height:1.6}
+  .legend b{color:#0f172a}
+</style>
+</head>
+<body>
+  <div class="poster-title">
+    <h1>SmartCell — “OUT” a device (consignment) · mobile POC</h1>
+    <p>Handing a device to another shop (or your other branch) at an agreed price. It stays yours-but-out until the other side <b>pays</b> (→ sold) or <b>returns</b> it (→ back in stock). Mock data only.</p>
+  </div>
+
+  <div class="gallery">
+
+    <!-- SCREEN 1: OUT LIST -->
+    <div class="frame">
+      <div class="label">1 · Out Devices</div>
+      <div class="sub">Home tab — what's out, what's owed</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar">
+            <h2>Out Devices</h2>
+            <span class="loc">G15 IT Tower ▾</span>
+          </div>
+          <div class="body">
+            <div class="stats">
+              <div class="stat"><div class="n">8</div><div class="k">devices out<br>Rs 7,20,000 value</div></div>
+              <div class="stat amber"><div class="n">Rs 2,40,000</div><div class="k">to collect<br>from 3 shops</div></div>
+            </div>
+            <div class="tabs">
+              <span class="tab active">Active · 8</span>
+              <span class="tab">Sold</span>
+              <span class="tab">Returned</span>
+              <span class="tab">All</span>
+            </div>
+
+            <div class="card out-card">
+              <div class="oc-top">
+                <div><div class="oc-model">iPhone 13 · 128GB · Blue</div><div class="oc-imei">IMEI …35 7421</div></div>
+                <span class="chip amber">OUT · 2d</span>
+              </div>
+              <div class="oc-dest"><span class="badge ext">External</span><span class="shop">Zain Telecom</span></div>
+              <div class="oc-bottom"><div class="oc-price">Rs 165,000<small>out price</small></div><div class="pay unpaid">● Unpaid</div></div>
+            </div>
+
+            <div class="card out-card">
+              <div class="oc-top">
+                <div><div class="oc-model">Galaxy S24 Ultra · 256GB</div><div class="oc-imei">IMEI …99 0930</div></div>
+                <span class="chip blue">OUT · 1d</span>
+              </div>
+              <div class="oc-dest"><span class="badge int">Our branch</span><span class="shop">G7 Fazal Tower</span></div>
+              <div class="oc-bottom"><div class="oc-price">Transfer<small>internal move</small></div><div class="pay" style="color:var(--muted)">— in transit</div></div>
+            </div>
+
+            <div class="card out-card">
+              <div class="oc-top">
+                <div><div class="oc-model">Pixel 8 Pro · 128GB</div><div class="oc-imei">IMEI …12 5512</div></div>
+                <span class="chip red">OUT · 9d</span>
+              </div>
+              <div class="oc-dest"><span class="badge ext">External</span><span class="shop">Mobile Hub (Hall Rd)</span></div>
+              <div class="oc-bottom"><div class="oc-price">Rs 132,000<small>out price</small></div><div class="pay unpaid">● Unpaid · overdue</div></div>
+            </div>
+
+            <div class="card out-card">
+              <div class="oc-top">
+                <div><div class="oc-model">iPhone 12 · 64GB · Black</div><div class="oc-imei">IMEI …30 3088</div></div>
+                <span class="chip amber">OUT · 3d</span>
+              </div>
+              <div class="oc-dest"><span class="badge ext">External</span><span class="shop">Zain Telecom</span></div>
+              <div class="oc-bottom"><div class="oc-price">Rs 92,000<small>out price</small></div><div class="pay partial">◐ Partial · Rs 40k</div></div>
+            </div>
+            <div style="height:56px"></div>
+          </div>
+          <div class="fab">+ OUT a device</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: NEW OUT -->
+    <div class="frame">
+      <div class="label">2 · OUT a device</div>
+      <div class="sub">Pick device → destination → price</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">←</span><h2>OUT a device</h2></div>
+          <div class="body">
+            <div class="label-s">Device</div>
+            <div class="input"><span class="ph">🔍 Search model or scan IMEI…</span></div>
+            <div class="picked" style="margin-top:9px">
+              <div class="ph-thumb">A</div>
+              <div style="flex:1">
+                <div style="font-weight:800;font-size:14px">iPhone 13 · 128GB · Blue</div>
+                <div class="oc-imei">IMEI 3534 …7421 · In stock at G15</div>
+                <div style="font-size:12.5px;margin-top:3px">Your cost <b>Rs 150,000</b></div>
+              </div>
+              <span style="color:var(--success);font-weight:800">✓</span>
+            </div>
+
+            <div class="label-s">Send to</div>
+            <div class="seg"><span class="o on">Partner shop</span><span class="o">Our branch</span></div>
+            <div class="input" style="margin-top:9px">Zain Telecom &nbsp;·&nbsp; <span class="ph">0300-1234567</span> &nbsp;▾</div>
+            <div class="hint">＋ New partner shop</div>
+
+            <div class="label-s">OUT price (Rs)</div>
+            <div class="input big">165,000</div>
+            <div class="hint">Your cost Rs 150,000 · expected margin <b style="color:var(--success)">Rs 15,000</b></div>
+
+            <div class="label-s">Note (optional)</div>
+            <div class="input"><span class="ph">Customer wants blue, will confirm tmrw</span></div>
+
+            <div class="btn primary">OUT this device →</div>
+            <div class="hint" style="text-align:center">Device is reserved &amp; removed from sellable stock until it's sold or returned.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: OUT DETAIL -->
+    <div class="frame">
+      <div class="label">3 · OUT detail</div>
+      <div class="sub">Track + settle or return</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">←</span><h2>OUT · iPhone 13</h2></div>
+          <div class="body">
+            <div class="hero">
+              <div class="m">iPhone 13 · 128GB · Blue</div>
+              <div class="meta">IMEI 3534 56 …7421</div>
+              <div class="cost">Your cost <b>Rs 150,000</b></div>
+              <span class="big-status" style="background:var(--amberbg);color:var(--warn)">● OUT · 2 days</span>
+            </div>
+
+            <div class="card">
+              <div class="sectit">Destination</div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:800">Zain Telecom <span class="badge ext">External</span></div><div class="pr-sub">0300-1234567 · out from G15 IT Tower</div></div>
+                <span style="font-size:20px">📞</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="sectit">Money</div>
+              <div class="row2"><span>OUT price</span><span class="v">Rs 165,000</span></div>
+              <div class="row2"><span>Received</span><span class="v">Rs 0</span></div>
+              <div class="bar"><i style="width:0%"></i></div>
+              <div class="row2"><span style="color:var(--danger);font-weight:800">To collect</span><span class="v" style="color:var(--danger)">Rs 165,000</span></div>
+            </div>
+
+            <div class="card">
+              <div class="sectit">Timeline</div>
+              <div class="tl"><span class="dot done"></span><span class="line"></span><div class="t">OUT'd to Zain Telecom</div><div class="d">25 Jun, 6:10 pm · by Ali (G15)</div></div>
+              <div class="tl"><span class="dot now"></span><div class="t">Awaiting payment / return</div><div class="d">2 days ago</div></div>
+            </div>
+
+            <div class="btn success">Mark sold &amp; record payment</div>
+            <div class="btn outline">↩ Return to stock</div>
+            <div class="btn ghostdanger" style="text-align:center">Cancel OUT (created by mistake)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: RECORD PAYMENT -->
+    <div class="frame">
+      <div class="label">4 · Mark sold / payment</div>
+      <div class="sub">Settle — books the sale &amp; profit</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">✕</span><h2>Record payment</h2></div>
+          <div class="body">
+            <div class="hint" style="margin:0 2px 6px">Zain Telecom · iPhone 13 · 128GB</div>
+
+            <div class="label-s">Sold price (agreed)</div>
+            <div class="input big">165,000</div>
+            <div class="hint">OUT price was Rs 165,000 — edit if they negotiated.</div>
+
+            <div class="label-s">Amount received now</div>
+            <div class="input big">165,000</div>
+
+            <div class="label-s">Payment method</div>
+            <div class="seg"><span class="o on">Cash</span><span class="o">Bank</span><span class="o">JazzCash</span></div>
+
+            <div class="card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-weight:800;font-size:14px">Settle in full</div><div class="pr-sub">closes this OUT as Sold</div></div>
+              <div style="width:46px;height:28px;border-radius:16px;background:var(--success);position:relative"><span style="position:absolute;right:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff"></span></div>
+            </div>
+
+            <div class="result">✓ Sale of Rs 165,000 recorded · profit <b>Rs 15,000</b> booked to G15 IT Tower · counts in Grand Profit.</div>
+            <div class="btn success">Confirm sale</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: PARTNERS / RECEIVABLES -->
+    <div class="frame">
+      <div class="label">5 · Partners &amp; receivables</div>
+      <div class="sub">Who's holding our devices / owes us</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><h2>Partners</h2><span class="loc">+ New</span></div>
+          <div class="body">
+            <div class="stats">
+              <div class="stat"><div class="n">5</div><div class="k">partner shops</div></div>
+              <div class="stat amber"><div class="n">Rs 2,40,000</div><div class="k">total outstanding</div></div>
+            </div>
+            <div class="card" style="padding:4px 14px">
+              <div class="partner-row"><div><div class="pr-name">Zain Telecom</div><div class="pr-sub">3 out · 0300-1234567</div></div><div class="pr-bal">Rs 1,17,000</div></div>
+              <div class="partner-row"><div><div class="pr-name">Mobile Hub (Hall Rd)</div><div class="pr-sub">1 out · overdue 9d</div></div><div class="pr-bal">Rs 1,32,000</div></div>
+              <div class="partner-row"><div><div class="pr-name">Al-Rehman Mobiles</div><div class="pr-sub">0 out</div></div><div class="pr-bal ok">Rs 0</div></div>
+              <div class="partner-row" style="border-bottom:none"><div><div class="pr-name">G7 Fazal Tower</div><div class="pr-sub">our branch · 2 in transit</div></div><div class="pr-bal ok">internal</div></div>
+            </div>
+            <div class="hint" style="margin-left:2px">Tap a partner to see their out devices, payment history &amp; settle in bulk.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <b>Status model shown:</b> <span class="chip amber" style="font-size:10px">OUT</span> handed over, awaiting outcome ·
+    <span class="chip red" style="font-size:10px">OVERDUE</span> out too long, unpaid ·
+    <span class="chip green" style="font-size:10px">SOLD</span> paid → revenue + profit booked ·
+    <span class="chip grey" style="font-size:10px">RETURNED</span> came back to stock.
+    &nbsp; <b>External</b> = third-party shop (creates a receivable; settle = a sale). <b>Our branch</b> = internal move (G15↔G7), no sale until that branch sells it.
+  </div>
+</body>
+</html>

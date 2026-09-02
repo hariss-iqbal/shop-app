@@ -1,0 +1,128 @@
+{
+  "PIXEL 9 PRO": {
+    "ram": "16GB",
+    "display": "6.3\" LTPO OLED 120Hz",
+    "camera": "50MP + 48MP + 48MP",
+    "battery": "4700mAh",
+    "chipset": "Google Tensor G4",
+    "source": "https://www.gsmarena.com/google_pixel_9_pro-13218.php",
+    "fetchedAt": "2026-07-25T20:34:45.164Z"
+  },
+  "PIXEL 10": {
+    "ram": "12GB",
+    "display": "6.3\" OLED 120Hz",
+    "camera": "48MP + 10.8MP + 13MP",
+    "battery": "4970mAh",
+    "chipset": "Google Tensor G5",
+    "source": "https://www.gsmarena.com/google_pixel_10_5g-13979.php",
+    "fetchedAt": "2026-07-25T20:34:51.235Z"
+  },
+  "PIXEL 8 PRO": {
+    "ram": "12GB",
+    "display": "6.7\" LTPO OLED 120Hz",
+    "camera": "50MP + 48MP + 48MP",
+    "battery": "5050mAh",
+    "chipset": "Google Tensor G3",
+    "source": "https://www.gsmarena.com/google_pixel_8_pro-12545.php",
+    "fetchedAt": "2026-07-25T20:34:58.213Z"
+  },
+  "PIXEL 8": {
+    "ram": "8GB",
+    "display": "6.2\" OLED 120Hz",
+    "camera": "50MP + 12MP + 12MP",
+    "battery": "4575mAh",
+    "chipset": "Google Tensor G3",
+    "source": "https://www.gsmarena.com/google_pixel_8-12546.php",
+    "fetchedAt": "2026-07-25T20:35:03.666Z"
+  },
+  "PIXEL 7 PRO": {
+    "ram": "12GB",
+    "display": "6.7\" LTPO AMOLED 120Hz",
+    "camera": "50MP + 48MP + 12MP",
+    "battery": "5000mAh",
+    "chipset": "Google Tensor G2",
+    "source": "https://www.gsmarena.com/google_pixel_7_pro-11908.php",
+    "fetchedAt": "2026-07-25T20:35:09.199Z"
+  },
+  "PIXEL 9": {
+    "ram": "12GB",
+    "display": "6.3\" OLED 120Hz",
+    "camera": "50MP + 48MP",
+    "battery": "4700mAh",
+    "chipset": "Google Tensor G4",
+    "source": "https://www.gsmarena.com/google_pixel_9-13219.php",
+    "fetchedAt": "2026-07-25T20:35:16.116Z"
+  },
+  "PIXEL 7": {
+    "ram": "8GB",
+    "display": "6.3\" AMOLED 90Hz",
+    "camera": "50MP + 12MP",
+    "battery": "4355mAh",
+    "chipset": "Google Tensor G2",
+    "source": "https://www.gsmarena.com/google_pixel_7-11903.php",
+    "fetchedAt": "2026-07-25T20:35:21.383Z"
+  },
+  "PIXEL 7A": {
+    "ram": "8GB",
+    "display": "6.1\" OLED 90Hz",
+    "camera": "64MP + 13MP",
+    "battery": "4385mAh",
+    "chipset": "Google Tensor G2",
+    "source": "https://www.gsmarena.com/google_pixel_7a-12170.php",
+    "fetchedAt": "2026-07-25T20:35:27.201Z"
+  },
+  "PIXEL 6 PRO": {
+    "ram": "12GB",
+    "display": "6.7\" LTPO AMOLED 120Hz",
+    "camera": "50MP + 48MP + 12MP",
+    "battery": "5003mAh",
+    "chipset": "Google Tensor",
+    "source": "https://www.gsmarena.com/google_pixel_6_pro-10918.php",
+    "fetchedAt": "2026-07-25T20:35:33.327Z"
+  },
+  "PIXEL 6": {
+    "ram": "8GB",
+    "display": "6.4\" AMOLED 90Hz",
+    "camera": "50MP + 12MP",
+    "battery": "4614mAh",
+    "chipset": "Google Tensor",
+    "source": "https://www.gsmarena.com/google_pixel_6-11037.php",
+    "fetchedAt": "2026-07-25T20:35:39.621Z"
+  },
+  "PIXEL 6A": {
+    "ram": "6GB",
+    "display": "6.1\" OLED",
+    "camera": "12.2MP + 12MP",
+    "battery": "4410mAh",
+    "chipset": "Google Tensor",
+    "source": "https://www.gsmarena.com/google_pixel_6a-11229.php",
+    "fetchedAt": "2026-07-25T20:35:45.127Z"
+  },
+  "13T": {
+    "ram": "16GB",
+    "display": "6.32\" LTPO AMOLED 120Hz",
+    "camera": "50MP + 50MP",
+    "battery": "6260mAh",
+    "chipset": "Qualcomm SM8750-AB Snapdragon 8 Elite",
+    "source": "https://www.gsmarena.com/oneplus_13t_5g-13791.php",
+    "fetchedAt": "2026-07-25T20:35:51.211Z"
+  },
+  "PHONE (1)": {
+    "ram": "12GB",
+    "display": "6.55\" OLED 120Hz",
+    "camera": "50MP + 50MP",
+    "battery": "4500mAh",
+    "chipset": "Qualcomm SM7325-AE Snapdragon 778G+ 5G",
+    "source": "https://www.gsmarena.com/nothing_phone_(1)-11636.php",
+    "fetchedAt": "2026-07-25T20:35:57.305Z"
+  },
+  "IPHONE 13": {
+    "ram": "4GB",
+    "display": "6.1\" Super Retina XDR OLED",
+    "camera": "12MP + 12MP",
+    "battery": "3240mAh",
+    "chipset": "Apple A15 Bionic",
+    "source": "https://www.gsmarena.com/apple_iphone_13-11103.php",
+    "fetchedAt": "2026-07-25T20:36:05.861Z"
+  }
+}

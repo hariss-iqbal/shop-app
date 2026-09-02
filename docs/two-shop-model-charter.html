@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SmartCell Two-Shop Stock Model — Decision Charter &amp; Plan-Mode Prompt</title>
+<style>
+  :root{
+    --accent:#2563eb; --accent-dark:#1e40af; --accent-soft:#e7edfb;
+    --bg:#eef1f6; --panel:#ffffff; --ink:#16202c; --muted:#5d6e80;
+    --border:#d7dfe9; --code-bg:#0d1826; --code-ink:#d7e3f0;
+    --ok:#2e8b57; --radius:12px; --shadow:0 1px 3px rgba(20,35,60,.08),0 6px 22px rgba(20,35,60,.06);
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.55;font-size:15px}
+  header.top{background:linear-gradient(135deg,var(--accent-dark),var(--accent));color:#fff;padding:30px 28px 26px}
+  header.top .wrap{max-width:1320px;margin:0 auto}
+  header.top h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
+  header.top p{margin:0;opacity:.92;max-width:900px}
+  header.top .badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:4px 10px;border-radius:999px;font-size:12.5px}
+  .layout{max-width:1320px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 480px;gap:24px;align-items:start}
+  @media (max-width:1040px){.layout{grid-template-columns:1fr}}
+  .content{display:flex;flex-direction:column;gap:20px;min-width:0}
+  section.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .card h2{margin:0;padding:15px 20px;font-size:16px;border-bottom:1px solid var(--border);background:#fbfcfe;display:flex;align-items:center;gap:10px}
+  .card h2 .num{background:var(--accent);color:#fff;width:23px;height:23px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+  .card .body{padding:18px 20px}
+  .card .body>p:first-child{margin-top:0}
+  h3{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:20px 0 10px}
+  h3:first-child{margin-top:0}
+  a{color:var(--accent-dark)}
+  code{font-family:var(--mono);background:var(--accent-soft);padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--accent-dark)}
+  .grid{display:grid;gap:14px}
+  .grid.cols2{grid-template-columns:1fr 1fr}
+  @media (max-width:560px){.grid.cols2{grid-template-columns:1fr}}
+  .field label.lbl{display:block;font-weight:600;font-size:13px;margin-bottom:5px}
+  .field .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  select,input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;background:#fff;color:var(--ink)}
+  select:focus,input[type=text]:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .checks{display:flex;flex-wrap:wrap;gap:8px}
+  .chk{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13.5px;background:#fff;user-select:none}
+  .chk:hover{border-color:var(--accent)}
+  .chk input{accent-color:var(--accent);width:16px;height:16px;flex:none}
+  .chk.on{background:var(--accent-soft);border-color:var(--accent)}
+  table.data{width:100%;border-collapse:collapse;font-size:13px}
+  table.data th,table.data td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--border);vertical-align:top}
+  table.data th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  table.data td.mono{font-family:var(--mono);font-size:12px}
+  .note-wrap{margin-top:16px;border-top:1px dashed var(--border);padding-top:12px}
+  .note-wrap label.lbl{display:block;font-weight:600;font-size:12.5px;margin-bottom:5px;color:var(--muted)}
+  textarea.note{width:100%;min-height:48px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:13.5px;resize:vertical;background:#fff;color:var(--ink)}
+  textarea.note:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .diagram{width:100%;height:auto;display:block;background:#fbfcfe;border:1px solid var(--border);border-radius:10px}
+  .note-box{background:#fff8ec;border:1px solid #f0dcb8;border-radius:9px;padding:10px 12px;font-size:13px;color:#6b4e21;margin-top:12px}
+  .risk-box{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:10px 12px;font-size:13px;color:#7f1d1d;margin-top:12px}
+  aside.promptPanel{position:sticky;top:18px}
+  .promptPanel .inner{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .promptPanel .head{padding:14px 16px;border-bottom:1px solid var(--border);background:#fbfcfe;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .promptPanel .head h2{margin:0;font-size:15px;padding:0;border:none;background:none;display:flex;align-items:center;gap:8px}
+  .planbadge{background:#fff;color:var(--accent-dark);border:1px solid var(--accent);font-weight:700;font-size:10.5px;padding:2px 7px;border-radius:999px;letter-spacing:.6px}
+  .promptPanel .head .meta{font-size:11.5px;color:var(--muted)}
+  .promptActions{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  button.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 14px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+  button.btn:hover{background:var(--accent-dark)}
+  button.btn.ghost{background:#fff;color:var(--accent-dark)}
+  button.btn.ghost:hover{background:var(--accent-soft)}
+  #copied{font-size:12.5px;color:var(--ok);align-self:center;opacity:0;transition:opacity .2s}
+  #copied.show{opacity:1}
+  textarea#prompt{width:100%;height:min(64vh,760px);border:none;resize:vertical;padding:16px;background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:12.3px;line-height:1.55;white-space:pre-wrap}
+  textarea#prompt:focus{outline:none}
+  footer{max-width:1320px;margin:10px auto 40px;padding:0 20px;color:var(--muted);font-size:12.5px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1 id="docTitle" data-prompttitle="SmartCell two-shop stock model — shop1 master hub, shop2 satellite fed by OUTs (mobile app + Supabase backend)">SmartCell Two-Shop Stock Model — Decision Charter</h1>
+    <p>All stock is booked under <b>shop1 (master)</b>; <b>shop2</b> holds phones only via internal OUTs and hands them back as returns.
+       Shop2 sells what it holds and can pass phones onward to partner shops. This charter fixes every open decision of that model.
+       It was <b>red-teamed from five lenses</b> (operations, money, fraud, customer, scaling) and checked against the current
+       mobile IN/OUT implementation. Configure the decisions; a ready-to-paste <b>Plan-Mode kickoff prompt</b> is generated live on the right.</p>
+    <div class="badges">
+      <span class="badge">Hub-and-spoke · shop1 = master</span>
+      <span class="badge">Shops: walking distance · same market</span>
+      <span class="badge">Shop2 ≈ 20–60 phones</span>
+      <span class="badge">Red-teamed · 2026-07-11</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="content" id="form">
+
+    <!-- ============ 1 — Operating model ============ -->
+    <section class="card" data-block="Operating model">
+      <h2><span class="num">1</span> Operating model</h2>
+      <div class="body">
+        <svg class="diagram" viewBox="0 0 760 300" role="img" aria-label="Hub-and-spoke stock model">
+          <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+          <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/></marker></defs>
+          <!-- shop1 hub -->
+          <rect x="40" y="90" width="200" height="110" rx="12" fill="#1e40af"/>
+          <text x="140" y="128" fill="#fff" font-size="16" font-weight="700" text-anchor="middle">SHOP 1 — MASTER</text>
+          <text x="140" y="150" fill="#c7d6f5" font-size="11" text-anchor="middle">all stock booked here</text>
+          <text x="140" y="166" fill="#c7d6f5" font-size="11" text-anchor="middle">intake · purchases · trade-ins</text>
+          <text x="140" y="182" fill="#c7d6f5" font-size="11" text-anchor="middle">partner khata lives here</text>
+          <!-- shop2 -->
+          <rect x="450" y="40" width="180" height="90" rx="12" fill="#2563eb"/>
+          <text x="540" y="74" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">SHOP 2</text>
+          <text x="540" y="94" fill="#d6e2fa" font-size="11" text-anchor="middle">holds 20–60 phones via OUT</text>
+          <text x="540" y="110" fill="#d6e2fa" font-size="11" text-anchor="middle">sells · returns · forwards</text>
+          <!-- partners -->
+          <rect x="450" y="185" width="180" height="80" rx="12" fill="#0e7490"/>
+          <text x="540" y="216" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">PARTNER SHOPS</text>
+          <text x="540" y="236" fill="#c9e8f2" font-size="11" text-anchor="middle">OUT = receivable (khata)</text>
+          <text x="540" y="252" fill="#c9e8f2" font-size="11" text-anchor="middle">IN = payable on sale</text>
+          <!-- arrows -->
+          <path d="M240,110 L450,78" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arr)"/>
+          <text x="340" y="80" fill="#1e40af" font-size="11.5" font-weight="700" text-anchor="middle">OUT (internal transfer)</text>
+          <path d="M450,108 L240,140" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrg)"/>
+          <text x="345" y="140" fill="#15803d" font-size="11.5" font-weight="700" text-anchor="middle">RETURN (never an OUT)</text>
+          <path d="M240,180 L450,215" fill="none" stroke="#0e7490" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="330" y="212" fill="#0e7490" font-size="11" font-weight="700" text-anchor="middle">OUT / IN · two-way khata</text>
+          <path d="M540,130 L540,185" fill="none" stroke="#0e7490" stroke-width="2" marker-end="url(#arr)"/>
+          <text x="620" y="162" fill="#0e7490" font-size="11" font-weight="700" text-anchor="middle">forward (chain)</text>
+        </svg>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_model">Stock model</label>
+            <select id="c_model" data-key="Stock model">
+              <option value="Hub-and-spoke: all stock booked under shop1 (master); shop2 holds only via internal OUTs; shop2-to-shop1 is ALWAYS a return, never an OUT" selected>Hub-and-spoke — shop1 master, shop2 via OUT (decided)</option>
+              <option value="Per-shop stock assignment (REJECTED — tried, the split kept lying because phones constantly moved)">Per-shop stock assignment (REJECTED — already tried)</option>
+              <option value="Generic transfers: any holder to any holder, no master (more flexible, more to manage)">Generic any-to-any transfers (no master)</option>
+            </select>
+            <div class="hint">The decided direction. Generic transfers matter only if shop3 arrives (block 8).</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_shop1name">Shop 1 (master) display name</label>
+            <input type="text" id="c_shop1name" data-key="Shop1 (master) name" value="SmartCell Main" />
+            <div class="hint">Names are free — the master role is what matters.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_shop2name">Shop 2 (satellite) display name</label>
+            <input type="text" id="c_shop2name" data-key="Shop2 (satellite) name" value="SmartCell 2" />
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_truth">Source of truth for &ldquo;where is this phone&rdquo;</label>
+            <select id="c_truth" data-key="Source of truth for location">
+              <option value="One derived holder per unit, kept in sync by every movement action; all screens and reports read only that" selected>One derived holder per unit (recommended)</option>
+              <option value="Ledger rows only, each screen joins for itself (today: products.location_id silently rots)">Ledger rows only, screens join ad hoc (status quo)</option>
+            </select>
+            <div class="hint">Today <code>products.location_id</code> is never updated by OUT/return — reports lie after the first move.</div>
+          </div>
+        </div>
+        <h3>Operating facts (locked in from owner answers)</h3>
+        <div class="checks" data-key="Operating facts" style="flex-direction:column;align-items:stretch">
+          <label class="chk"><input type="checkbox" value="Shops are walking distance apart in the same market; a phone can be carried over in minutes while the customer waits" checked> Walking distance / same market — minutes door-to-door</label>
+          <label class="chk"><input type="checkbox" value="Shop2 holds roughly 20-60 phones with transfers most days" checked> Shop2 holds ~20–60 phones, transfers most days</label>
+          <label class="chk"><input type="checkbox" value="Cash is normally sent to the shop1 owner, but the owner wants per-sale visibility: sold at what price and WHO currently holds the amount" checked> Cash goes to owner — but track &ldquo;sold at what price + who holds the amount&rdquo;</label>
+          <label class="chk"><input type="checkbox" value="Split authority: staff move stock freely between own shops; partner OUTs need owner/manager approval; every action visible on a timeline" checked> Split authority + a visible timeline of every action</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2 — Internal moves ============ -->
+    <section class="card" data-block="Internal moves: shop1 &#8646; shop2">
+      <h2><span class="num">2</span> Internal moves: shop1 ⇄ shop2</h2>
+      <div class="body">
+        <p>Internal branch OUTs are <b>transfers, not consignments</b>: same business, so a &ldquo;price&rdquo; and an &ldquo;overdue&rdquo; clock are
+           meaningless on them. Today the mobile app treats both identically — every phone at shop2 shows a fake price and a
+           climbing <code>daysOut</code> that will read &ldquo;200 days overdue&rdquo; for normal display stock.</p>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_semantics">Branch OUT semantics</label>
+            <select id="c_semantics" data-key="Branch OUT semantics">
+              <option value="Internal transfer flavor: out_price NULL on branch OUTs, no overdue clock, excluded from receivables; partner OUTs keep price + overdue" selected>Transfer flavor — no price, no overdue (recommended)</option>
+              <option value="Same as partner OUT (status quo: mandatory price, overdue chip at 7 days)">Same as partner OUT (status quo)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_return">Return handshake</label>
+            <select id="c_return" data-key="Return handshake">
+              <option value="Two-step: sender marks dispatched, receiver confirms received (IMEI match) — unit sellable at shop1 only after confirmation" selected>Two-step: dispatched → received w/ IMEI confirm (recommended)</option>
+              <option value="One-tap instant return (status quo — unit becomes sellable at shop1 the moment anyone taps Return)">One-tap instant return (status quo)</option>
+              <option value="Three-step with named carrier and an in-transit alarm (overkill at walking distance, right if a rider is ever involved)">Three-step with named carrier + transit alarm</option>
+            </select>
+            <div class="hint">Even at walking distance, one-tap return is the red team's top fraud hole: &ldquo;returned&rdquo; phones that never arrive are unattributable.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_bulk">Restocking shop2 (10–30 phones at once)</label>
+            <select id="c_bulk" data-key="Bulk restock">
+              <option value="Bulk-move screen: multi-select or IMEI-scan N units, one destination, one confirm; same for bulk returns" selected>Bulk-move screen w/ scan (recommended)</option>
+              <option value="One-by-one create OUT per phone (status quo — staff will skip steps and the ledger drifts)">One-by-one per phone (status quo)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_recall">Recall etiquette (shop1 wants a phone shop2 holds)</label>
+            <select id="c_recall" data-key="Recall etiquette">
+              <option value="Recall is a REQUEST the holding shop acknowledges; a holding shop can place a short soft-claim (~2h) on a unit mid-negotiation; owner can override" selected>Request + acknowledge, soft-claim protects live deals (recommended)</option>
+              <option value="Shop1 can pull any unit instantly, remotely (status quo — can kill shop2's live negotiation mid-haggle)">Shop1 pulls instantly (status quo)</option>
+            </select>
+          </div>
+        </div>
+        <h3>Movement safeguards</h3>
+        <div class="checks" data-key="Movement safeguards">
+          <label class="chk"><input type="checkbox" value="Warn when an OUT would move the LAST available unit of a model out of shop1" checked> Last-unit warning</label>
+          <label class="chk"><input type="checkbox" value="IMEI scan at hand-over AND at hand-back — return refuses a non-matching unit (prevents silent swaps between identical units where PTA status rides on the exact IMEI)" checked> IMEI scan both directions</label>
+          <label class="chk"><input type="checkbox" value="Store BOTH IMEI1 and IMEI2 per unit (dual-SIM boxes print both) and scan-match accepts either — otherwise false mismatches teach staff to tap through the warning, killing the control" checked> Dual-IMEI aware scanning</label>
+          <label class="chk"><input type="checkbox" value="Box-packed? checklist line on each OUT (critic's view: a packing habit announced once beats a checkbox staff tap without looking)"> Box-packed checklist on OUT</label>
+          <label class="chk"><input type="checkbox" value="Tie-break rule when both shops have a live customer for the same unit: first confirmed claim wins" checked> Tie-break: first confirmed claim wins</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 — Selling at shop2 ============ -->
+    <section class="card" data-block="Selling at shop2">
+      <h2><span class="num">3</span> Selling at shop2</h2>
+      <div class="body">
+        <p><b>A sale is a sale, regardless of shop.</b> Today a phone at shop2 is <code>status='out'</code>, the POS refuses it, and the only
+           sale path is the thin <code>settle_device_out</code> — manager-gated, no receipt, no customer name, no trade-in. The red team rated
+           this the single worst operational hole: the person at the counter cannot legally sell what his shop holds.</p>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_salepath">Shop2 sale path</label>
+            <select id="c_salepath" data-key="Shop2 sale path">
+              <option value="Full normal POS sale (receipt, customer, warranty, trade-in) that atomically auto-settles the branch OUT in the same transaction" selected>Full POS sale, auto-settles the OUT (recommended)</option>
+              <option value="Keep settle_device_out as the shop2 sale (status quo: bare sales row, no receipt/customer/trade-in)">Keep settle-as-sale (status quo)</option>
+              <option value="Return first, then sell via POS (two steps; phone briefly available-at-shop1 while physically at shop2)">Return-then-sell dance</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_whosells">Who can complete a shop2 sale</label>
+            <select id="c_whosells" data-key="Who can sell at shop2">
+              <option value="Location-scoped staff role: any shop2 employee can sell what shop2 holds, alone, in one transaction" selected>Shop2 staff, location-scoped (recommended)</option>
+              <option value="Manager/admin only (status quo — the counter stalls whenever the manager is at the bank or prayers)">Manager/admin only (status quo)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_floor">Price control</label>
+            <select id="c_floor" data-key="Price control">
+              <option value="A minimum sell price travels with every phone; selling below floor requires owner approval (PIN or async approve tap)" selected>Price floor + owner approval below it (recommended)</option>
+              <option value="Staff discretion, owner reviews the timeline afterwards">Staff discretion, review later</option>
+            </select>
+            <div class="hint">Kills the &ldquo;sell at 197k, record 189k&rdquo; skim — the red team's most likely daily fraud.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_reprice">Repricing while at shop2</label>
+            <select id="c_reprice" data-key="Repricing stock at shop2">
+              <option value="Central repricing: owner/manager price updates propagate to the unit wherever it sits (shop2, transit); the floor moves with it; every reprice logged on the timeline" selected>Central repricing propagates (recommended)</option>
+              <option value="Price frozen at dispatch until the unit returns (status quo — used rates move weekly with the dollar, so shop2 quotes stale prices)">Frozen at dispatch price</option>
+            </select>
+            <div class="hint">A floor anchored to a stale dispatch price misfires in both directions — false fraud alarms and real skims that pass.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_tradein">Trade-ins at shop2</label>
+            <select id="c_tradein" data-key="Trade-ins at shop2">
+              <option value="Fully supported in the shop2 sale flow: trade-in unit auto-booked under shop1 ownership + auto-OUT'd to shop2 in the same transaction (the fiction is software's job, not the employee's)" selected>Supported, one atomic step (recommended)</option>
+              <option value="Not allowed at shop2 — every trade-in and purchase routes physically through shop1">Not allowed at shop2</option>
+            </select>
+          </div>
+        </div>
+        <h3>Sale record requirements</h3>
+        <div class="checks" data-key="Sale record requirements">
+          <label class="chk"><input type="checkbox" value="Buyer name + phone mandatory on every phone sale at either shop" checked> Buyer name + phone mandatory</label>
+          <label class="chk"><input type="checkbox" value="Sale is credited to the SELLING shop (derived from the seller's session/home shop, never from the product's home location, never NULL)" checked> Sale credited to selling shop</label>
+          <label class="chk"><input type="checkbox" value="Partial payment (udhaar) allowed at shop2, balance collectable at EITHER shop against the original sale" checked> Udhaar allowed, collectable at either shop</label>
+          <label class="chk"><input type="checkbox" value="Customer receipt (bill) generated for shop2 sales exactly like shop1 web POS sales" checked> Receipt parity with shop1</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 — Money: cash custody & profit ============ -->
+    <section class="card" data-block="Money: cash custody &amp; profit">
+      <h2><span class="num">4</span> Money: cash custody &amp; profit</h2>
+      <div class="body">
+        <p>The stock ledger answers &ldquo;which phone is where&rdquo; — the money side must answer <b>&ldquo;which rupee is where&rdquo;</b>.
+           Today there is no drawer, till, or cash-movement concept at all: sales have a payment method, expenses have a location,
+           and that is the entire money model. Owner's ask: see <b>sold at what price and who holds the amount</b>.</p>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_cash">Cash custody model</label>
+            <select id="c_cash" data-key="Cash custody model">
+              <option value="Per-shop cash ledger: every sale/expense posts to that shop's drawer; a 'hand over to owner / send to shop1' transfer record with receiver confirmation; expected-vs-counted daily close" selected>Per-shop cash ledger + handover records (recommended)</option>
+              <option value="Track only who-holds-what per sale (lighter: each sale carries a holder until marked handed-over; no drawer math)">Per-sale holder tracking only (lighter)</option>
+              <option value="No cash tracking in the system (status quo — WhatsApp and trust)">No cash tracking (status quo)</option>
+            </select>
+            <div class="hint">The expected-drawer figure is what makes a same-day mismatch visible instead of a month-end mystery.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_internalrev">Internal transfers &amp; revenue</label>
+            <select id="c_internalrev" data-key="Internal transfers and revenue">
+              <option value="Internal branch movements NEVER create a sales row or profit; revenue books exactly once, at the customer sale, credited to the selling shop" selected>Internal moves never book revenue (recommended)</option>
+              <option value="Keep status quo (settling a branch OUT mints a real sales row — phantom revenue and double-count risk)">Status quo (settle mints revenue)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_partnerpay">Partner money trail</label>
+            <select id="c_partnerpay" data-key="Partner money trail">
+              <option value="Explicit payment events (partner, direction, amount, method, WHICH SHOP's drawer, who recorded) supporting installments and one-click netted khata settlement; balances always derived, never hand-edited" selected>Payment events + installments + netting (recommended)</option>
+              <option value="Status quo: one amount_received at settle, pay_partner mutates a running counter, no installment or netting record">Status quo (single-shot amounts)</option>
+            </select>
+            <div class="hint">Partners here pay in installments after taking a phone; today weeks 2–4 have no recording path at all.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_pl">Per-shop P&amp;L</label>
+            <select id="c_pl" data-key="Per-shop P&L">
+              <option value="Monthly per-shop view: sales, profit, expenses, rent/salaries attributed per shop — answers 'is shop2 worth running'" selected>Per-shop P&amp;L view (recommended)</option>
+              <option value="One combined business number is enough">Combined only</option>
+            </select>
+          </div>
+        </div>
+        <h3>Money rules</h3>
+        <div class="checks" data-key="Money rules">
+          <label class="chk"><input type="checkbox" value="Every sale surfaces: sold price, payment method, and current cash holder until handed over" checked> Per-sale &ldquo;who holds the amount&rdquo; (owner's explicit ask)</label>
+          <label class="chk"><input type="checkbox" value="Capital-at-shop2 line: cost value + age buckets of everything shop2 holds (critic: optional at this scale — the owner walks both shops weekly and knows every stuck phone by name)"> Capital-at-shop2 aging view (optional)</label>
+          <label class="chk"><input type="checkbox" value="Stock valuation includes units OUT at partners (still our capital until settled) — today it silently drops them"> Include partner-held units in stock value</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 — Website & catalog visibility ============ -->
+    <section class="card" data-block="Website &amp; catalog visibility">
+      <h2><span class="num">5</span> Website &amp; catalog visibility</h2>
+      <div class="body">
+        <div class="risk-box"><b>Verified against the code:</b> a phone with <code>status='out'</code> disappears from the public website catalog,
+          the Facebook/Instagram/WhatsApp feed, the POS, the dashboard stock counts AND the stock valuation. Under this model, shop2's
+          entire display stock (20–60 phones) is permanently &ldquo;out&rdquo; — <b>without a fix, half the sellable inventory vanishes from
+          www.smartcell.pk the day you adopt the model.</b></div>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_webvis">Shop2 stock on the public site + Meta feed</label>
+            <select id="c_webvis" data-key="Shop2 stock on public site">
+              <option value="Visible: units held at OUR OWN branches count as available (catalog predicate: available OR out-to-a-branch); partner-held stays hidden" selected>Show branch-held stock (recommended)</option>
+              <option value="Hidden (accept the status quo: only shop1 shelf stock is online)">Hide shop2 stock (status quo behavior)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_partnvis">Partner-held stock on the public site</label>
+            <select id="c_partnvis" data-key="Partner-held stock on public site">
+              <option value="Hidden — a phone at a partner may already be sold-pending-payment; promising it online is reckless" selected>Hidden (recommended)</option>
+              <option value="Visible as available (aggressive; risks selling what a partner already sold)">Visible as available</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_storefront">Storefront presentation</label>
+            <select id="c_storefront" data-key="Storefront presentation">
+              <option value="One storefront; staff resolve which branch has the unit privately (inventory search shows 'At Shop2 — recallable' vs 'With partner X — do not promise')" selected>One storefront, staff see branch privately (recommended)</option>
+              <option value="Public site shows per-branch availability to customers">Show branch to customers</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_reserve">Booking advance (bayana)</label>
+            <select id="c_reserve" data-key="Booking advance / reservation">
+              <option value="Add a 'reserved' state: customer name/phone, advance amount, reserving shop, auto-expiry (~48h); blocks sale/OUT/recall at BOTH shops; advance posts to the shop's cash ledger" selected>Reserved state w/ advance + expiry (recommended)</option>
+              <option value="No reservation concept (status quo — advances float in the drawer while the phone stays sellable at the other shop)">No reservations (status quo)</option>
+            </select>
+          </div>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 — Partners: chains, khata & consignment-IN ============ -->
+    <section class="card" data-block="Partners: chains, khata &amp; consignment-IN">
+      <h2><span class="num">6</span> Partners: chains, khata &amp; consignment-IN</h2>
+      <div class="body">
+        <p>Owner's rule: shop2 may OUT onward to any partner — never back to shop1 (that is a return). Today the database makes a
+           chain <b>impossible</b> (one active ledger row per phone), so staff would fake a return + re-OUT — which briefly puts the
+           phone back on the website and erases WHO handed it to the partner.</p>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_chain">Shop2 → partner chain</label>
+            <select id="c_chain" data-key="Shop2 to partner chain">
+              <option value="Native chaining: forwarding closes the branch leg as 'forwarded' and opens a partner OUT with from = shop2, parent link preserved — full trail, no fake return" selected>Native chain, trail preserved (recommended)</option>
+              <option value="Return + re-OUT fiction (status quo mechanics; history collapses to shop1→partner, brief phantom availability)">Return + re-OUT fiction (status quo)</option>
+              <option value="Forbid: partner OUTs only ever originate from shop1">Forbid — partner OUTs from shop1 only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_receivable">Who chases a shop2-originated receivable</label>
+            <select id="c_receivable" data-key="Receivable ownership">
+              <option value="Owner centrally — every partner receivable lands in one khata the owner runs; the trail still names which shop/person handed the phone over" selected>Owner centrally, trail names the handler (recommended)</option>
+              <option value="The shop that created the OUT chases its own receivables">Originating shop chases</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_inatshop2">Consignment-IN phone displayed at shop2</label>
+            <select id="c_inatshop2" data-key="Consignment-IN at shop2">
+              <option value="Allowed: ownership (partner payable) and physical location are tracked separately, so an IN phone can sit at shop2 while we still owe partner X on sale" selected>Allowed — ownership ≠ location (recommended)</option>
+              <option value="Not allowed: IN phones stay at the shop that received them until sold or returned">Not allowed — stays where received</option>
+            </select>
+            <div class="hint">Today the DB flatly refuses this move, so staff carry the phone over off-book and the payable turns into a shouting match.</div>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_ack">Partner acknowledgment</label>
+            <select id="c_ack" data-key="Partner acknowledgment">
+              <option value="Auto-WhatsApp to the partner's registered number on every OUT/IN/return (model + IMEI + agreed price); monthly khata statement goes owner-to-partner directly" selected>Auto-WhatsApp acks + monthly statement (recommended)</option>
+              <option value="Verbal/manual as today">Verbal as today</option>
+            </select>
+            <div class="hint">The backend already has a WhatsApp service. Acks kill both fictitious OUTs and &ldquo;partner denies receiving it&rdquo;.</div>
+          </div>
+        </div>
+        <h3>Partner rules</h3>
+        <div class="checks" data-key="Partner rules">
+          <label class="chk"><input type="checkbox" value="IMEI mandatory (NOT NULL) on every phone row including consignment-IN, with CPLC/PTA check at intake" checked> IMEI mandatory + CPLC check on IN</label>
+          <label class="chk"><input type="checkbox" value="Return from a partner verifies the physical IMEI matches before the row closes" checked> IMEI verify on partner returns</label>
+          <label class="chk"><input type="checkbox" value="Partner OUT list shows overdue clock ONLY for partner rows (internal branch rows never 'overdue')" checked> Overdue = partners only</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7 — Authority, roles & timeline ============ -->
+    <section class="card" data-block="Authority, roles &amp; timeline">
+      <h2><span class="num">7</span> Authority, roles &amp; timeline</h2>
+      <div class="body">
+        <p>Today the ONLY gate on every movement and money RPC is <code>is_manager_or_admin()</code> — global, not per-shop. For shop2 to
+           function, its senior gets manager rights and can then cancel shop1's OUTs, settle any partner at any price, and record
+           partner payments at 11pm. Owner's decision: <b>split authority + a timeline where we see everything</b>.</p>
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_roles">Role model</label>
+            <select id="c_roles" data-key="Role model">
+              <option value="Location-scoped staff role: users have a home shop; staff act only on units their shop holds (sell, receive, dispatch, request); owner/manager approve the sensitive list below" selected>Location-scoped staff + owner approvals (decided)</option>
+              <option value="Keep global is_manager_or_admin only (status quo)">Global manager gate only (status quo)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_timeline">Timeline / audit trail</label>
+            <select id="c_timeline" data-key="Timeline">
+              <option value="Full timeline view: every movement, sale, return, payment and approval as one chronological feed with actor + shop + before/after, filterable per phone / per person / per shop" selected>Full timeline feed (decided — owner's ask)</option>
+              <option value="Per-record history only, no unified feed">Per-record history only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_costvis">Cost-price visibility for shop2 staff</label>
+            <select id="c_costvis" data-key="Cost visibility for staff">
+              <option value="Hidden: staff see selling/floor price only; cost and margins are owner/manager-only" selected>Hide cost from staff (recommended)</option>
+              <option value="Visible to all staff">Visible to all</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_approvalmode">Approval mechanics</label>
+            <select id="c_approvalmode" data-key="Approval mechanics">
+              <option value="Async one-tap approve on the owner's phone (request shows unit, price, person; approval logged on the timeline)" selected>Async one-tap on owner's phone (recommended)</option>
+              <option value="Owner PIN entered at the counter">Owner PIN at counter</option>
+            </select>
+          </div>
+        </div>
+        <h3>Actions requiring owner/manager approval</h3>
+        <div class="checks" data-key="Owner-approval actions">
+          <label class="chk"><input type="checkbox" value="Creating an OUT to an external partner" checked> Partner OUTs</label>
+          <label class="chk"><input type="checkbox" value="Selling below the unit's floor price" checked> Below-floor sales</label>
+          <label class="chk"><input type="checkbox" value="Cancelling any OUT" checked> Cancels</label>
+          <label class="chk"><input type="checkbox" value="Recording payments to partners (pay_partner)" checked> Partner payments</label>
+          <label class="chk"><input type="checkbox" value="Writing off a unit as lost/damaged" checked> Loss write-offs</label>
+          <label class="chk"><input type="checkbox" value="Internal shop1-to-shop2 moves (leave unchecked = staff move freely, per split-authority decision)"> Internal moves (default: free)</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8 — Lifecycle edge cases ============ -->
+    <section class="card" data-block="Lifecycle edge cases">
+      <h2><span class="num">8</span> Lifecycle edge cases</h2>
+      <div class="body">
+        <p>States the model needs beyond sold/returned — today none of these are recordable, so each becomes ghost stock or a shouting match.</p>
+        <div class="checks" data-key="Lifecycle states to add" style="flex-direction:column;align-items:stretch">
+          <label class="chk"><input type="checkbox" value="LOST terminal state (transit snatch, robbery, disappearance): books a loss expense against the owning shop, stores FIR/notes, bulk-selectable; forbids the fake cancel/return exit" checked> <b>Lost / write-off state</b> — robbery &amp; snatch are routine market risks; today they are literally unrecordable</label>
+          <label class="chk"><input type="checkbox" value="REPAIR destination: send a unit to a known repair-wala (zero price, no overdue, employee-permitted, allowed even while at shop2); unit shows 'at Rafiq — day 21' instead of vanishing" checked> <b>Repair destination</b> — repair sends from shop2 are doubly impossible today</label>
+          <label class="chk"><input type="checkbox" value="OWNER-CUSTODY holder: the owner personally carries phones daily (between shops, wholesale market, bazaar stall) — 'with owner' becomes a first-class holder so those units stop reading 'at shop1' from a car glovebox" checked> <b>Owner-custody holder</b> — the third location every real day already has</label>
+          <label class="chk"><input type="checkbox" value="DAMAGE / repair-cost events appended to a unit's cost basis (critic: at this scale an expense entry + a note on the product usually suffices)"> Damage &amp; repair-cost events on the unit (optional)</label>
+          <label class="chk"><input type="checkbox" value="COUNT SESSIONS: expected-IMEIs-per-holder list derived from the ledger; scan/tick physical units; explicit adjustment records (relocate / mark-lost / mark-found). Weekly 10-minute ritual per shop, counted by someone who does NOT work at that shop" checked> <b>Count sessions + adjustments</b> — the reconciliation loop every human-moves-phones system needs</label>
+          <label class="chk"><input type="checkbox" value="Late/offline recording: actual-sale-time recorded separately from entry-time so load-shedding entries land on the right day and drawer" checked> <b>Offline-tolerant timestamps</b> (load-shedding reality)</label>
+          <label class="chk"><input type="checkbox" value="Staff-transfer handover: five-minute count session signed by both employees when someone changes shops"> Staff-transfer handover count</label>
+        </div>
+        <h3>Accessories (quantity-based — the per-IMEI model does not cover them)</h3>
+        <div class="field">
+          <select id="c_accessories" data-key="Accessories">
+            <option value="Phase 2: revive per-location quantity tracking for accessories (transfer N units, POS decrements the selling shop) — phones-only first" selected>Phase 2 — phones first, accessories next (recommended)</option>
+            <option value="Include accessories in scope now">Include now</option>
+            <option value="Accept accessory stock at shop2 as an untracked pool">Leave untracked</option>
+          </select>
+          <div class="hint">20 chargers ride to shop2 in the same bike bag as the phones; today there is no possible record of that.</div>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 9 — Future-proofing (shop3) ============ -->
+    <section class="card" data-block="Future-proofing (shop3 and beyond)">
+      <h2><span class="num">9</span> Future-proofing (shop3 and beyond)</h2>
+      <div class="body">
+        <p>The return-only spoke rule works for exactly two shops. With a shop3, a spoke-to-spoke move (shop2 → shop3) would force the
+           same paper fiction that killed attempt #1: a fake return through shop1 for a phone that physically rides straight across town.</p>
+        <div class="field">
+          <label class="lbl" for="c_shop3">Schema stance</label>
+          <select id="c_shop3" data-key="Shop3 stance">
+            <option value="Build movements as generic from-holder → to-holder records; 'everything routes through shop1' is a UI policy for the 2-shop case, not a database invariant — shop3 becomes a dropdown entry, not a redesign" selected>Generic movements, hub as policy (recommended)</option>
+            <option value="Hard-code the 2-shop hub rule; redesign if shop3 ever happens">Hard-code 2-shop rule</option>
+          </select>
+        </div>
+        <div class="checks" data-key="Future-proofing extras" style="margin-top:14px">
+          <label class="chk"><input type="checkbox" value="Intake can be booked from any shop with holder = that shop ('booked under shop1' stays an accounting label, so a sealed/closed shop1 never blocks shop2 intake)" checked> Intake survives a shop1 outage</label>
+          <label class="chk"><input type="checkbox" value="Per-shop opening screen: what my shop holds this morning + pending requests/approvals" checked> Per-shop morning view</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 10 — Scope, guardrails & build order ============ -->
+    <section class="card" data-block="Scope, guardrails &amp; build order">
+      <h2><span class="num">10</span> Scope, guardrails &amp; build order</h2>
+      <div class="body">
+        <div class="grid cols2">
+          <div class="field">
+            <label class="lbl" for="c_surface">Primary surface</label>
+            <select id="c_surface" data-key="Primary surface">
+              <option value="Mobile app first (current home of IN/OUT); web admin gets read-only visibility (timeline, holdings, cash) in the same phase; web POS sale-path fix is backend-shared" selected>Mobile-first, web read-only visibility (recommended)</option>
+              <option value="Mobile + full web admin parity in one phase">Mobile + web parity at once</option>
+              <option value="Mobile only, web untouched">Mobile only</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="lbl" for="c_rollout">Rollout</label>
+            <select id="c_rollout" data-key="Rollout">
+              <option value="Local first: migrations into the migrations folder only, tested against local Supabase + e2e harness; owner deploys to prod surgically as established" selected>Local first, surgical prod deploy (established method)</option>
+              <option value="Straight to prod (against project rules)">Straight to prod</option>
+            </select>
+          </div>
+        </div>
+        <h3>Guardrails (become hard constraints in the prompt)</h3>
+        <div class="checks" data-key="Guardrails" style="flex-direction:column;align-items:stretch">
+          <label class="chk"><input type="checkbox" value="NEVER run supabase db reset; NEVER push migrations to prod — write migration files only, apply locally via psql/migration up per the established drift-aware method" checked> Migration discipline (project rules)</label>
+          <label class="chk"><input type="checkbox" value="Do not break existing partner khata flows or the mobile IN/OUT screens mid-migration — additive changes, feature-flagged where behavior changes" checked> Additive — don't break existing IN/OUT</label>
+          <label class="chk"><input type="checkbox" value="Revenue books exactly once per phone, at the customer sale — internal movements must never create sales rows" checked> One revenue event per phone</label>
+          <label class="chk"><input type="checkbox" value="Physical location always records reality; 'booked under shop1' is an accounting/ownership label, never a location lie" checked> Location = physical truth</label>
+          <label class="chk"><input type="checkbox" value="Every state change logs actor + shop + timestamp onto the timeline; no silent mutations" checked> Everything on the timeline</label>
+          <label class="chk"><input type="checkbox" value="Server-side enforcement for floors/approvals/scoping — client-side checks are advisory only" checked> Enforce server-side, not client-side</label>
+          <label class="chk"><input type="checkbox" value="All money/balance figures derived from immutable event rows, never mutable running counters" checked> Balances derived from events</label>
+        </div>
+        <h3>Adoption budget — the four daily habits (everything else must be automatic or periodic)</h3>
+        <div class="checks" data-key="Daily-habit control set" style="flex-direction:column;align-items:stretch">
+          <label class="chk"><input type="checkbox" value="One-tap shop2 sale: full POS sale that auto-settles the branch OUT" checked> One-tap shop2 sale</label>
+          <label class="chk"><input type="checkbox" value="Single in-transit flag on returns: sender stamped, receiver confirms" checked> In-transit flag on returns</label>
+          <label class="chk"><input type="checkbox" value="Two-line nightly cash close per shop: expected vs counted" checked> Two-line nightly cash close</label>
+          <label class="chk"><input type="checkbox" value="Periodic IMEI scan-count per shop (weekly or monthly), counted by someone from the OTHER shop" checked> Periodic IMEI scan-count</label>
+        </div>
+        <div class="note-box"><b>Wholesaler's rule:</b> the more you make staff write, the less they write. These four are the daily
+          ceiling — every other mitigation in this charter must be either automatic (software does it silently) or periodic (the owner
+          does it). Attempt #1 died of ledger-reality drift; both an unseeded opening state and an over-ceremonied process recreate it.</div>
+        <h3>Suggested build order (phases)</h3>
+        <div class="checks" data-key="Build phases (in order)" style="flex-direction:column;align-items:stretch">
+          <label class="chk"><input type="checkbox" value="Phase 0 — Cutover: physical IMEI scan at BOTH shops seeds day-1 truth (every phone physically at shop2 becomes an opening branch-OUT row; live partner khata balances entered as opening rows); daily app-vs-paper-register tie-out during transition until the app is declared the winning ledger" checked> 0. Cutover: seed opening state + paper-register tie-out</label>
+          <label class="chk"><input type="checkbox" value="Phase 1 — Foundations: transfer-vs-consignment split (branch OUTs price-less, no overdue), derived holder kept in sync, home-shop on users, location-scoped staff role, timeline table + feed" checked> 1. Foundations: transfer semantics · holder truth · roles · timeline</label>
+          <label class="chk"><input type="checkbox" value="Phase 2 — Selling: full POS sale for branch-OUT units (auto-settle, receipt, trade-in), price floors + async owner approval, sale credited to selling shop, catalog predicate fix so branch stock stays online" checked> 2. Selling at shop2 + catalog visibility fix</label>
+          <label class="chk"><input type="checkbox" value="Phase 3 — Money: per-shop cash ledger, who-holds-the-amount, handover records, partner payment events w/ installments + netting, per-shop P&L" checked> 3. Money: drawers · holders · partner payments</label>
+          <label class="chk"><input type="checkbox" value="Phase 4 — Movement hardening: two-step returns, bulk restock w/ scan, chained partner OUTs, reserved state, recall etiquette, WhatsApp acks" checked> 4. Movement hardening + chains + reservations</label>
+          <label class="chk"><input type="checkbox" value="Phase 5 — Lifecycle: lost/repair/damage states, count sessions + adjustments, capital-aging views, consignment-IN at shop2" checked> 5. Lifecycle states + count sessions</label>
+        </div>
+        <div class="note-box"><b>Kept intentionally out of scope:</b> accessories per-shop tracking (block 8 decision), the supplier
+          (wholesale-market) payables khata — a real ledger, likely the owner's biggest liability, but a separate feature — any
+          multi-tenant concept (single business, multiple branches), and automated commission calculations. Flag interest in a note if wanted.</div>
+        <div class="note-wrap">
+          <label class="lbl">Note for this block (optional)</label>
+          <textarea class="note" placeholder="Leave a note in this block's context…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 11 — Open questions ============ -->
+    <section class="card" data-block="Open questions to answer before build">
+      <h2><span class="num">11</span> Open questions to answer before build</h2>
+      <div class="body">
+        <p>The red team's sharpest unanswered questions. None block the plan — each has a safe default — but answers change details.
+           Tick the ones you can answer now and put the answers in the note below.</p>
+        <div class="checks" data-key="Open questions" style="flex-direction:column;align-items:stretch">
+          <label class="chk"><input type="checkbox" value="Is a manager physically present at shop2 ALL open hours (bank runs, prayers, lunch included) — or must a plain salesman be able to sell alone? (Default assumed: salesman sells alone via scoped role)"> Manager coverage at shop2?</label>
+          <label class="chk"><input type="checkbox" value="How many walk-in trade-ins/purchases happen at shop2 per week? (Default: supported, atomic intake)"> Trade-in volume at shop2?</label>
+          <label class="chk"><input type="checkbox" value="Do partners pay lump-sum or weekly installments? (Default: installments supported)"> Partner payment rhythm?</label>
+          <label class="chk"><input type="checkbox" value="Would partners tolerate an automatic WhatsApp with IMEI + price on every OUT? (Default: yes, silent opt-out per partner)"> Partner WhatsApp tolerance?</label>
+          <label class="chk"><input type="checkbox" value="Do the two shops share the same weekly off-day? What happens when a customer wants a phone locked in the closed shop? (Default: last-unit warning + morning view)"> Off-day collision?</label>
+          <label class="chk"><input type="checkbox" value="What share of revenue comes via website/Instagram/WhatsApp catalog? (Default: assumed significant — catalog fix is Phase 2)"> Online revenue share?</label>
+          <label class="chk"><input type="checkbox" value="Is stock insured / has transit snatch happened before — what would police/insurer need (IMEI list, FIR ref)? (Default: lost state stores FIR reference)"> Insurance / FIR needs?</label>
+          <label class="chk"><input type="checkbox" value="Do you pay any commission per sale — whose sale is a chained shop2→partner deal? (Default: no commission logic built)"> Commission model?</label>
+          <label class="chk"><input type="checkbox" value="Warranty promise: must a shop2-sold phone be fully servable (lookup, swap, refund) at shop1? (Default: yes — receipt parity makes it possible)"> Cross-shop warranty service?</label>
+          <label class="chk"><input type="checkbox" value="The controls in this charter assume 100% of deals are recorded in the app; confirm that is the intent, and decide which ledger WINS when the app and the daily paper register disagree during transition (Default: app wins after the cutover tie-out period)"> App vs paper register — is 100% recording the goal, and which ledger wins?</label>
+          <label class="chk"><input type="checkbox" value="Restock is typically lifted on supplier credit (udhaar) from the wholesale market — should supplier payables become a tracked khata in a later phase? (Default: out of scope now)"> Supplier payables khata later?</label>
+          <label class="chk"><input type="checkbox" value="Sealed box-pack units displayed at shop2: does moving them break seals / start warranty at activation, changing their value? Should sealed/open be a recorded flag? (Default: not recorded)"> Sealed vs open state worth tracking?</label>
+        </div>
+        <div class="note-wrap">
+          <label class="lbl">Answers / note for this block</label>
+          <textarea class="note" placeholder="Write answers to any ticked questions here — they go into the generated prompt…"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ end blocks ============ -->
+
+  </div>
+
+  <aside class="promptPanel">
+    <div class="inner">
+      <div class="head">
+        <h2>Generated Prompt <span class="planbadge">PLAN MODE</span></h2>
+        <span class="meta" id="counts">0 lines</span>
+      </div>
+      <div class="promptActions">
+        <button class="btn" id="copyBtn">Copy</button>
+        <button class="btn ghost" id="downloadBtn">Download .md</button>
+        <button class="btn ghost" id="resetBtn">Reset</button>
+        <span id="copied">Copied ✓</span>
+      </div>
+      <textarea id="prompt" readonly spellcheck="false"></textarea>
+    </div>
+  </aside>
+</div>
+
+<footer>Self-contained decision charter · SmartCell two-shop stock model · red-teamed from five lenses and verified against the shop-app codebase · 2026-07-11.</footer>
+
+<script>
+"use strict";
+var $=function(id){return document.getElementById(id);};
+function refreshChkStyles(){
+  var ls=document.querySelectorAll('.chk');
+  for(var i=0;i<ls.length;i++){var cb=ls[i].querySelector('input');if(cb)ls[i].classList.toggle('on',cb.checked);}
+}
+function collectBlocks(){
+  var out=[];
+  var cards=document.querySelectorAll('.card[data-block]');
+  for(var i=0;i<cards.length;i++){
+    var card=cards[i];
+    var title=card.getAttribute('data-block');
+    var items=[];
+    var ctrls=card.querySelectorAll('[data-key]');
+    for(var j=0;j<ctrls.length;j++){
+      var ctrl=ctrls[j];
+      var key=ctrl.getAttribute('data-key');
+      if(ctrl.classList.contains('checks')){
+        var checked=ctrl.querySelectorAll('input:checked');
+        var vals=[];
+        for(var k=0;k<checked.length;k++){vals.push(checked[k].value);}
+        items.push([key, vals.join('; ')]);
+      } else if(ctrl.tagName==='SELECT'){
+        items.push([key, ctrl.value]);
+      } else if(ctrl.tagName==='INPUT'){
+        items.push([key, (ctrl.value||'').trim()]);
+      } else if(ctrl.tagName==='TEXTAREA' && !ctrl.classList.contains('note')){
+        items.push([key, (ctrl.value||'').trim()]);
+      }
+    }
+    var noteEl=card.querySelector('textarea.note');
+    var note=noteEl?(noteEl.value||'').trim():'';
+    out.push({title:title, items:items, note:note});
+  }
+  return out;
+}
+function buildPrompt(){
+  var t=$('docTitle');
+  var title=(t&&t.getAttribute('data-prompttitle'))||'Implementation';
+  var L=[];
+  L.push('# PLAN MODE PROMPT — '+title);
+  L.push('');
+  L.push('> HOW TO USE: paste this into a fresh session and START IN PLAN MODE.');
+  L.push('> Do not write code until the plan is approved. This prompt fixes the business model,');
+  L.push('> the decisions and the guardrails. Produce the plan first; keep deliverables in English.');
+  L.push('');
+  L.push('Context: SmartCell runs two of its own shops (walking distance, same market) plus two-way');
+  L.push('partner-shop consignment (khata). The mobile app already ships a device_outs ledger (OUT/IN),');
+  L.push('partner_shops and store_locations. This work turns that into the full two-shop operating model.');
+  L.push('');
+  var blocks=collectBlocks();
+  for(var i=0;i<blocks.length;i++){
+    var b=blocks[i];
+    L.push('## '+(i+1)+'. '+b.title.replace(/&amp;/g,'&'));
+    for(var j=0;j<b.items.length;j++){
+      if(b.items[j][1]!=='') L.push('- '+b.items[j][0]+': '+b.items[j][1]);
+    }
+    if(b.note){
+      L.push('');
+      L.push('  Notes (this block):');
+      var nl=b.note.split('\n');
+      for(var n=0;n<nl.length;n++){ L.push('  > '+nl[n]); }
+    }
+    L.push('');
+  }
+  L.push('## First steps in Plan Mode');
+  L.push('1. Restate the operating model and confirm the scope above.');
+  L.push('2. Audit the current device_outs/consignment implementation against every decision here;');
+  L.push('   list exactly what changes (schema, RPCs, mobile screens, web catalog predicate).');
+  L.push('3. Produce a phased implementation plan honoring the build order, every decision, note and guardrail.');
+  L.push('4. Ask before deviating from anything this prompt fixes; flag any gap or ambiguity you find.');
+  return L.join('\n');
+}
+function update(){
+  refreshChkStyles();
+  var txt=buildPrompt();
+  $('prompt').value=txt;
+  var c=$('counts');
+  if(c) c.textContent=txt.split('\n').length+' lines · '+txt.length.toLocaleString()+' chars';
+}
+$('form').addEventListener('input',update);
+$('form').addEventListener('change',update);
+$('copyBtn').addEventListener('click',function(){
+  var ta=$('prompt');
+  function done(){var c=$('copied');c.classList.add('show');setTimeout(function(){c.classList.remove('show');},1600);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(done,function(){ta.removeAttribute('readonly');ta.select();document.execCommand('copy');ta.setAttribute('readonly','');done();});
+  } else { ta.removeAttribute('readonly');ta.select();document.execCommand('copy');ta.setAttribute('readonly','');done(); }
+});
+$('downloadBtn').addEventListener('click',function(){
+  var t=$('docTitle');
+  var base=((t&&t.getAttribute('data-prompttitle'))||'plan').replace(/[^\w.-]+/g,'_');
+  var blob=new Blob([$('prompt').value],{type:'text/markdown;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=base+'_planmode_prompt.md';
+  document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(a.href);
+});
+$('resetBtn').addEventListener('click',function(){
+  var sel=document.querySelectorAll('#form select');
+  for(var i=0;i<sel.length;i++){var o=sel[i].options;for(var j=0;j<o.length;j++){o[j].selected=o[j].defaultSelected;}}
+  var cbs=document.querySelectorAll('#form input[type=checkbox]');
+  for(var k=0;k<cbs.length;k++){cbs[k].checked=cbs[k].defaultChecked;}
+  var txt=document.querySelectorAll('#form input[type=text]');
+  for(var m=0;m<txt.length;m++){txt[m].value=txt[m].defaultValue;}
+  var tas=document.querySelectorAll('#form textarea');
+  for(var p=0;p<tas.length;p++){tas[p].value=tas[p].defaultValue;}
+  update();
+});
+update();
+</script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import { ImageOptimizationService } from '../../../core/services/image-optimizat
 import { ToastService } from '../../../shared/services/toast.service';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { MetaPixelService } from '../../../core/services/meta-pixel.service';
 import { Brand } from '../../../models/brand.model';
 import { ProductCondition, ProductConditionLabels, PtaStatus, PtaStatusLabels, ProductStatus } from '../../../enums';
 
@@ -172,6 +173,7 @@ export class CatalogComponent implements OnInit, AfterViewInit, OnDestroy {
     private toastService: ToastService,
     private seoService: SeoService,
     private shopDetailsService: ShopDetailsService,
+    private metaPixel: MetaPixelService,
   ) {
     this.selectedSort = this.sortOptions[0];
   }
@@ -225,7 +227,14 @@ export class CatalogComponent implements OnInit, AfterViewInit, OnDestroy {
   private setupSearchDebounce(): void {
     this.searchSubject$
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => { this.filterVersion.update(v => v + 1); this.updateUrlParams(); this.loadModels(); });
+      .subscribe((term: string) => {
+        this.filterVersion.update(v => v + 1);
+        this.updateUrlParams();
+        this.loadModels();
+        // Debounced and de-duplicated, so this is one event per settled query
+        // rather than one per keystroke. Clearing the box emits '' and is ignored.
+        this.metaPixel.search(term);
+      });
   }
 
   private subscribeToQueryParams(): void {

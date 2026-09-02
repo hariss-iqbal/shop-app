@@ -188,6 +188,14 @@ export interface ProductSpecSuggestion {
   storage: number[];       // Storage options in GB (e.g., [64, 128, 256])
   colors: string[];        // Available color options
   modelName?: string;      // Canonical model name from GSMArena (brand prefix stripped)
+
+  // Marketing-facing specs, formatted for display rather than parsing.
+  // All optional: GSMArena layouts vary by phone and age, so any of these may be
+  // absent. Consumers must render only what is present.
+  display?: string;        // e.g. '6.7" LTPO OLED 120Hz'
+  camera?: string;         // e.g. '50MP + 48MP + 48MP'
+  battery?: string;        // e.g. '5050mAh'
+  chipset?: string;        // e.g. 'Google Tensor G3'
 }
 
 export interface FetchProductSpecsResponseDto {

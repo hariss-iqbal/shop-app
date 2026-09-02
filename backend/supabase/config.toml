@@ -183,3 +183,8 @@ inspector_port = 8083
 [functions.phone-shop-functions]
 # Disable JWT verification for local testing if needed
 # verify_jwt = false
+
+# Public Meta product-catalog feed — Meta's crawler fetches it with no auth,
+# so JWT verification must be off.
+[functions.meta-catalog]
+verify_jwt = false

@@ -1,0 +1,41 @@
+# Upload scope for the `shop-app` (storefront) Vercel project.
+#
+# This project deploys from THIS directory, not from frontend/, because
+# vercel.json and api/ live here. Without this file the CLI uploads the whole
+# tree — including the 5.6GB mobile/ React Native checkout — and the deploy
+# dies on Vercel's 100MB per-file limit.
+#
+# Keep: vercel.json, api/, and the frontend sources the build needs
+# (`cd frontend && npm install && npm run build`).
+
+# Dependencies and build caches — Vercel installs and builds these itself
+node_modules
+frontend/.angular
+frontend/dist
+
+# Sibling projects: not part of the storefront build.
+# backend/ is a separate Vercel project, deployed from its own directory.
+mobile
+backend
+testing
+tmp
+docs
+scripts
+supabase
+
+# Local test and debug output. The *.png rules are anchored with a leading
+# slash on purpose — a bare `*.png` would also strip frontend/public/icons/,
+# which ships the favicons, PWA icons and the default og:image.
+frontend/e2e
+frontend/test-results
+frontend/playwright.config.ts
+.playwright-mcp
+/*.png
+/frontend/*.png
+*.log
+
+# Local tooling / secrets
+.claude
+.git
+.env
+.env.*

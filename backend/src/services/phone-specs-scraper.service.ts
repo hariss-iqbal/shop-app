@@ -21,6 +21,9 @@ export class PhoneSpecsScraperService {
   private readonly CACHE_TTL = 30 * 24 * 60 * 60; // 30 days in seconds
   private readonly USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
   private readonly BASE_URL = 'https://www.gsmarena.com';
+
+  /** Cap on brand-listing pages walked per lookup, so a miss can't crawl a whole brand. */
+  private readonly MAX_LISTING_PAGES = 6;
   private lastRequestTime = 0;
   private readonly MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
 
@@ -48,9 +51,23 @@ export class PhoneSpecsScraperService {
 
       console.log(`[PhoneSpecsScraper] Fetching specs for ${brand} ${model}`);
 
-      // Step 1: Search for the phone
+      // Step 1: Locate the phone.
+      // The brand listing is tried first because GSMArena's search endpoint is
+      // behind a bot challenge and no longer returns results to a server-side
+      // request. Search is kept as a fallback in case that ever changes back.
       const searchQuery = `${brand} ${model}`.trim();
-      const searchResults = await this.searchPhone(searchQuery);
+
+      let searchResults = await this.findViaBrandListing(brand, model).catch(err => {
+        console.warn('[PhoneSpecsScraper] Brand listing lookup failed:', err.message);
+        return [] as Array<{ name: string; url: string }>;
+      });
+
+      if (searchResults.length === 0) {
+        searchResults = await this.searchPhone(searchQuery).catch(err => {
+          console.warn('[PhoneSpecsScraper] Search fallback failed:', err.message);
+          return [] as Array<{ name: string; url: string }>;
+        });
+      }
 
       if (!searchResults || searchResults.length === 0) {
         return {
@@ -122,7 +139,11 @@ export class PhoneSpecsScraperService {
     // Normalize function - removes spaces, special chars for comparison
     const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
 
+    // Brand listings label phones without the brand ('13T', 'Phone (1)'), while
+    // search results include it ('OnePlus 13T'). Accept either, or exact matches
+    // coming from the listing path are rejected here.
     const normalizedSearch = normalize(searchTerms);
+    const normalizedModelOnly = normalize(model);
 
     // Score each result
     const scored = results.map(result => {
@@ -130,7 +151,7 @@ export class PhoneSpecsScraperService {
       let score = 0;
 
       // Exact match (highest priority)
-      if (normalizedName === normalizedSearch) {
+      if (normalizedName === normalizedSearch || normalizedName === normalizedModelOnly) {
         score = 1000;
       }
       // Exact match with brand/model only (ignoring extra words)
@@ -235,6 +256,116 @@ export class PhoneSpecsScraperService {
    */
   async searchModels(query: string): Promise<Array<{ name: string; url: string }>> {
     return this.searchPhone(query);
+  }
+
+  /**
+   * Resolves a phone by walking GSMArena's brand listing instead of its search.
+   *
+   * WHY: /results.php3 is behind a Cloudflare Turnstile challenge and returns a
+   * bot-check page to any server-side request, so search-based lookup fails for
+   * every model. The brand listings (/google-phones-107.php etc.) and the
+   * product pages themselves are not gated, so this path needs no challenge
+   * solving — it just reads pages that are openly served.
+   *
+   * @param brand brand name, e.g. 'Google'
+   * @param model model name, e.g. 'Pixel 8 Pro'
+   */
+  private async findViaBrandListing(
+    brand: string,
+    model: string
+  ): Promise<Array<{ name: string; url: string }>> {
+    const brandUrl = await this.resolveBrandUrl(brand);
+    if (!brandUrl) return [];
+
+    // Listings paginate at 40 phones per page, so an older model won't be on
+    // page 1. Walk pages until the model is found or the pages run out.
+    const seen = new Set<string>();
+    const queue = [brandUrl];
+    const results: Array<{ name: string; url: string }> = [];
+
+    // Listing names omit the brand ('Pixel 8 Pro', not 'Google Pixel 8 Pro'),
+    // so match against the model alone.
+    const wanted = this.normalizeName(model);
+
+    while (queue.length && seen.size < this.MAX_LISTING_PAGES) {
+      const pageUrl = queue.shift()!;
+      if (seen.has(pageUrl)) continue;
+      seen.add(pageUrl);
+
+      await this.respectRateLimit();
+      const response = await axios.get(pageUrl, {
+        headers: { 'User-Agent': this.USER_AGENT },
+        timeout: 10000
+      });
+      const $ = cheerio.load(response.data);
+
+      $('div.makers a[href$=".php"]').each((_, el) => {
+        const $a = $(el);
+        const href = $a.attr('href');
+        const name = $a.find('span').text().trim() || $a.text().trim();
+        if (!href || !name) return;
+        if (/-phones-/.test(href)) return;   // paging/nav link, not a product
+        results.push({ name, url: `${this.BASE_URL}/${href}` });
+      });
+
+      // Stop as soon as an exact match is on the page — no need to keep paging.
+      if (results.some(r => this.normalizeName(r.name) === wanted)) break;
+
+      $(`a[href*="${brand.toLowerCase().replace(/[^a-z0-9]/g, '')}-phones-f-"]`).each((_, el) => {
+        const href = $(el).attr('href');
+        if (href && !seen.has(`${this.BASE_URL}/${href}`)) queue.push(`${this.BASE_URL}/${href}`);
+      });
+    }
+
+    return results
+      .map(r => ({ ...r, score: this.nameScore(this.normalizeName(r.name), wanted) }))
+      .filter(r => r.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ name, url }) => ({ name, url }));
+  }
+
+  /** Finds a brand's listing URL from GSMArena's makers index. */
+  private async resolveBrandUrl(brand: string): Promise<string | null> {
+    await this.respectRateLimit();
+    const response = await axios.get(`${this.BASE_URL}/makers.php3`, {
+      headers: { 'User-Agent': this.USER_AGENT },
+      timeout: 10000
+    });
+
+    const $ = cheerio.load(response.data);
+    const slug = brand.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let match: string | null = null;
+
+    $('a[href*="-phones-"]').each((_, el) => {
+      if (match) return;
+      const href = $(el).attr('href') || '';
+      if (new RegExp(`^${slug}-phones-\\d+\\.php$`, 'i').test(href)) {
+        match = `${this.BASE_URL}/${href}`;
+      }
+    });
+
+    return match;
+  }
+
+  private normalizeName(s: string): string {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  /**
+   * Exact match beats prefix match beats token overlap. Returns 0 when the
+   * candidate contains tokens the query didn't ask for (so 'Pixel 8' does not
+   * match 'Pixel 8 Pro'), which is the failure mode that matters here.
+   */
+  private nameScore(candidate: string, wanted: string): number {
+    if (candidate === wanted) return 1000;
+
+    const cTokens = candidate.split(' ');
+    const wTokens = wanted.split(' ');
+    const extra = cTokens.filter(t => !wTokens.includes(t));
+    const missing = wTokens.filter(t => !cTokens.includes(t));
+
+    if (missing.length) return 0;
+    return 100 - extra.length * 10;
   }
 
   /**
@@ -343,7 +474,99 @@ export class PhoneSpecsScraperService {
       return null;
     }
 
-    return { ram, storage, colors };
+    return {
+      ram,
+      storage,
+      colors,
+      display: this.extractDisplay($),
+      camera: this.extractCamera($),
+      battery: this.extractBattery($),
+      chipset: this.extractChipset($)
+    };
+  }
+
+  /**
+   * Reads one value from GSMArena's spec tables.
+   *
+   * The tables are section-scoped: each <table> opens with a <th> naming the
+   * section ('Display', 'Battery', ...) and its rows are td.ttl / td.nfo pairs.
+   * Scoping by section matters because row labels repeat — 'Type' appears under
+   * both Display and Battery.
+   *
+   * @param labels row labels to try, in priority order
+   */
+  private specValue(
+    $: cheerio.CheerioAPI,
+    section: string,
+    labels: string[]
+  ): string | undefined {
+    let found: string | undefined;
+
+    $('table').each((_, table) => {
+      if (found) return;
+      const $table = $(table);
+      if ($table.find('th').first().text().trim() !== section) return;
+
+      for (const label of labels) {
+        $table.find('tr').each((__, tr) => {
+          if (found) return;
+          const $tr = $(tr);
+          if ($tr.find('td.ttl').text().trim().toLowerCase() !== label.toLowerCase()) return;
+          const value = $tr.find('td.nfo').text().trim();
+          if (value && value !== '-') found = value;
+        });
+        if (found) break;
+      }
+    });
+
+    return found;
+  }
+
+  /** e.g. '6.7" LTPO OLED 120Hz' — size from Size, panel/refresh from Type. */
+  private extractDisplay($: cheerio.CheerioAPI): string | undefined {
+    const size = this.specValue($, 'Display', ['Size']);
+    const type = this.specValue($, 'Display', ['Type']);
+
+    const inches = size?.match(/([\d.]+)\s*inches/i)?.[1];
+
+    // Type reads e.g. "LTPO OLED, 120Hz, HDR10+, 1600 nits (HBM)". The panel is
+    // always first, but the refresh rate is not always second — on the Pixel 7a
+    // it sits third, behind HDR — so search for it rather than taking a slice.
+    const panel = type?.split(',')[0]?.trim();
+    const refresh = type?.match(/(\d+)\s*Hz/i)?.[1];
+
+    const parts = [
+      inches ? `${inches}"` : '',
+      panel,
+      refresh ? `${refresh}Hz` : ''
+    ].filter(Boolean);
+
+    return parts.length ? parts.join(' ') : undefined;
+  }
+
+  /** e.g. '50MP + 48MP + 48MP' from the Single/Dual/Triple/Quad row. */
+  private extractCamera($: cheerio.CheerioAPI): string | undefined {
+    const value = this.specValue($, 'Main Camera', [
+      'Penta', 'Quad', 'Triple', 'Dual', 'Single'
+    ]);
+    if (!value) return undefined;
+
+    const megapixels = [...value.matchAll(/([\d.]+)\s*MP/gi)].map(m => `${m[1]}MP`);
+    return megapixels.length ? megapixels.join(' + ') : undefined;
+  }
+
+  /** e.g. '5050mAh'. */
+  private extractBattery($: cheerio.CheerioAPI): string | undefined {
+    const value = this.specValue($, 'Battery', ['Type', 'Capacity']);
+    const mah = value?.match(/([\d,]+)\s*mAh/i)?.[1]?.replace(/,/g, '');
+    return mah ? `${mah}mAh` : undefined;
+  }
+
+  /** e.g. 'Google Tensor G3' — the fabrication node in parentheses is dropped. */
+  private extractChipset($: cheerio.CheerioAPI): string | undefined {
+    const value = this.specValue($, 'Platform', ['Chipset']);
+    const cleaned = value?.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    return cleaned || undefined;
   }
 
   /**

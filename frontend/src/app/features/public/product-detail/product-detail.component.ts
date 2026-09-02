@@ -10,6 +10,7 @@ import { SeoService } from '../../../shared/services/seo.service';
 import { JsonLdService } from '../../../shared/services/json-ld.service';
 import { CurrencyService } from '../../../core/services/currency.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { MetaPixelService, PixelProduct } from '../../../core/services/meta-pixel.service';
 import { ProductDetail, Product } from '../../../models/product.model';
 import { ProductCondition, ProductConditionLabels, PtaStatus, PtaStatusLabels } from '../../../enums';
 
@@ -56,7 +57,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     private seoService: SeoService,
     private jsonLdService: JsonLdService,
     private currencyService: CurrencyService,
-    private shopDetailsService: ShopDetailsService
+    private shopDetailsService: ShopDetailsService,
+    private metaPixel: MetaPixelService
   ) {}
 
   /* ── Data signals ── */
@@ -301,6 +303,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     this.updateSeoTags(detail);
     this.jsonLdService.setProductStructuredData(detail);
     this.tracker.trackView(detail.id);
+    this.metaPixel.viewContent(this.toPixelProduct(detail));
 
     const mid = modelId || detail.modelId;
     if (mid) {
@@ -372,6 +375,9 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       this.product.set(updatedProduct);
       this.buildGalleryImages(updatedProduct);
       this.updateSeoTags(updatedProduct);
+      // A variant switch is a new product view: different storage, price and
+      // catalog id, so it seeds retargeting the same as a fresh page load.
+      this.metaPixel.viewContent(this.toPixelProduct(updatedProduct));
       const colorParam = matchedColor ? `?color=${encodeURIComponent(matchedColor)}` : '';
       this.location.replaceState(`/product/${variant.slug}${colorParam}`);
       window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
@@ -472,9 +478,25 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   /* ── Commerce ── */
+
+  /** Shapes a loaded product for the pixel; keeps the catalog id in one place. */
+  private toPixelProduct(p: ProductDetail): PixelProduct {
+    return {
+      variantSlug: p.variantSlug ?? null,
+      color: p.color ?? null,
+      name: `${p.brandName} ${p.modelName || p.model}`,
+      price: p.sellingPrice
+    };
+  }
+
   openWhatsAppInquiry(): void {
     const p = this.product();
     if (!p) return;
+
+    // Fired before the tab opens: on mobile the WhatsApp hand-off can suspend
+    // this page, and a queued pixel call would never be sent.
+    this.metaPixel.contact('whatsapp', this.toPixelProduct(p));
+
     const parts = [`Hi! I'm interested in the ${p.brandName} ${p.model}`];
     if (p.storageGb) parts[0] += ` (${p.storageGb}GB)`;
     if (p.color) parts[0] += ` in ${p.color}`;

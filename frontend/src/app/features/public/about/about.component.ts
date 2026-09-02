@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { MetaPixelService } from '../../../core/services/meta-pixel.service';
 
 interface ValueItem {
   icon: string;
@@ -38,8 +39,14 @@ interface OpeningHoursItem {
 export class AboutComponent implements OnInit {
   constructor(
     private seoService: SeoService,
-    private shopDetailsService: ShopDetailsService
+    private shopDetailsService: ShopDetailsService,
+    private metaPixel: MetaPixelService
   ) { }
+
+  /** No product context here — the visitor hasn't picked a phone yet. */
+  trackWhatsAppClick(): void {
+    this.metaPixel.contact('whatsapp');
+  }
 
   shopName = this.shopDetailsService.shopName;
   phoneDisplay = this.shopDetailsService.phoneDisplay;

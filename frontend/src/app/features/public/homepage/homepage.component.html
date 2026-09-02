@@ -261,7 +261,7 @@
       <span class="eyebrow">— FAQ</span>
       <h2 style="font-family:var(--sans);font-size:clamp(32px, 3.4vw, 46px);font-weight:500;letter-spacing:-0.03em;line-height:1.05;margin:10px 0 20px">Questions, <em>answered</em>.</h2>
       <p style="color:var(--fg-2);font-size:15px;max-width:340px;margin:0 0 24px">Can't find what you're looking for? Our team replies on WhatsApp within minutes.</p>
-      <a [href]="whatsappLink()" target="_blank" class="btn btn-secondary">Message on WhatsApp</a>
+      <a [href]="whatsappLink()" target="_blank" class="btn btn-secondary" (click)="trackWhatsAppClick()">Message on WhatsApp</a>
     </div>
     <div class="faq-list">
       @for (faq of faqs; track faq.question; let i = $index) {

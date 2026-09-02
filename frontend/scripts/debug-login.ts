@@ -1,0 +1,25 @@
+import { chromium } from 'playwright';
+const SHOT = '/Users/haris/IdeaProjects/general-project-maker/projects/shop-app/tmp/stock-compare/shots';
+(async () => {
+  const b = await chromium.launch({ headless: true });
+  const p = await b.newPage();
+  const errors: string[] = [];
+  p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  p.on('pageerror', e => errors.push('PAGEERR ' + e.message));
+  await p.goto('http://localhost:4200/auth/login');
+  await p.waitForTimeout(1500);
+  console.log('email inputs:', await p.locator('input[placeholder="admin@example.com"]').count());
+  console.log('pwd inputs:', await p.locator('input[type="password"]').count());
+  console.log('signin btns:', await p.getByRole('button', { name: 'Sign In' }).count());
+  await p.locator('input[placeholder="admin@example.com"]').fill('admin@gmail.com');
+  await p.locator('input[type="password"]').first().fill('password123');
+  await p.screenshot({ path: `${SHOT}/login-filled.png` });
+  await p.getByRole('button', { name: 'Sign In' }).click();
+  await p.waitForTimeout(5000);
+  console.log('URL after:', p.url());
+  const body = await p.locator('body').innerText();
+  console.log('TOASTS/ERR:', body.split('\n').filter(l => /error|invalid|denied|pending|approv|fail|wrong|incorrect/i.test(l)).slice(0, 8).join(' | '));
+  console.log('console errors:', errors.slice(0, 8).join(' | '));
+  await p.screenshot({ path: `${SHOT}/login-after.png` });
+  await b.close();
+})();

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SmartCell — IN consignment POC</title>
+<style>
+  :root{
+    --primary:#2563eb; --primary-dark:#1e40af; --bg:#f1f5f9; --card:#fff;
+    --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --success:#16a34a;
+    --danger:#dc2626; --warn:#d97706; --chipbg:#eef2ff; --chiptext:#3730a3;
+    --amberbg:#fef3c7; --greenbg:#dcfce7; --redbg:#fee2e2; --greybg:#f1f5f9;
+    --inbg:#fdf2f8; --inborder:#fbcfe8; --intext:#9d174d;     /* IN = pink */
+    --owe:#dc2626; --owed:#16a34a;
+  }
+  *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{margin:0;background:#e2e8f0;color:var(--text);padding:28px;-webkit-font-smoothing:antialiased;}
+  .poster-title{max-width:880px;margin:0 auto 6px;}
+  .poster-title h1{font-size:22px;margin:0;letter-spacing:-.4px}
+  .poster-title p{color:#475569;margin:6px 0 22px;font-size:14px;max-width:780px;line-height:1.5}
+  .gallery{display:flex;flex-wrap:wrap;gap:26px 34px;justify-content:center;max-width:900px;margin:0 auto;}
+  .frame{width:380px;}
+  .frame>.label{font-size:13px;font-weight:700;color:#334155;margin:0 0 8px 6px;text-transform:uppercase;letter-spacing:.6px}
+  .frame>.sub{font-size:12px;color:#64748b;margin:-4px 0 10px 6px}
+  .phone{width:380px;height:760px;background:var(--bg);border:11px solid #0f172a;border-radius:42px;overflow:hidden;position:relative;box-shadow:0 18px 40px rgba(2,6,23,.28);}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;background:#0f172a;border-radius:0 0 16px 16px;z-index:30}
+  .statusbar{height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:13px;font-weight:700;}
+  .statusbar .r{letter-spacing:2px}
+  .scr{height:718px;overflow:hidden;display:flex;flex-direction:column;}
+  .appbar{display:flex;align-items:center;gap:10px;padding:6px 16px 12px;}
+  .appbar .back{font-size:22px;width:22px}
+  .appbar h2{font-size:20px;font-weight:800;margin:0;flex:1;letter-spacing:-.3px}
+  .link{color:var(--primary);font-weight:700;font-size:14px}
+  .body{flex:1;overflow:auto;padding:4px 14px 16px;}
+  .tabs{display:flex;gap:7px;margin-bottom:12px}
+  .tab{padding:8px 16px;border-radius:18px;font-size:13px;font-weight:700;background:#fff;border:1px solid var(--border);color:var(--muted)}
+  .tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+  .stats{display:flex;gap:10px;margin-bottom:12px}
+  .stat{flex:1;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 13px;}
+  .stat .n{font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .stat .k{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+  .stat.owe{background:#fef2f2;border-color:#fecaca}.stat.owe .n{color:var(--owe)}
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:13px;margin-bottom:10px;}
+  .oc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .oc-model{font-size:15.5px;font-weight:800;letter-spacing:-.2px}
+  .oc-imei{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+  .chip{display:inline-flex;align-items:center;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:800;}
+  .chip.pink{background:var(--inbg);color:var(--intext)}
+  .chip.green{background:var(--greenbg);color:var(--success)}
+  .chip.grey{background:var(--greybg);color:var(--muted)}
+  .chip.amber{background:var(--amberbg);color:var(--warn)}
+  .badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:.4px}
+  .badge.in{background:var(--inbg);color:var(--intext);border:1px solid var(--inborder)}
+  .oc-dest{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-top:8px}
+  .oc-bottom{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:9px;margin-top:9px}
+  .owe-txt{font-size:13px;font-weight:800;color:var(--owe)}
+  .sell-txt{font-size:12px;font-weight:800;color:var(--success)}
+  .price{font-size:15px;font-weight:800}.price small{display:block;font-size:11px;color:var(--muted);font-weight:600}
+  .fab{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;background:var(--primary);color:#fff;font-weight:800;font-size:15px;padding:14px 26px;border-radius:30px;box-shadow:0 10px 24px rgba(37,99,235,.45);z-index:20}
+  .label-s{font-size:12.5px;font-weight:700;margin:14px 2px 6px}
+  .input{background:#fff;border:1px solid var(--border);border-radius:11px;padding:12px 13px;font-size:14.5px;display:flex;align-items:center;gap:8px}
+  .input.big{font-size:21px;font-weight:800;padding:14px}
+  .input .ph{color:#94a3b8}
+  .twocol{display:flex;gap:10px}.twocol>div{flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .pchip{border:1px solid var(--border);border-radius:16px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--muted);background:#fff}
+  .pchip.on{background:var(--primary);border-color:var(--primary);color:#fff}
+  .hint{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.45}
+  .btn{display:block;text-align:center;border-radius:12px;padding:15px;font-weight:800;font-size:15.5px;margin-top:16px}
+  .btn.primary{background:var(--primary);color:#fff}.btn.success{background:var(--success);color:#fff}
+  .btn.outline{background:#fff;border:1.5px solid var(--border);color:var(--text)}
+  .hero{background:#fff;border:1px solid var(--border);border-radius:16px;padding:15px;text-align:center;margin-bottom:12px}
+  .hero .m{font-size:19px;font-weight:800}.hero .meta{font-size:12.5px;color:var(--muted);margin-top:3px;font-family:ui-monospace,Menlo,monospace}
+  .pill{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:800;padding:7px 14px;border-radius:20px;margin-top:10px}
+  .row2{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0}.row2 .v{font-weight:800}
+  .sectit{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:2px 2px 8px}
+  .net{border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+  .net.owed{background:#ecfdf5;border:1px solid #a7f3d0}.net.owe{background:#fef2f2;border:1px solid #fecaca}
+  .net .big{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .net.owed .big{color:var(--owed)}.net.owe .big{color:var(--owe)}
+  .net .lbl{font-size:13px;color:#475569;margin-top:2px;font-weight:600}
+  .ledger-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+  .lr-l{font-size:13.5px;font-weight:700}.lr-d{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .lr-amt{font-weight:800;font-size:14px}
+  .plus{color:var(--owed)}.minus{color:var(--owe)}
+  .result{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:12px;font-size:13px;color:#065f46;font-weight:700;margin-top:14px}
+  .legend{max-width:860px;margin:26px auto 0;font-size:12.5px;color:#475569;background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;line-height:1.6}
+  .legend b{color:#0f172a}
+</style>
+</head>
+<body>
+  <div class="poster-title">
+    <h1>SmartCell — taking devices <b>IN</b> on consignment · mobile POC</h1>
+    <p>The mirror of OUT: another shop hands <i>us</i> a device at an agreed price. We sell it (we then owe them) or hand it back. Same partners as OUT, so each shop has <b>one running balance that nets both directions</b> (khata). Mock data.</p>
+  </div>
+
+  <div class="gallery">
+
+    <!-- 1: CONSIGNMENT LIST (IN tab) -->
+    <div class="frame">
+      <div class="label">1 · Consignment — In</div>
+      <div class="sub">Devices we hold for others</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><h2>Consignment</h2><span class="link">Partners</span></div>
+          <div class="body">
+            <div class="tabs"><span class="tab">Out</span><span class="tab active">In · 6</span></div>
+            <div class="stats">
+              <div class="stat"><div class="n">6 held</div><div class="k">others' devices<br>in our stock</div></div>
+              <div class="stat owe"><div class="n">Rs 2,10,000</div><div class="k">we'll owe<br>if all sold</div></div>
+            </div>
+
+            <div class="card">
+              <div class="oc-top"><div><div class="oc-model">Pixel 8 Pro · 256GB · Black</div><div class="oc-imei">IMEI …97 9706</div></div><span class="chip pink">IN STOCK</span></div>
+              <div class="oc-dest"><span class="badge in">From</span><span style="font-weight:700">Zain Telecom</span></div>
+              <div class="oc-bottom"><div class="price">Rs 130,000<small>we owe if sold</small></div><div class="sell-txt">● sellable</div></div>
+            </div>
+
+            <div class="card">
+              <div class="oc-top"><div><div class="oc-model">iPhone 14 · 128GB · Blue</div><div class="oc-imei">IMEI …41 2231</div></div><span class="chip green">SOLD · owe</span></div>
+              <div class="oc-dest"><span class="badge in">From</span><span style="font-weight:700">Mobile Hub</span></div>
+              <div class="oc-bottom"><div class="price">Sold Rs 175,000<small>our price</small></div><div class="owe-txt">we owe Rs 160,000</div></div>
+            </div>
+
+            <div class="card">
+              <div class="oc-top"><div><div class="oc-model">Galaxy S23 · 256GB</div><div class="oc-imei">IMEI …08 4417</div></div><span class="chip pink">IN STOCK</span></div>
+              <div class="oc-dest"><span class="badge in">From</span><span style="font-weight:700">Zain Telecom</span></div>
+              <div class="oc-bottom"><div class="price">Rs 80,000<small>we owe if sold</small></div><div class="sell-txt">● sellable</div></div>
+            </div>
+            <div style="height:56px"></div>
+          </div>
+          <div class="fab">+ Take a device IN</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2: TAKE IN -->
+    <div class="frame">
+      <div class="label">2 · Take a device IN</div>
+      <div class="sub">Add their device to our stock</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">←</span><h2>Take IN</h2></div>
+          <div class="body">
+            <div class="label-s">From which shop</div>
+            <div class="chips"><span class="pchip on">Zain Telecom</span><span class="pchip">Mobile Hub</span><span class="pchip">＋ New</span></div>
+
+            <div class="label-s">Device</div>
+            <div class="input"><span class="ph">Brand · Model — e.g. Google Pixel 8 Pro</span></div>
+            <div class="twocol" style="margin-top:9px">
+              <div><div class="label-s" style="margin-top:0">Storage</div><div class="input">256 GB</div></div>
+              <div><div class="label-s" style="margin-top:0">Color</div><div class="input">Black</div></div>
+            </div>
+            <div class="label-s">IMEI (optional)</div>
+            <div class="input"><span class="ph">scan or type…</span></div>
+
+            <div class="label-s">IN price — what we'll owe them</div>
+            <div class="input big">130,000</div>
+            <div class="label-s">Our intended sell price (optional)</div>
+            <div class="input">155,000</div>
+            <div class="hint">≈ margin <b style="color:var(--success)">Rs 25,000</b> if sold at 155k</div>
+
+            <div class="btn primary">Take IN →</div>
+            <div class="hint" style="text-align:center">Added to sellable stock, flagged consignment. Not counted in our owned-stock value.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3: IN DETAIL -->
+    <div class="frame">
+      <div class="label">3 · IN detail</div>
+      <div class="sub">Sell it or hand it back</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">←</span><h2>IN · Pixel 8 Pro</h2></div>
+          <div class="body">
+            <div class="hero">
+              <div class="m">Pixel 8 Pro · 256GB · Black</div>
+              <div class="meta">IMEI …97 9706</div>
+              <span class="pill" style="background:var(--inbg);color:var(--intext)">● IN STOCK · held for Zain</span>
+            </div>
+            <div class="card">
+              <div class="sectit">From partner</div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">Zain Telecom <span class="badge in">External</span></div><div class="oc-imei">0300-1234567 · taken in 24 Jun</div></div><span style="font-size:20px">📞</span></div>
+            </div>
+            <div class="card">
+              <div class="sectit">Money</div>
+              <div class="row2"><span>IN price (we owe if sold)</span><span class="v">Rs 130,000</span></div>
+              <div class="row2"><span>Intended sell price</span><span class="v">Rs 155,000</span></div>
+              <div class="row2"><span style="color:var(--success);font-weight:800">Margin if sold</span><span class="v" style="color:var(--success)">Rs 25,000</span></div>
+            </div>
+            <div class="btn success">Mark sold (record our price)</div>
+            <div class="btn outline">↩ Return to Zain</div>
+            <div class="hint" style="text-align:center">It can also just be sold from the normal POS — selling it auto-creates what we owe Zain.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4: PARTNER STATEMENT (NETTED KHATA) -->
+    <div class="frame">
+      <div class="label">4 · Partner statement (khata)</div>
+      <div class="sub">One netted balance, both directions</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">←</span><h2>Zain Telecom</h2></div>
+          <div class="body">
+            <div class="net owed">
+              <div class="big">Zain owes you Rs 20,000</div>
+              <div class="lbl">net of both directions</div>
+            </div>
+            <div class="twocol">
+              <div class="card" style="text-align:center"><div class="oc-imei" style="margin:0">They owe us (OUT)</div><div style="font-size:17px;font-weight:800;color:var(--owed);margin-top:4px">Rs 1,00,000</div></div>
+              <div class="card" style="text-align:center"><div class="oc-imei" style="margin:0">We owe them (IN)</div><div style="font-size:17px;font-weight:800;color:var(--owe);margin-top:4px">Rs 80,000</div></div>
+            </div>
+            <div class="card" style="padding:4px 14px">
+              <div class="sectit" style="margin-top:12px">History</div>
+              <div class="ledger-row"><div><div class="lr-l">OUT · Pixel 9 Pro XL</div><div class="lr-d">sold, unpaid by Zain</div></div><div class="lr-amt plus">+165,000</div></div>
+              <div class="ledger-row"><div><div class="lr-l">IN · iPhone 14 sold</div><div class="lr-d">we owe Zain</div></div><div class="lr-amt minus">−160,000</div></div>
+              <div class="ledger-row"><div><div class="lr-l">Zain paid us</div><div class="lr-d">22 Jun · cash</div></div><div class="lr-amt minus">−65,000</div></div>
+              <div class="ledger-row" style="border:none"><div><div class="lr-l">We paid Zain</div><div class="lr-d">23 Jun</div></div><div class="lr-amt plus">+80,000</div></div>
+            </div>
+            <div class="btn primary">Settle net · Zain pays Rs 20,000</div>
+            <div class="btn outline">Record a payment</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5: MARK SOLD SHEET -->
+    <div class="frame">
+      <div class="label">5 · Mark IN sold</div>
+      <div class="sub">Books our sale + what we owe</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span class="r">●●● ☷ ▮</span></div>
+        <div class="scr">
+          <div class="appbar"><span class="back">✕</span><h2>Sold — Pixel 8 Pro</h2></div>
+          <div class="body">
+            <div class="hint" style="margin:0 2px 6px">From Zain · IN price Rs 130,000</div>
+            <div class="label-s">Our sale price (to customer)</div>
+            <div class="input big">155,000</div>
+            <div class="label-s">Payment method</div>
+            <div class="chips"><span class="pchip on">Cash</span><span class="pchip">Card</span><span class="pchip">Other</span></div>
+            <div class="result">✓ Sale Rs 155,000 booked · margin <b>Rs 25,000</b> (155k − 130k) counts in Grand Profit.</div>
+            <div class="card" style="margin-top:12px;background:#fef2f2;border-color:#fecaca">
+              <div class="row2"><span style="font-weight:800;color:var(--owe)">We now owe Zain</span><span class="v" style="color:var(--owe)">Rs 130,000</span></div>
+              <div class="hint" style="margin-top:2px">Added to Zain's tab — pay anytime, nets against what they owe us.</div>
+            </div>
+            <div class="btn success">Confirm sale</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <b>IN vs OUT:</b> OUT = our device at their shop (they owe us). IN = their device in our shop (we owe them, but only once it sells).
+    IN devices are <b>sellable from the normal POS</b>, flagged consignment, and excluded from our owned-stock value.
+    Selling an IN device books the sale (margin = our price − IN price) and adds what we owe to the partner's tab.
+    Each partner has <b>one net balance</b> (they-owe − we-owe) you can settle in one go.
+  </div>
+</body>
+</html>

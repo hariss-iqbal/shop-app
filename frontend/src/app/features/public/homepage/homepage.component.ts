@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { SeoService } from '../../../shared/services/seo.service';
 import { ShopDetailsService } from '../../../core/services/shop-details.service';
+import { MetaPixelService } from '../../../core/services/meta-pixel.service';
 import { PromoBannerComponent } from '../promo-banner/promo-banner.component';
 
 interface FaqItem {
@@ -124,7 +125,8 @@ export class HomepageComponent implements OnInit, OnDestroy {
   constructor(
     private seoService: SeoService,
     public shopDetailsService: ShopDetailsService,
-    private router: Router
+    private router: Router,
+    private metaPixel: MetaPixelService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -156,5 +158,10 @@ export class HomepageComponent implements OnInit, OnDestroy {
     const num = this.shopDetailsService.whatsappNumber();
     if (num) return `https://wa.me/${num.replace(/[^0-9]/g, '')}`;
     return '#';
+  }
+
+  /** No product context here — the visitor hasn't picked a phone yet. */
+  trackWhatsAppClick(): void {
+    this.metaPixel.contact('whatsapp');
   }
 }

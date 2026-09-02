@@ -2,15 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Phone Shop</title>
+  <title>Smart Cell</title>
   <base href="/">
   <!-- F-025: Mobile-Optimized Viewport Settings -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
   <meta name="theme-color" content="#f5f7f8">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1220">
-  <meta name="description" content="Mobile-optimized Point of Sale system for phone retail. Manage sales, inventory, receipts, and customer transactions.">
+  <meta name="description" content="Buy new and used phones at Smart Cell — PTA approved and non-PTA stock, honest pricing, fast delivery across Pakistan.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
+
+  <!-- Meta (Facebook) domain verification for smartcell.pk, Business portfolio
+       "SmartCell" (id 1178510318677691). Proves we own the domain, which is what
+       unlocks Aggregated Event Measurement — i.e. choosing which of our pixel
+       events Meta prioritises for iOS attribution.
+
+       Must stay a STATIC tag inside <head>. Meta's crawler does not run
+       JavaScript, so moving this into SeoService or any runtime-injected tag
+       silently fails verification. -->
+  <meta name="facebook-domain-verification" content="rms45xa2w1f0wu7dig2ozuxja2ckf1" />
+
+  <!-- Default social link preview.
+       SeoService rewrites these per route, but only after Angular boots, and
+       social crawlers don't run JavaScript — so these static values are what
+       WhatsApp/Facebook/Twitter actually read for any non-product URL.
+       Product URLs are served with real per-product tags by api/og.js. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Smart Cell">
+  <meta property="og:title" content="Smart Cell">
+  <meta property="og:description" content="Buy new and used phones at Smart Cell — PTA approved and non-PTA stock, honest pricing, fast delivery across Pakistan.">
+  <meta property="og:url" content="https://www.smartcell.pk/">
+  <meta property="og:image" content="https://www.smartcell.pk/icons/icon-512x512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Smart Cell">
+  <meta name="twitter:description" content="Buy new and used phones at Smart Cell — PTA approved and non-PTA stock, honest pricing, fast delivery across Pakistan.">
+  <meta name="twitter:image" content="https://www.smartcell.pk/icons/icon-512x512.png">
 
   <!-- Favicons and App Icons -->
   <link rel="icon" type="image/svg+xml" href="icons/favicon-source.svg">
@@ -105,6 +133,33 @@
       touch-action: manipulation;
     }
   </style>
+
+  <!-- Meta Pixel Code -->
+  <script>
+    // Live site only. index.html isn't touched by Angular's fileReplacements, so
+    // without this guard `ng serve` and every Vercel preview deploy would fire
+    // real events into the production pixel — polluting the retargeting
+    // audiences and conversion data that ad spend is optimised against.
+    (function () {
+      var LIVE_HOSTS = ['smartcell.pk', 'www.smartcell.pk'];
+      if (LIVE_HOSTS.indexOf(location.hostname) === -1) return;
+
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '1888423905552768');
+      fbq('track', 'PageView');
+    })();
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1888423905552768&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
 </head>
 <body>
   <noscript>Please enable JavaScript to use this application.</noscript>

@@ -215,18 +215,32 @@
               />
             </td>
             <td>
-              <p-button
-                icon="pi pi-eye"
-                [rounded]="true"
-                [text]="true"
-                severity="info"
-                size="small"
-                pTooltip="View Details"
-                tooltipPosition="top"
-                [routerLink]="['/admin/variants', variant.variantId]"
-                [queryParams]="variant.color ? { color: variant.color } : {}"
-                (click)="$event.stopPropagation()"
-              />
+              <div class="flex align-items-center gap-1">
+                <p-button
+                  icon="pi pi-eye"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="info"
+                  size="small"
+                  pTooltip="View Details"
+                  tooltipPosition="top"
+                  [routerLink]="['/admin/variants', variant.variantId]"
+                  [queryParams]="variant.color ? { color: variant.color } : {}"
+                  (click)="$event.stopPropagation()"
+                />
+                <p-button
+                  icon="pi pi-megaphone"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="help"
+                  size="small"
+                  pTooltip="Create Facebook post"
+                  tooltipPosition="top"
+                  [attr.aria-label]="'Create Facebook post for ' + variant.modelName"
+                  data-testid="create-post"
+                  (onClick)="openPostPreview(variant); $event.stopPropagation()"
+                />
+              </div>
             </td>
           </tr>
         </ng-template>
@@ -263,3 +277,9 @@
     </p-card>
   </div>
 </div>
+
+<app-post-preview
+  [context]="postContext()"
+  [imageUrl]="postImageUrl()"
+  [(visible)]="postDialogVisible"
+/>

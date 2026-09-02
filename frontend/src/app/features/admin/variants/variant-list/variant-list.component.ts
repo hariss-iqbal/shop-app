@@ -23,6 +23,8 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { Brand } from '../../../../models/brand.model';
 import { ProductCondition, ProductConditionLabels } from '../../../../enums/product-condition.enum';
 import { PtaStatus, PtaStatusLabels } from '../../../../enums/pta-status.enum';
+import { PostPreviewComponent } from '../post-preview/post-preview.component';
+import { PostTemplateContext } from '../../../../core/services/fb-post-template.service';
 
 interface VariantRow {
   /** Synthetic row key: `${variantId}__${color ?? '__nocolor'}`. Used as the p-table dataKey so rows track per (variant, color). */
@@ -65,7 +67,8 @@ interface VariantRow {
     SelectModule,
     ChipModule,
     ToggleSwitchModule,
-    DecimalPipe
+    DecimalPipe,
+    PostPreviewComponent
   ],
   templateUrl: './variant-list.component.html'
 })
@@ -115,6 +118,11 @@ export class VariantListComponent implements OnInit {
 
   // Toggling active state
   togglingId = signal<string | null>(null);
+
+  // Facebook post preview
+  postDialogVisible = signal(false);
+  postContext = signal<PostTemplateContext | null>(null);
+  postImageUrl = signal<string | null>(null);
 
   private lastLazyLoadEvent: TableLazyLoadEvent | null = null;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -462,6 +470,26 @@ export class VariantListComponent implements OnInit {
     } finally {
       this.togglingId.set(null);
     }
+  }
+
+  /**
+   * Opens the post preview for a row. The caption is rendered from the row we
+   * already hold — stock, price and colour are exactly what the table shows,
+   * so the post matches what the admin is looking at.
+   */
+  openPostPreview(variant: VariantRow): void {
+    this.postContext.set({
+      modelName: variant.modelName,
+      brandName: variant.brandName,
+      storageGb: variant.storageGb,
+      color: variant.color,
+      condition: variant.condition,
+      ptaStatus: variant.ptaStatus,
+      sellingPrice: variant.sellingPrice,
+      stockCount: variant.stockCount
+    });
+    this.postImageUrl.set(variant.primaryImageUrl);
+    this.postDialogVisible.set(true);
   }
 
   getPtaLabel(status: string | null): string {
